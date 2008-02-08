@@ -1,0 +1,21 @@
+#!/usr/bin/ruby
+
+if File.symlink?(__FILE__)
+  $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
+else
+  $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
+end
+
+require "account.rb"
+
+begin
+  if ARGV.length > 0
+    name=ARGV[0]
+  else
+    name=`groups`.split(/\s+/)[0]
+  end
+  account=Account.new(name)
+  account.print_params
+rescue
+  puts $!
+end

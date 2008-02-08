@@ -1,0 +1,199 @@
+#!/usr/bin/ruby
+#
+# wait_job
+#
+# Version: 3.00  (if you change this, also change $VER below)
+#    Date: 05/28/2002
+#  Author: Christopher Harrop
+# Changes: Initial creation 05/28/2002
+#          07/16/2002: Change call to qacct so that it does an ssh
+#                      to g0063.
+#          07/17/2002: Set SGE_ROOT environment variable so that
+#                      it will work from a cron job
+#          07/19/2002: Added alarms around ssh's to qmaster so that
+#                      it will hopefully work in the event of a
+#                      qmaster failover.
+#          07/19/2002: Added code to dynamically get the current
+#                      qmaster instead of hard coding g0063.
+#          07/26/2002: Added undocumented -r option to control the
+#                      retry interval.  Also, changed the parsing
+#                      of command line options to use Getopt.
+#          08/08/2002: Added a fix to make sure the SGE_ROOT variable
+#                      is passed through the ssh command.
+#          10/28/2002: Added architecture check to set SGE paths appropriately
+#          12/12/2002: Fixed exit status bug where multiple jobs with the
+#                      same job id would cause the script to report the
+#                      wrong exit status
+#          12/18/2002: Added options of waiting for jobid.qsubtime where
+#                      qsubtime is in "Thu_Jan__1_00:00:0_1970" format
+#          02/18/2003: Alpha version now uses an Intel server
+#          04/28/2003: Complete rewrite in Ruby using class library designed
+#                      for creating, submitting, and tracking jobs.  The
+#                      qsubtime option listed above is NO LONGER supported
+#                      until further notice.
+#          02/24/2005: Updated to use new SGEBatchSystem Ruby class
+#
+#####################################################
+
+if File.symlink?(__FILE__)
+  $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
+else
+  $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
+end
+
+require "sgebatchsystem.rb"
+
+#####################################################
+#
+# print_usage
+#
+#####################################################
+def print_usage
+
+  puts <<EOF
+
+  wait_job job_number [timeout] [-d] [-s] [-v] [-V] [-h]
+
+  Loops until the specified job finishes (or starts) or until a
+  timeout is reached.  This script will return either the job's
+  exit status or one of the following values:
+
+    JOB_STATE_UNKNOWN=255
+    JOB_TIMED_OUT=254
+ 
+  Command options:
+ 
+  timeout The number of seconds to wait before giving up and
+          returning JOB_TIMED_OUT.
+ 
+  -d      Delete the job if the timeout expires.
+ 
+  -s      Wait for the job to start execution instead of waiting for
+          the job to terminate.
+ 
+  -v      Print verbose diagnostic output.
+ 
+  -V      Print the version of this program.
+ 
+  -h      Print this message
+
+EOF
+
+end
+
+#####################################################
+#
+# main
+#
+#####################################################
+
+# Set some constants
+VER=3.0
+RETRY_INTERVAL=60
+DEFAULT_TIMEOUT=31536000 # The number of seconds in a 365 day year
+
+# Set error values
+JOB_STATE_UNKNOWN=255
+JOB_TIMED_OUT=254
+
+# Initialize parameters
+jid=nil
+timeout=DEFAULT_TIMEOUT
+wait_start=false
+delete=false
+verbose=false
+
+# The first argument can only be a jid, -V, or -h
+arg=ARGV.shift
+if arg=~/^\d+$/
+  jid=arg
+elsif arg=~/^-V$/
+  puts "wait_job version #{VER}"
+  exit 0
+elsif arg=~/^-h$/
+  print_usage
+  exit 0
+else
+  puts "\nSyntax Error!\n"
+  print_usage
+  exit 1
+end  
+
+# Get the timeout if there is one
+arg=ARGV.shift
+unless arg.nil?
+  if arg=~/^\d+$/
+    timeout=arg.to_i
+  else
+    ARGV.unshift(arg)
+  end
+end
+
+# Get the rest of the options
+ARGV.each { |arg|
+  if arg=~/^-s$/
+    wait_start=true
+  elsif arg=~/^-d$/
+    delete=true
+  elsif arg=~/^-v$/
+    verbose=true
+  elsif arg=~/^-V$/ 
+    puts "wait_job version #{VER}"
+    exit 0
+  elsif arg=~/^-h$/
+    print_usage
+    exit 0
+  else
+    puts "\nSyntax Error!\n"
+    print_usage
+    exit 1
+  end
+}
+
+# Wait for the job
+begin
+  deadline=Time.now + timeout
+  exit_status=nil
+  batch_system=SGEBatchSystem.new()
+  if wait_start
+    batch_system.wait_job_start(jid,timeout,RETRY_INTERVAL,verbose)
+  else 
+    batch_system.wait_job_finish(jid,timeout,RETRY_INTERVAL,verbose)
+    3.times {
+      exit_status=batch_system.get_job_exit_status(jid)
+      break unless exit_status.nil?
+      if verbose
+        puts "#{Time.now} :: Job #{jid}'s exit status could not be determined"
+      end
+      sleep RETRY_INTERVAL
+    }       
+    if exit_status.nil?
+      if verbose
+        puts "#{Time.now} :: Job #{jid}'s exit status could not be determined too many times, giving up"
+      end
+      exit JOB_STATE_UNKNOWN
+    else
+      if verbose
+        puts "#{Time.now} :: Job #{jid} exited with status=#{exit_status}"
+      end
+      exit exit_status
+    end
+  end
+rescue TimeoutExpired
+  if delete
+    result=batch_system.qdel(jid)    
+    if verbose
+      if result != 0
+        puts "Attempt to delete job #{jid} failed"
+      else
+        puts "Job #{jid} has been deleted"
+      end
+    end
+  end
+  exit JOB_TIMED_OUT
+rescue
+  exit JOB_STATE_UNKNOWN
+end
+
+
+
