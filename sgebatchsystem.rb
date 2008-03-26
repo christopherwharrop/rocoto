@@ -672,6 +672,16 @@ class SGEBatchSystem
         # Skip records that don't fall within the requested time range
         next if fields[10].to_i < ssecs
         next if fields[10].to_i > esecs
+
+        # Skip records for Jet project accounts not specified
+        unless accounts.nil?
+          next if accounts.index(fields[6]).nil?
+        end
+
+        # Skip records for Jet project accounts not specified
+        unless users.nil?
+          next if users.index(fields[3]).nil?
+        end
      
         # Get the relevant stats from the record
         user=fields[3]

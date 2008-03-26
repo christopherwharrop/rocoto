@@ -20,8 +20,10 @@ opts= GetoptLong.new(
 )
 
 # Initialize the list of users and projects 
-users=""
-projects=""
+#users=""
+#projects=""
+users=nil
+projects=nil
 
 # Initialize the start and end times to today at 00:00:00 thru current time
 now=Time.now

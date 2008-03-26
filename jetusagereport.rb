@@ -60,11 +60,11 @@ class JetUsageReport
     @projects=projects
 
     sge=SGEBatchSystem.new()
-    stats=sge.collect_job_stats(@stime,@etime,@users,@projects).split(/%/)
-    @total_stats=stats[0].split(/:/)
-    @user_stats=stats[1].split("$")
-    @project_stats=stats[2].split("$")
-    @emp_stats=stats[3].split("$")
+    stats=sge.collect_job_stats(@stime,@etime,@projects,@users).split(/%/)
+    @total_stats=   stats[0].nil? ? [] : stats[0].split(/:/)
+    @user_stats=    stats[1].nil? ? [] : stats[1].split("$")
+    @project_stats= stats[2].nil? ? [] : stats[2].split("$")
+    @emp_stats=     stats[3].nil? ? [] : stats[3].split("$")
 
   end
 
