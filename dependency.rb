@@ -110,6 +110,7 @@ class Dependency_AND_Operator < Dependency_Operator
   def resolved?(cycleTime)
 
     missing=0
+    @max_missing=0 if @max_missing.nil? 
     @operands.each { |operand|
       unless operand.resolved?(cycleTime)
         missing+=1
@@ -242,6 +243,8 @@ end
 ##########################################
 class FileDependency < Dependency_Operand
 
+  require 'timeout'
+
   #####################################################
   #
   # initialize
@@ -262,9 +265,16 @@ class FileDependency < Dependency_Operand
   def resolved?(cycleTime)
 
     filename=@trigger.to_s(cycleTime)
-    if File.exists?(filename)
-      return Time.now > (File.mtime(filename) + @age)
-    else
+
+    begin
+      status = Timeout::timeout(5) {
+        if File.exists?(filename)
+          return Time.now > (File.mtime(filename) + @age)
+        else
+          return false
+        end
+      }
+    rescue Timeout::Error
       return false
     end
 
