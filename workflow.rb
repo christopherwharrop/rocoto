@@ -1,5 +1,12 @@
 unless defined? $__workflow__
 
+if File.symlink?(__FILE__)
+  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+else
+  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
+end
+$:.unshift("#{File.dirname(__FILE__)}/usr/lib64/ruby/site_ruby/1.8/x86_64-linux") 
+
 ##########################################
 #
 # Class Workflow
@@ -7,13 +14,7 @@ unless defined? $__workflow__
 ##########################################
 class Workflow
 
-  if File.symlink?(__FILE__)
-    $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
-  else
-    $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
-  end
-
-  require 'rexml/document'
+  require 'libxml_ruby'
   require 'pstore'
   require 'workflowlog.rb'
   require 'cyclecron.rb'
@@ -70,7 +71,7 @@ class Workflow
     @lockfile="#{store}.lock"
 
     begin
-      Lockfile.new(@lockfile,opts) do
+#      Lockfile.new(@lockfile,opts) do
 
         # Retrieve the previous XML filename and parse time
         @store.transaction do
@@ -85,6 +86,7 @@ class Workflow
           @taskorder=@store['TASKORDER'].nil?     ? Hash.new : @store['TASKORDER']
           @schedulers=@store['SCHEDULERS'].nil?   ? Hash.new : @store['SCHEDULERS']
           @status=@store['STATUS'].nil?           ? Hash.new : @store['STATUS']
+          @reservation_lead_time=@store['RESERVATION_LEAD_TIME'].nil? ? 0 : @store['RESERVATION_LEAD_TIME']
         end
 
         # For backward compatibility where store files use a string instead of a Hash for @status
@@ -119,14 +121,33 @@ class Workflow
             @store['TASKORDER']=@taskorder
             @store['SCHEDULERS']=@schedulers
             @store['STATUS']=@status
+            @store['RESERVATION_LEAD_TIME']=@reservation_lead_time
           end
 
         end
 
-      end
+#      end
 
     rescue Lockfile::MaxTriesLockError
       puts "The workflow is locked."
+      raise
+    rescue ArgumentError
+      if $!.message=~/marshal data too short/
+        puts
+        puts "WARNING!  Store file corruption has been detected."
+        puts
+        self.parseXML
+        if @realtime
+          puts "Attempting to automatically recover by removing the store file, #{store}."
+          puts "All workflow history and state has been lost."
+          File.delete(store)
+        else
+          puts "Manual recovery is required.  First, adjust the cycle specification in the XML file"
+          puts "to eliminate cycles that have already completed successfully.  Then, remove the"
+          puts "corrupted store file, #{store}.  The workflow should then resume."
+        end
+        puts
+      end
       raise
     end
 
@@ -156,7 +177,10 @@ class Workflow
     @xmlparsetime=Time.now
 
     # Get the workflow element in the XML file
-    workflow=REXML::Document.new(File.new(@xmlfile)).elements["workflow"]
+#    workflowdoc=REXML::Document.new(File.new(@xmlfile))
+    workflowdoc=LibXML::XML::Document.file(@xmlfile)
+
+    workflow=workflowdoc.root
 
     # Get the workflow realtime attribute
     case workflow.attributes["realtime"]
@@ -180,12 +204,23 @@ class Workflow
         raise XMLError,"<workflow> attribute 'maxflowrate' contains illegal value: '#{workflow.attributes["maxflowrate"]}'"
     end
 
+    # Get the workflow reservation_lead_time attribute
+    case workflow.attributes["reservation_lead_time"]
+      when /^\d+$/
+        @reservation_lead_time=workflow.attributes["reservation_lead_time"].to_i
+      when nil,"0"
+        @reservation_lead_time=0
+      else
+        raise XMLError,"<workflow> attribute 'reservation_lead_time' contains illegal value: '#{workflow.attributes["reservation_lead_time"]}'"
+    end
+
     # Parse log, cycle, and task tags in depth-first order
     @log=nil
     @cyclecrons.clear
     @schedulers.clear
     @taskorder.clear
-    workflow.elements.each {|e|
+    workflow.each {|e|
+      next unless e.node_type==LibXML::XML::Node::ELEMENT_NODE
       case e.name
         when "log"
           if @log.nil?
@@ -245,7 +280,7 @@ class Workflow
      end
  
      # Get the fields
-     year,month,day,hour,min=element.text.split(/\s+/)
+     year,month,day,hour,min=element.content.strip.split(/\s+/)
  
      # Make sure year field is not a "*"
      raise XMLError,"The year field of a <cycle> can not be a '*'" if year=="*"
@@ -345,7 +380,11 @@ class Workflow
     taskproperties=Hash.new
     taskenvironments=Hash.new
     taskdependency=nil
-    element.elements.each { |e|
+    taskhangdependency=nil
+    taskdeadlinedependency=nil
+    element.each { |e|
+
+      next unless e.node_type==LibXML::XML::Node::ELEMENT_NODE
 
       case e.name
         when "property"
@@ -355,20 +394,28 @@ class Workflow
           environment=parse_environment(e)
           taskenvironments[environment.name]=environment
         when "dependency"
-          raise XMLError,"<dependency> tag can contain only one tag" if e.elements.size > 1
-          taskdependency=Dependency.new(parse_dependency_node(e.elements[1]))
+          elements=e.find_all {|node| node.node_type==LibXML::XML::Node::ELEMENT_NODE}
+          raise XMLError,"<dependency> tag can contain only one tag" if elements.size > 1
+          taskdependency=Dependency.new(parse_dependency_node(elements[0]))
+        when "hangdependency"
+          elements=e.find_all {|node| node.node_type==LibXML::XML::Node::ELEMENT_NODE}
+          raise XMLError,"<hangdependency> tag can contain only one tag" if elements.size > 1
+          taskhangdependency=Dependency.new(parse_dependency_node(elements[0]))
+        when "deadlinedependency"
+          elements=e.find_all {|node| node.node_type==LibXML::XML::Node::ELEMENT_NODE}
+          raise XMLError,"<deadlinedependency> tag can contain only one tag" if elements.size > 1
+          taskdeadlinedependency=Dependency.new(parse_dependency_node(elements[0]))
         else
           raise XMLError,"Invalid tag, <#{e.name}>"
       end
 
     }
-#puts taskproperties.inspect
 
     # Create task object or update one that we had from the last time we parsed
     if @tasks[taskid].nil?
-      @tasks[taskid]=Task.new(taskid,taskaction,tasksched,taskcycles,tasktries,taskthrottle,taskproperties,taskenvironments,taskdependency,@log)
+      @tasks[taskid]=Task.new(taskid,taskaction,tasksched,taskcycles,tasktries,taskthrottle,taskproperties,taskenvironments,taskdependency,taskhangdependency,taskdeadlinedependency,@log)
     else
-      @tasks[taskid].alter(taskid,taskaction,tasksched,taskcycles,tasktries,taskthrottle,taskproperties,taskenvironments,taskdependency,@log)
+      @tasks[taskid].alter(taskid,taskaction,tasksched,taskcycles,tasktries,taskthrottle,taskproperties,taskenvironments,taskdependency,taskhangdependency,taskdeadlinedependency,@log)
     end
 
     # Set the sequence number for this task
@@ -384,14 +431,26 @@ class Workflow
   #####################################################
   def parse_property(element)
 
-    # Make sure the <property> tag contains a <name> tag 
-    raise XMLError,"<property> must contain exactly one <name>" if element.elements["name"].nil?
+    name=nil
+    value=nil
+   
+    # Get the list of elements
+    element.each { |e|
 
-    # Get the property name
-    name=element.elements["name"].text
-        
-    # If a <value> tag is present then create a cycle string to represent its contents
-    value=CycleString.new(element.elements["value"]) unless element.elements["value"].nil?
+      next unless e.node_type==LibXML::XML::Node::ELEMENT_NODE
+
+      case e.name
+        when "name"
+          raise XMLError,"<property> must contain exactly one <name>" unless name.nil?
+          name=e.content.strip
+        when "value"
+          raise XMLError,"<property> may not contain more than one <value>" unless value.nil?
+          value=CycleString.new(e)
+        else
+      end   
+    }
+
+    raise XMLError,"<property> must contain exactly one <name>" if name.nil?
 
     return Property.new(name,value)
 
@@ -405,15 +464,27 @@ class Workflow
   #####################################################
   def parse_environment(element)
 
-    # Make sure the <environment> tag contains a <name> tag
-    raise XMLError,"<environment> must contain exactly one <name>" if element.elements["name"].nil?
-        
-    # Get the environment name
-    name=element.elements["name"].text
+    name=nil
+    value=nil
+   
+    # Get the list of elements
+    element.each { |e|
 
-    # If a <value> tag is present create a cycle string to represent its contents
-    value=CycleString.new(element.elements["value"]) unless element.elements["value"].nil?
-    
+      next unless e.node_type==LibXML::XML::Node::ELEMENT_NODE
+
+      case e.name
+        when "name"
+          raise XMLError,"<environment> must contain exactly one <name>" unless name.nil?
+          name=e.content.strip
+        when "value"
+          raise XMLError,"<environment> may not contain more than one <value>" unless value.nil?
+          value=CycleString.new(e)
+        else
+      end   
+    }
+
+    raise XMLError,"<environment> must contain exactly one <name>" if name.nil?
+
     return Environment.new(name,value)
 
   end
@@ -427,10 +498,11 @@ class Workflow
   def parse_dependency_node(element)
 
     # Build a dependency tree
+    elements=element.find_all {|node| node.node_type==LibXML::XML::Node::ELEMENT_NODE}
     case element.name
       when "not"
-        raise XMLError,"<not> tags can contain only one tag" if element.elements.size > 1
-        return Dependency_NOT_Operator.new(element.elements.collect { |child|
+        raise XMLError,"<not> tags can contain only one tag" if elements.size > 1
+        return Dependency_NOT_Operator.new(elements.collect { |child|
           parse_dependency_node(child)
         })          
       when "and"
@@ -439,11 +511,12 @@ class Workflow
         else
           max_missing=element.attributes['max_missing'].to_i
         end
-        return Dependency_AND_Operator.new(element.elements.collect { |child|
+        return Dependency_AND_Operator.new(elements.collect { |child|
           parse_dependency_node(child)
         },max_missing)          
+
       when "or"
-        return Dependency_OR_Operator.new(element.elements.collect { |child|
+        return Dependency_OR_Operator.new(elements.collect { |child|
           parse_dependency_node(child)
         })          
       when "taskdep"
@@ -564,26 +637,29 @@ class Workflow
     begin
 
       # Lock the workflow while working on tasks and cycles
-      Lockfile.new(@lockfile,opts) do
+#      Lockfile.new(@lockfile,opts) do
 
         # Calculate a new cycle to add if we are doing realtime
         if @realtime
 
+# NOTE: this doesn't work for subhourly cycles!!!! 
           # Get the latest cycle not greater than the current time
-          nextcycles=@cyclecrons.values.collect { |cyclecron| cyclecron.prev(Time.now) }.compact
-          if nextcycles.empty?
-            newcycle=nil
-          else
-            newcycle=nextcycles.max
-          end
-
-          # Add the new cycle if there is one
-          unless newcycle.nil?
-            unless @cycles.has_key?(newcycle)
-              @cycles[newcycle]=Time.now
-              @status[newcycle]="RUN"
+          0.step(@reservation_lead_time,3600) {|i|
+            nextcycles=@cyclecrons.values.collect { |cyclecron| cyclecron.prev(Time.now+i) }.compact
+            if nextcycles.empty?
+              newcycle=nil
+            else
+              newcycle=nextcycles.max
             end
-          end
+
+            # Add the new cycle if there is one
+            unless newcycle.nil?
+              unless @cycles.has_key?(newcycle)
+                @cycles[newcycle]=Time.now
+                @status[newcycle]="RUN"
+              end
+            end
+          }
 
         # Calculate a new cycle to add if we are doing retrospective
         else
@@ -632,6 +708,11 @@ class Workflow
 
         end
 
+        @store.transaction do
+          @store['CYCLES']=@cycles
+          @store['STATUS']=@status
+        end
+
         # Loop over cycles
         @cycles.keys.each { |cycle|
 
@@ -645,7 +726,7 @@ class Workflow
 
         }
 
-      end
+#      end
 
     rescue
       puts $!

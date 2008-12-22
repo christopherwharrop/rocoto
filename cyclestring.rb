@@ -1,17 +1,18 @@
 unless defined? $__cyclestring__
 
+if File.symlink?(__FILE__)
+  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+else
+  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
+end
+$:.unshift("#{File.dirname(__FILE__)}/usr/lib64/ruby/site_ruby/1.8/x86_64-linux") 
+
 ##########################################
 #
 # Class CycleString
 #
 ##########################################
 class CycleString
-
-  if File.symlink?(__FILE__)
-    $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
-  else
-    $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
-  end
 
   require 'cycletime.rb'
 
@@ -23,8 +24,9 @@ class CycleString
   def initialize(element)
 
     @strarray=element.collect {|e|
-      if e.kind_of?(REXML::Text)
-        e.value
+      if e.node_type==LibXML::XML::Node::TEXT_NODE
+#      if e.kind_of?(REXML::Text)
+        e.content
       else
         offset=e.attributes["offset"].to_i
         case e.name
