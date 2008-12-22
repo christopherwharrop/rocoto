@@ -14,7 +14,7 @@ class Command
 # run
 #
 ##########################################################
-def Command.run(cmd,max_time=60)
+def Command.run(cmd,max_time=15)
 
   output=""
   pipe=IO.popen("#{cmd} 2>&1","w+")
