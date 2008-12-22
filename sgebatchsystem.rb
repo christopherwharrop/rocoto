@@ -1,5 +1,12 @@
 unless defined? $__sgebatchsystem__
 
+if File.symlink?(__FILE__)
+  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+else
+  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
+end
+$:.unshift("#{File.dirname(__FILE__)}/usr/lib64/ruby/site_ruby/1.8/x86_64-linux") 
+
 ###############################################################################
 #
 # SGE accounting record format (fields are separated by colons)
@@ -106,12 +113,6 @@ unless defined? $__sgebatchsystem__
 ##########################################
 class SGEBatchSystem
 
-  if File.symlink?(__FILE__)
-    $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
-  else
-    $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
-  end
-
   require 'etc'
   require 'command.rb'
   require 'exceptions.rb'
@@ -129,10 +130,16 @@ class SGEBatchSystem
 
     begin
 
-      # Set the SGE_ROOT 
+      # Set the SGE_ROOT
       if sge_root.nil?
         if ENV['SGE_ROOT'].nil?
-          @sge_root="/usr/local/sge" 
+          if File.exists?("/usr/local/sge/util/arch")
+            @sge_root="/usr/local/sge"
+          elsif File.exists?("/opt/sge/default/util/arch")
+            @sge_root="/opt/sge/default"
+          elsif File.exists?("/opt/sge/util/arch")
+            @sge_root="/opt/sge"
+          end
         else
           @sge_root=ENV['SGE_ROOT']
         end
@@ -149,7 +156,18 @@ class SGEBatchSystem
         bin=output[0].chomp
       end
       @sge_path="#{@sge_root}/bin/#{bin}"
-      @acct_path="#{@sge_root}/default/common"                
+#      @acct_path="#{@sge_root}/default/common"
+      @acct_path="#{File.expand_path(ENV['SGE_ROOT'])}/default/common/accounting"
+      catch (:done) do
+        loop do
+          if File.symlink?(@acct_path)
+            @acct_path=File.expand_path(File.readlink(@acct_path),@acct_path)
+          else
+            throw :done
+          end
+        end
+      end
+      @acct_path=File.dirname(@acct_path)
 
       # Check to see if the accounting files are available locally or only on the SGE server
       if File.exist?("#{@acct_path}/accounting")
@@ -167,7 +185,7 @@ class SGEBatchSystem
       @qstat_available=true
 
       # Initialize the qstat table with current data
-      self.refresh_qstat
+#      self.refresh_qstat
 
     rescue
       raise "SGEBatchSystem object could not be initialized\n\n#{$!}"
@@ -284,6 +302,7 @@ class SGEBatchSystem
               cmd="echo BEGIN;gunzip -c #{file} | tac | awk 'NR>#{line_count} && NR<=#{line_count+1000}'"
             else
               cmd="echo BEGIN;tac #{file} | awk 'NR>#{line_count} && NR<=#{line_count+1000}'"
+#              cmd="echo BEGIN;tac #{file} | head -#{line_count+1000} | tail -1000"
             end
           end
 
@@ -301,7 +320,7 @@ class SGEBatchSystem
             fields=record.split(/:/)
 
             # Skip bogus records
-            next unless fields.length==43
+            next unless fields.length==43 || fields.length==44
             next unless fields[8].to_i > 0
 
             # Quit if we've reached the minimum end_time
@@ -342,9 +361,12 @@ class SGEBatchSystem
   #####################################################
   def get_job_state(jid)
 
-
     # Refresh qstat table if we need to
-    self.refresh_qstat if (Time.now - @qstat_update_time) > @qstat_refresh_rate
+    if @qstat_update_time.nil?
+      self.refresh_qstat
+    else
+      self.refresh_qstat if (Time.now - @qstat_update_time) > @qstat_refresh_rate
+    end
 
     # Check qstat table for job state
     if @qstat.has_key?(jid.to_i)
@@ -634,27 +656,8 @@ class SGEBatchSystem
     }
 
     # Initialize user and project and emp hashes
-    user_njobs=Hash.new
-    user_ncpus=Hash.new
-    user_walltime=Hash.new
-    user_cputime=Hash.new
-
-    project_njobs=Hash.new
-    project_ncpus=Hash.new
-    project_walltime=Hash.new
-    project_cputime=Hash.new
-
-    emp_njobs=Hash.new
-    emp_ncpus=Hash.new
-    emp_walltime=Hash.new
-    emp_cputime=Hash.new
-
-    # Initialize total stats counters
-    total_njobs=0
-    total_ncpus=0
-    total_walltime=0
-    total_cputime=0
-
+    overall_stats=Hash.new
+    
     # Loop over relevant accounting files and read them backwards to accumulate stats
     sindex.downto(eindex) { |index|
       file=files[index]
@@ -678,7 +681,7 @@ class SGEBatchSystem
           next if accounts.index(fields[6]).nil?
         end
 
-        # Skip records for Jet project accounts not specified
+        # Skip records for user not specified
         unless users.nil?
           next if users.index(fields[3]).nil?
         end
@@ -692,33 +695,55 @@ class SGEBatchSystem
         ncpus=fields[34].to_i
         walltime=fields[13].to_i
         cputime=ncpus*walltime
+  
+        # Allocate stat hash
+        if overall_stats[emp].nil?
+          overall_stats[emp]=Hash.new
+          overall_stats[emp][project]=Hash.new
+          overall_stats[emp][project][user]=Hash.new
+          overall_stats[emp][project][user]["njobs"]=0
+          overall_stats[emp][project][user]["ncpus"]=0
+          overall_stats[emp][project][user]["walltime"]=0
+          overall_stats[emp][project][user]["cputime"]=0
+        elsif overall_stats[emp][project].nil?
+          overall_stats[emp][project]=Hash.new
+          overall_stats[emp][project][user]=Hash.new
+          overall_stats[emp][project][user]["njobs"]=0
+          overall_stats[emp][project][user]["ncpus"]=0
+          overall_stats[emp][project][user]["walltime"]=0
+          overall_stats[emp][project][user]["cputime"]=0
+        elsif overall_stats[emp][project][user].nil?
+          overall_stats[emp][project][user]=Hash.new
+          overall_stats[emp][project][user]["njobs"]=0
+          overall_stats[emp][project][user]["ncpus"]=0
+          overall_stats[emp][project][user]["walltime"]=0
+          overall_stats[emp][project][user]["cputime"]=0
+        end
 
-        # Accumulate total stats
-        total_njobs+=1
-        total_ncpus+=ncpus
-        total_walltime+=walltime
-        total_cputime+=cputime
-
-        # Accumulate stats by user
-        user_njobs[user].nil? ? user_njobs[user]=1 : user_njobs[user]+=1
-        user_ncpus[user].nil? ? user_ncpus[user]=ncpus : user_ncpus[user]+=ncpus
-        user_walltime[user].nil? ? user_walltime[user]=walltime : user_walltime[user]+=walltime
-        user_cputime[user].nil? ? user_cputime[user]=cputime : user_cputime[user]+=cputime
-
-        # Accumulate stats by project
-        project_njobs[project].nil? ?  project_njobs[project]=1 : project_njobs[project]+=1
-        project_ncpus[project].nil? ? project_ncpus[project]=ncpus : project_ncpus[project]+=ncpus
-        project_walltime[project].nil? ? project_walltime[project]=walltime : project_walltime[project]+=walltime
-        project_cputime[project].nil? ? project_cputime[project]=cputime : project_cputime[project]+=cputime
- 
-        # Accumulate stats by emp project
-        emp_njobs[emp].nil? ? emp_njobs[emp]=1 : emp_njobs[emp]+=1
-        emp_ncpus[emp].nil? ? emp_ncpus[emp]=ncpus : emp_ncpus[emp]+=ncpus
-        emp_walltime[emp].nil? ? emp_walltime[emp]=walltime : emp_walltime[emp]+=walltime
-        emp_cputime[emp].nil? ? emp_cputime[emp]=cputime : emp_cputime[emp]+=cputime
+        # Accumulate stats
+        overall_stats[emp][project][user]["njobs"]+=1
+        overall_stats[emp][project][user]["ncpus"]+=ncpus
+        overall_stats[emp][project][user]["walltime"]+=walltime
+        overall_stats[emp][project][user]["cputime"]+=cputime
 
       }
     }
+
+    stats=Array.new
+    overall_stats.keys.sort.each { |emp_key|
+      overall_stats[emp_key].keys.sort.each { |project_key|
+        overall_stats[emp_key][project_key].keys.sort.each { |user_key|
+          stats.push(([emp_key,project_key,user_key] + 
+                      [overall_stats[emp_key][project_key][user_key]["njobs"]] + 
+                      [overall_stats[emp_key][project_key][user_key]["ncpus"]] + 
+                      [overall_stats[emp_key][project_key][user_key]["walltime"]] + 
+                      [overall_stats[emp_key][project_key][user_key]["cputime"]]).join(":") )
+        }
+      }
+    }
+
+    return stats.join("%")
+   
 
     # Format the stats into strings with each stat separated by :'s and each user/project/emp seperated by $'s
     total_stats=[total_njobs,total_ncpus,total_walltime,total_cputime].join(":")
@@ -1051,17 +1076,17 @@ class SGEBatchSystem
       ENV['SGE_ROOT']=@sge_root
 
       # Get the current SGE server's hostname
-      output=Command.run("#{@sge_path}/qconf -sss")
-      if output[1] != 0
-        raise output[0]
-      end
-      server=output[0].split(".")[0].chomp
+#      output=Command.run("#{@sge_path}/qconf -sss")
+#      if output[1] != 0
+#        raise output[0]
+#      end
+#      server=output[0].split(".")[0].chomp
 
       # Get our hostname
-      host=`hostname -s`.chomp
+#      host=`hostname -s`.chomp
 
       # Don't rollover unless we are on the current server
-      return 1 unless host==server
+#      return 1 unless host==server
 
       # Get a list of accounting files sorted by modification time in reverse order
       files=Dir["#{@acct_path}/accounting*"].sort! { |a,b|
@@ -1125,16 +1150,16 @@ class SGEBatchSystem
         `/bin/gzip #{file}`
       }
 
-      # Get gzipped files
-      files=Dir["#{@acct_path}/accounting*.gz"]
+#      # Get gzipped files
+#      files=Dir["#{@acct_path}/accounting*.gz"]
 
-      # Copy files to /home for safe keeping
-      homedir="/home/admin/accounting/logs"
-      files.reject { |file|
-        File.exists?("#{homedir}/File.basename(file)")
-      }.each { |file|
-        `/bin/cp -pd #{file} #{homedir}/#{File.basename(file)}`
-      }
+#      # Copy files to /home for safe keeping
+#      homedir="/home/admin/accounting/logs"
+#      files.reject { |file|
+#        File.exists?("#{homedir}/File.basename(file)")
+#      }.each { |file|
+#        `/bin/cp -pd #{file} #{homedir}/#{File.basename(file)}`
+#      }
 
       # Return success
       return 0
