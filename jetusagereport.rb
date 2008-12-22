@@ -1,5 +1,12 @@
 unless defined? $__jetusagereport__
 
+if File.symlink?(__FILE__)
+  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+else
+  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
+end
+$:.unshift("#{File.dirname(__FILE__)}/usr/lib64/ruby/site_ruby/1.8/x86_64-linux") 
+
 ##########################################
 #
 # Class JetUsageReport
@@ -7,14 +14,13 @@ unless defined? $__jetusagereport__
 ##########################################
 class JetUsageReport
 
-  if File.symlink?(__FILE__)
-    $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
-  else
-    $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
-  end
+  @@wjet_cores=1392+1952  # wjet + hjet
+  @@ejet_cores=616
+  @@ijet_cores=1154
+  @@smtpserver="10.1.99.99"
 
   require 'sgebatchsystem.rb'
-
+  require 'net/smtp'
 
   #####################################################
   #
@@ -48,66 +54,113 @@ class JetUsageReport
     case pes
       when /ncomp/
         @machine="iJET"
+        @ncores=@@ijet_cores
       when /ecomp/
         @machine="eJET"
+        @ncores=@@ejet_cores
       when /wcomp/
         @machine="wJET"
+        @ncores=@@wjet_cores
     end
 
-    @stime=stime
-    @etime=etime
-    @users=users
-    @projects=projects
+    # Convert start and end time strings into Time objects
+    @start_time=Time.gm(*(stime.gsub(/[-_:]/,":").split(":")))
+    @end_time=Time.gm(*(etime.gsub(/[-_:]/,":").split(":")))
+ 
+    # Compute number of wall hours for this time period    
+    @nwallhours=(@end_time-@start_time)/3600.0
 
+    # Compute cpuhour capacity for this time period
+    @ncpuhours=@nwallhours*@ncores
+
+    # Get a batch system object
     sge=SGEBatchSystem.new()
-    stats=sge.collect_job_stats(@stime,@etime,@projects,@users).split(/%/)
-    @total_stats=   stats[0].nil? ? [] : stats[0].split(/:/)
-    @user_stats=    stats[1].nil? ? [] : stats[1].split("$")
-    @project_stats= stats[2].nil? ? [] : stats[2].split("$")
-    @emp_stats=     stats[3].nil? ? [] : stats[3].split("$")
 
+    # Get the job statistics from the accounting logs
+    @stats=sge.collect_job_stats(stime,etime,projects,users).split(/%/)
+
+    # Reconstitute overall_stats
+    @overall_stats=Hash.new
+    @total=Hash.new
+    @total["njobs"]=0
+    @total["ncpus"]=0
+    @total["walltime"]=0
+    @total["cputime"]=0
+    @user=Hash.new
+    @project=Hash.new
+    @emp=Hash.new
+    @stats.each { |stat|
+      emp,project,user=stat.split(":")[0..2]
+      njobs,ncpus,walltime,cputime=stat.split(":")[3..6].collect {|i| i.to_i}
+      if @overall_stats[emp].nil?
+        @overall_stats[emp]=Hash.new
+      end
+      if @overall_stats[emp][project].nil?
+        @overall_stats[emp][project]=Hash.new
+      end
+      if @overall_stats[emp][project][user].nil?
+        @overall_stats[emp][project][user]=Hash.new
+      end
+
+      # Accumulate stats per user per project per emp
+      @overall_stats[emp][project][user]["njobs"]=njobs
+      @overall_stats[emp][project][user]["ncpus"]=ncpus
+      @overall_stats[emp][project][user]["walltime"]=walltime
+      @overall_stats[emp][project][user]["cputime"]=cputime
+
+      # Accumulate grand total stats
+      @total["njobs"]+=njobs
+      @total["ncpus"]+=ncpus
+      @total["walltime"]+=walltime
+      @total["cputime"]+=cputime
+      
+      # Accumulate total stats per user 
+      if @user[user].nil? 
+        @user[user]=Hash.new
+        @user[user]["njobs"]=0
+        @user[user]["ncpus"]=0
+        @user[user]["walltime"]=0
+        @user[user]["cputime"]=0
+      end
+      @user[user]["njobs"]+=njobs
+      @user[user]["ncpus"]+=ncpus
+      @user[user]["walltime"]+=walltime
+      @user[user]["cputime"]+=cputime
+
+      # Accumulate total stats per project 
+      if @project[project].nil? 
+        @project[project]=Hash.new
+        @project[project]["njobs"]=0
+        @project[project]["ncpus"]=0
+        @project[project]["walltime"]=0
+        @project[project]["cputime"]=0
+      end
+      @project[project]["njobs"]+=njobs
+      @project[project]["ncpus"]+=ncpus
+      @project[project]["walltime"]+=walltime
+      @project[project]["cputime"]+=cputime
+
+      # Accumulate total stats per emp
+      if @emp[emp].nil? 
+        @emp[emp]=Hash.new
+        @emp[emp]["njobs"]=0
+        @emp[emp]["ncpus"]=0
+        @emp[emp]["walltime"]=0
+        @emp[emp]["cputime"]=0
+      end
+      @emp[emp]["njobs"]+=njobs
+      @emp[emp]["ncpus"]+=ncpus
+      @emp[emp]["walltime"]+=walltime
+      @emp[emp]["cputime"]+=cputime
+
+    }
+
+    # Get EMP allocations
+    @emp.keys.each {|emp|
+      @emp[emp]["allocation"]=0.0
+    }
+ 
   end
-
-
-  #####################################################
-  #
-  # print_overall_summary
-  #
-  #####################################################
-  def print_overall_summary
-
-    puts
-    puts "Job Summary"
-    puts "--------------------------------------------"
-    printf "Total Number of Jobs Completed: %12d\n",@total_stats[0]
-    printf "     Total Number of CPUs Used: %12d\n",@total_stats[1]
-    printf "   Total Wall Clock Time (hrs): %12.2f\n",@total_stats[2].to_i/3600.0
-    printf "          Total CPU Time (hrs): %12.2f\n",@total_stats[3].to_i/3600.0
-    puts
-   
-  end
-
-  #####################################################
-  #
-  # print_stats
-  #
-  #####################################################
-  def print_category_stats(header,category,stats)
-
-    puts
-    puts header
-    puts "-----------------------------------------------------------------------------"
-    printf "%15s\t%9s\t%9s\t%12s\t%12s\n","","Total #","Total #","Total Wall","Total CPU"
-    printf "%15s\t%9s\t%9s\t%12s\t%12s\n",category,"of Jobs","of CPUs","Time (hrs)","Time (hrs)"
-    puts "-----------------------------------------------------------------------------"    
-    stats.each { |record|
-      cat,njobs,cpus,wallh,cpuh=record.split(":")
-      printf "%15s\t%9d\t%9d\t%12.2f\t%12.2f\n",cat,njobs,cpus,wallh.to_i/3600.0,cpuh.to_i/3600.0
-    }    
-    puts
-
-  end
-
 
 
   #####################################################
@@ -117,13 +170,66 @@ class JetUsageReport
   #####################################################
   def print_header
 
-    # Convert start and end time strings to Time objects
-    stime_arr=@stime.gsub(/[-_:]/,":").split(":")
-    etime_arr=@etime.gsub(/[-_:]/,":").split(":")
+    start_str=@start_time.strftime("%m/%d/%Y %H:%M:%S %Z")
+    end_str=@end_time.strftime("%m/%d/%Y %H:%M:%S %Z")
 
-    puts
-    puts "#{@machine} Usage Report For: #{Time.gm(*stime_arr).strftime("%m/%d/%Y %H:%M:%S %Z")} thru #{Time.gm(*etime_arr).strftime("%m/%d/%Y %H:%M:%S %Z")}"
-    puts
+    msg=sprintf  "\n"
+    msg+=sprintf "#{@machine} Usage Report For: #{start_str} thru #{end_str}\n"
+    msg+=sprintf  "\n"
+
+    return msg
+
+  end
+
+
+  #####################################################
+  #
+  # print_summary
+  #
+  #####################################################
+  def print_summary
+
+    msg=sprintf  "\n"
+    msg+=sprintf "Machine Capacity Summary\n"
+    msg+=sprintf "----------------------------------------\n"
+    msg+=sprintf " Number of CPUs in Service: %12d\n",@ncores
+    msg+=sprintf "Wall Clock Time Span (hrs): %12.2f\n",@nwallhours
+    msg+=sprintf "CPU Time Capacity (cpuhrs): %12.2f\n",@ncpuhours
+    msg+=sprintf "\n"
+    msg+=sprintf "\n"
+    msg+=sprintf "Machine Usage Summary\n"
+    msg+=sprintf "----------------------------------------------\n"
+    msg+=sprintf "  Total Number of Jobs Completed: %12d\n",@total["njobs"]
+    msg+=sprintf "       Total Number of CPUs Used: %12d\n",@total["ncpus"]
+    msg+=sprintf "Total Wall Clock Time Used (hrs): %12.2f\n",@total["walltime"]/3600.0
+    msg+=sprintf "    Total CPU Time Used (cpuhrs): %12.2f\n",@total["cputime"]/3600.0
+    msg+=sprintf "             Total %% Utilization: %12.2f\n",(@total["cputime"]/3600.0)/@ncpuhours*100
+    msg+=sprintf "\n"
+
+    return msg
+
+  end
+
+
+  #####################################################
+  #
+  # print_legend
+  #
+  #####################################################
+  def print_legend
+
+    msg=sprintf  "\n"
+    msg+=sprintf "Utilization Definitions\n"
+    msg+=sprintf "-----------------------------------------------------------------------------------------------\n"
+    msg+=sprintf " Relative %% Utilization: The percent of the total *usage* of the machine that was used by\n"
+    msg+=sprintf "                         the given EMP, project, or user, during the given time interval\n"
+    msg+=sprintf " Absolute %% Utilization: The percent of the total *capacity* of the machine that was used\n"
+    msg+=sprintf "                         during the given time interval\n"
+    msg+=sprintf "Allocated %% Utilization: The percent of the total *capacity* of the machine that was allocated\n"
+    msg+=sprintf "                         by the EMP allocation committee\n"
+    msg+=sprintf  "\n"
+
+    return msg
 
   end
 
@@ -133,34 +239,139 @@ class JetUsageReport
   # print_user_stats
   #
   #####################################################
-  def print_user_stats
+  def print_user_stats(userlist=nil)
 
-    self.print_category_stats("User Job Summary","User",@user_stats)   
+    msg=sprintf  "\n"
+    msg+=sprintf "User Job Summary\n"
+    msg+=sprintf "============================================================================================================\n"
+    msg+=sprintf "%15s\t%9s\t%9s\t%12s\t%12s\t%12s\t%12s\n","","Total #","Total #","Total Wall","Total CPU","Relative %","Absolute %"
+    msg+=sprintf "%15s\t%9s\t%9s\t%12s\t%12s\t%12s\t%12s\n","User","of Jobs","of CPUs","Time (hrs)","Time (hrs)","Utilization","Utilization"
+    msg+=sprintf "============================================================================================================\n"
+    @user.keys.sort.each { |user|
+      unless userlist.nil?
+        next if userlist.index(user).nil?
+      end
+      msg+=sprintf "%15s\t%9d\t%9d\t%12.2f\t%12.2f\t%12.2f\t%12.2f\n",user,
+                                                @user[user]["njobs"],
+                                                @user[user]["ncpus"],
+                                                @user[user]["walltime"]/3600.0,
+                                                @user[user]["cputime"]/3600.0,
+                                                (@user[user]["cputime"]/3600.0)/(@total["cputime"]/3600.0)*100.0,
+                                                (@user[user]["cputime"]/3600.0)/@ncpuhours*100.0
+    }
+    msg+="\n"
 
-  end  
+    return msg
 
+  end
 
   #####################################################
   #
   # print_project_stats
   #
   #####################################################
-  def print_project_stats
+  def print_project_stats(emplist=nil,projectlist=nil)
 
-    self.print_category_stats("Project Job Summary","Project",@project_stats)   
+    msg=sprintf "\n"
+    msg+=sprintf "Project Job Summary\n"
+    msg+=sprintf "============================================================================================================\n"
+    msg+=sprintf "%15s\t%15s\t%15s\t%9s\t%9s\t%12s\t%12s\n","","","","Total #","Total #","Total Wall","Total CPU"
+    msg+=sprintf "%15s\t%15s\t%15s\t%9s\t%9s\t%12s\t%12s\n","EMP","Project","User","of Jobs","of CPUs","Time (hrs)","Time (hrs)"
+    msg+=sprintf "============================================================================================================\n"
+    @overall_stats.keys.sort.each { |emp|
+      unless emplist.nil?
+        next if emplist.index(emp).nil?
+      end
+      msg+=sprintf "%15s\t%15s\t%15s\t%9d\t%9d\t%12.2f\t%12.2f\n",emp,
+                                                                    "",
+                                                                    "",
+                                                                    @emp[emp]["njobs"],
+                                                                    @emp[emp]["ncpus"],
+                                                                    @emp[emp]["walltime"]/3600.0,
+                                                                    @emp[emp]["cputime"]/3600.0
+      msg+=sprintf "------------------------------------------------------------------------------------------------------------\n"
+      @overall_stats[emp].keys.sort.each { |project|
+        unless projectlist.nil?
+          next if projectlist.index(project).nil?
+        end
+        msg+=sprintf "%15s\t%15s\t%15s\t%9d\t%9d\t%12.2f\t%12.2f\n","",
+                                                                      project,
+                                                                      "",
+                                                                      @project[project]["njobs"],
+                                                                      @project[project]["ncpus"],
+                                                                      @project[project]["walltime"]/3600.0,
+                                                                      @project[project]["cputime"]/3600.0
+        @overall_stats[emp][project].keys.sort.each { |user|
+          msg+=sprintf "%15s\t%15s\t%15s\t%9d\t%9d\t%12.2f\t%12.2f\n","",
+                                                                        "",
+                                                                        user,
+                                                                        @overall_stats[emp][project][user]["njobs"],
+                                                                        @overall_stats[emp][project][user]["ncpus"],
+                                                                        @overall_stats[emp][project][user]["walltime"]/3600.0,
+                                                                        @overall_stats[emp][project][user]["cputime"]/3600.0
+        }
+      msg+=sprintf "------------------------------------------------------------------------------------------------------------\n"
+      }
+ 
+    }
+    msg+=sprintf "\n"
 
-  end  
+    return msg
+
+  end
+
 
   #####################################################
   #
-  # print_emp_stats
+  # print_utilization_stats
   #
   #####################################################
-  def print_emp_stats
+  def print_utilization_stats(emplist=nil,projectlist=nil)
 
-    self.print_category_stats("EMP Job Summary","EMP",@emp_stats)   
+    msg=sprintf "\n"
+    msg+=sprintf "Project Utilization Summary\n"
+    msg+=sprintf "============================================================================================\n"
+    msg+=sprintf "%15s\t%15s\t%15s\t%12s\t%12s\t%12s\n","","","","Relative %","Absolute %","Allocated %"
+    msg+=sprintf "%15s\t%15s\t%15s\t%12s\t%12s\t%12s\n","EMP","Project","User","Utilization","Utilization","Utilization"
+    msg+=sprintf "============================================================================================\n"
+    @overall_stats.keys.sort.each { |emp|
+      unless emplist.nil?
+        next if emplist.index(emp).nil?
+      end
+      msg+=sprintf "%15s\t%15s\t%15s\t%12.2f\t%12.2f\t%12.2f\n",emp,
+                                                                    "",
+                                                                    "",
+                                                                    (@emp[emp]["cputime"]/3600.0)/(@total["cputime"]/3600.0)*100.0,
+                                                                    (@emp[emp]["cputime"]/3600.0)/@ncpuhours*100.0,
+                                                                    @emp[emp]["allocation"]
+      msg+=sprintf "--------------------------------------------------------------------------------------------\n"
+      @overall_stats[emp].keys.sort.each { |project|
+        unless projectlist.nil?
+          next if projectlist.index(project).nil?
+        end
+        msg+=sprintf "%15s\t%15s\t%15s\t%12.2f\t%12.2f\n","",
+                                                                      project,
+                                                                      "",
+                                                                      (@project[project]["cputime"]/3600.0)/(@total["cputime"]/3600.0)*100.0,
+                                                                      (@project[project]["cputime"]/3600.0)/@ncpuhours*100.0
+        @overall_stats[emp][project].keys.sort.each { |user|
+          msg+=sprintf "%15s\t%15s\t%15s\t%12.2f\t%12.2f\n","",
+                                                                        "",
+                                                                        user,
+                                                                        (@overall_stats[emp][project][user]["cputime"]/3600.0)/(@total["cputime"]/3600.0)*100.0,
+                                                                        (@overall_stats[emp][project][user]["cputime"]/3600.0)/@ncpuhours*100.0
+        }
+      msg+=sprintf "--------------------------------------------------------------------------------------------\n"
+      }
+ 
+    }
+    msg+="\n"
 
-  end  
+    return msg
+
+  end
+
+
 
 
   #####################################################
@@ -170,186 +381,63 @@ class JetUsageReport
   #####################################################
   def print_full_report
 
-    self.print_header
-    self.print_overall_summary
-    self.print_user_stats
-    self.print_project_stats
-    self.print_emp_stats
+    puts self.print_header
+    puts self.print_summary
+    puts self.print_legend
+    puts self.print_user_stats
+    puts self.print_project_stats
+    puts self.print_utilization_stats
 
   end  
+
+  #####################################################
+  #
+  # email_emp_reports
+  #
+  #####################################################
+  def email_emp_reports
+
+    @overall_stats.keys.each { |emp|
+      report="Subject: EMP Usage Report for #{emp}\n\n"
+      report+=self.print_header
+      report+=self.print_summary
+      report+=self.print_legend
+      report+=self.print_project_stats([emp])
+      report+=self.print_utilization_stats([emp])
+
+      Net::SMTP.start(@@smtpserver) do |smtp|
+        smtp.send_message(report,'jet.mgmt.gsd@noaa.gov',['christopher.w.harrop@noaa.gov'])
+      end
+    }
+
+  end  
+
+  #####################################################
+  #
+  # email_project_reports
+  #
+  #####################################################
+  def email_project_reports
+
+    @overall_stats.keys.each { |emp|
+      @overall_stats[emp].keys.each { |project|
+        report="Subject: Jet Project Usage Report for #{project}\n\n"
+        report+=self.print_header
+        report+=self.print_summary
+        report+=self.print_legend
+        report+=self.print_project_stats([emp],[project])
+        report+=self.print_utilization_stats([emp],[project])
+
+        Net::SMTP.start(@@smtpserver) do |smtp|
+          smtp.send_message(report,'jet.mgmt.gsd@noaa.gov',['christopher.w.harrop@noaa.gov'])
+        end
+
+      }
+    }
+
+  end  
+
   
-
-
-  #####################################################
-  #
-  # print_node_hist
-  #
-  #####################################################
-  def print_node_hist(bins)
-    
-    node_hist=Array.new
-    node_hist.fill(0,0,bins.length+1)
-
-    @jobs.each_value { |val|
-      nodes=val[3].to_i
-      index=0
-      bins.each { |bin|
-        if nodes > bin
-          index+=1
-        else
-          break
-        end
-      }
-      node_hist[index]+=1
-    }
-    puts
-    printf "%16s","CPUs:";
-    bins.each { |bin|
-      if (bin.class==Fixnum) 
-        printf "%8d",bin
-      else
-	printf "%8.2f",bin
-      end
-    }
-    printf "%8s","Inf"
-    puts
-    printf "------------------------"
-    bins.each { |bin|
-        printf "--------"
-    }
-    puts
-    printf "%16s","Count:"
-    node_hist.each { |hist|
-      printf "%8d",hist
-    }
-    puts
-    printf "%16s","Percent:"
-    cnodes=0.0
-    node_hist.each { |hist|
-      cnodes+=hist
-      if (@jobs.size != 0)
-	printf "%8.2f",cnodes/@jobs.size
-      else
-	printf "%8.2f",0.0
-      end
-    }
-    puts
-
-  end
-
-  #####################################################
-  #
-  # print_wallh_hist
-  #
-  #####################################################
-  def print_wallh_hist(bins)
-    
-    wallh_hist=Array.new
-    wallh_hist.fill(0,0,bins.length+1)
-
-    @jobs.each_value { |val|
-      wallh=val[2].to_i/3600.0
-      index=0
-      bins.each { |bin|
-        if wallh > bin
-          index+=1
-        else
-          break
-        end
-      }
-      wallh_hist[index]+=1
-    }
-    puts
-    printf "%16s","Wall Time (hrs):";
-    bins.each { |bin|
-      if (bin.class==Fixnum) 
-        printf "%8d",bin
-      else
-	printf "%8.2f",bin
-      end
-    }
-    printf "%8s","Inf"
-    puts
-    printf "------------------------"
-    bins.each { |bin|
-        printf "--------"
-    }
-    puts
-    printf "%16s","Count:"
-    wallh_hist.each { |hist|
-      printf "%8d",hist
-    }
-    puts
-    printf "%16s","Percent:"
-    cnodes=0.0
-    wallh_hist.each { |hist|
-      cnodes+=hist
-      if (@jobs.size != 0)
-	printf "%8.2f",cnodes/@jobs.size
-      else
-	printf "%8.2f",0.0
-      end
-    }
-    puts
-
-  end
-
-  #####################################################
-  #
-  # print_cpuh_hist
-  #
-  #####################################################
-  def print_cpuh_hist(bins)
-    
-    cpuh_hist=Array.new
-    cpuh_hist.fill(0,0,bins.length+1)
-
-    @jobs.each_value { |val|
-      cpuh=val[2].to_i/3600.0 * val[3].to_i
-      index=0
-      bins.each { |bin|
-        if cpuh > bin
-          index+=1
-        else
-          break
-        end
-      }
-      cpuh_hist[index]+=1
-    }
-    puts
-    printf "%16s","CPU Time (hrs):";
-    bins.each { |bin|
-      if (bin.class==Fixnum) 
-        printf "%8d",bin
-      else
-	printf "%8.2f",bin
-      end
-    }
-    printf "%8s","Inf"
-    puts
-    printf "------------------------"
-    bins.each { |bin|
-        printf "--------"
-    }
-    puts
-    printf "%16s","Count:"
-    cpuh_hist.each { |hist|
-      printf "%8d",hist
-    }
-    puts
-    printf "%16s","Percent:"
-    cnodes=0.0
-    cpuh_hist.each { |hist|
-      cnodes+=hist
-      if (@jobs.size != 0)
-	printf "%8.2f",cnodes/@jobs.size
-      else
-	printf "%8.2f",0.0
-      end
-    }
-    puts
-
-  end
 
 end
 
