@@ -1,0 +1,3396 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: LibXML::XML::Node</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">LibXML::XML::Node</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../../files/ext/libxml/libxml_c.html">
+                ext/libxml/libxml.c
+                </a>
+        <br />
+                <a href="../../../files/lib/libxml/node_rb.html">
+                lib/libxml/node.rb
+                </a>
+        <br />
+                <a href="../../../files/lib/libxml/node_set_rb.html">
+                lib/libxml/node_set.rb
+                </a>
+        <br />
+                <a href="../../../files/lib/libxml/properties_rb.html">
+                lib/libxml/properties.rb
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                Object
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+call-seq:
+</p>
+<pre>
+   nodeset.xpath_ctxt -&gt; context
+</pre>
+<p>
+Return the xpath context corresponding to this nodeset, if any.
+</p>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000125">&lt;&lt;</a>&nbsp;&nbsp;
+      <a href="#M000169">==</a>&nbsp;&nbsp;
+      <a href="#M000118">[]</a>&nbsp;&nbsp;
+      <a href="#M000126">[]=</a>&nbsp;&nbsp;
+      <a href="#M000184">attribute?</a>&nbsp;&nbsp;
+      <a href="#M000185">attribute_decl?</a>&nbsp;&nbsp;
+      <a href="#M000132">attributes</a>&nbsp;&nbsp;
+      <a href="#M000170">attributes?</a>&nbsp;&nbsp;
+      <a href="#M000133">base</a>&nbsp;&nbsp;
+      <a href="#M000134">base=</a>&nbsp;&nbsp;
+      <a href="#M000135">blank?</a>&nbsp;&nbsp;
+      <a href="#M000186">cdata?</a>&nbsp;&nbsp;
+      <a href="#M000206">child</a>&nbsp;&nbsp;
+      <a href="#M000128">child=</a>&nbsp;&nbsp;
+      <a href="#M000204">child?</a>&nbsp;&nbsp;
+      <a href="#M000127">child_add</a>&nbsp;&nbsp;
+      <a href="#M000179">children</a>&nbsp;&nbsp;
+      <a href="#M000205">children?</a>&nbsp;&nbsp;
+      <a href="#M000171">clone</a>&nbsp;&nbsp;
+      <a href="#M000187">comment?</a>&nbsp;&nbsp;
+      <a href="#M000137">content</a>&nbsp;&nbsp;
+      <a href="#M000138">content=</a>&nbsp;&nbsp;
+      <a href="#M000139">content_stripped</a>&nbsp;&nbsp;
+      <a href="#M000136">copy</a>&nbsp;&nbsp;
+      <a href="#M000142">debug_dump</a>&nbsp;&nbsp;
+      <a href="#M000140">doc</a>&nbsp;&nbsp;
+      <a href="#M000188">docbook_doc?</a>&nbsp;&nbsp;
+      <a href="#M000189">doctype?</a>&nbsp;&nbsp;
+      <a href="#M000190">document?</a>&nbsp;&nbsp;
+      <a href="#M000191">dtd?</a>&nbsp;&nbsp;
+      <a href="#M000141">dump</a>&nbsp;&nbsp;
+      <a href="#M000172">dup</a>&nbsp;&nbsp;
+      <a href="#M000119">each</a>&nbsp;&nbsp;
+      <a href="#M000175">each_attr</a>&nbsp;&nbsp;
+      <a href="#M000207">each_child</a>&nbsp;&nbsp;
+      <a href="#M000176">each_element</a>&nbsp;&nbsp;
+      <a href="#M000192">element?</a>&nbsp;&nbsp;
+      <a href="#M000194">element_decl?</a>&nbsp;&nbsp;
+      <a href="#M000143">empty?</a>&nbsp;&nbsp;
+      <a href="#M000193">entity?</a>&nbsp;&nbsp;
+      <a href="#M000195">entity_ref?</a>&nbsp;&nbsp;
+      <a href="#M000144">eql?</a>&nbsp;&nbsp;
+      <a href="#M000173">find</a>&nbsp;&nbsp;
+      <a href="#M000174">find_first</a>&nbsp;&nbsp;
+      <a href="#M000120">first</a>&nbsp;&nbsp;
+      <a href="#M000178">first?</a>&nbsp;&nbsp;
+      <a href="#M000196">fragment?</a>&nbsp;&nbsp;
+      <a href="#M000197">html_doc?</a>&nbsp;&nbsp;
+      <a href="#M000145">lang</a>&nbsp;&nbsp;
+      <a href="#M000146">lang=</a>&nbsp;&nbsp;
+      <a href="#M000121">last</a>&nbsp;&nbsp;
+      <a href="#M000182">last?</a>&nbsp;&nbsp;
+      <a href="#M000147">line_num</a>&nbsp;&nbsp;
+      <a href="#M000148">name</a>&nbsp;&nbsp;
+      <a href="#M000149">name=</a>&nbsp;&nbsp;
+      <a href="#M000150">namespace</a>&nbsp;&nbsp;
+      <a href="#M000152">namespace=</a>&nbsp;&nbsp;
+      <a href="#M000198">namespace?</a>&nbsp;&nbsp;
+      <a href="#M000151">namespace_node</a>&nbsp;&nbsp;
+      <a href="#M000114">new</a>&nbsp;&nbsp;
+      <a href="#M000115">new_cdata</a>&nbsp;&nbsp;
+      <a href="#M000116">new_comment</a>&nbsp;&nbsp;
+      <a href="#M000117">new_text</a>&nbsp;&nbsp;
+      <a href="#M000122">next</a>&nbsp;&nbsp;
+      <a href="#M000130">next=</a>&nbsp;&nbsp;
+      <a href="#M000180">next?</a>&nbsp;&nbsp;
+      <a href="#M000153">node_type</a>&nbsp;&nbsp;
+      <a href="#M000183">node_type_name</a>&nbsp;&nbsp;
+      <a href="#M000199">notation?</a>&nbsp;&nbsp;
+      <a href="#M000154">ns</a>&nbsp;&nbsp;
+      <a href="#M000155">ns?</a>&nbsp;&nbsp;
+      <a href="#M000157">ns_def</a>&nbsp;&nbsp;
+      <a href="#M000156">ns_def?</a>&nbsp;&nbsp;
+      <a href="#M000123">parent</a>&nbsp;&nbsp;
+      <a href="#M000177">parent?</a>&nbsp;&nbsp;
+      <a href="#M000158">path</a>&nbsp;&nbsp;
+      <a href="#M000200">pi?</a>&nbsp;&nbsp;
+      <a href="#M000159">pointer</a>&nbsp;&nbsp;
+      <a href="#M000124">prev</a>&nbsp;&nbsp;
+      <a href="#M000131">prev=</a>&nbsp;&nbsp;
+      <a href="#M000181">prev?</a>&nbsp;&nbsp;
+      <a href="#M000208">properties</a>&nbsp;&nbsp;
+      <a href="#M000209">properties?</a>&nbsp;&nbsp;
+      <a href="#M000160">remove!</a>&nbsp;&nbsp;
+      <a href="#M000162">search_href</a>&nbsp;&nbsp;
+      <a href="#M000161">search_ns</a>&nbsp;&nbsp;
+      <a href="#M000129">sibling=</a>&nbsp;&nbsp;
+      <a href="#M000163">space_preserve</a>&nbsp;&nbsp;
+      <a href="#M000164">space_preserve=</a>&nbsp;&nbsp;
+      <a href="#M000201">text?</a>&nbsp;&nbsp;
+      <a href="#M000165">to_s</a>&nbsp;&nbsp;
+      <a href="#M000202">xinclude_end?</a>&nbsp;&nbsp;
+      <a href="#M000203">xinclude_start?</a>&nbsp;&nbsp;
+      <a href="#M000166">xlink?</a>&nbsp;&nbsp;
+      <a href="#M000167">xlink_type</a>&nbsp;&nbsp;
+      <a href="#M000168">xlink_type_name</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+    <div id="includes">
+      <h3 class="section-bar">Included Modules</h3>
+
+      <div id="includes-list">
+        <span class="include-name">Enumerable</span>
+      </div>
+    </div>
+
+    <div id="section">
+
+    <div id="class-list">
+      <h3 class="section-bar">Classes and Modules</h3>
+
+      Class <a href="Node/FailedModify.html" class="link">LibXML::XML::Node::FailedModify</a><br />
+Class <a href="Node/Set.html" class="link">LibXML::XML::Node::Set</a><br />
+Class <a href="Node/SetNamespace.html" class="link">LibXML::XML::Node::SetNamespace</a><br />
+Class <a href="Node/UnknownType.html" class="link">LibXML::XML::Node::UnknownType</a><br />
+
+    </div>
+
+    <div id="constants-list">
+      <h3 class="section-bar">Constants</h3>
+
+      <div class="name-list">
+        <table summary="Constants">
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SPACE_DEFAULT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(0)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SPACE_PRESERVE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(1)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SPACE_NOT_INHERIT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(-1)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_ACTUATE_AUTO</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(1)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_ACTUATE_NONE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(0)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_ACTUATE_ONREQUEST</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(2)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_SHOW_EMBED</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(2)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_SHOW_NEW</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(1)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_SHOW_NONE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(0)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_SHOW_REPLACE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(3)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_TYPE_EXTENDED</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(2)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_TYPE_EXTENDED_SET</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(3)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_TYPE_NONE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(0)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XLINK_TYPE_SIMPLE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(1)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">ELEMENT_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_ELEMENT_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">ATTRIBUTE_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_ATTRIBUTE_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TEXT_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_TEXT_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">CDATA_SECTION_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_CDATA_SECTION_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">ENTITY_REF_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_ENTITY_REF_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">ENTITY_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_ENTITY_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">PI_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PI_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">COMMENT_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_COMMENT_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DOCUMENT_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_DOCUMENT_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DOCUMENT_TYPE_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_DOCUMENT_TYPE_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DOCUMENT_FRAG_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_DOCUMENT_FRAG_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">NOTATION_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_NOTATION_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">HTML_DOCUMENT_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_HTML_DOCUMENT_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DTD_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_DTD_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">ELEMENT_DECL</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_ELEMENT_DECL)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">ATTRIBUTE_DECL</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_ATTRIBUTE_DECL)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">ENTITY_DECL</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_ENTITY_DECL)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">NAMESPACE_DECL</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_NAMESPACE_DECL)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XINCLUDE_START</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_XINCLUDE_START)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">XINCLUDE_END</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_XINCLUDE_END)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DOCB_DOCUMENT_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_DOCB_DOCUMENT_NODE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DOCB_DOCUMENT_NODE</td>
+          <td>=</td>
+          <td class="context-item-value">Qnil</td>
+        </tr>
+        </table>
+      </div>
+    </div>
+
+
+
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Class methods</h3>
+
+      <div id="method-M000114" class="method-detail">
+        <a name="M000114"></a>
+
+        <div class="method-heading">
+          <a href="#M000114" class="method-signature">
+          <span class="method-name">XML::Node.new(name, content = nil) &rarr; XML::Node<br />
+XML::Node.new_element(name, content = nil) &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Node.html#M000114">new</a> element node with the
+specified <a href="Node.html#M000148">name</a>, optionally setting the
+node&#8216;s <a href="Node.html#M000137">content</a>. backward
+compatibility for &lt;.5 <a href="Node.html#M000114">new</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000114-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000114-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Node.new(name, content = nil) -&gt; XML::Node
+ *    XML::Node.new_element(name, content = nil) -&gt; XML::Node
+ * 
+ * Create a new element node with the specified name, optionally setting
+ * the node's content.
+ * backward compatibility for &lt;.5 new
+ */
+VALUE
+ruby_xml_node2_new_string_bc(int argc, VALUE *argv, VALUE class)
+{
+  VALUE content=Qnil;
+  VALUE name=Qnil;
+  switch(argc) {
+  case 2:
+    content=argv[1];
+    if ( TYPE(content) != T_STRING)
+      content=rb_obj_as_string(content);
+    
+  case 1:
+    name=check_string_or_symbol( argv[0] );
+    return ruby_xml_node2_new_string(class,Qnil,name,content);
+
+  default:
+    rb_raise(rb_eArgError, &quot;wrong number of arguments (1 or 2) given %d&quot;,argc);
+  }
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000115" class="method-detail">
+        <a name="M000115"></a>
+
+        <div class="method-heading">
+          <a href="#M000115" class="method-signature">
+          <span class="method-name">XML::Node.new_cdata(content = nil) &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Node.html#M000114">new</a> CDATA node, optionally setting
+the node&#8216;s <a href="Node.html#M000137">content</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000115-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000115-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Node.new_cdata(content = nil) -&gt; XML::Node
+ * 
+ * Create a new #CDATA node, optionally setting
+ * the node's content.
+ */
+VALUE
+ruby_xml_node_new_cdata(int argc, VALUE *argv, VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000116" class="method-detail">
+        <a name="M000116"></a>
+
+        <div class="method-heading">
+          <a href="#M000116" class="method-signature">
+          <span class="method-name">XML::Node.new_comment(content = nil) &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Node.html#M000114">new</a> comment node, optionally
+setting the node&#8216;s <a href="Node.html#M000137">content</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000116-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000116-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Node.new_comment(content = nil) -&gt; XML::Node
+ * 
+ * Create a new comment node, optionally setting
+ * the node's content.
+ * 
+ */
+VALUE
+ruby_xml_node_new_comment(int argc, VALUE *argv, VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000117" class="method-detail">
+        <a name="M000117"></a>
+
+        <div class="method-heading">
+          <a href="#M000117" class="method-signature">
+          <span class="method-name">XML::Node.new_text(content = nil) &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Node.html#M000114">new</a> text node, optionally setting
+the node&#8216;s <a href="Node.html#M000137">content</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000117-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000117-source">
+<pre>
+/*
+ * call-seq: 
+ *    XML::Node.new_text(content = nil) -&gt; XML::Node
+ * 
+ * Create a new text node, optionally setting
+ * the node's content.
+ * 
+ */
+VALUE
+ruby_xml_node_new_text(VALUE class, VALUE text)
+{
+  VALUE obj;
+  xmlNodePtr xnode;
+  
+  if ( NIL_P(text) )
+    return Qnil;
+
+  if (TYPE(text) != T_STRING )
+    rb_raise(rb_eTypeError, &quot;requires string argument&quot;);
+  
+  xnode=xmlNewText((xmlChar*)STR2CSTR(text));
+  if ( xnode == NULL )
+    return Qnil;
+  
+  obj=ruby_xml_node2_wrap(class,xnode);
+  rb_obj_call_init(obj,0,NULL);
+  return obj;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000125" class="method-detail">
+        <a name="M000125"></a>
+
+        <div class="method-heading">
+          <a href="#M000125" class="method-signature">
+          <span class="method-name">node << ("string" | node) &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Add the specified string or <a href="Node.html">XML::Node</a> to this
+node&#8216;s <a href="Node.html#M000137">content</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000125-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000125-source">
+<pre>
+/*
+ * call-seq:
+ *    node &lt;&lt; (&quot;string&quot; | node) -&gt; XML::Node
+ * 
+ * Add the specified string or XML::Node to this node's
+ * content.
+ */
+VALUE
+ruby_xml_node_content_add(VALUE self, VALUE obj) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000169" class="method-detail">
+        <a name="M000169"></a>
+
+        <div class="method-heading">
+          <span class="method-name">==</span><span class="method-args">(p1)</span>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Alias for eql?
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000118" class="method-detail">
+        <a name="M000118"></a>
+
+        <div class="method-heading">
+          <a href="#M000118" class="method-signature">
+          <span class="method-name">node.property("name") &rarr; "string"<br />
+node["name"]          &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the named property.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000118-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000118-source">
+<pre>
+/*
+ * call-seq:
+ *    node.property(&quot;name&quot;) -&gt; &quot;string&quot;
+ *    node[&quot;name&quot;]          -&gt; &quot;string&quot;
+ * 
+ * Obtain the named property.
+ */
+VALUE
+ruby_xml_node_property_get(VALUE self, VALUE name) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000126" class="method-detail">
+        <a name="M000126"></a>
+
+        <div class="method-heading">
+          <a href="#M000126" class="method-signature">
+          <span class="method-name">node["name"] = "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<a href="Node/Set.html">Set</a> the named property.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000126-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000126-source">
+<pre>
+/*
+ * call-seq:
+ *    node[&quot;name&quot;] = &quot;string&quot;
+ * 
+ * Set the named property.
+ */
+VALUE
+ruby_xml_node_property_set(VALUE self, VALUE name, VALUE value) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000184" class="method-detail">
+        <a name="M000184"></a>
+
+        <div class="method-heading">
+          <a href="#M000184" class="method-signature">
+          <span class="method-name">attribute?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an attribute node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000184-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000184-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 158</span>
+158:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">attribute?</span>
+159:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">ATTRIBUTE_NODE</span>
+160:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000185" class="method-detail">
+        <a name="M000185"></a>
+
+        <div class="method-heading">
+          <a href="#M000185" class="method-signature">
+          <span class="method-name">attribute_decl?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an attribute declaration node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000185-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000185-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 163</span>
+163:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">attribute_decl?</span>
+164:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">ATTRIBUTE_DECL</span>
+165:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000132" class="method-detail">
+        <a name="M000132"></a>
+
+        <div class="method-heading">
+          <a href="#M000132" class="method-signature">
+          <span class="method-name">node.attributes &rarr; attributes<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Returns the <a href="Attributes.html">XML::Attributes</a> for this node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000132-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000132-source">
+<pre>
+/*
+ * call-seq:
+ *    node.attributes -&gt; attributes
+ * 
+ * Returns the XML::Attributes for this node. 
+ */
+VALUE
+ruby_xml_node_attributes_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000170" class="method-detail">
+        <a name="M000170"></a>
+
+        <div class="method-heading">
+          <a href="#M000170" class="method-signature">
+          <span class="method-name">attributes?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determines whether this node has <a href="Node.html#M000132">attributes</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000170-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000170-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 8</span>
+ 8:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">attributes?</span>
+ 9:         <span class="ruby-identifier">attributes</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">0</span>
+10:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000133" class="method-detail">
+        <a name="M000133"></a>
+
+        <div class="method-heading">
+          <a href="#M000133" class="method-signature">
+          <span class="method-name">node.base &rarr; "uri"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s <a href="Node.html#M000133">base</a> URI.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000133-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000133-source">
+<pre>
+/*
+ * call-seq:
+ *    node.base -&gt; &quot;uri&quot;
+ * 
+ * Obtain this node's base URI.
+ */
+VALUE
+ruby_xml_node_base_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000134" class="method-detail">
+        <a name="M000134"></a>
+
+        <div class="method-heading">
+          <a href="#M000134" class="method-signature">
+          <span class="method-name">node.base = "uri"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<a href="Node/Set.html">Set</a> this node&#8216;s <a
+href="Node.html#M000133">base</a> URI.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000134-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000134-source">
+<pre>
+/*
+ * call-seq:
+ *    node.base = &quot;uri&quot;
+ * 
+ * Set this node's base URI.
+ */
+VALUE
+ruby_xml_node_base_set(VALUE self, VALUE uri) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000135" class="method-detail">
+        <a name="M000135"></a>
+
+        <div class="method-heading">
+          <a href="#M000135" class="method-signature">
+          <span class="method-name">node.empty? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this node is empty.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000135-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000135-source">
+<pre>
+/*
+ * call-seq:
+ *    node.empty? -&gt; (true|false)
+ * 
+ * Determine whether this node is empty.
+ */
+VALUE
+ruby_xml_node_empty_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000186" class="method-detail">
+        <a name="M000186"></a>
+
+        <div class="method-heading">
+          <a href="#M000186" class="method-signature">
+          <span class="method-name">cdata?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an CDATA node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000186-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000186-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 168</span>
+168:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">cdata?</span>
+169:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">CDATA_SECTION_NODE</span>
+170:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000206" class="method-detail">
+        <a name="M000206"></a>
+
+        <div class="method-heading">
+          <span class="method-name">child</span><span class="method-args">()</span>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Alias for <a href="Node.html#M000120">first</a>
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000128" class="method-detail">
+        <a name="M000128"></a>
+
+        <div class="method-heading">
+          <a href="#M000128" class="method-signature">
+          <span class="method-name">node.child = node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<a href="Node/Set.html">Set</a> a <a href="Node.html#M000206">child</a>
+node for this node. Also called for &lt;&lt;
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000128-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000128-source">
+<pre>
+/*
+ * call-seq:
+ *    node.child = node
+ * 
+ * Set a child node for this node. Also called for &lt;&lt;
+ */
+VALUE
+ruby_xml_node_child_set(VALUE self, VALUE rnode) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000204" class="method-detail">
+        <a name="M000204"></a>
+
+        <div class="method-heading">
+          <span class="method-name">child?</span><span class="method-args">()</span>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Alias for <a href="Node.html#M000120">first</a>?
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000127" class="method-detail">
+        <a name="M000127"></a>
+
+        <div class="method-heading">
+          <a href="#M000127" class="method-signature">
+          <span class="method-name">node.child_add(node)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<a href="Node/Set.html">Set</a> a <a href="Node.html#M000206">child</a>
+node for this node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000127-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000127-source">
+<pre>
+/*
+ * call-seq:
+ *    node.child_add(node)
+ * 
+ * Set a child node for this node.
+ */
+VALUE
+ruby_xml_node_child_add(VALUE self, VALUE rnode) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000179" class="method-detail">
+        <a name="M000179"></a>
+
+        <div class="method-heading">
+          <a href="#M000179" class="method-signature">
+          <span class="method-name">children</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Returns this node&#8216;s <a href="Node.html#M000179">children</a> as an
+array.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000179-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000179-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 82</span>
+82:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">children</span>
+83:         <span class="ruby-identifier">entries</span>
+84:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000205" class="method-detail">
+        <a name="M000205"></a>
+
+        <div class="method-heading">
+          <span class="method-name">children?</span><span class="method-args">()</span>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Alias for <a href="Node.html#M000120">first</a>?
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000171" class="method-detail">
+        <a name="M000171"></a>
+
+        <div class="method-heading">
+          <a href="#M000171" class="method-signature">
+          <span class="method-name">clone</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a shallow <a href="Node.html#M000136">copy</a> of the node. To
+create a deep <a href="Node.html#M000136">copy</a> call <a
+href="Node.html#M000136">Node#copy(true)</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000171-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000171-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 14</span>
+14:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">clone</span>
+15:         <span class="ruby-identifier">copy</span>(<span class="ruby-keyword kw">false</span>)
+16:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000187" class="method-detail">
+        <a name="M000187"></a>
+
+        <div class="method-heading">
+          <a href="#M000187" class="method-signature">
+          <span class="method-name">comment?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an comment node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000187-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000187-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 173</span>
+173:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">comment?</span>
+174:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">COMMENT_NODE</span>
+175:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000137" class="method-detail">
+        <a name="M000137"></a>
+
+        <div class="method-heading">
+          <a href="#M000137" class="method-signature">
+          <span class="method-name">node.content &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s <a href="Node.html#M000137">content</a> as a
+string.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000137-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000137-source">
+<pre>
+/*
+ * call-seq:
+ *    node.content -&gt; &quot;string&quot;
+ * 
+ * Obtain this node's content as a string.
+ */
+VALUE
+ruby_xml_node_content_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000138" class="method-detail">
+        <a name="M000138"></a>
+
+        <div class="method-heading">
+          <a href="#M000138" class="method-signature">
+          <span class="method-name">node.content = "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<a href="Node/Set.html">Set</a> this node&#8216;s <a
+href="Node.html#M000137">content</a> to the specified string.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000138-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000138-source">
+<pre>
+/*
+ * call-seq:
+ *    node.content = &quot;string&quot;
+ * 
+ * Set this node's content to the specified string.
+ */ 
+VALUE
+ruby_xml_node_content_set(VALUE self, VALUE content) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000139" class="method-detail">
+        <a name="M000139"></a>
+
+        <div class="method-heading">
+          <a href="#M000139" class="method-signature">
+          <span class="method-name">node.content_stripped &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s stripped <a href="Node.html#M000137">content</a>.
+</p>
+<p>
+<b>Deprecated</b>: Stripped <a href="Node.html#M000137">content</a> can be
+obtained via the <tt><a href="Node.html#M000137">content</a></tt> method.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000139-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000139-source">
+<pre>
+/*
+ * call-seq:
+ *    node.content_stripped -&gt; &quot;string&quot;
+ * 
+ * Obtain this node's stripped content.
+ * 
+ * *Deprecated*: Stripped content can be obtained via the
+ * +content+ method.
+ */
+VALUE
+ruby_xml_node_content_stripped_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000136" class="method-detail">
+        <a name="M000136"></a>
+
+        <div class="method-heading">
+          <a href="#M000136" class="method-signature">
+          <span class="method-name">node.copy &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Creates a <a href="Node.html#M000136">copy</a> of this node. To create a
+shallow <a href="Node.html#M000136">copy</a> set the deep parameter to
+false. To create a deep <a href="Node.html#M000136">copy</a> set the deep
+parameter to true.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000136-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000136-source">
+<pre>
+/*
+ * call-seq:
+ *    node.copy -&gt; XML::Node
+ * 
+ * Creates a copy of this node.  To create a 
+ * shallow copy set the deep parameter to false.
+ * To create a deep copy set the deep parameter
+ * to true. 
+ *
+ */
+VALUE
+ruby_xml_node_copy(VALUE self, VALUE deep) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000142" class="method-detail">
+        <a name="M000142"></a>
+
+        <div class="method-heading">
+          <a href="#M000142" class="method-signature">
+          <span class="method-name">node.debug_dump &rarr; (true|nil)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Dump this node to stdout, including any debugging information.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000142-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000142-source">
+<pre>
+/*
+ * call-seq:
+ *    node.debug_dump -&gt; (true|nil)
+ * 
+ * Dump this node to stdout, including any debugging
+ * information.
+ */
+VALUE
+ruby_xml_node_debug_dump(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000140" class="method-detail">
+        <a name="M000140"></a>
+
+        <div class="method-heading">
+          <a href="#M000140" class="method-signature">
+          <span class="method-name">node.doc &rarr; document<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Document.html">XML::Document</a> this node belongs to.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000140-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000140-source">
+<pre>
+/*
+ * call-seq:
+ *    node.doc -&gt; document
+ * 
+ * Obtain the XML::Document this node belongs to.
+ */
+VALUE
+ruby_xml_node_doc(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000188" class="method-detail">
+        <a name="M000188"></a>
+
+        <div class="method-heading">
+          <a href="#M000188" class="method-signature">
+          <span class="method-name">docbook_doc?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an docbook node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000188-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000188-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 178</span>
+178:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">docbook_doc?</span>
+179:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">DOCB_DOCUMENT_NODE</span>
+180:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000189" class="method-detail">
+        <a name="M000189"></a>
+
+        <div class="method-heading">
+          <a href="#M000189" class="method-signature">
+          <span class="method-name">doctype?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an docbook node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000189-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000189-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 183</span>
+183:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">doctype?</span>
+184:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">DOCUMENT_TYPE_NODE</span>
+185:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000190" class="method-detail">
+        <a name="M000190"></a>
+
+        <div class="method-heading">
+          <a href="#M000190" class="method-signature">
+          <span class="method-name">document?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an DOCTYPE node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000190-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000190-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 188</span>
+188:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">document?</span>
+189:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">DOCUMENT_NODE</span>
+190:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000191" class="method-detail">
+        <a name="M000191"></a>
+
+        <div class="method-heading">
+          <a href="#M000191" class="method-signature">
+          <span class="method-name">dtd?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an DTD node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000191-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000191-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 193</span>
+193:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">dtd?</span>
+194:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">DTD_NODE</span>
+195:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000141" class="method-detail">
+        <a name="M000141"></a>
+
+        <div class="method-heading">
+          <a href="#M000141" class="method-signature">
+          <span class="method-name">node.dump &rarr; (true|nil)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Dump this node to stdout.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000141-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000141-source">
+<pre>
+/*
+ * call-seq:
+ *    node.dump -&gt; (true|nil)
+ * 
+ * Dump this node to stdout.
+ */
+VALUE
+ruby_xml_node_dump(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000172" class="method-detail">
+        <a name="M000172"></a>
+
+        <div class="method-heading">
+          <a href="#M000172" class="method-signature">
+          <span class="method-name">dup</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a shallow <a href="Node.html#M000136">copy</a> of the node. To
+create a deep <a href="Node.html#M000136">copy</a> call <a
+href="Node.html#M000136">Node#copy(true)</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000172-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000172-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 20</span>
+20:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">dup</span>
+21:         <span class="ruby-identifier">copy</span>(<span class="ruby-keyword kw">false</span>)
+22:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000119" class="method-detail">
+        <a name="M000119"></a>
+
+        <div class="method-heading">
+          <a href="#M000119" class="method-signature">
+          <span class="method-name">node.each &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Iterates over this node&#8216;s <a href="Node.html#M000179">children</a>,
+including text nodes, element nodes, etc. If you wish to iterate only over
+<a href="Node.html#M000206">child</a> elements, use <a
+href="Node.html#M000176">XML::Node#each_element</a>.
+</p>
+<pre>
+ doc = XML::Document.new('model/books.xml')
+ doc.root.each {|node| puts node}
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000119-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000119-source">
+<pre>
+/*
+ * call-seq:
+ *    node.each -&gt; XML::Node
+ * 
+ * Iterates over this node's children, including text 
+ * nodes, element nodes, etc.  If you wish to iterate
+ * only over child elements, use XML::Node#each_element.
+ *
+ *  doc = XML::Document.new('model/books.xml')
+ *  doc.root.each {|node| puts node}
+ */
+VALUE
+ruby_xml_node_each(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000175" class="method-detail">
+        <a name="M000175"></a>
+
+        <div class="method-heading">
+          <a href="#M000175" class="method-signature">
+          <span class="method-name">each_attr</span><span class="method-args">() {|attr| ...}</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+&#8212;&#8212;- Traversal &#8212;&#8212;&#8212;&#8212;&#8212;- Iterates
+over this node&#8216;s <a href="Node.html#M000132">attributes</a>.
+</p>
+<pre>
+ doc = XML::Document.new('model/books.xml')
+ doc.root.each_attr {|attr| puts attr}
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000175-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000175-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 54</span>
+54:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">each_attr</span>
+55:         <span class="ruby-identifier">attributes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">attr</span><span class="ruby-operator">|</span>
+56:           <span class="ruby-keyword kw">yield</span>(<span class="ruby-identifier">attr</span>)
+57:         <span class="ruby-keyword kw">end</span>
+58:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000207" class="method-detail">
+        <a name="M000207"></a>
+
+        <div class="method-heading">
+          <span class="method-name">each_child</span><span class="method-args">()</span>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Alias for <a href="Node.html#M000119">each</a>
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000176" class="method-detail">
+        <a name="M000176"></a>
+
+        <div class="method-heading">
+          <a href="#M000176" class="method-signature">
+          <span class="method-name">each_element</span><span class="method-args">() {|node| ...}</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Iterates over this node&#8216;s <a href="Node.html#M000206">child</a>
+elements (nodes that have a <a href="Node.html#M000153">node_type</a> ==
+ELEMENT_NODE).
+</p>
+<pre>
+ doc = XML::Document.new('model/books.xml')
+ doc.root.each_element {|element| puts element}
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000176-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000176-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 65</span>
+65:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">each_element</span>
+66:         <span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+67:           <span class="ruby-keyword kw">yield</span>(<span class="ruby-identifier">node</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">ELEMENT_NODE</span>
+68:         <span class="ruby-keyword kw">end</span>
+69:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000192" class="method-detail">
+        <a name="M000192"></a>
+
+        <div class="method-heading">
+          <a href="#M000192" class="method-signature">
+          <span class="method-name">element?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an element node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000192-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000192-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 198</span>
+198:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">element?</span>
+199:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">ELEMENT_NODE</span>
+200:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000194" class="method-detail">
+        <a name="M000194"></a>
+
+        <div class="method-heading">
+          <a href="#M000194" class="method-signature">
+          <span class="method-name">element_decl?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an element declaration node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000194-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000194-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 208</span>
+208:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">element_decl?</span>
+209:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">ELEMENT_DECL</span>
+210:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000143" class="method-detail">
+        <a name="M000143"></a>
+
+        <div class="method-heading">
+          <a href="#M000143" class="method-signature">
+          <span class="method-name">node.empty? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this node is empty.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000143-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000143-source">
+<pre>
+/*
+ * call-seq:
+ *    node.empty? -&gt; (true|false)
+ * 
+ * Determine whether this node is empty.
+ */
+VALUE
+ruby_xml_node_empty_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000193" class="method-detail">
+        <a name="M000193"></a>
+
+        <div class="method-heading">
+          <a href="#M000193" class="method-signature">
+          <span class="method-name">entity?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an entity node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000193-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000193-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 203</span>
+203:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">entity?</span>
+204:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">ENTITY_NODE</span>
+205:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000195" class="method-detail">
+        <a name="M000195"></a>
+
+        <div class="method-heading">
+          <a href="#M000195" class="method-signature">
+          <span class="method-name">entity_ref?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an entity reference node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000195-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000195-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 213</span>
+213:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">entity_ref?</span>
+214:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">ENTITY_REF_NODE</span>
+215:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000144" class="method-detail">
+        <a name="M000144"></a>
+
+        <div class="method-heading">
+          <a href="#M000144" class="method-signature">
+          <span class="method-name">node.eql?(other_node) => (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Test equality between the two nodes. Two nodes are equal if they are the
+same node or have the same <a href="../XML.html">XML</a> representation.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000144-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000144-source">
+<pre>
+/*
+ * call-seq:
+ *    node.eql?(other_node) =&gt; (true|false)
+ * 
+ * Test equality between the two nodes. Two nodes are equal
+ * if they are the same node or have the same XML representation.*/
+VALUE
+ruby_xml_node_eql_q(VALUE self, VALUE other) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000173" class="method-detail">
+        <a name="M000173"></a>
+
+        <div class="method-heading">
+          <a href="#M000173" class="method-signature">
+          <span class="method-name">find</span><span class="method-args">(xpath, nslist = nil)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Return nodes matching the specified xpath expression. For more information,
+please refer to the documentation for <a
+href="Document.html#M000359">XML::Document#find</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000173-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000173-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 27</span>
+27:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">find</span>(<span class="ruby-identifier">xpath</span>, <span class="ruby-identifier">nslist</span> = <span class="ruby-keyword kw">nil</span>)
+28:         <span class="ruby-keyword kw">if</span> <span class="ruby-keyword kw">not</span> <span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">doc</span>
+29:           <span class="ruby-identifier">raise</span>(<span class="ruby-constant">TypeError</span>, <span class="ruby-value str">&quot;A node must belong to a document before &quot;</span> <span class="ruby-operator">+</span>
+30:                            <span class="ruby-value str">&quot;it can be searched with XPath.&quot;</span>)
+31:         <span class="ruby-keyword kw">end</span>
+32:       
+33:         <span class="ruby-identifier">context</span> = <span class="ruby-constant">XPath</span><span class="ruby-operator">::</span><span class="ruby-constant">Context</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword kw">self</span>)
+34:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">node</span> = <span class="ruby-keyword kw">self</span>  
+35:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">register_namespaces_from_node</span>(<span class="ruby-keyword kw">self</span>)
+36:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">register_namespaces_from_node</span>(<span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">doc</span>.<span class="ruby-identifier">root</span>)
+37:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">register_namespaces</span>(<span class="ruby-identifier">nslist</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">nslist</span>
+38: 
+39:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">find</span>(<span class="ruby-identifier">xpath</span>)
+40:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000174" class="method-detail">
+        <a name="M000174"></a>
+
+        <div class="method-heading">
+          <a href="#M000174" class="method-signature">
+          <span class="method-name">find_first</span><span class="method-args">(xpath, nslist = nil)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Return the <a href="Node.html#M000120">first</a> node matching the
+specified xpath expression. For more information, please refer to the
+documentation for <a href="Node.html#M000173">XML::Node#find</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000174-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000174-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 45</span>
+45:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">find_first</span>(<span class="ruby-identifier">xpath</span>, <span class="ruby-identifier">nslist</span> = <span class="ruby-keyword kw">nil</span>)
+46:         <span class="ruby-identifier">find</span>(<span class="ruby-identifier">xpath</span>, <span class="ruby-identifier">nslist</span>).<span class="ruby-identifier">first</span>
+47:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000120" class="method-detail">
+        <a name="M000120"></a>
+
+        <div class="method-heading">
+          <a href="#M000120" class="method-signature">
+          <span class="method-name">node.first &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Returns this node&#8216;s <a href="Node.html#M000120">first</a> <a
+href="Node.html#M000206">child</a> node if any.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000120-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000120-source">
+<pre>
+/*
+ * call-seq:
+ *    node.first -&gt; XML::Node
+ * 
+ * Returns this node's first child node if any.
+ */
+VALUE
+ruby_xml_node_first_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000178" class="method-detail">
+        <a name="M000178"></a>
+
+        <div class="method-heading">
+          <a href="#M000178" class="method-signature">
+          <span class="method-name">first?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determines whether this node has a <a href="Node.html#M000120">first</a>
+node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000178-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000178-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 77</span>
+77:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">first?</span>
+78:         <span class="ruby-keyword kw">not</span> <span class="ruby-identifier">first</span>.<span class="ruby-identifier">nil?</span>
+79:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000196" class="method-detail">
+        <a name="M000196"></a>
+
+        <div class="method-heading">
+          <a href="#M000196" class="method-signature">
+          <span class="method-name">fragment?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is a fragment node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000196-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000196-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 218</span>
+218:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">fragment?</span>
+219:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">DOCUMENT_FRAG_NODE</span>
+220:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000197" class="method-detail">
+        <a name="M000197"></a>
+
+        <div class="method-heading">
+          <a href="#M000197" class="method-signature">
+          <span class="method-name">html_doc?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is a html document node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000197-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000197-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 223</span>
+223:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">html_doc?</span>
+224:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">HTML_DOCUMENT_NODE</span>
+225:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000145" class="method-detail">
+        <a name="M000145"></a>
+
+        <div class="method-heading">
+          <a href="#M000145" class="method-signature">
+          <span class="method-name">node.lang &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the language set for this node, if any. This is set in <a
+href="../XML.html">XML</a> via the xml:<a href="Node.html#M000145">lang</a>
+attribute.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000145-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000145-source">
+<pre>
+/*
+ * call-seq:
+ *    node.lang -&gt; &quot;string&quot;
+ * 
+ * Obtain the language set for this node, if any.
+ * This is set in XML via the xml:lang attribute.
+ */
+VALUE
+ruby_xml_node_lang_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000146" class="method-detail">
+        <a name="M000146"></a>
+
+        <div class="method-heading">
+          <a href="#M000146" class="method-signature">
+          <span class="method-name">node.lang = "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<a href="Node/Set.html">Set</a> the language for this node. This affects
+the value of the xml:<a href="Node.html#M000145">lang</a> attribute.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000146-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000146-source">
+<pre>
+/*
+ * call-seq:
+ *    node.lang = &quot;string&quot;
+ * 
+ * Set the language for this node. This affects the value
+ * of the xml:lang attribute.
+ */
+VALUE
+ruby_xml_node_lang_set(VALUE self, VALUE lang) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000121" class="method-detail">
+        <a name="M000121"></a>
+
+        <div class="method-heading">
+          <a href="#M000121" class="method-signature">
+          <span class="method-name">node.last &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Node.html#M000121">last</a> <a
+href="Node.html#M000206">child</a> node of this node, if any.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000121-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000121-source">
+<pre>
+/*
+ * call-seq:
+ *    node.last -&gt; XML::Node
+ * 
+ * Obtain the last child node of this node, if any.
+ */
+VALUE
+ruby_xml_node_last_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000182" class="method-detail">
+        <a name="M000182"></a>
+
+        <div class="method-heading">
+          <a href="#M000182" class="method-signature">
+          <span class="method-name">last?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determines whether this node has a <a href="Node.html#M000121">last</a>
+node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000182-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000182-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 97</span>
+97:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">last?</span>
+98:         <span class="ruby-keyword kw">not</span> <span class="ruby-identifier">last</span>.<span class="ruby-identifier">nil?</span>
+99:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000147" class="method-detail">
+        <a name="M000147"></a>
+
+        <div class="method-heading">
+          <a href="#M000147" class="method-signature">
+          <span class="method-name">node.line_num &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the line number (in the <a href="../XML.html">XML</a> document) that
+this node was read from. If <tt>default_line_numbers</tt> is set false (the
+default), this method returns zero.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000147-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000147-source">
+<pre>
+/*
+ * call-seq:
+ *    node.line_num -&gt; num
+ * 
+ * Obtain the line number (in the XML document) that this
+ * node was read from. If +default_line_numbers+ is set
+ * false (the default), this method returns zero.
+ */
+VALUE
+ruby_xml_node_line_num(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000148" class="method-detail">
+        <a name="M000148"></a>
+
+        <div class="method-heading">
+          <a href="#M000148" class="method-signature">
+          <span class="method-name">node.name &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s <a href="Node.html#M000148">name</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000148-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000148-source">
+<pre>
+/*
+ * call-seq:
+ *    node.name -&gt; &quot;string&quot;
+ * 
+ * Obtain this node's name.
+ */
+VALUE
+ruby_xml_node_name_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000149" class="method-detail">
+        <a name="M000149"></a>
+
+        <div class="method-heading">
+          <a href="#M000149" class="method-signature">
+          <span class="method-name">node.name = "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<a href="Node/Set.html">Set</a> this node&#8216;s <a
+href="Node.html#M000148">name</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000149-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000149-source">
+<pre>
+/*
+ * call-seq:
+ *    node.name = &quot;string&quot;
+ * 
+ * Set this node's name.
+ */
+VALUE
+ruby_xml_node_name_set(VALUE self, VALUE name) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000150" class="method-detail">
+        <a name="M000150"></a>
+
+        <div class="method-heading">
+          <a href="#M000150" class="method-signature">
+          <span class="method-name">node.namespace &rarr; [namespace, ..., namespace]<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain an array of +<a href="NS.html">XML::NS</a>+ objects representing
+this node&#8216;s xmlns <a href="Node.html#M000132">attributes</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000150-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000150-source">
+<pre>
+/*
+ * call-seq:
+ *    node.namespace -&gt; [namespace, ..., namespace]
+ * 
+ * Obtain an array of +XML::NS+ objects representing
+ * this node's xmlns attributes
+ */
+VALUE
+ruby_xml_node_namespace_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000152" class="method-detail">
+        <a name="M000152"></a>
+
+        <div class="method-heading">
+          <a href="#M000152" class="method-signature">
+          <span class="method-name">node.namespace = namespace<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Add the specified <a href="NS.html">XML::NS</a> object to this node&#8216;s
+xmlns <a href="Node.html#M000132">attributes</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000152-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000152-source">
+<pre>
+/*
+ * call-seq:
+ *    node.namespace = namespace
+ * 
+ * Add the specified XML::NS object to this node's xmlns attributes.
+ */
+VALUE
+ruby_xml_node_namespace_set(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000198" class="method-detail">
+        <a name="M000198"></a>
+
+        <div class="method-heading">
+          <a href="#M000198" class="method-signature">
+          <span class="method-name">namespace?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is a <a href="Node.html#M000150">namespace</a> node (not
+if it has a namepsace)
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000198-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000198-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 229</span>
+229:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">namespace?</span>
+230:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">NAMESPACE_DECL</span>
+231:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000151" class="method-detail">
+        <a name="M000151"></a>
+
+        <div class="method-heading">
+          <a href="#M000151" class="method-signature">
+          <span class="method-name">node.namespace_node &rarr; namespace.<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s <a href="Node.html#M000150">namespace</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000151-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000151-source">
+<pre>
+/*
+ * call-seq:
+ *    node.namespace_node -&gt; namespace.
+ * 
+ * Obtain this node's namespace node.
+ */
+VALUE
+ruby_xml_node_namespace_get_node(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000122" class="method-detail">
+        <a name="M000122"></a>
+
+        <div class="method-heading">
+          <a href="#M000122" class="method-signature">
+          <span class="method-name">node.next &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Node.html#M000122">next</a> sibling node, if any.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000122-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000122-source">
+<pre>
+/*
+ * call-seq:
+ *    node.next -&gt; XML::Node
+ * 
+ * Obtain the next sibling node, if any.
+ */
+VALUE
+ruby_xml_node_next_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000130" class="method-detail">
+        <a name="M000130"></a>
+
+        <div class="method-heading">
+          <a href="#M000130" class="method-signature">
+          <span class="method-name">node.next = node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Insert the specified node as this node&#8216;s <a
+href="Node.html#M000122">next</a> sibling.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000130-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000130-source">
+<pre>
+/*
+ * call-seq:
+ *    node.next = node
+ * 
+ * Insert the specified node as this node's next sibling.
+ */
+VALUE
+ruby_xml_node_next_set(VALUE self, VALUE rnode) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000180" class="method-detail">
+        <a name="M000180"></a>
+
+        <div class="method-heading">
+          <a href="#M000180" class="method-signature">
+          <span class="method-name">next?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determines whether this node has a <a href="Node.html#M000122">next</a>
+node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000180-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000180-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 87</span>
+87:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">next?</span>
+88:         <span class="ruby-keyword kw">not</span> <span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">next</span>.<span class="ruby-identifier">nil?</span>
+89:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000153" class="method-detail">
+        <a name="M000153"></a>
+
+        <div class="method-heading">
+          <a href="#M000153" class="method-signature">
+          <span class="method-name">node.type &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s type identifier.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000153-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000153-source">
+<pre>
+/*
+ * call-seq:
+ *    node.type -&gt; num
+ * 
+ * Obtain this node's type identifier.
+ */
+VALUE
+ruby_xml_node_type(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000183" class="method-detail">
+        <a name="M000183"></a>
+
+        <div class="method-heading">
+          <a href="#M000183" class="method-signature">
+          <span class="method-name">node_type_name</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Returns this node&#8216;s type <a href="Node.html#M000148">name</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000183-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000183-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 105</span>
+105:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">node_type_name</span>
+106:         <span class="ruby-keyword kw">case</span> <span class="ruby-identifier">node_type</span>
+107:           <span class="ruby-comment cmt"># Most common choices first</span>
+108:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">ATTRIBUTE_NODE</span><span class="ruby-operator">:</span>
+109:             <span class="ruby-value str">'attribute'</span>
+110:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">DOCUMENT_NODE</span><span class="ruby-operator">:</span>
+111:             <span class="ruby-value str">'document_xml'</span>
+112:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">ELEMENT_NODE</span><span class="ruby-operator">:</span>
+113:             <span class="ruby-value str">'element'</span>
+114:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">TEXT_NODE</span><span class="ruby-operator">:</span>
+115:             <span class="ruby-value str">'text'</span>
+116:           
+117:           <span class="ruby-comment cmt"># Now the rest  </span>
+118:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">ATTRIBUTE_DECL</span><span class="ruby-operator">:</span>
+119:             <span class="ruby-value str">'attribute_decl'</span>
+120:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">CDATA_SECTION_NODE</span><span class="ruby-operator">:</span>
+121:             <span class="ruby-value str">'cdata'</span>
+122:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">COMMENT_NODE</span><span class="ruby-operator">:</span>
+123:             <span class="ruby-value str">'comment'</span>
+124:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">DOCB_DOCUMENT_NODE</span><span class="ruby-operator">:</span>
+125:             <span class="ruby-value str">'document_docbook'</span>
+126:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">DOCUMENT_FRAG_NODE</span><span class="ruby-operator">:</span>
+127:             <span class="ruby-value str">'fragment'</span>
+128:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">DOCUMENT_TYPE_NODE</span><span class="ruby-operator">:</span>
+129:             <span class="ruby-value str">'doctype'</span>
+130:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">DTD_NODE</span><span class="ruby-operator">:</span>
+131:             <span class="ruby-value str">'dtd'</span>
+132:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">ELEMENT_DECL</span><span class="ruby-operator">:</span>
+133:             <span class="ruby-value str">'elem_decl'</span>
+134:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">ENTITY_DECL</span><span class="ruby-operator">:</span>
+135:             <span class="ruby-value str">'entity_decl'</span>
+136:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">ENTITY_NODE</span><span class="ruby-operator">:</span>
+137:             <span class="ruby-value str">'entity'</span>
+138:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">ENTITY_REF_NODE</span><span class="ruby-operator">:</span>
+139:             <span class="ruby-value str">'entity_ref'</span>
+140:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">HTML_DOCUMENT_NODE</span><span class="ruby-operator">:</span>
+141:             <span class="ruby-value str">'document_html'</span>
+142:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">NAMESPACE_DECL</span><span class="ruby-operator">:</span>
+143:             <span class="ruby-value str">'namespace'</span>
+144:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">NOTATION_NODE</span><span class="ruby-operator">:</span>
+145:             <span class="ruby-value str">'notation'</span>
+146:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">PI_NODE</span><span class="ruby-operator">:</span>
+147:             <span class="ruby-value str">'pi'</span>
+148:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">XINCLUDE_START</span><span class="ruby-operator">:</span>
+149:             <span class="ruby-value str">'xinclude_start'</span>
+150:           <span class="ruby-keyword kw">when</span> <span class="ruby-constant">XINCLUDE_END</span><span class="ruby-operator">:</span>
+151:             <span class="ruby-value str">'xinclude_end'</span>
+152:           <span class="ruby-keyword kw">else</span>
+153:             <span class="ruby-identifier">raise</span>(<span class="ruby-constant">UnknownType</span>, <span class="ruby-value str">&quot;Unknown node type: %n&quot;</span>, <span class="ruby-identifier">node</span>.<span class="ruby-identifier">node_type</span>);
+154:         <span class="ruby-keyword kw">end</span>
+155:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000199" class="method-detail">
+        <a name="M000199"></a>
+
+        <div class="method-heading">
+          <a href="#M000199" class="method-signature">
+          <span class="method-name">notation?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is a notation node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000199-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000199-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 234</span>
+234:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">notation?</span>
+235:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">NOTATION_NODE</span>
+236:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000154" class="method-detail">
+        <a name="M000154"></a>
+
+        <div class="method-heading">
+          <a href="#M000154" class="method-signature">
+          <span class="method-name">node.namespace &rarr; [namespace, ..., namespace]<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain an array of +<a href="NS.html">XML::NS</a>+ objects representing
+this node&#8216;s xmlns <a href="Node.html#M000132">attributes</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000154-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000154-source">
+<pre>
+/*
+ * call-seq:
+ *    node.namespace -&gt; [namespace, ..., namespace]
+ * 
+ * Obtain an array of +XML::NS+ objects representing
+ * this node's xmlns attributes
+ */
+VALUE
+ruby_xml_node_namespace_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000155" class="method-detail">
+        <a name="M000155"></a>
+
+        <div class="method-heading">
+          <a href="#M000155" class="method-signature">
+          <span class="method-name">node.ns? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this node has a <a
+href="Node.html#M000150">namespace</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000155-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000155-source">
+<pre>
+/*
+ * call-seq:
+ *    node.ns? -&gt; (true|false)
+ * 
+ * Determine whether this node has a namespace.
+ */
+VALUE
+ruby_xml_node_ns_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000157" class="method-detail">
+        <a name="M000157"></a>
+
+        <div class="method-heading">
+          <a href="#M000157" class="method-signature">
+          <span class="method-name">node.ns_def &rarr; namespace<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s default <a href="Node.html#M000150">namespace</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000157-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000157-source">
+<pre>
+/*
+ * call-seq:
+ *    node.ns_def -&gt; namespace
+ * 
+ * Obtain this node's default namespace.
+ */
+VALUE
+ruby_xml_node_ns_def_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000156" class="method-detail">
+        <a name="M000156"></a>
+
+        <div class="method-heading">
+          <a href="#M000156" class="method-signature">
+          <span class="method-name">node.ns_def? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain an array of +<a href="NS.html">XML::NS</a>+ objects representing
+this node&#8216;s xmlns <a href="Node.html#M000132">attributes</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000156-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000156-source">
+<pre>
+/*
+ * call-seq:
+ *    node.ns_def? -&gt; (true|false)
+ * 
+ * Obtain an array of +XML::NS+ objects representing
+ * this node's xmlns attributes
+ */
+VALUE
+ruby_xml_node_ns_def_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000123" class="method-detail">
+        <a name="M000123"></a>
+
+        <div class="method-heading">
+          <a href="#M000123" class="method-signature">
+          <span class="method-name">node.parent &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s <a href="Node.html#M000123">parent</a> node, if
+any.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000123-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000123-source">
+<pre>
+/*
+ * call-seq:
+ *    node.parent -&gt; XML::Node
+ * 
+ * Obtain this node's parent node, if any.
+ */
+VALUE
+ruby_xml_node_parent_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000177" class="method-detail">
+        <a name="M000177"></a>
+
+        <div class="method-heading">
+          <a href="#M000177" class="method-signature">
+          <span class="method-name">parent?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determines whether this node has a <a href="Node.html#M000123">parent</a>
+node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000177-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000177-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 72</span>
+72:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">parent?</span>
+73:         <span class="ruby-keyword kw">not</span> <span class="ruby-identifier">parent</span>.<span class="ruby-identifier">nil?</span>
+74:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000158" class="method-detail">
+        <a name="M000158"></a>
+
+        <div class="method-heading">
+          <a href="#M000158" class="method-signature">
+          <span class="method-name">node.path &rarr; path<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this node&#8216;s <a href="Node.html#M000158">path</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000158-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000158-source">
+<pre>
+/*
+ * call-seq:
+ *    node.path -&gt; path
+ * 
+ * Obtain this node's path.
+ */
+VALUE
+ruby_xml_node_path(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000200" class="method-detail">
+        <a name="M000200"></a>
+
+        <div class="method-heading">
+          <a href="#M000200" class="method-signature">
+          <span class="method-name">pi?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is a processiong instruction node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000200-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000200-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 239</span>
+239:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">pi?</span>
+240:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">PI_NODE</span>
+241:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000159" class="method-detail">
+        <a name="M000159"></a>
+
+        <div class="method-heading">
+          <a href="#M000159" class="method-signature">
+          <span class="method-name">node.pointer &rarr; XML::Node_set<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Evaluates an <a href="XPointer.html">XPointer</a> expression relative to
+this node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000159-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000159-source">
+<pre>
+/*
+ * call-seq:
+ *    node.pointer -&gt; XML::Node_set
+ * 
+ * Evaluates an XPointer expression relative to this node.
+ */
+VALUE
+ruby_xml_node_pointer(VALUE self, VALUE xptr_str) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000124" class="method-detail">
+        <a name="M000124"></a>
+
+        <div class="method-heading">
+          <a href="#M000124" class="method-signature">
+          <span class="method-name">node.prev &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the previous sibling, if any.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000124-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000124-source">
+<pre>
+/*
+ * call-seq:
+ *    node.prev -&gt; XML::Node
+ * 
+ * Obtain the previous sibling, if any.
+ */
+VALUE
+ruby_xml_node_prev_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000131" class="method-detail">
+        <a name="M000131"></a>
+
+        <div class="method-heading">
+          <a href="#M000131" class="method-signature">
+          <span class="method-name">node.prev = node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Insert the specified node as this node&#8216;s previous sibling.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000131-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000131-source">
+<pre>
+/*
+ * call-seq:
+ *    node.prev = node
+ * 
+ * Insert the specified node as this node's previous sibling.
+ */
+VALUE
+ruby_xml_node_prev_set(VALUE self, VALUE rnode) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000181" class="method-detail">
+        <a name="M000181"></a>
+
+        <div class="method-heading">
+          <a href="#M000181" class="method-signature">
+          <span class="method-name">prev?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determines whether this node has a previous node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000181-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000181-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 92</span>
+92:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">prev?</span>
+93:         <span class="ruby-keyword kw">not</span> <span class="ruby-identifier">prev</span>.<span class="ruby-identifier">nil?</span>
+94:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000208" class="method-detail">
+        <a name="M000208"></a>
+
+        <div class="method-heading">
+          <span class="method-name">properties</span><span class="method-args">()</span>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Alias for <a href="Node.html#M000132">attributes</a>
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000209" class="method-detail">
+        <a name="M000209"></a>
+
+        <div class="method-heading">
+          <span class="method-name">properties?</span><span class="method-args">()</span>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Alias for <a href="Node.html#M000132">attributes</a>?
+</p>
+        </div>
+      </div>
+
+      <div id="method-M000160" class="method-detail">
+        <a name="M000160"></a>
+
+        <div class="method-heading">
+          <a href="#M000160" class="method-signature">
+          <span class="method-name">node.remove! &rarr; nil<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Removes this node from it&#8216;s <a href="Node.html#M000123">parent</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000160-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000160-source">
+<pre>
+/*
+ * call-seq:
+*    node.remove! -&gt; nil
+*
+* Removes this node from it's parent.
+*/
+VALUE
+ruby_xml_node_remove_ex(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000162" class="method-detail">
+        <a name="M000162"></a>
+
+        <div class="method-heading">
+          <a href="#M000162" class="method-signature">
+          <span class="method-name">node.search_href &rarr; namespace<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Search for a <a href="Node.html#M000150">namespace</a> by href.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000162-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000162-source">
+<pre>
+/*
+ * call-seq:
+ *    node.search_href -&gt; namespace
+ * 
+ * Search for a namespace by href.
+ */
+VALUE
+ruby_xml_node_search_href(VALUE self, VALUE href) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000161" class="method-detail">
+        <a name="M000161"></a>
+
+        <div class="method-heading">
+          <a href="#M000161" class="method-signature">
+          <span class="method-name">node.search_ns &rarr; namespace<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Search for a <a href="Node.html#M000150">namespace</a> by <a
+href="Node.html#M000150">namespace</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000161-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000161-source">
+<pre>
+/*
+ * call-seq:
+ *    node.search_ns -&gt; namespace
+ * 
+ * Search for a namespace by namespace.
+ */
+VALUE
+ruby_xml_node_search_ns(VALUE self, VALUE ns) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000129" class="method-detail">
+        <a name="M000129"></a>
+
+        <div class="method-heading">
+          <a href="#M000129" class="method-signature">
+          <span class="method-name">node.sibling(node) &rarr; XML::Node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Add the specified node as a sibling of this node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000129-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000129-source">
+<pre>
+/*
+ * call-seq:
+ *    node.sibling(node) -&gt; XML::Node
+ * 
+ * Add the specified node as a sibling of this node.
+ */
+VALUE
+ruby_xml_node_sibling_set(VALUE self, VALUE rnode) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000163" class="method-detail">
+        <a name="M000163"></a>
+
+        <div class="method-heading">
+          <a href="#M000163" class="method-signature">
+          <span class="method-name">node.space_preserve &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this node preserves whitespace.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000163-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000163-source">
+<pre>
+/*
+ * call-seq:
+ *    node.space_preserve -&gt; (true|false)
+ * 
+ * Determine whether this node preserves whitespace.
+ */
+VALUE
+ruby_xml_node_space_preserve_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000164" class="method-detail">
+        <a name="M000164"></a>
+
+        <div class="method-heading">
+          <a href="#M000164" class="method-signature">
+          <span class="method-name">node.space_preserve = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Control whether this node preserves whitespace.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000164-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000164-source">
+<pre>
+/*
+ * call-seq:
+ *    node.space_preserve = true|false
+ * 
+ * Control whether this node preserves whitespace.
+ */
+VALUE
+ruby_xml_node_space_preserve_set(VALUE self, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000201" class="method-detail">
+        <a name="M000201"></a>
+
+        <div class="method-heading">
+          <a href="#M000201" class="method-signature">
+          <span class="method-name">text?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is a text node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000201-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000201-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 244</span>
+244:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">text?</span>
+245:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">TEXT_NODE</span>
+246:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000165" class="method-detail">
+        <a name="M000165"></a>
+
+        <div class="method-heading">
+          <a href="#M000165" class="method-signature">
+          <span class="method-name">node.to_s &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Coerce this node to a string representation of it&#8216;s <a
+href="../XML.html">XML</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000165-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000165-source">
+<pre>
+/*
+ * call-seq:
+ *    node.to_s -&gt; &quot;string&quot;
+ * 
+ * Coerce this node to a string representation of
+ * it's XML.
+ */
+VALUE
+ruby_xml_node_to_s(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000202" class="method-detail">
+        <a name="M000202"></a>
+
+        <div class="method-heading">
+          <a href="#M000202" class="method-signature">
+          <span class="method-name">xinclude_end?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an xinclude end node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000202-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000202-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 249</span>
+249:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">xinclude_end?</span>
+250:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">XINCLUDE_END</span>
+251:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000203" class="method-detail">
+        <a name="M000203"></a>
+
+        <div class="method-heading">
+          <a href="#M000203" class="method-signature">
+          <span class="method-name">xinclude_start?</span><span class="method-args">()</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Specifies if this is an xinclude start node
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000203-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000203-source">
+<pre>
+     <span class="ruby-comment cmt"># File lib/libxml/node.rb, line 254</span>
+254:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">xinclude_start?</span>
+255:         <span class="ruby-identifier">node_type</span> <span class="ruby-operator">==</span> <span class="ruby-constant">XINCLUDE_START</span>
+256:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000166" class="method-detail">
+        <a name="M000166"></a>
+
+        <div class="method-heading">
+          <a href="#M000166" class="method-signature">
+          <span class="method-name">node.xlink? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this node is an xlink node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000166-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000166-source">
+<pre>
+/*
+ * call-seq:
+ *    node.xlink? -&gt; (true|false)
+ * 
+ * Determine whether this node is an xlink node.
+ */
+VALUE
+ruby_xml_node_xlink_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000167" class="method-detail">
+        <a name="M000167"></a>
+
+        <div class="method-heading">
+          <a href="#M000167" class="method-signature">
+          <span class="method-name">node.xlink_type &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the type identifier for this xlink, if applicable. If this is not an
+xlink node (see +<a href="Node.html#M000166">xlink?</a>+), will return nil.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000167-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000167-source">
+<pre>
+/*
+ * call-seq:
+ *    node.xlink_type -&gt; num
+ * 
+ * Obtain the type identifier for this xlink, if applicable.
+ * If this is not an xlink node (see +xlink?+), will return
+ * nil.
+ */
+VALUE
+ruby_xml_node_xlink_type(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000168" class="method-detail">
+        <a name="M000168"></a>
+
+        <div class="method-heading">
+          <a href="#M000168" class="method-signature">
+          <span class="method-name">node.xlink_type_name &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the type <a href="Node.html#M000148">name</a> for this xlink, if
+applicable. If this is not an xlink node (see +<a
+href="Node.html#M000166">xlink?</a>+), will return nil.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000168-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000168-source">
+<pre>
+/*
+ * call-seq:
+ *    node.xlink_type_name -&gt; &quot;string&quot;
+ * 
+ * Obtain the type name for this xlink, if applicable.
+ * If this is not an xlink node (see +xlink?+), will return
+ * nil.
+ */
+VALUE
+ruby_xml_node_xlink_type_name(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

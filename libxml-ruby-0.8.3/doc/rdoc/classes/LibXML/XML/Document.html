@@ -1,0 +1,1489 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: LibXML::XML::Document</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">LibXML::XML::Document</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../../files/ext/libxml/libxml_c.html">
+                ext/libxml/libxml.c
+                </a>
+        <br />
+                <a href="../../../files/lib/libxml/document_rb.html">
+                lib/libxml/document.rb
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                Object
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+Reads or writes an <a href="../XML.html">XML</a> document:
+</p>
+<p>
+Reading:
+</p>
+<pre>
+ require 'xml'
+
+ doc = XML::Document.new()
+ doc.root = XML::Node.new('root_node')
+ doc.root &lt;&lt; XML::Node.new('elem1')
+ doc.save('output.xml', format)
+</pre>
+<p>
+Writing:
+</p>
+<pre>
+ require 'libxml'
+ doc = XML::Document.file('output.xml')
+ root = doc.root
+</pre>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000326">child</a>&nbsp;&nbsp;
+      <a href="#M000327">child?</a>&nbsp;&nbsp;
+      <a href="#M000328">compression</a>&nbsp;&nbsp;
+      <a href="#M000329">compression=</a>&nbsp;&nbsp;
+      <a href="#M000330">compression?</a>&nbsp;&nbsp;
+      <a href="#M000332">debug_dump</a>&nbsp;&nbsp;
+      <a href="#M000333">debug_dump_head</a>&nbsp;&nbsp;
+      <a href="#M000334">debug_format_dump</a>&nbsp;&nbsp;
+      <a href="#M000331">dump</a>&nbsp;&nbsp;
+      <a href="#M000335">encoding</a>&nbsp;&nbsp;
+      <a href="#M000336">encoding=</a>&nbsp;&nbsp;
+      <a href="#M000324">file</a>&nbsp;&nbsp;
+      <a href="#M000337">filename</a>&nbsp;&nbsp;
+      <a href="#M000359">find</a>&nbsp;&nbsp;
+      <a href="#M000360">find_first</a>&nbsp;&nbsp;
+      <a href="#M000338">format_dump</a>&nbsp;&nbsp;
+      <a href="#M000339">last</a>&nbsp;&nbsp;
+      <a href="#M000340">last?</a>&nbsp;&nbsp;
+      <a href="#M000325">new</a>&nbsp;&nbsp;
+      <a href="#M000341">next</a>&nbsp;&nbsp;
+      <a href="#M000342">next?</a>&nbsp;&nbsp;
+      <a href="#M000343">parent</a>&nbsp;&nbsp;
+      <a href="#M000344">parent?</a>&nbsp;&nbsp;
+      <a href="#M000345">prev</a>&nbsp;&nbsp;
+      <a href="#M000346">prev?</a>&nbsp;&nbsp;
+      <a href="#M000358">reader</a>&nbsp;&nbsp;
+      <a href="#M000347">root</a>&nbsp;&nbsp;
+      <a href="#M000348">root=</a>&nbsp;&nbsp;
+      <a href="#M000349">save</a>&nbsp;&nbsp;
+      <a href="#M000350">standalone?</a>&nbsp;&nbsp;
+      <a href="#M000351">to_s</a>&nbsp;&nbsp;
+      <a href="#M000352">url</a>&nbsp;&nbsp;
+      <a href="#M000355">validate</a>&nbsp;&nbsp;
+      <a href="#M000357">validate_relaxng</a>&nbsp;&nbsp;
+      <a href="#M000356">validate_schema</a>&nbsp;&nbsp;
+      <a href="#M000353">version</a>&nbsp;&nbsp;
+      <a href="#M000354">xinclude</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+
+
+
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Class methods</h3>
+
+      <div id="method-M000324" class="method-detail">
+        <a name="M000324"></a>
+
+        <div class="method-heading">
+          <a href="#M000324" class="method-signature">
+          <span class="method-name">XML::Document.file(filename) &rarr; document<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Document.html#M000325">new</a> <a
+href="Document.html">XML::Document</a> by parsing the specified <a
+href="Document.html#M000324">file</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000324-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000324-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Document.file(filename) -&gt; document
+ * 
+ * Create a new XML::Document by parsing the specified
+ * file.
+ */
+VALUE
+ruby_xml_document_new_file(VALUE class, VALUE filename) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000325" class="method-detail">
+        <a name="M000325"></a>
+
+        <div class="method-heading">
+          <a href="#M000325" class="method-signature">
+          <span class="method-name">XML::Document.new(xml_version = 1.0) &rarr; document<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Document.html#M000325">new</a> <a
+href="Document.html">XML::Document</a>, optionally specifying the <a
+href="../XML.html">XML</a> <a href="Document.html#M000353">version</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000325-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000325-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Document.new(xml_version = 1.0) -&gt; document
+ * 
+ * Create a new XML::Document, optionally specifying the
+ * XML version.
+ */
+VALUE
+ruby_xml_document_new(int argc, VALUE *argv, VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000326" class="method-detail">
+        <a name="M000326"></a>
+
+        <div class="method-heading">
+          <a href="#M000326" class="method-signature">
+          <span class="method-name">document.child &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get this document&#8216;s <a href="Document.html#M000326">child</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000326-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000326-source">
+<pre>
+/*
+ * call-seq:
+ *    document.child -&gt; node
+ * 
+ * Get this document's child node.
+ */
+VALUE
+ruby_xml_document_child_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000327" class="method-detail">
+        <a name="M000327"></a>
+
+        <div class="method-heading">
+          <a href="#M000327" class="method-signature">
+          <span class="method-name">document.child? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this document has a <a
+href="Document.html#M000326">child</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000327-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000327-source">
+<pre>
+/*
+ * call-seq:
+ *    document.child? -&gt; (true|false)
+ * 
+ * Determine whether this document has a child node.
+ */
+VALUE
+ruby_xml_document_child_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000328" class="method-detail">
+        <a name="M000328"></a>
+
+        <div class="method-heading">
+          <a href="#M000328" class="method-signature">
+          <span class="method-name">document.compression &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this document&#8216;s <a
+href="Document.html#M000328">compression</a> mode identifier.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000328-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000328-source">
+<pre>
+/*
+ * call-seq:
+ *    document.compression -&gt; num
+ * 
+ * Obtain this document's compression mode identifier.
+ */
+VALUE
+ruby_xml_document_compression_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000329" class="method-detail">
+        <a name="M000329"></a>
+
+        <div class="method-heading">
+          <a href="#M000329" class="method-signature">
+          <span class="method-name">document.compression = num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set this document&#8216;s <a href="Document.html#M000328">compression</a>
+mode.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000329-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000329-source">
+<pre>
+/*
+ * call-seq:
+ *    document.compression = num
+ * 
+ * Set this document's compression mode.
+ */
+VALUE
+ruby_xml_document_compression_set(VALUE self, VALUE num) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000330" class="method-detail">
+        <a name="M000330"></a>
+
+        <div class="method-heading">
+          <a href="#M000330" class="method-signature">
+          <span class="method-name">document.compression? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this document is compressed.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000330-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000330-source">
+<pre>
+/*
+ * call-seq:
+ *    document.compression? -&gt; (true|false)
+ * 
+ * Determine whether this document is compressed.
+ */
+VALUE
+ruby_xml_document_compression_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000332" class="method-detail">
+        <a name="M000332"></a>
+
+        <div class="method-heading">
+          <a href="#M000332" class="method-signature">
+          <span class="method-name">document.debug_dump([stream]) &rarr; true<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Debug <a href="Document.html#M000353">version</a> of <a
+href="Document.html#M000331">dump</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000332-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000332-source">
+<pre>
+/*
+ * call-seq:
+ *    document.debug_dump([stream]) -&gt; true
+ * 
+ * Debug version of dump.
+ */
+VALUE
+ruby_xml_document_debug_dump(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000333" class="method-detail">
+        <a name="M000333"></a>
+
+        <div class="method-heading">
+          <a href="#M000333" class="method-signature">
+          <span class="method-name">document.debug_dump_head([stream]) &rarr; true<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Debug-<a href="Document.html#M000331">dump</a> this document&#8216;s header
+to the specified IO stream. If no stream is specified, stdout is used.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000333-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000333-source">
+<pre>
+/*
+ * call-seq:
+ *    document.debug_dump_head([stream]) -&gt; true
+ * 
+ * Debug-dump this document's header to the specified IO stream.
+ * If no stream is specified, stdout is used.
+ */
+VALUE
+ruby_xml_document_debug_dump_head(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000334" class="method-detail">
+        <a name="M000334"></a>
+
+        <div class="method-heading">
+          <a href="#M000334" class="method-signature">
+          <span class="method-name">document.debug_format_dump([stream]) &rarr; true<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+<b>Deprecated</b> in favour of <a
+href="Document.html#M000338">format_dump</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000334-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000334-source">
+<pre>
+/*
+ * call-seq:
+ *    document.debug_format_dump([stream]) -&gt; true
+ * 
+ * *Deprecated* in favour of format_dump.
+ */
+VALUE
+ruby_xml_document_debug_format_dump(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000331" class="method-detail">
+        <a name="M000331"></a>
+
+        <div class="method-heading">
+          <a href="#M000331" class="method-signature">
+          <span class="method-name">document.dump([stream]) &rarr; true<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Dump this document&#8216;s <a href="../XML.html">XML</a> to the specified
+IO stream. If no stream is specified, stdout is used.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000331-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000331-source">
+<pre>
+/*
+ * call-seq:
+ *    document.dump([stream]) -&gt; true
+ * 
+ * Dump this document's XML to the specified IO stream.
+ * If no stream is specified, stdout is used.
+ */
+VALUE
+ruby_xml_document_dump(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000335" class="method-detail">
+        <a name="M000335"></a>
+
+        <div class="method-heading">
+          <a href="#M000335" class="method-signature">
+          <span class="method-name">document.encoding &rarr; "encoding"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Document.html#M000335">encoding</a> specified by this
+document.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000335-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000335-source">
+<pre>
+/*
+ * call-seq:
+ *    document.encoding -&gt; &quot;encoding&quot;
+ * 
+ * Obtain the encoding specified by this document.
+ */
+VALUE
+ruby_xml_document_encoding_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000336" class="method-detail">
+        <a name="M000336"></a>
+
+        <div class="method-heading">
+          <a href="#M000336" class="method-signature">
+          <span class="method-name">document.encoding = "encoding"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set the <a href="Document.html#M000335">encoding</a> for this document.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000336-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000336-source">
+<pre>
+/*
+ * call-seq:
+ *    document.encoding = &quot;encoding&quot;
+ * 
+ * Set the encoding for this document.
+ */
+VALUE
+ruby_xml_document_encoding_set(VALUE self, VALUE encoding) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000337" class="method-detail">
+        <a name="M000337"></a>
+
+        <div class="method-heading">
+          <a href="#M000337" class="method-signature">
+          <span class="method-name">document.filename &rarr; "filename"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Document.html#M000337">filename</a> this document was
+read from.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000337-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000337-source">
+<pre>
+/*
+ * call-seq:
+ *    document.filename -&gt; &quot;filename&quot;
+ * 
+ * Obtain the filename this document was read from.
+ */
+VALUE
+ruby_xml_document_filename_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000359" class="method-detail">
+        <a name="M000359"></a>
+
+        <div class="method-heading">
+          <a href="#M000359" class="method-signature">
+          <span class="method-name">find</span><span class="method-args">(xpath, nslist = nil)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Return the nodes matching the specified xpath expression, optionally using
+the specified namespace. For more information about working with
+namespaces, please refer to the <a href="XPath.html">XML::XPath</a>
+documentation.
+</p>
+<p>
+Parameters:
+</p>
+<ul>
+<li>xpath - The xpath expression as a string
+
+</li>
+<li>namespaces - An optional list of namespaces (see <a
+href="XPath.html">XML::XPath</a> for information).
+
+</li>
+<li>Returns - <a href="XPath/Object.html">XML::XPath::Object</a>
+
+</li>
+</ul>
+<pre>
+ document.find('/foo', 'xlink:http://www.w3.org/1999/xlink')
+</pre>
+<p>
+IMPORTANT - The returned <a href="Node/Set.html">XML::Node::Set</a> must be
+freed before its associated document. In a running Ruby program this will
+happen automatically via Ruby&#8216;s mark and sweep garbage collector.
+However, if the program exits, Ruby does not guarantee the order in which
+objects are freed (see <a
+href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17700">blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17700</a>).
+As a result, the associated document may be freed before the node list,
+which will cause a segmentation fault. To avoid this, use the following
+(non-ruby like) coding style:
+</p>
+<pre>
+ nodes = doc.find('/header')
+ nodes.each do |node|
+   ... do stuff ...
+ end
+
+ nodes = nil
+ GC.start
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000359-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000359-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/document.rb, line 37</span>
+37:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">find</span>(<span class="ruby-identifier">xpath</span>, <span class="ruby-identifier">nslist</span> = <span class="ruby-keyword kw">nil</span>)
+38:         <span class="ruby-identifier">context</span> = <span class="ruby-constant">XPath</span><span class="ruby-operator">::</span><span class="ruby-constant">Context</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword kw">self</span>)
+39:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">node</span> = <span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">root</span>  
+40:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">register_namespaces_from_node</span>(<span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">root</span>)
+41:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">register_namespaces</span>(<span class="ruby-identifier">nslist</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">nslist</span>
+42: 
+43:         <span class="ruby-identifier">context</span>.<span class="ruby-identifier">find</span>(<span class="ruby-identifier">xpath</span>)
+44:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000360" class="method-detail">
+        <a name="M000360"></a>
+
+        <div class="method-heading">
+          <a href="#M000360" class="method-signature">
+          <span class="method-name">find_first</span><span class="method-args">(xpath, nslist = nil)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Return the first node matching the specified xpath expression. For more
+information, please refer to the documentation for <a
+href="Document.html#M000359">XML::Document#find</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000360-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000360-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/document.rb, line 49</span>
+49:       <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">find_first</span>(<span class="ruby-identifier">xpath</span>, <span class="ruby-identifier">nslist</span> = <span class="ruby-keyword kw">nil</span>)
+50:         <span class="ruby-identifier">find</span>(<span class="ruby-identifier">xpath</span>, <span class="ruby-identifier">nslist</span>).<span class="ruby-identifier">first</span>
+51:       <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000338" class="method-detail">
+        <a name="M000338"></a>
+
+        <div class="method-heading">
+          <a href="#M000338" class="method-signature">
+          <span class="method-name">document.format_dump([stream], [spacing]) &rarr; true<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Dump this document&#8216;s formatted <a href="../XML.html">XML</a> to the
+specified IO stream. If no stream is specified, stdout is used. If spacing
+is specified, it must be a boolean that determines whether spacing is used.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000338-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000338-source">
+<pre>
+/*
+ * call-seq:
+ *    document.format_dump([stream], [spacing]) -&gt; true
+ * 
+ * Dump this document's formatted XML to the specified IO stream.
+ * If no stream is specified, stdout is used. If spacing is 
+ * specified, it must be a boolean that determines whether 
+ * spacing is used.
+ */
+VALUE
+ruby_xml_document_format_dump(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000339" class="method-detail">
+        <a name="M000339"></a>
+
+        <div class="method-heading">
+          <a href="#M000339" class="method-signature">
+          <span class="method-name">document.last &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Document.html#M000339">last</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000339-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000339-source">
+<pre>
+/*
+ * call-seq:
+ *    document.last -&gt; node
+ * 
+ * Obtain the last node.
+ */
+VALUE
+ruby_xml_document_last_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000340" class="method-detail">
+        <a name="M000340"></a>
+
+        <div class="method-heading">
+          <a href="#M000340" class="method-signature">
+          <span class="method-name">document.last? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether there is a <a href="Document.html#M000339">last</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000340-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000340-source">
+<pre>
+/*
+ * call-seq:
+ *    document.last? -&gt; (true|false)
+ * 
+ * Determine whether there is a last node.
+ */
+VALUE
+ruby_xml_document_last_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000341" class="method-detail">
+        <a name="M000341"></a>
+
+        <div class="method-heading">
+          <a href="#M000341" class="method-signature">
+          <span class="method-name">document.next &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Document.html#M000341">next</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000341-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000341-source">
+<pre>
+/*
+ * call-seq:
+ *    document.next -&gt; node
+ * 
+ * Obtain the next node.
+ */
+VALUE
+ruby_xml_document_next_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000342" class="method-detail">
+        <a name="M000342"></a>
+
+        <div class="method-heading">
+          <a href="#M000342" class="method-signature">
+          <span class="method-name">document.next? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether there is a <a href="Document.html#M000341">next</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000342-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000342-source">
+<pre>
+/*
+ * call-seq:
+ *    document.next? -&gt; (true|false)
+ * 
+ * Determine whether there is a next node.
+ */
+VALUE
+ruby_xml_document_next_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000343" class="method-detail">
+        <a name="M000343"></a>
+
+        <div class="method-heading">
+          <a href="#M000343" class="method-signature">
+          <span class="method-name">document.parent &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Document.html#M000343">parent</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000343-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000343-source">
+<pre>
+/*
+ * call-seq:
+ *    document.parent -&gt; node
+ * 
+ * Obtain the parent node.
+ */
+VALUE
+ruby_xml_document_parent_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000344" class="method-detail">
+        <a name="M000344"></a>
+
+        <div class="method-heading">
+          <a href="#M000344" class="method-signature">
+          <span class="method-name">document.parent? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether there is a <a href="Document.html#M000343">parent</a>
+node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000344-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000344-source">
+<pre>
+/*
+ * call-seq:
+ *    document.parent? -&gt; (true|false)
+ * 
+ * Determine whether there is a parent node.
+ */
+VALUE
+ruby_xml_document_parent_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000345" class="method-detail">
+        <a name="M000345"></a>
+
+        <div class="method-heading">
+          <a href="#M000345" class="method-signature">
+          <span class="method-name">document.prev &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the previous node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000345-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000345-source">
+<pre>
+/*
+ * call-seq:
+ *    document.prev -&gt; node
+ * 
+ * Obtain the previous node.
+ */
+VALUE
+ruby_xml_document_prev_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000346" class="method-detail">
+        <a name="M000346"></a>
+
+        <div class="method-heading">
+          <a href="#M000346" class="method-signature">
+          <span class="method-name">document.prev? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether there is a previous node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000346-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000346-source">
+<pre>
+/*
+ * call-seq:
+ *    document.prev? -&gt; (true|false)
+ * 
+ * Determine whether there is a previous node.
+ */
+VALUE
+ruby_xml_document_prev_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000358" class="method-detail">
+        <a name="M000358"></a>
+
+        <div class="method-heading">
+          <a href="#M000358" class="method-signature">
+          <span class="method-name">document.reader &rarr; reader<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Reader.html">XML::Reader</a> from the document. This is a
+shortcut to <a href="Reader.html#M000268">XML::Reader.walker</a>().
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000358-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000358-source">
+<pre>
+/*
+ * call-seq:
+ *    document.reader -&gt; reader
+ * 
+ * Create a XML::Reader from the document. This is a shortcut to
+ * XML::Reader.walker().
+ */
+static VALUE
+ruby_xml_document_reader(VALUE self)
+{
+  return ruby_xml_reader_new_walker(cXMLReader, self);
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000347" class="method-detail">
+        <a name="M000347"></a>
+
+        <div class="method-heading">
+          <a href="#M000347" class="method-signature">
+          <span class="method-name">document.root &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Document.html#M000347">root</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000347-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000347-source">
+<pre>
+/*
+ * call-seq:
+ *    document.root -&gt; node
+ * 
+ * Obtain the root node.
+ */
+VALUE
+ruby_xml_document_root_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000348" class="method-detail">
+        <a name="M000348"></a>
+
+        <div class="method-heading">
+          <a href="#M000348" class="method-signature">
+          <span class="method-name">document.root = node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set the <a href="Document.html#M000347">root</a> node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000348-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000348-source">
+<pre>
+/*
+ * call-seq:
+ *    document.root = node
+ * 
+ * Set the root node.
+ */
+VALUE
+ruby_xml_document_root_set(VALUE self, VALUE node) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000349" class="method-detail">
+        <a name="M000349"></a>
+
+        <div class="method-heading">
+          <a href="#M000349" class="method-signature">
+          <span class="method-name">document.save(filename, format = false) &rarr; int<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Save this document to the <a href="Document.html#M000324">file</a> given by
+<a href="Document.html#M000337">filename</a>, optionally formatting the
+output.
+</p>
+<p>
+Parameters:
+</p>
+<pre>
+ filename: The filename or URL of the new document
+ format: Specifies whether formatting spaces should be added.
+ returns: The number of bytes written or -1 in case of error.
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000349-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000349-source">
+<pre>
+/*
+ * call-seq:
+ *    document.save(filename, format = false) -&gt; int
+ * 
+ * Save this document to the file given by filename, 
+ * optionally formatting the output.
+ 
+ * Parameters:
+ *  filename: The filename or URL of the new document
+ *  format: Specifies whether formatting spaces should be added.
+ *  returns: The number of bytes written or -1 in case of error. 
+ */
+VALUE
+ruby_xml_document_save(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000350" class="method-detail">
+        <a name="M000350"></a>
+
+        <div class="method-heading">
+          <a href="#M000350" class="method-signature">
+          <span class="method-name">document.standalone? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this is a standalone document.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000350-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000350-source">
+<pre>
+/*
+ * call-seq:
+ *    document.standalone? -&gt; (true|false)
+ * 
+ * Determine whether this is a standalone document.
+ */
+VALUE
+ruby_xml_document_standalone_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000351" class="method-detail">
+        <a name="M000351"></a>
+
+        <div class="method-heading">
+          <a href="#M000351" class="method-signature">
+          <span class="method-name">document.to_s({format=true,encoding) &rarr; "xml"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Coerce this document to a string representation of it&#8216;s <a
+href="../XML.html">XML</a>. The default is to pretty format, but this
+depends <a href="Parser.html#M000064">Parser#indent_tree_output</a>==true
+or <a href="Parser.html#M000046">Parser#default_keep_blanks</a>==false.
+</p>
+<p>
+The <a href="Document.html#M000335">encoding</a> is not applied to the
+document, but is <a href="Document.html#M000335">encoding</a> target of the
+resulting string.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000351-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000351-source">
+<pre>
+/*
+ * call-seq:
+ *    document.to_s({format=true,encoding) -&gt; &quot;xml&quot;
+ * 
+ * Coerce this document to a string representation
+ * of it's XML. The default is to pretty format, but this
+ * depends Parser#indent_tree_output==true or
+ * Parser#default_keep_blanks==false.
+ *
+ * The encoding is not applied to the document, but is
+ * encoding target of the resulting string.
+ */
+VALUE
+ruby_xml_document_to_s(int argc, VALUE *argv, VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000352" class="method-detail">
+        <a name="M000352"></a>
+
+        <div class="method-heading">
+          <a href="#M000352" class="method-signature">
+          <span class="method-name">document.url &rarr; "url"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this document&#8216;s source URL, if any.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000352-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000352-source">
+<pre>
+/*
+ * call-seq:
+ *    document.url -&gt; &quot;url&quot;
+ * 
+ * Obtain this document's source URL, if any.
+ */
+VALUE
+ruby_xml_document_url_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000355" class="method-detail">
+        <a name="M000355"></a>
+
+        <div class="method-heading">
+          <a href="#M000355" class="method-signature">
+          <span class="method-name">document.validate(dtd) &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Validate this document against the specified XML::DTD.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000355-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000355-source">
+<pre>
+/*
+ * call-seq:
+ *    document.validate(dtd) -&gt; (true|false)
+ * 
+ * Validate this document against the specified XML::DTD.
+ */
+VALUE
+ruby_xml_document_validate_dtd(VALUE self, VALUE dtd) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000357" class="method-detail">
+        <a name="M000357"></a>
+
+        <div class="method-heading">
+          <a href="#M000357" class="method-signature">
+          <span class="method-name">document.validate_schema(relaxng) &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Validate this document against the specified <a
+href="RelaxNG.html">XML::RelaxNG</a>.
+</p>
+<p>
+If a block is provided it is used as an error handler for validaten errors.
+The block is called with two argument, the message and a flag indication if
+the message is an error (true) or a warning (false).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000357-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000357-source">
+<pre>
+/*
+ * call-seq:
+ *    document.validate_schema(relaxng) -&gt; (true|false)
+ * 
+ * Validate this document against the specified XML::RelaxNG.
+ *
+ * If a block is provided it is used as an error handler for validaten errors.
+ * The block is called with two argument, the message and a flag indication
+ * if the message is an error (true) or a warning (false).
+ */
+VALUE
+ruby_xml_document_validate_relaxng(VALUE self, VALUE relaxng) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000356" class="method-detail">
+        <a name="M000356"></a>
+
+        <div class="method-heading">
+          <a href="#M000356" class="method-signature">
+          <span class="method-name">document.validate_schema(schema) &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Validate this document against the specified <a
+href="Schema.html">XML::Schema</a>.
+</p>
+<p>
+If a block is provided it is used as an error handler for validaten errors.
+The block is called with two argument, the message and a flag indication if
+the message is an error (true) or a warning (false).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000356-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000356-source">
+<pre>
+/*
+ * call-seq:
+ *    document.validate_schema(schema) -&gt; (true|false)
+ * 
+ * Validate this document against the specified XML::Schema.
+ * 
+ * If a block is provided it is used as an error handler for validaten errors.
+ * The block is called with two argument, the message and a flag indication
+ * if the message is an error (true) or a warning (false).
+ */
+VALUE
+ruby_xml_document_validate_schema(VALUE self, VALUE schema) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000353" class="method-detail">
+        <a name="M000353"></a>
+
+        <div class="method-heading">
+          <a href="#M000353" class="method-signature">
+          <span class="method-name">document.version &rarr; "version"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="../XML.html">XML</a> <a
+href="Document.html#M000353">version</a> specified by this document.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000353-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000353-source">
+<pre>
+/*
+ * call-seq:
+ *    document.version -&gt; &quot;version&quot;
+ * 
+ * Obtain the XML version specified by this document.
+ */
+VALUE
+ruby_xml_document_version_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000354" class="method-detail">
+        <a name="M000354"></a>
+
+        <div class="method-heading">
+          <a href="#M000354" class="method-signature">
+          <span class="method-name">document.xinclude &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Process <a href="Document.html#M000354">xinclude</a> directives in this
+document.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000354-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000354-source">
+<pre>
+/*
+ * call-seq:
+ *    document.xinclude -&gt; num
+ * 
+ * Process xinclude directives in this document. 
+ */
+VALUE
+ruby_xml_document_xinclude(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

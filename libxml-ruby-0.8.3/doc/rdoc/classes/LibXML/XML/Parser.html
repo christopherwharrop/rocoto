@@ -1,0 +1,2239 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: LibXML::XML::Parser</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">LibXML::XML::Parser</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../../files/ext/libxml/libxml_c.html">
+                ext/libxml/libxml.c
+                </a>
+        <br />
+                <a href="../../../files/lib/libxml/parser_rb.html">
+                lib/libxml/parser.rb
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                Object
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+call-seq:
+</p>
+<pre>
+   context.well_formed? -&gt; (true|false)
+</pre>
+<p>
+Determine whether this <a href="Parser.html#M000076">context</a> contains
+well-formed <a href="../XML.html">XML</a>.
+</p>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000039">catalog_dump</a>&nbsp;&nbsp;
+      <a href="#M000040">catalog_remove</a>&nbsp;&nbsp;
+      <a href="#M000041">check_lib_versions</a>&nbsp;&nbsp;
+      <a href="#M000076">context</a>&nbsp;&nbsp;
+      <a href="#M000042">debug_entities</a>&nbsp;&nbsp;
+      <a href="#M000043">debug_entities=</a>&nbsp;&nbsp;
+      <a href="#M000044">default_compression</a>&nbsp;&nbsp;
+      <a href="#M000045">default_compression=</a>&nbsp;&nbsp;
+      <a href="#M000046">default_keep_blanks</a>&nbsp;&nbsp;
+      <a href="#M000047">default_keep_blanks=</a>&nbsp;&nbsp;
+      <a href="#M000050">default_line_numbers</a>&nbsp;&nbsp;
+      <a href="#M000051">default_line_numbers=</a>&nbsp;&nbsp;
+      <a href="#M000048">default_load_external_dtd</a>&nbsp;&nbsp;
+      <a href="#M000049">default_load_external_dtd=</a>&nbsp;&nbsp;
+      <a href="#M000052">default_pedantic_parser</a>&nbsp;&nbsp;
+      <a href="#M000053">default_pedantic_parser=</a>&nbsp;&nbsp;
+      <a href="#M000054">default_substitute_entities</a>&nbsp;&nbsp;
+      <a href="#M000055">default_substitute_entities=</a>&nbsp;&nbsp;
+      <a href="#M000056">default_tree_indent_string</a>&nbsp;&nbsp;
+      <a href="#M000057">default_tree_indent_string=</a>&nbsp;&nbsp;
+      <a href="#M000058">default_validity_checking</a>&nbsp;&nbsp;
+      <a href="#M000059">default_validity_checking=</a>&nbsp;&nbsp;
+      <a href="#M000060">default_warnings</a>&nbsp;&nbsp;
+      <a href="#M000061">default_warnings=</a>&nbsp;&nbsp;
+      <a href="#M000021">enabled_automata?</a>&nbsp;&nbsp;
+      <a href="#M000022">enabled_c14n?</a>&nbsp;&nbsp;
+      <a href="#M000023">enabled_catalog?</a>&nbsp;&nbsp;
+      <a href="#M000024">enabled_debug?</a>&nbsp;&nbsp;
+      <a href="#M000025">enabled_docbook?</a>&nbsp;&nbsp;
+      <a href="#M000026">enabled_ftp?</a>&nbsp;&nbsp;
+      <a href="#M000028">enabled_html?</a>&nbsp;&nbsp;
+      <a href="#M000027">enabled_http?</a>&nbsp;&nbsp;
+      <a href="#M000029">enabled_iconv?</a>&nbsp;&nbsp;
+      <a href="#M000030">enabled_memory_debug?</a>&nbsp;&nbsp;
+      <a href="#M000031">enabled_regexp?</a>&nbsp;&nbsp;
+      <a href="#M000032">enabled_schemas?</a>&nbsp;&nbsp;
+      <a href="#M000033">enabled_thread?</a>&nbsp;&nbsp;
+      <a href="#M000034">enabled_unicode?</a>&nbsp;&nbsp;
+      <a href="#M000035">enabled_xinclude?</a>&nbsp;&nbsp;
+      <a href="#M000036">enabled_xpath?</a>&nbsp;&nbsp;
+      <a href="#M000037">enabled_xpointer?</a>&nbsp;&nbsp;
+      <a href="#M000038">enabled_zlib?</a>&nbsp;&nbsp;
+      <a href="#M000062">features</a>&nbsp;&nbsp;
+      <a href="#M000063">file</a>&nbsp;&nbsp;
+      <a href="#M000071">filename</a>&nbsp;&nbsp;
+      <a href="#M000072">filename=</a>&nbsp;&nbsp;
+      <a href="#M000064">indent_tree_output</a>&nbsp;&nbsp;
+      <a href="#M000065">indent_tree_output=</a>&nbsp;&nbsp;
+      <a href="#M000066">io</a>&nbsp;&nbsp;
+      <a href="#M000073">io</a>&nbsp;&nbsp;
+      <a href="#M000074">io=</a>&nbsp;&nbsp;
+      <a href="#M000067">memory_dump</a>&nbsp;&nbsp;
+      <a href="#M000068">memory_used</a>&nbsp;&nbsp;
+      <a href="#M000069">new</a>&nbsp;&nbsp;
+      <a href="#M000075">parse</a>&nbsp;&nbsp;
+      <a href="#M000079">register_error_handler</a>&nbsp;&nbsp;
+      <a href="#M000070">string</a>&nbsp;&nbsp;
+      <a href="#M000077">string</a>&nbsp;&nbsp;
+      <a href="#M000078">string=</a>&nbsp;&nbsp;
+      <a href="#M000080">xml_error_func_handler</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+    <div id="class-list">
+      <h3 class="section-bar">Classes and Modules</h3>
+
+      Class <a href="Parser/Context.html" class="link">LibXML::XML::Parser::Context</a><br />
+Class <a href="Parser/ParseError.html" class="link">LibXML::XML::Parser::ParseError</a><br />
+
+    </div>
+
+    <div id="constants-list">
+      <h3 class="section-bar">Constants</h3>
+
+      <div class="name-list">
+        <table summary="Constants">
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">LIBXML_VERSION</td>
+          <td>=</td>
+          <td class="context-item-value">rb_str_new2(LIBXML_DOTTED_VERSION)</td>
+          <td width="3em">&nbsp;</td>
+          <td class="context-item-desc">
+Constants
+
+</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">VERSION</td>
+          <td>=</td>
+          <td class="context-item-value">rb_str_new2(RUBY_LIBXML_VERSION)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">VERNUM</td>
+          <td>=</td>
+          <td class="context-item-value">INT2NUM(RUBY_LIBXML_VERNUM)</td>
+        </tr>
+        </table>
+      </div>
+    </div>
+
+
+
+    <div id="attribute-list">
+      <h3 class="section-bar">Attributes</h3>
+
+      <div class="name-list">
+        <table>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">error_handler</td>
+          <td class="context-item-value">&nbsp;[R]&nbsp;</td>
+          <td class="context-item-desc"></td>
+        </tr>
+        </table>
+      </div>
+    </div>
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Class methods</h3>
+
+      <div id="method-M000039" class="method-detail">
+        <a name="M000039"></a>
+
+        <div class="method-heading">
+          <a href="#M000039" class="method-signature">
+          <span class="method-name">XML::Parser.catalog_dump &rarr; true<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Dump the parser resource catalogs to stdout.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000039-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000039-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.catalog_dump -&gt; true
+ * 
+ * Dump the parser resource catalogs to stdout.
+ */
+VALUE
+ruby_xml_parser_catalog_dump(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000040" class="method-detail">
+        <a name="M000040"></a>
+
+        <div class="method-heading">
+          <a href="#M000040" class="method-signature">
+          <span class="method-name">XML::Parser.catalog_remove(catalog) &rarr; true<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Remove the specified resource catalog.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000040-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000040-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.catalog_remove(catalog) -&gt; true
+ * 
+ * Remove the specified resource catalog.
+ */
+VALUE
+ruby_xml_parser_catalog_remove(VALUE self, VALUE cat) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000041" class="method-detail">
+        <a name="M000041"></a>
+
+        <div class="method-heading">
+          <a href="#M000041" class="method-signature">
+          <span class="method-name">XML::Parser.check_lib_versions &rarr; true                                                     <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Check LIBXML version matches version the bindings were compiled to. Throws
+an exception if not.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000041-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000041-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.check_lib_versions -&gt; true                                                     
+ * 
+ * Check LIBXML version matches version the bindings
+ * were compiled to. Throws an exception if not.
+ */
+VALUE
+ruby_xml_parser_check_lib_versions(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000042" class="method-detail">
+        <a name="M000042"></a>
+
+        <div class="method-heading">
+          <a href="#M000042" class="method-signature">
+          <span class="method-name">XML::Parser.debug_entities &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether included-entity debugging is enabled. (Requires Libxml to
+be compiled with debugging support)
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000042-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000042-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.debug_entities -&gt; (true|false)
+ * 
+ * Determine whether included-entity debugging is enabled.
+ * (Requires Libxml to be compiled with debugging support)
+ */
+VALUE
+ruby_xml_parser_debug_entities_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000043" class="method-detail">
+        <a name="M000043"></a>
+
+        <div class="method-heading">
+          <a href="#M000043" class="method-signature">
+          <span class="method-name">XML::Parser.debug_entities = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Enable or disable included-entity debugging. (Requires Libxml to be
+compiled with debugging support)
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000043-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000043-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.debug_entities = true|false
+ * 
+ * Enable or disable included-entity debugging.
+ * (Requires Libxml to be compiled with debugging support)
+ */
+VALUE
+ruby_xml_parser_debug_entities_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000044" class="method-detail">
+        <a name="M000044"></a>
+
+        <div class="method-heading">
+          <a href="#M000044" class="method-signature">
+          <span class="method-name">XML::Parser.default_compression &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers use Zlib compression by default (requires libxml
+to be compiled with Zlib support).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000044-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000044-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_compression -&gt; (true|false)
+ * 
+ * Determine whether parsers use Zlib compression by default
+ * (requires libxml to be compiled with Zlib support).
+ */
+VALUE
+ruby_xml_parser_default_compression_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000045" class="method-detail">
+        <a name="M000045"></a>
+
+        <div class="method-heading">
+          <a href="#M000045" class="method-signature">
+          <span class="method-name">XML::Parser.default_compression = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers use Zlib compression by default (requires libxml
+to be compiled with Zlib support).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000045-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000045-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_compression = true|false
+ * 
+ * Controls whether parsers use Zlib compression by default
+ * (requires libxml to be compiled with Zlib support).
+ */
+VALUE
+ruby_xml_parser_default_compression_set(VALUE class, VALUE num) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000046" class="method-detail">
+        <a name="M000046"></a>
+
+        <div class="method-heading">
+          <a href="#M000046" class="method-signature">
+          <span class="method-name">XML::Parser.default_keep_blanks &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers retain whitespace by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000046-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000046-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_keep_blanks -&gt; (true|false)
+ * 
+ * Determine whether parsers retain whitespace by default.
+ */
+VALUE
+ruby_xml_parser_default_keep_blanks_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000047" class="method-detail">
+        <a name="M000047"></a>
+
+        <div class="method-heading">
+          <a href="#M000047" class="method-signature">
+          <span class="method-name">XML::Parser.default_keep_blanks = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers retain whitespace by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000047-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000047-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_keep_blanks = true|false
+ * 
+ * Controls whether parsers retain whitespace by default.
+ */
+VALUE
+ruby_xml_parser_default_keep_blanks_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000050" class="method-detail">
+        <a name="M000050"></a>
+
+        <div class="method-heading">
+          <a href="#M000050" class="method-signature">
+          <span class="method-name">XML::Parser.default_line_numbers &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers retain line-numbers by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000050-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000050-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_line_numbers -&gt; (true|false)
+ * 
+ * Determine whether parsers retain line-numbers by default.
+ */
+VALUE
+ruby_xml_parser_default_line_numbers_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000051" class="method-detail">
+        <a name="M000051"></a>
+
+        <div class="method-heading">
+          <a href="#M000051" class="method-signature">
+          <span class="method-name">XML::Parser.default_line_numbers = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers retain line-numbers by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000051-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000051-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_line_numbers = true|false
+ * 
+ * Controls whether parsers retain line-numbers by default.
+ */
+VALUE
+ruby_xml_parser_default_line_numbers_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000048" class="method-detail">
+        <a name="M000048"></a>
+
+        <div class="method-heading">
+          <a href="#M000048" class="method-signature">
+          <span class="method-name">XML::Parser.default_load_external_dtd &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers load external DTDs by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000048-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000048-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_load_external_dtd -&gt; (true|false)
+ * 
+ * Determine whether parsers load external DTDs by default.
+ */
+VALUE
+ruby_xml_parser_default_load_external_dtd_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000049" class="method-detail">
+        <a name="M000049"></a>
+
+        <div class="method-heading">
+          <a href="#M000049" class="method-signature">
+          <span class="method-name">XML::Parser.default_load_external_dtd = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers load external DTDs by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000049-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000049-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_load_external_dtd = true|false
+ * 
+ * Controls whether parsers load external DTDs by default.
+ */
+VALUE
+ruby_xml_parser_default_load_external_dtd_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000052" class="method-detail">
+        <a name="M000052"></a>
+
+        <div class="method-heading">
+          <a href="#M000052" class="method-signature">
+          <span class="method-name">XML::Parser.default_pedantic_parser &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers are pedantic by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000052-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000052-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_pedantic_parser -&gt; (true|false)
+ * 
+ * Determine whether parsers are pedantic by default.
+ */
+VALUE
+ruby_xml_parser_default_pedantic_parser_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000053" class="method-detail">
+        <a name="M000053"></a>
+
+        <div class="method-heading">
+          <a href="#M000053" class="method-signature">
+          <span class="method-name">XML::Parser.default_pedantic_parser = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers are pedantic by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000053-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000053-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_pedantic_parser = true|false
+ * 
+ * Controls whether parsers are pedantic by default.
+ */
+VALUE
+ruby_xml_parser_default_pedantic_parser_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000054" class="method-detail">
+        <a name="M000054"></a>
+
+        <div class="method-heading">
+          <a href="#M000054" class="method-signature">
+          <span class="method-name">XML::Parser.default_substitute_entities &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers perform inline entity substitution (for external
+entities) by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000054-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000054-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_substitute_entities -&gt; (true|false)
+ * 
+ * Determine whether parsers perform inline entity substitution
+ * (for external entities) by default.
+ */
+VALUE
+ruby_xml_parser_default_substitute_entities_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000055" class="method-detail">
+        <a name="M000055"></a>
+
+        <div class="method-heading">
+          <a href="#M000055" class="method-signature">
+          <span class="method-name">XML::Parser.default_substitute_entities = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers perform inline entity substitution (for external
+entities) by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000055-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000055-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_substitute_entities = true|false
+ * 
+ * Controls whether parsers perform inline entity substitution
+ * (for external entities) by default.
+ */
+VALUE
+ruby_xml_parser_default_substitute_entities_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000056" class="method-detail">
+        <a name="M000056"></a>
+
+        <div class="method-heading">
+          <a href="#M000056" class="method-signature">
+          <span class="method-name">XML::Parser.default_tree_indent_string &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the default <a href="Parser.html#M000070">string</a> used by parsers
+to indent the <a href="../XML.html">XML</a> tree for output.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000056-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000056-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_tree_indent_string -&gt; &quot;string&quot;
+ * 
+ * Obtain the default string used by parsers to indent the XML tree
+ * for output.
+ */
+VALUE
+ruby_xml_parser_default_tree_indent_string_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000057" class="method-detail">
+        <a name="M000057"></a>
+
+        <div class="method-heading">
+          <a href="#M000057" class="method-signature">
+          <span class="method-name">XML::Parser.default_tree_indent_string = "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set the default <a href="Parser.html#M000070">string</a> used by parsers to
+indent the <a href="../XML.html">XML</a> tree for output.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000057-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000057-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_tree_indent_string = &quot;string&quot;
+ * 
+ * Set the default string used by parsers to indent the XML tree
+ * for output.
+ */
+VALUE
+ruby_xml_parser_default_tree_indent_string_set(VALUE class, VALUE string) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000058" class="method-detail">
+        <a name="M000058"></a>
+
+        <div class="method-heading">
+          <a href="#M000058" class="method-signature">
+          <span class="method-name">XML::Parser.default_validity_checking &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers perform <a href="../XML.html">XML</a> validation
+by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000058-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000058-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_validity_checking -&gt; (true|false)
+ * 
+ * Determine whether parsers perform XML validation by default.
+ */
+VALUE
+ruby_xml_parser_default_validity_checking_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000059" class="method-detail">
+        <a name="M000059"></a>
+
+        <div class="method-heading">
+          <a href="#M000059" class="method-signature">
+          <span class="method-name">XML::Parser.default_validity_checking = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers perform <a href="../XML.html">XML</a> validation
+by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000059-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000059-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_validity_checking = true|false
+ * 
+ * Controls whether parsers perform XML validation by default.
+ */
+VALUE
+ruby_xml_parser_default_validity_checking_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000060" class="method-detail">
+        <a name="M000060"></a>
+
+        <div class="method-heading">
+          <a href="#M000060" class="method-signature">
+          <span class="method-name">XML::Parser.default_warnings &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers output warnings by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000060-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000060-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_warnings -&gt; (true|false)
+ * 
+ * Determine whether parsers output warnings by default.
+ */
+VALUE
+ruby_xml_parser_default_warnings_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000061" class="method-detail">
+        <a name="M000061"></a>
+
+        <div class="method-heading">
+          <a href="#M000061" class="method-signature">
+          <span class="method-name">XML::Parser.default_warnings = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether parsers output warnings by default.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000061-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000061-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.default_warnings = true|false
+ * 
+ * Controls whether parsers output warnings by default.
+ */
+VALUE
+ruby_xml_parser_default_warnings_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000021" class="method-detail">
+        <a name="M000021"></a>
+
+        <div class="method-heading">
+          <a href="#M000021" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_automata? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml regexp automata support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000021-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000021-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_automata? -&gt; (true|false)
+ * 
+ * Determine whether libxml regexp automata support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_automata_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000022" class="method-detail">
+        <a name="M000022"></a>
+
+        <div class="method-heading">
+          <a href="#M000022" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_c14n? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml &#8216;canonical <a
+href="../XML.html">XML</a>&#8217; support is enabled. See &quot;Canonical
+<a href="../XML.html">XML</a>&quot; (<a
+href="http://www.w3.org/TR/xml-c14n">www.w3.org/TR/xml-c14n</a>)
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000022-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000022-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_c14n? -&gt; (true|false)
+ * 
+ * Determine whether libxml 'canonical XML' support is enabled.
+ * See &quot;Canonical XML&quot; (http://www.w3.org/TR/xml-c14n)
+ */
+VALUE
+ruby_xml_parser_enabled_c14n_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000023" class="method-detail">
+        <a name="M000023"></a>
+
+        <div class="method-heading">
+          <a href="#M000023" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_catalog? &rarr; (true|false)                                         <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml resource catalog support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000023-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000023-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_catalog? -&gt; (true|false)                                         
+ * 
+ * Determine whether libxml resource catalog support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_catalog_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000024" class="method-detail">
+        <a name="M000024"></a>
+
+        <div class="method-heading">
+          <a href="#M000024" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_debug? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml debugging support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000024-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000024-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_debug? -&gt; (true|false)  
+ * 
+ * Determine whether libxml debugging support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_debug_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000025" class="method-detail">
+        <a name="M000025"></a>
+
+        <div class="method-heading">
+          <a href="#M000025" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_docbook? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml docbook support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000025-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000025-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_docbook? -&gt; (true|false)  
+ * 
+ * Determine whether libxml docbook support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_docbook_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000026" class="method-detail">
+        <a name="M000026"></a>
+
+        <div class="method-heading">
+          <a href="#M000026" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_ftp? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml ftp client support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000026-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000026-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_ftp? -&gt; (true|false)  
+ * 
+ * Determine whether libxml ftp client support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_ftp_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000028" class="method-detail">
+        <a name="M000028"></a>
+
+        <div class="method-heading">
+          <a href="#M000028" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_html? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml html support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000028-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000028-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_html? -&gt; (true|false)  
+ * 
+ * Determine whether libxml html support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_html_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000027" class="method-detail">
+        <a name="M000027"></a>
+
+        <div class="method-heading">
+          <a href="#M000027" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_http? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml http client support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000027-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000027-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_http? -&gt; (true|false)  
+ * 
+ * Determine whether libxml http client support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_http_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000029" class="method-detail">
+        <a name="M000029"></a>
+
+        <div class="method-heading">
+          <a href="#M000029" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_iconv? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml iconv support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000029-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000029-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_iconv? -&gt; (true|false)  
+ * 
+ * Determine whether libxml iconv support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_iconv_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000030" class="method-detail">
+        <a name="M000030"></a>
+
+        <div class="method-heading">
+          <a href="#M000030" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_memory_debug? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml memory location debugging support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000030-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000030-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_memory_debug? -&gt; (true|false)  
+ * 
+ * Determine whether libxml memory location debugging support
+ * is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_memory_debug_location_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000031" class="method-detail">
+        <a name="M000031"></a>
+
+        <div class="method-heading">
+          <a href="#M000031" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_regexp? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml regular expression support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000031-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000031-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_regexp? -&gt; (true|false)  
+ * 
+ * Determine whether libxml regular expression support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_regexp_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000032" class="method-detail">
+        <a name="M000032"></a>
+
+        <div class="method-heading">
+          <a href="#M000032" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_schemas? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml schema support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000032-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000032-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_schemas? -&gt; (true|false)  
+ * 
+ * Determine whether libxml schema support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_schemas_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000033" class="method-detail">
+        <a name="M000033"></a>
+
+        <div class="method-heading">
+          <a href="#M000033" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_thread? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml thread-safe semantics support is enabled (I
+think?).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000033-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000033-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_thread? -&gt; (true|false)  
+ * 
+ * Determine whether libxml thread-safe semantics support 
+ * is enabled (I think?).
+ */
+VALUE
+ruby_xml_parser_enabled_thread_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000034" class="method-detail">
+        <a name="M000034"></a>
+
+        <div class="method-heading">
+          <a href="#M000034" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_unicode? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml unicode support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000034-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000034-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_unicode? -&gt; (true|false)  
+ * 
+ * Determine whether libxml unicode support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_unicode_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000035" class="method-detail">
+        <a name="M000035"></a>
+
+        <div class="method-heading">
+          <a href="#M000035" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_xinclude? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml xinclude support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000035-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000035-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_xinclude? -&gt; (true|false)  
+ * 
+ * Determine whether libxml xinclude support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_xinclude_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000036" class="method-detail">
+        <a name="M000036"></a>
+
+        <div class="method-heading">
+          <a href="#M000036" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_xpath? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml xpath support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000036-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000036-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_xpath? -&gt; (true|false)  
+ * 
+ * Determine whether libxml xpath support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_xpath_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000037" class="method-detail">
+        <a name="M000037"></a>
+
+        <div class="method-heading">
+          <a href="#M000037" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_xpointer? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml xpointer support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000037-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000037-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_xpointer? -&gt; (true|false)  
+ * 
+ * Determine whether libxml xpointer support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_xpointer_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000038" class="method-detail">
+        <a name="M000038"></a>
+
+        <div class="method-heading">
+          <a href="#M000038" class="method-signature">
+          <span class="method-name">XML::Parser.enabled_zlib? &rarr; (true|false)  <br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether libxml zlib support is enabled.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000038-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000038-source">
+<pre>
+/*
+ * call-seq:
+ *              XML::Parser.enabled_zlib? -&gt; (true|false)  
+ * 
+ * Determine whether libxml zlib support is enabled.
+ */
+VALUE
+ruby_xml_parser_enabled_zlib_q(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000062" class="method-detail">
+        <a name="M000062"></a>
+
+        <div class="method-heading">
+          <a href="#M000062" class="method-signature">
+          <span class="method-name">XML::Parser.features &rarr; ["feature", ..., "feature"]<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtains an array of strings representing <a
+href="Parser.html#M000062">features</a> supported (and enabled) by the
+installed libxml.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000062-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000062-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.features -&gt; [&quot;feature&quot;, ..., &quot;feature&quot;]
+ * 
+ * Obtains an array of strings representing features supported 
+ * (and enabled) by the installed libxml.
+ */
+VALUE
+ruby_xml_parser_features(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000063" class="method-detail">
+        <a name="M000063"></a>
+
+        <div class="method-heading">
+          <a href="#M000063" class="method-signature">
+          <span class="method-name">XML::Parser.file &rarr; parser<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Parser.html#M000069">new</a> parser instance that will
+read the specified <a href="Parser.html#M000063">file</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000063-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000063-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.file -&gt; parser
+ * 
+ * Create a new parser instance that will read the specified file.
+ */
+VALUE
+ruby_xml_parser_new_file(VALUE class, VALUE filename) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000064" class="method-detail">
+        <a name="M000064"></a>
+
+        <div class="method-heading">
+          <a href="#M000064" class="method-signature">
+          <span class="method-name">XML::Parser.indent_tree_output &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determines whether <a href="../XML.html">XML</a> output will be indented
+(using the <a href="Parser.html#M000070">string</a> supplied to
+<tt>default_indent_tree_string</tt>)
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000064-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000064-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.indent_tree_output -&gt; (true|false)
+ * 
+ * Determines whether XML output will be indented 
+ * (using the string supplied to +default_indent_tree_string+)
+ */
+VALUE
+ruby_xml_parser_indent_tree_output_get(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000065" class="method-detail">
+        <a name="M000065"></a>
+
+        <div class="method-heading">
+          <a href="#M000065" class="method-signature">
+          <span class="method-name">XML::Parser.indent_tree_output = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Controls whether <a href="../XML.html">XML</a> output will be indented
+(using the <a href="Parser.html#M000070">string</a> supplied to
+<tt>default_indent_tree_string</tt>)
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000065-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000065-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.indent_tree_output = true|false
+ * 
+ * Controls whether XML output will be indented 
+ * (using the string supplied to +default_indent_tree_string+)
+ */
+VALUE
+ruby_xml_parser_indent_tree_output_set(VALUE class, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000066" class="method-detail">
+        <a name="M000066"></a>
+
+        <div class="method-heading">
+          <a href="#M000066" class="method-signature">
+          <span class="method-name">XML::Parser.io &rarr; parser<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Parser.html#M000069">new</a> parser instance that will
+read from the specified IO object.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000066-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000066-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.io -&gt; parser
+ * 
+ * Create a new parser instance that will read from the
+ * specified IO object.
+ */
+VALUE
+ruby_xml_parser_new_io(VALUE class, VALUE io) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000067" class="method-detail">
+        <a name="M000067"></a>
+
+        <div class="method-heading">
+          <a href="#M000067" class="method-signature">
+          <span class="method-name">XML::Parser.memory_dump &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Perform a parser memory dump (requires memory debugging support in libxml).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000067-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000067-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.memory_dump -&gt; (true|false)
+ * 
+ * Perform a parser memory dump (requires memory debugging 
+ * support in libxml).
+ */
+VALUE
+ruby_xml_parser_memory_dump(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000068" class="method-detail">
+        <a name="M000068"></a>
+
+        <div class="method-heading">
+          <a href="#M000068" class="method-signature">
+          <span class="method-name">XML::Parser.memory_used &rarr; num_bytes<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Perform a parser memory dump (requires memory debugging support in libxml).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000068-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000068-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.memory_used -&gt; num_bytes
+ * 
+ * Perform a parser memory dump (requires memory debugging 
+ * support in libxml).
+ */
+VALUE
+ruby_xml_parser_memory_used(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000069" class="method-detail">
+        <a name="M000069"></a>
+
+        <div class="method-heading">
+          <a href="#M000069" class="method-signature">
+          <span class="method-name">XML::Parser.new &rarr; parser<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Parser.html#M000069">new</a> parser instance with no
+pre-determined source.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000069-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000069-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.new -&gt; parser
+ * 
+ * Create a new parser instance with no pre-determined source.
+ */
+VALUE
+ruby_xml_parser_new(VALUE class) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000079" class="method-detail">
+        <a name="M000079"></a>
+
+        <div class="method-heading">
+          <a href="#M000079" class="method-signature">
+          <span class="method-name">register_error_handler</span><span class="method-args">(value = nil, &amp;block)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Register the attached block as the handler for parser errors.
+</p>
+<p>
+<a href="Parser.html#M000079">Parser.register_error_handler</a> {|msg|
+&lt;do stuff&gt;} <a
+href="Parser.html#M000079">Parser.register_error_handler</a>(lambda {|msg|
+&lt;do stuff&gt;}) <a
+href="Parser.html#M000079">Parser.register_error_handler(nil)</a>
+</p>
+<p>
+A message describing <a href="Parser.html#M000075">parse</a> errors is
+passed to the block. Libxml passes error messages to the handler in parts,
+one per call. A typical error results in six calls to this proc, with
+arguments:
+</p>
+<pre>
+  &quot;Entity: line 1: &quot;,
+  &quot;parser &quot;,
+  &quot;error : &quot;,
+  &quot;Opening and ending tag mismatch: foo line 1 and foz\n&quot;,
+  &quot;&lt;foo&gt;&lt;bar/&gt;&lt;/foz&gt;\n&quot;,
+  &quot;                 ^\n&quot;
+</pre>
+<p>
+Note that the error handler is shared by all threads.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000079-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000079-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/parser.rb, line 25</span>
+25:         <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">register_error_handler</span>(<span class="ruby-identifier">value</span> = <span class="ruby-keyword kw">nil</span>, <span class="ruby-operator">&amp;</span><span class="ruby-identifier">block</span>)
+26:           <span class="ruby-comment cmt"># Value may be nil or a proc.</span>
+27:           <span class="ruby-identifier">tmp</span> = <span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">error_handler</span>
+28:           <span class="ruby-ivar">@error_handler</span> = <span class="ruby-identifier">block_given?</span> <span class="ruby-value">? </span><span class="ruby-identifier">block</span> <span class="ruby-operator">:</span> <span class="ruby-identifier">value</span>
+29:           <span class="ruby-identifier">tmp</span>
+30:         <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000070" class="method-detail">
+        <a name="M000070"></a>
+
+        <div class="method-heading">
+          <a href="#M000070" class="method-signature">
+          <span class="method-name">XML::Parser.string &rarr; parser<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="Parser.html#M000069">new</a> parser instance that will <a
+href="Parser.html#M000075">parse</a> the given <a
+href="Parser.html#M000070">string</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000070-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000070-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Parser.string -&gt; parser
+ * 
+ * Create a new parser instance that will parse the given
+ * string.
+ */
+VALUE
+ruby_xml_parser_new_string(VALUE class, VALUE str) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000080" class="method-detail">
+        <a name="M000080"></a>
+
+        <div class="method-heading">
+          <a href="#M000080" class="method-signature">
+          <span class="method-name">xml_error_func_handler</span><span class="method-args">(msg)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000080-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000080-source">
+<pre>
+    <span class="ruby-comment cmt"># File lib/libxml/parser.rb, line 32</span>
+32:         <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">xml_error_func_handler</span>(<span class="ruby-identifier">msg</span>)
+33:           <span class="ruby-keyword kw">if</span> <span class="ruby-keyword kw">not</span> <span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">error_handler</span>
+34:             <span class="ruby-identifier">$stderr</span>.<span class="ruby-identifier">puts</span>(<span class="ruby-identifier">msg</span>)
+35:           <span class="ruby-keyword kw">else</span>
+36:             <span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">error_handler</span>.<span class="ruby-identifier">call</span>(<span class="ruby-identifier">msg</span>)
+37:           <span class="ruby-keyword kw">end</span>
+38:         <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000076" class="method-detail">
+        <a name="M000076"></a>
+
+        <div class="method-heading">
+          <a href="#M000076" class="method-signature">
+          <span class="method-name">parser.context &rarr; context<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Parser/Context.html">XML::Parser::Context</a>
+associated with this parser.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000076-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000076-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.context -&gt; context
+ * 
+ * Obtain the XML::Parser::Context associated with this
+ * parser.
+ */
+VALUE
+ruby_xml_parser_context_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000071" class="method-detail">
+        <a name="M000071"></a>
+
+        <div class="method-heading">
+          <a href="#M000071" class="method-signature">
+          <span class="method-name">parser.filename &rarr; "filename"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Parser.html#M000071">filename</a> this parser will read
+from.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000071-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000071-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.filename -&gt; &quot;filename&quot;
+ * 
+ * Obtain the filename this parser will read from.
+ */
+VALUE
+ruby_xml_parser_filename_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000072" class="method-detail">
+        <a name="M000072"></a>
+
+        <div class="method-heading">
+          <a href="#M000072" class="method-signature">
+          <span class="method-name">parser.filename = "filename"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set the <a href="Parser.html#M000071">filename</a> this parser will read
+from.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000072-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000072-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.filename = &quot;filename&quot;
+ * 
+ * Set the filename this parser will read from.
+ */
+VALUE
+ruby_xml_parser_filename_set(VALUE self, VALUE filename) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000073" class="method-detail">
+        <a name="M000073"></a>
+
+        <div class="method-heading">
+          <a href="#M000073" class="method-signature">
+          <span class="method-name">parser.io &rarr; IO<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the IO instance this parser works with.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000073-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000073-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.io -&gt; IO
+ * 
+ * Obtain the IO instance this parser works with.
+ */
+VALUE
+ruby_xml_parser_io_get(VALUE self, VALUE io) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000074" class="method-detail">
+        <a name="M000074"></a>
+
+        <div class="method-heading">
+          <a href="#M000074" class="method-signature">
+          <span class="method-name">parser.io = IO<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set the IO instance this parser works with.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000074-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000074-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.io = IO
+ * 
+ * Set the IO instance this parser works with.
+ */
+VALUE
+ruby_xml_parser_io_set(VALUE self, VALUE io) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000075" class="method-detail">
+        <a name="M000075"></a>
+
+        <div class="method-heading">
+          <a href="#M000075" class="method-signature">
+          <span class="method-name">parser.parse &rarr; document<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Parse the input <a href="../XML.html">XML</a> and create an <a
+href="Document.html">XML::Document</a> with it&#8216;s content. If an error
+occurs, <a href="Parser/ParseError.html">XML::Parser::ParseError</a> is
+thrown.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000075-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000075-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.parse -&gt; document
+ * 
+ * Parse the input XML and create an XML::Document with
+ * it's content. If an error occurs, XML::Parser::ParseError
+ * is thrown.
+ */
+VALUE
+ruby_xml_parser_parse(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000077" class="method-detail">
+        <a name="M000077"></a>
+
+        <div class="method-heading">
+          <a href="#M000077" class="method-signature">
+          <span class="method-name">parser.string &rarr; "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Parser.html#M000070">string</a> this parser works with.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000077-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000077-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.string -&gt; &quot;string&quot;
+ * 
+ * Obtain the string this parser works with.
+ */
+VALUE
+ruby_xml_parser_str_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000078" class="method-detail">
+        <a name="M000078"></a>
+
+        <div class="method-heading">
+          <a href="#M000078" class="method-signature">
+          <span class="method-name">parser.string = "string"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set the <a href="Parser.html#M000070">string</a> this parser works with.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000078-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000078-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.string = &quot;string&quot;
+ * 
+ * Set the string this parser works with.
+ */
+VALUE
+ruby_xml_parser_str_set(VALUE self, VALUE str) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

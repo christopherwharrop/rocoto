@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: LibXML::XML::NS</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">LibXML::XML::NS</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../../files/ext/libxml/libxml_c.html">
+                ext/libxml/libxml.c
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                Object
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+call-seq:
+</p>
+<pre>
+   ns.prefix? -&gt; (true|false)
+</pre>
+<p>
+Determine whether this namespace has a <a
+href="NS.html#M000227">prefix</a>.
+</p>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000224">href</a>&nbsp;&nbsp;
+      <a href="#M000225">href?</a>&nbsp;&nbsp;
+      <a href="#M000223">new</a>&nbsp;&nbsp;
+      <a href="#M000226">next</a>&nbsp;&nbsp;
+      <a href="#M000227">prefix</a>&nbsp;&nbsp;
+      <a href="#M000228">prefix?</a>&nbsp;&nbsp;
+      <a href="#M000229">to_s</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+
+
+
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Class methods</h3>
+
+      <div id="method-M000223" class="method-detail">
+        <a name="M000223"></a>
+
+        <div class="method-heading">
+          <a href="#M000223" class="method-signature">
+          <span class="method-name">initialize(node, "href", "prefix")<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a <a href="NS.html#M000223">new</a> namespace attached to the
+specified node with the give <a href="NS.html#M000227">prefix</a> and
+namespace.
+</p>
+<pre>
+ XML::NS.new(node, &quot;xlink&quot;, &quot;http://www.w3.org/1999/xlink&quot;)
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000223-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000223-source">
+<pre>
+/*
+ * call-seq:
+ *    initialize(node, &quot;href&quot;, &quot;prefix&quot;)
+ * 
+ * Create a new namespace attached to the specified node with the
+ * give prefix and namespace.
+ *
+ *  XML::NS.new(node, &quot;xlink&quot;, &quot;http://www.w3.org/1999/xlink&quot;)
+ */
+VALUE
+ruby_xml_ns_initialize(VALUE self, VALUE node, VALUE href, VALUE prefix) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000224" class="method-detail">
+        <a name="M000224"></a>
+
+        <div class="method-heading">
+          <a href="#M000224" class="method-signature">
+          <span class="method-name">ns.href &rarr; "href"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the namespace&#8216;s <a href="NS.html#M000224">href</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000224-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000224-source">
+<pre>
+/*
+ * call-seq:
+ *    ns.href -&gt; &quot;href&quot;
+ * 
+ * Obtain the namespace's href.
+ */
+VALUE
+ruby_xml_ns_href_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000225" class="method-detail">
+        <a name="M000225"></a>
+
+        <div class="method-heading">
+          <a href="#M000225" class="method-signature">
+          <span class="method-name">ns.href? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this namespace has an <a href="NS.html#M000224">href</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000225-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000225-source">
+<pre>
+/*
+ * call-seq:
+ *    ns.href? -&gt; (true|false)
+ * 
+ * Determine whether this namespace has an href.
+ */
+VALUE
+ruby_xml_ns_href_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000226" class="method-detail">
+        <a name="M000226"></a>
+
+        <div class="method-heading">
+          <a href="#M000226" class="method-signature">
+          <span class="method-name">ns.next &rarr; ns<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="NS.html#M000226">next</a> namespace.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000226-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000226-source">
+<pre>
+/*
+ * call-seq:
+ *    ns.next -&gt; ns
+ * 
+ * Obtain the next namespace.
+ */
+VALUE
+ruby_xml_ns_next(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000227" class="method-detail">
+        <a name="M000227"></a>
+
+        <div class="method-heading">
+          <a href="#M000227" class="method-signature">
+          <span class="method-name">ns.prefix &rarr; "prefix"<br />
+ns.to_s   &rarr; "prefix"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the namespace&#8216;s <a href="NS.html#M000227">prefix</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000227-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000227-source">
+<pre>
+/*
+ * call-seq:
+ *    ns.prefix -&gt; &quot;prefix&quot;
+ *    ns.to_s   -&gt; &quot;prefix&quot;
+ * 
+ * Obtain the namespace's prefix.
+ */
+VALUE
+ruby_xml_ns_prefix_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000228" class="method-detail">
+        <a name="M000228"></a>
+
+        <div class="method-heading">
+          <a href="#M000228" class="method-signature">
+          <span class="method-name">ns.prefix? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this namespace has a <a
+href="NS.html#M000227">prefix</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000228-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000228-source">
+<pre>
+/*
+ * call-seq:
+ *    ns.prefix? -&gt; (true|false)
+ * 
+ * Determine whether this namespace has a prefix.
+ */
+VALUE
+ruby_xml_ns_prefix_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000229" class="method-detail">
+        <a name="M000229"></a>
+
+        <div class="method-heading">
+          <a href="#M000229" class="method-signature">
+          <span class="method-name">ns.prefix &rarr; "prefix"<br />
+ns.to_s   &rarr; "prefix"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the namespace&#8216;s <a href="NS.html#M000227">prefix</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000229-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000229-source">
+<pre>
+/*
+ * call-seq:
+ *    ns.prefix -&gt; &quot;prefix&quot;
+ *    ns.to_s   -&gt; &quot;prefix&quot;
+ * 
+ * Obtain the namespace's prefix.
+ */
+VALUE
+ruby_xml_ns_prefix_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

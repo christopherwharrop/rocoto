@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: LibXML::XML::XPath::Context</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">LibXML::XML::XPath::Context</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../../../files/ext/libxml/ruby_xml_xpath_c.html">
+                ext/libxml/ruby_xml_xpath.c
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                <a href="Object.html">
+                Object
+               </a>
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+The <a href="Context.html">XML::XPath::Context</a> class is used to
+evaluate <a href="../XPath.html">XPath</a> expressions. Generally, you
+should not directly use this class, but instead use the <a
+href="../Document.html#M000359">XML::Document#find</a> and <a
+href="../Node.html#M000173">XML::Node#find</a> methods.
+</p>
+<pre>
+ doc = XML::Document.string('&lt;header&gt;content&lt;/header&gt;')
+ context = XPath::Context.new(doc)
+ context.node = doc.root
+ context.register_namespaces_from_node(doc.root)
+ nodes = context.find('/header')
+</pre>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000006">find</a>&nbsp;&nbsp;
+      <a href="#M000001">new</a>&nbsp;&nbsp;
+      <a href="#M000005">node=</a>&nbsp;&nbsp;
+      <a href="#M000004">register_namespace</a>&nbsp;&nbsp;
+      <a href="#M000002">register_namespaces</a>&nbsp;&nbsp;
+      <a href="#M000003">register_namespaces_from_node</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+
+
+
+    <div id="attribute-list">
+      <h3 class="section-bar">Attributes</h3>
+
+      <div class="name-list">
+        <table>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">doc</td>
+          <td class="context-item-value">&nbsp;[R]&nbsp;</td>
+          <td class="context-item-desc"></td>
+        </tr>
+        </table>
+      </div>
+    </div>
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Class methods</h3>
+
+      <div id="method-M000001" class="method-detail">
+        <a name="M000001"></a>
+
+        <div class="method-heading">
+          <a href="#M000001" class="method-signature">
+          <span class="method-name">XPath::Context.new(node) &rarr; XPath::Context<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Creates a <a href="Context.html#M000001">new</a> <a
+href="../XPath.html">XPath</a> context for the specified document. The
+context can then be used to evaluate an <a href="../XPath.html">XPath</a>
+expression.
+</p>
+<pre>
+ doc = XML::Document.string('&lt;header&gt;&lt;first&gt;hi&lt;/first&gt;&lt;/header&gt;')
+ context = XPath::Context.new(doc)
+ nodes = XPath::Object.new('//first', context)
+ nodes.length == 1
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000001-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000001-source">
+<pre>
+/* call-seq:
+ *    XPath::Context.new(node) -&gt; XPath::Context
+ * 
+ * Creates a new XPath context for the specified document.  The
+ * context can then be used to evaluate an XPath expression.
+ *
+ *  doc = XML::Document.string('&lt;header&gt;&lt;first&gt;hi&lt;/first&gt;&lt;/header&gt;')
+ *  context = XPath::Context.new(doc)
+ *  nodes = XPath::Object.new('//first', context)
+ *  nodes.length == 1
+ */
+VALUE
+ruby_xml_xpath_context_initialize(VALUE self, VALUE node) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000006" class="method-detail">
+        <a name="M000006"></a>
+
+        <div class="method-heading">
+          <a href="#M000006" class="method-signature">
+          <span class="method-name">context.find("xpath") &rarr; XML::XPath::Object<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Find nodes matching the specified <a href="../XPath.html">XPath</a>
+expression
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000006-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000006-source">
+<pre>
+/*
+ * call-seq:
+ *    context.find(&quot;xpath&quot;) -&gt; XML::XPath::Object
+ * 
+ * Find nodes matching the specified XPath expression
+ */
+VALUE
+ruby_xml_xpath_context_find(VALUE self, VALUE xpath_expr) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000005" class="method-detail">
+        <a name="M000005"></a>
+
+        <div class="method-heading">
+          <a href="#M000005" class="method-signature">
+          <span class="method-name">context.node = node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Set the current node used by the <a href="../XPath.html">XPath</a> engine
+</p>
+<pre>
+ doc = XML::Document.string('&lt;header&gt;&lt;first&gt;hi&lt;/first&gt;&lt;/header&gt;')
+ context.node = doc.root.first
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000005-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000005-source">
+<pre>
+/*
+ * call-seq:
+ *    context.node = node
+ * 
+ * Set the current node used by the XPath engine
+ 
+ *  doc = XML::Document.string('&lt;header&gt;&lt;first&gt;hi&lt;/first&gt;&lt;/header&gt;')
+ *  context.node = doc.root.first
+ */
+VALUE
+ruby_xml_xpath_context_node_set(VALUE self, VALUE node) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000004" class="method-detail">
+        <a name="M000004"></a>
+
+        <div class="method-heading">
+          <a href="#M000004" class="method-signature">
+          <span class="method-name">context.register_namespace(prefix, uri) &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Register the specified namespace URI with the specified prefix in this
+context.
+</p>
+<pre>
+  context.register_namespace('xi', 'http://www.w3.org/2001/XInclude')
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000004-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000004-source">
+<pre>
+/*
+ * call-seq:
+ *    context.register_namespace(prefix, uri) -&gt; (true|false)
+ * 
+ * Register the specified namespace URI with the specified prefix
+ * in this context.
+ 
+ *   context.register_namespace('xi', 'http://www.w3.org/2001/XInclude')
+ */
+VALUE
+ruby_xml_xpath_context_register_namespace(VALUE self, VALUE prefix, VALUE uri) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000002" class="method-detail">
+        <a name="M000002"></a>
+
+        <div class="method-heading">
+          <a href="#M000002" class="method-signature">
+          <span class="method-name">context.register_namespaces(["prefix:uri"]) &rarr; self<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Register the specified namespaces in this context.
+</p>
+<pre>
+  context.register_namespaces('xi:http://www.w3.org/2001/XInclude')
+  context.register_namespaces(['xlink:http://www.w3.org/1999/xlink',
+                               'xi:http://www.w3.org/2001/XInclude')
+  context.register_namespaces('xlink' =&gt; 'http://www.w3.org/1999/xlink',
+                                 'xi' =&gt; 'http://www.w3.org/2001/XInclude')
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000002-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000002-source">
+<pre>
+/*
+ * call-seq:
+ *    context.register_namespaces([&quot;prefix:uri&quot;]) -&gt; self
+ * 
+ * Register the specified namespaces in this context.
+ *
+ *   context.register_namespaces('xi:http://www.w3.org/2001/XInclude')
+ *   context.register_namespaces(['xlink:http://www.w3.org/1999/xlink',
+ *                                'xi:http://www.w3.org/2001/XInclude')
+ *   context.register_namespaces('xlink' =&gt; 'http://www.w3.org/1999/xlink',
+ *                                  'xi' =&gt; 'http://www.w3.org/2001/XInclude')
+ */
+VALUE
+ruby_xml_xpath_context_register_namespaces(VALUE self, VALUE nslist) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000003" class="method-detail">
+        <a name="M000003"></a>
+
+        <div class="method-heading">
+          <a href="#M000003" class="method-signature">
+          <span class="method-name">context.register_namespaces_from_node(node) &rarr; self<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Helper method to read in namespaces defined on a node.
+</p>
+<pre>
+ doc = XML::Document.string('&lt;header&gt;&lt;first&gt;hi&lt;/first&gt;&lt;/header&gt;')
+ context = XPath::Context.new(doc)
+ context.register_namespaces_from_node(doc.root)
+</pre>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000003-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000003-source">
+<pre>
+/* call-seq:
+ *    context.register_namespaces_from_node(node) -&gt; self
+ * 
+ * Helper method to read in namespaces defined on a node.
+ *
+ *  doc = XML::Document.string('&lt;header&gt;&lt;first&gt;hi&lt;/first&gt;&lt;/header&gt;')
+ *  context = XPath::Context.new(doc)
+ *  context.register_namespaces_from_node(doc.root)
+ */
+VALUE
+ruby_xml_xpath_context_register_namespaces_from_node(VALUE self, VALUE node) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1255 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: LibXML::XML::Parser::Context</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">LibXML::XML::Parser::Context</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../../../files/ext/libxml/ruby_xml_parser_c.html">
+                ext/libxml/ruby_xml_parser.c
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                Object
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+call-seq:
+</p>
+<pre>
+   context.well_formed? -&gt; (true|false)
+</pre>
+<p>
+Determine whether this context contains well-formed <a
+href="../../XML.html">XML</a>.
+</p>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000081">data_directory</a>&nbsp;&nbsp;
+      <a href="#M000082">depth</a>&nbsp;&nbsp;
+      <a href="#M000083">disable_sax?</a>&nbsp;&nbsp;
+      <a href="#M000084">docbook?</a>&nbsp;&nbsp;
+      <a href="#M000085">encoding</a>&nbsp;&nbsp;
+      <a href="#M000086">errno</a>&nbsp;&nbsp;
+      <a href="#M000087">html?</a>&nbsp;&nbsp;
+      <a href="#M000088">io_max_num_streams</a>&nbsp;&nbsp;
+      <a href="#M000089">io_num_streams</a>&nbsp;&nbsp;
+      <a href="#M000090">keep_blanks?</a>&nbsp;&nbsp;
+      <a href="#M000092">name_depth</a>&nbsp;&nbsp;
+      <a href="#M000093">name_depth_max</a>&nbsp;&nbsp;
+      <a href="#M000091">name_node</a>&nbsp;&nbsp;
+      <a href="#M000094">name_tab</a>&nbsp;&nbsp;
+      <a href="#M000095">node</a>&nbsp;&nbsp;
+      <a href="#M000096">node_depth</a>&nbsp;&nbsp;
+      <a href="#M000097">node_depth_max</a>&nbsp;&nbsp;
+      <a href="#M000098">num_chars</a>&nbsp;&nbsp;
+      <a href="#M000100">replace_entities=</a>&nbsp;&nbsp;
+      <a href="#M000099">replace_entities?</a>&nbsp;&nbsp;
+      <a href="#M000101">space_depth</a>&nbsp;&nbsp;
+      <a href="#M000102">space_depth_max</a>&nbsp;&nbsp;
+      <a href="#M000109">standalone?</a>&nbsp;&nbsp;
+      <a href="#M000108">stats?</a>&nbsp;&nbsp;
+      <a href="#M000103">subset_external?</a>&nbsp;&nbsp;
+      <a href="#M000104">subset_external_system_id</a>&nbsp;&nbsp;
+      <a href="#M000105">subset_external_uri</a>&nbsp;&nbsp;
+      <a href="#M000106">subset_internal?</a>&nbsp;&nbsp;
+      <a href="#M000107">subset_internal_name</a>&nbsp;&nbsp;
+      <a href="#M000110">valid</a>&nbsp;&nbsp;
+      <a href="#M000111">validate?</a>&nbsp;&nbsp;
+      <a href="#M000112">version</a>&nbsp;&nbsp;
+      <a href="#M000113">well_formed?</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+
+
+
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000081" class="method-detail">
+        <a name="M000081"></a>
+
+        <div class="method-heading">
+          <a href="#M000081" class="method-signature">
+          <span class="method-name">context.data_directory &rarr; "dir"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the data directory associated with this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000081-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000081-source">
+<pre>
+/*
+ * call-seq:
+ *    context.data_directory -&gt; &quot;dir&quot;
+ * 
+ * Obtain the data directory associated with this context.
+ */
+VALUE
+ruby_xml_parser_context_data_directory_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000082" class="method-detail">
+        <a name="M000082"></a>
+
+        <div class="method-heading">
+          <a href="#M000082" class="method-signature">
+          <span class="method-name">context.depth &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Context.html#M000082">depth</a> of this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000082-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000082-source">
+<pre>
+/*
+ * call-seq:
+ *    context.depth -&gt; num
+ * 
+ * Obtain the depth of this context.
+ */
+VALUE
+ruby_xml_parser_context_depth_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000083" class="method-detail">
+        <a name="M000083"></a>
+
+        <div class="method-heading">
+          <a href="#M000083" class="method-signature">
+          <span class="method-name">context.disable_sax? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether SAX-based processing is disabled in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000083-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000083-source">
+<pre>
+/*
+ * call-seq:
+ *    context.disable_sax? -&gt; (true|false)
+ * 
+ * Determine whether SAX-based processing is disabled
+ * in this context.
+ */
+VALUE
+ruby_xml_parser_context_disable_sax_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000084" class="method-detail">
+        <a name="M000084"></a>
+
+        <div class="method-heading">
+          <a href="#M000084" class="method-signature">
+          <span class="method-name">context.docbook? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this is a docbook context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000084-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000084-source">
+<pre>
+/*
+ * call-seq:
+ *    context.docbook? -&gt; (true|false)
+ * 
+ * Determine whether this is a docbook context.
+ */
+VALUE
+ruby_xml_parser_context_docbook_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000085" class="method-detail">
+        <a name="M000085"></a>
+
+        <div class="method-heading">
+          <a href="#M000085" class="method-signature">
+          <span class="method-name">context.encoding &rarr; "encoding"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the character <a href="Context.html#M000085">encoding</a> identifier
+used in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000085-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000085-source">
+<pre>
+/*
+ * call-seq:
+ *    context.encoding -&gt; &quot;encoding&quot;
+ * 
+ * Obtain the character encoding identifier used in
+ * this context.
+ */
+VALUE
+ruby_xml_parser_context_encoding_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000086" class="method-detail">
+        <a name="M000086"></a>
+
+        <div class="method-heading">
+          <a href="#M000086" class="method-signature">
+          <span class="method-name">context.errno &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the last-error number in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000086-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000086-source">
+<pre>
+/*
+ * call-seq:
+ *    context.errno -&gt; num
+ * 
+ * Obtain the last-error number in this context.
+ */
+VALUE
+ruby_xml_parser_context_errno_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000087" class="method-detail">
+        <a name="M000087"></a>
+
+        <div class="method-heading">
+          <a href="#M000087" class="method-signature">
+          <span class="method-name">context.html? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this is an html context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000087-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000087-source">
+<pre>
+/*
+ * call-seq:
+ *    context.html? -&gt; (true|false)
+ * 
+ * Determine whether this is an html context.
+ */
+VALUE
+ruby_xml_parser_context_html_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000088" class="method-detail">
+        <a name="M000088"></a>
+
+        <div class="method-heading">
+          <a href="#M000088" class="method-signature">
+          <span class="method-name">context.max_num_streams &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the limit on the number of IO streams opened in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000088-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000088-source">
+<pre>
+/*
+ * call-seq:
+ *    context.max_num_streams -&gt; num
+ * 
+ * Obtain the limit on the number of IO streams opened in
+ * this context.
+ */
+VALUE
+ruby_xml_parser_context_io_max_num_streams_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000089" class="method-detail">
+        <a name="M000089"></a>
+
+        <div class="method-heading">
+          <a href="#M000089" class="method-signature">
+          <span class="method-name">context.num_streams &rarr; "dir"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the actual number of IO streams in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000089-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000089-source">
+<pre>
+/*
+ * call-seq:
+ *    context.num_streams -&gt; &quot;dir&quot;
+ * 
+ * Obtain the actual number of IO streams in this
+ * context.
+ */
+VALUE
+ruby_xml_parser_context_io_num_streams_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000090" class="method-detail">
+        <a name="M000090"></a>
+
+        <div class="method-heading">
+          <a href="#M000090" class="method-signature">
+          <span class="method-name">context.keep_blanks? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether parsers in this context retain whitespace.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000090-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000090-source">
+<pre>
+/*
+ * call-seq:
+ *    context.keep_blanks? -&gt; (true|false)
+ * 
+ * Determine whether parsers in this context retain 
+ * whitespace.
+ */
+VALUE
+ruby_xml_parser_context_keep_blanks_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000092" class="method-detail">
+        <a name="M000092"></a>
+
+        <div class="method-heading">
+          <a href="#M000092" class="method-signature">
+          <span class="method-name">context.name_depth &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the name <a href="Context.html#M000082">depth</a> for this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000092-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000092-source">
+<pre>
+/*
+ * call-seq:
+ *    context.name_depth -&gt; num
+ * 
+ * Obtain the name depth for this context.
+ */
+VALUE
+ruby_xml_parser_context_name_depth_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000093" class="method-detail">
+        <a name="M000093"></a>
+
+        <div class="method-heading">
+          <a href="#M000093" class="method-signature">
+          <span class="method-name">context.name_depth_max &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the maximum name <a href="Context.html#M000082">depth</a> for this
+context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000093-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000093-source">
+<pre>
+/*
+ * call-seq:
+ *    context.name_depth_max -&gt; num
+ * 
+ * Obtain the maximum name depth for this context.
+ */
+VALUE
+ruby_xml_parser_context_name_depth_max_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000091" class="method-detail">
+        <a name="M000091"></a>
+
+        <div class="method-heading">
+          <a href="#M000091" class="method-signature">
+          <span class="method-name">context.name_node &rarr; "name"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the name <a href="Context.html#M000095">node</a> for this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000091-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000091-source">
+<pre>
+/*
+ * call-seq:
+ *    context.name_node -&gt; &quot;name&quot;
+ * 
+ * Obtain the name node for this context.
+ */
+VALUE
+ruby_xml_parser_context_name_node_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000094" class="method-detail">
+        <a name="M000094"></a>
+
+        <div class="method-heading">
+          <a href="#M000094" class="method-signature">
+          <span class="method-name">context.name_tab &rarr; ["name", ..., "name"]<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the name table for this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000094-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000094-source">
+<pre>
+/*
+ * call-seq:
+ *    context.name_tab -&gt; [&quot;name&quot;, ..., &quot;name&quot;]
+ * 
+ * Obtain the name table for this context.
+ */
+VALUE
+ruby_xml_parser_context_name_tab_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000095" class="method-detail">
+        <a name="M000095"></a>
+
+        <div class="method-heading">
+          <a href="#M000095" class="method-signature">
+          <span class="method-name">context.node &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the root <a href="Context.html#M000095">node</a> of this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000095-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000095-source">
+<pre>
+/*
+ * call-seq:
+ *    context.node -&gt; node
+ * 
+ * Obtain the root node of this context.
+ */
+VALUE
+ruby_xml_parser_context_node_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000096" class="method-detail">
+        <a name="M000096"></a>
+
+        <div class="method-heading">
+          <a href="#M000096" class="method-signature">
+          <span class="method-name">context.node_depth &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the <a href="Context.html#M000095">node</a> <a
+href="Context.html#M000082">depth</a> for this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000096-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000096-source">
+<pre>
+/*
+ * call-seq:
+ *    context.node_depth -&gt; num
+ * 
+ * Obtain the node depth for this context.
+ */
+VALUE
+ruby_xml_parser_context_node_depth_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000097" class="method-detail">
+        <a name="M000097"></a>
+
+        <div class="method-heading">
+          <a href="#M000097" class="method-signature">
+          <span class="method-name">context.node_depth_max &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the maximum <a href="Context.html#M000095">node</a> <a
+href="Context.html#M000082">depth</a> for this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000097-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000097-source">
+<pre>
+/*
+ * call-seq:
+ *    context.node_depth_max -&gt; num
+ * 
+ * Obtain the maximum node depth for this context.
+ */
+VALUE
+ruby_xml_parser_context_node_depth_max_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000098" class="method-detail">
+        <a name="M000098"></a>
+
+        <div class="method-heading">
+          <a href="#M000098" class="method-signature">
+          <span class="method-name">context.num_chars &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the number of characters in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000098-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000098-source">
+<pre>
+/*
+ * call-seq:
+ *    context.num_chars -&gt; num
+ * 
+ * Obtain the number of characters in this context.
+ */
+VALUE
+ruby_xml_parser_context_num_chars_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000100" class="method-detail">
+        <a name="M000100"></a>
+
+        <div class="method-heading">
+          <a href="#M000100" class="method-signature">
+          <span class="method-name">context.replace_entities = true|false<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Control whether external entity replacement is enabled in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000100-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000100-source">
+<pre>
+/*
+ * call-seq:
+ *    context.replace_entities = true|false
+ * 
+ * Control whether external entity replacement is enabled in this
+ * context.
+ */
+VALUE
+ruby_xml_parser_context_replace_entities_set(VALUE self, VALUE bool) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000099" class="method-detail">
+        <a name="M000099"></a>
+
+        <div class="method-heading">
+          <a href="#M000099" class="method-signature">
+          <span class="method-name">context.replace_entities? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether external entity replacement is enabled in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000099-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000099-source">
+<pre>
+/*
+ * call-seq:
+ *    context.replace_entities? -&gt; (true|false)
+ * 
+ * Determine whether external entity replacement is enabled in this 
+ * context.
+ */
+VALUE
+ruby_xml_parser_context_replace_entities_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000101" class="method-detail">
+        <a name="M000101"></a>
+
+        <div class="method-heading">
+          <a href="#M000101" class="method-signature">
+          <span class="method-name">context.space_depth &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the space <a href="Context.html#M000082">depth</a> for this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000101-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000101-source">
+<pre>
+/*
+ * call-seq:
+ *    context.space_depth -&gt; num
+ * 
+ * Obtain the space depth for this context.
+ */
+VALUE
+ruby_xml_parser_context_space_depth_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000102" class="method-detail">
+        <a name="M000102"></a>
+
+        <div class="method-heading">
+          <a href="#M000102" class="method-signature">
+          <span class="method-name">context.space_depth &rarr; num<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain the maximum space <a href="Context.html#M000082">depth</a> for this
+context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000102-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000102-source">
+<pre>
+/*
+ * call-seq:
+ *    context.space_depth -&gt; num
+ * 
+ * Obtain the maximum space depth for this context.
+ */
+VALUE
+ruby_xml_parser_context_space_depth_max_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000109" class="method-detail">
+        <a name="M000109"></a>
+
+        <div class="method-heading">
+          <a href="#M000109" class="method-signature">
+          <span class="method-name">context.standalone? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this is a standalone context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000109-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000109-source">
+<pre>
+/*
+ * call-seq:
+ *    context.standalone? -&gt; (true|false)
+ * 
+ * Determine whether this is a standalone context.
+ */
+VALUE
+ruby_xml_parser_context_standalone_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000108" class="method-detail">
+        <a name="M000108"></a>
+
+        <div class="method-heading">
+          <a href="#M000108" class="method-signature">
+          <span class="method-name">context.stats? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this context maintains statistics.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000108-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000108-source">
+<pre>
+/*
+ * call-seq:
+ *    context.stats? -&gt; (true|false)
+ * 
+ * Determine whether this context maintains statistics.
+ */
+VALUE
+ruby_xml_parser_context_stats_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000103" class="method-detail">
+        <a name="M000103"></a>
+
+        <div class="method-heading">
+          <a href="#M000103" class="method-signature">
+          <span class="method-name">context.subset_external? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this context is a subset of an external context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000103-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000103-source">
+<pre>
+/*
+ * call-seq:
+ *    context.subset_external? -&gt; (true|false)
+ * 
+ * Determine whether this context is a subset of an
+ * external context.
+ */
+VALUE
+ruby_xml_parser_context_subset_external_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000104" class="method-detail">
+        <a name="M000104"></a>
+
+        <div class="method-heading">
+          <a href="#M000104" class="method-signature">
+          <span class="method-name">context.subset_external_system_id &rarr; "system_id"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this context&#8216;s external subset system identifier. (<a
+href="Context.html#M000110">valid</a> only if either of <a
+href="Context.html#M000103">subset_external?</a> or <a
+href="Context.html#M000106">subset_internal?</a> is true).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000104-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000104-source">
+<pre>
+/*
+ * call-seq:
+ *    context.subset_external_system_id -&gt; &quot;system_id&quot;
+ * 
+ * Obtain this context's external subset system identifier. 
+ * (valid only if either of subset_external? or subset_internal?
+ * is true).
+ */
+VALUE
+ruby_xml_parser_context_subset_external_system_id_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000105" class="method-detail">
+        <a name="M000105"></a>
+
+        <div class="method-heading">
+          <a href="#M000105" class="method-signature">
+          <span class="method-name">context.subset_name &rarr; "name"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this context&#8216;s subset name (<a
+href="Context.html#M000110">valid</a> only if either of <a
+href="Context.html#M000103">subset_external?</a> or <a
+href="Context.html#M000106">subset_internal?</a> is true).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000105-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000105-source">
+<pre>
+/*
+ * call-seq:
+ *    context.subset_name -&gt; &quot;name&quot;
+ * 
+ * Obtain this context's subset name (valid only if
+ * either of subset_external? or subset_internal?
+ * is true).
+ */
+VALUE
+ruby_xml_parser_context_subset_name_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000106" class="method-detail">
+        <a name="M000106"></a>
+
+        <div class="method-heading">
+          <a href="#M000106" class="method-signature">
+          <span class="method-name">context.subset_internal? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this context is a subset of an internal context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000106-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000106-source">
+<pre>
+/*
+ * call-seq:
+ *    context.subset_internal? -&gt; (true|false)
+ * 
+ * Determine whether this context is a subset of an
+ * internal context.
+ */
+VALUE
+ruby_xml_parser_context_subset_internal_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000107" class="method-detail">
+        <a name="M000107"></a>
+
+        <div class="method-heading">
+          <a href="#M000107" class="method-signature">
+          <span class="method-name">context.subset_name &rarr; "name"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this context&#8216;s subset name (<a
+href="Context.html#M000110">valid</a> only if either of <a
+href="Context.html#M000103">subset_external?</a> or <a
+href="Context.html#M000106">subset_internal?</a> is true).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000107-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000107-source">
+<pre>
+/*
+ * call-seq:
+ *    context.subset_name -&gt; &quot;name&quot;
+ * 
+ * Obtain this context's subset name (valid only if
+ * either of subset_external? or subset_internal?
+ * is true).
+ */
+VALUE
+ruby_xml_parser_context_subset_name_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000110" class="method-detail">
+        <a name="M000110"></a>
+
+        <div class="method-heading">
+          <a href="#M000110" class="method-signature">
+          <span class="method-name">context.valid? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this context is <a href="Context.html#M000110">valid</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000110-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000110-source">
+<pre>
+/*
+ * call-seq:
+ *    context.valid? -&gt; (true|false)
+ * 
+ * Determine whether this context is valid.
+ */
+VALUE
+ruby_xml_parser_context_valid_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000111" class="method-detail">
+        <a name="M000111"></a>
+
+        <div class="method-heading">
+          <a href="#M000111" class="method-signature">
+          <span class="method-name">context.validate? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether validation is enabled in this context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000111-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000111-source">
+<pre>
+/*
+ * call-seq:
+ *    context.validate? -&gt; (true|false)
+ * 
+ * Determine whether validation is enabled in this context.
+ */
+VALUE
+ruby_xml_parser_context_validate_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000112" class="method-detail">
+        <a name="M000112"></a>
+
+        <div class="method-heading">
+          <a href="#M000112" class="method-signature">
+          <span class="method-name">context.version &rarr; "version"<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Obtain this context&#8216;s <a href="Context.html#M000112">version</a>
+identifier.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000112-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000112-source">
+<pre>
+/*
+ * call-seq:
+ *    context.version -&gt; &quot;version&quot;
+ * 
+ * Obtain this context's version identifier.
+ */
+VALUE
+ruby_xml_parser_context_version_get(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000113" class="method-detail">
+        <a name="M000113"></a>
+
+        <div class="method-heading">
+          <a href="#M000113" class="method-signature">
+          <span class="method-name">context.well_formed? &rarr; (true|false)<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether this context contains well-formed <a
+href="../../XML.html">XML</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000113-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000113-source">
+<pre>
+/*
+ * call-seq:
+ *    context.well_formed? -&gt; (true|false)
+ * 
+ * Determine whether this context contains well-formed XML.
+ */
+VALUE
+ruby_xml_parser_context_well_formed_q(VALUE self) {
+
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

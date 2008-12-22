@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>File: README</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href=".././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+  <div id="fileHeader">
+    <h1>README</h1>
+    <table class="header-table">
+    <tr class="top-aligned-row">
+      <td><strong>Path:</strong></td>
+      <td>README
+      </td>
+    </tr>
+    <tr class="top-aligned-row">
+      <td><strong>Last Update:</strong></td>
+      <td>Mon Jul 21 20:37:43 -0600 2008</td>
+    </tr>
+    </table>
+  </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <h1><a href="../classes/LibXML.html">LibXML</a> Ruby</h1>
+<h2>Overview</h2>
+<p>
+The libxml gem provides Ruby language bindings for GNOME&#8216;s Libxml2
+XML toolkit. It is free software, released under the MIT License.
+</p>
+<p>
+libxml-ruby provides several advantages over REXML:
+</p>
+<ul>
+<li>Speed - libxml is many times faster than REXML
+
+</li>
+<li>Features - libxml provides a number of additional features over REXML,
+including XML Schema Validation, RelaxNg validation, xslt (see
+libxslt-ruby)
+
+</li>
+<li>Conformance - libxml passes all 1800+ tests from the OASIS XML Tests Suite
+
+</li>
+</ul>
+<h2>Requirements</h2>
+<p>
+libxml-ruby requires Ruby 1.8.4 or higher. It is dependent on the following
+libraries to function properly:
+</p>
+<ul>
+<li>libm (math routines: very standard)
+
+</li>
+<li>libz (zlib)
+
+</li>
+<li>libiconv
+
+</li>
+<li>libxml2
+
+</li>
+</ul>
+<p>
+If you are running Linux or Unix you&#8216;ll need a C compiler so the
+extension can be compiled when it is installed. If you are running Windows,
+then install the Windows specific RubyGem which includes an already built
+extension.
+</p>
+<h2>INSTALLATION</h2>
+<p>
+The easiest way to install libxml-ruby is via Ruby Gems. To install:
+</p>
+<p>
+<tt>gem install libxml-ruby</tt>
+</p>
+<p>
+If you are running Windows, make sure to install the Win32 RubyGem which
+includes an already built binary file. The binary is built against libxml2
+version 2.6.32 and iconv version 1.11. Both of these are also included as
+pre-built binaries, and should be put either in the libxml/lib directory or
+on the Windows path.
+</p>
+<p>
+The Windows binaries are built with MingW and include libxml-ruby, libxml2
+and iconv. The gem also includes a Microsoft VC++ 2008 solution. If you
+wish to run a debug version of libxml-ruby on Windows, then it is highly
+recommended you use VC++.
+</p>
+<h2>Functionality</h2>
+<p>
+libxml is a highly conformant XML parser, passing all 1800+ tests from the
+OASIS XML Tests Suite. In addition, it includes rich functionality such as:
+</p>
+<ul>
+<li>SAX
+
+</li>
+<li>DOM
+
+</li>
+<li>HTML Parsing
+
+</li>
+<li>XMLReader
+
+</li>
+<li>XPath
+
+</li>
+<li>XPointer
+
+</li>
+<li>DTDs
+
+</li>
+<li>RelaxNG Schemas
+
+</li>
+<li>XML Schema
+
+</li>
+<li>XSLT (split into the libxslt-ruby bindings)
+
+</li>
+</ul>
+<p>
+libxml-ruby provides impressive coverage of libxml&#8216;s functionality
+through an easy-to-use C api.
+</p>
+<h2>Performance</h2>
+<p>
+In addition to being feature rich and conformation, the main reason people
+use libxml-ruby is for performance. Here are the results of a couple simple
+benchmarks recently blogged about on the Web (you can find them in the
+benchmark directory of the libxml distribution).
+</p>
+<p>
+From <a
+href="http://depixelate.com/2008/4/23/ruby-xml-parsing-benchmarks">depixelate.com/2008/4/23/ruby-xml-parsing-benchmarks</a>
+</p>
+<pre>
+               user     system      total        real
+ libxml    0.032000   0.000000   0.032000 (  0.031000)
+ Hpricot   0.640000   0.031000   0.671000 (  0.890000)
+ REXML     1.813000   0.047000   1.860000 (  2.031000)
+</pre>
+<p>
+From <a
+href="https://svn.concord.org/svn/projects/trunk/common/ruby/xml_benchmarks">svn.concord.org/svn/projects/trunk/common/ruby/xml_benchmarks</a>/
+</p>
+<pre>
+               user     system      total        real
+ libxml    0.641000   0.031000   0.672000 (  0.672000)
+ hpricot   5.359000   0.062000   5.421000 (  5.516000)
+ rexml    22.859000   0.047000  22.906000 ( 23.203000)
+</pre>
+<h2>USAGE</h2>
+<p>
+For in-depth information about using libxml-ruby please refer to its online
+Rdoc documentation.
+</p>
+<p>
+All libxml classes are in the <a
+href="../classes/LibXML/XML.html">LibXML::XML</a> module. The simplest way
+to use libxml is to require &#8216;xml&#8217;. This will mixin the <a
+href="../classes/LibXML.html">LibXML</a> module into the global namespace,
+allowing you to write code like this:
+</p>
+<p>
+require &#8216;xml&#8217; document = XML::Document.new
+</p>
+<p>
+If you prefer not to add the <a href="../classes/LibXML.html">LibXML</a>
+module to the global namepace, then write your code like this:
+</p>
+<p>
+require &#8216;libxml&#8216;
+</p>
+<p>
+class MyClass
+</p>
+<pre>
+  def some_method
+    document = LibXML::XML::Document.new
+  end
+</pre>
+<p>
+end
+</p>
+<p>
+Some simple examples are shown below.
+</p>
+<h3>READING</h3>
+<p>
+There are several ways to read xml documents.
+</p>
+<pre>
+  require 'xml'
+  doc = XML::Document.file('output.xml')
+  root = doc.root
+
+  puts &quot;Root element name: #{root.name}&quot;
+
+  elem3 = root.find('elem3').to_a.first
+  puts &quot;Elem3: #{elem3['attr']}&quot;
+
+  doc.find('//root_node/foo/bar').each do |node|
+    puts &quot;Node path: #{node.path} \t Contents: #{node.content}&quot;
+  end
+</pre>
+<p>
+And your terminal should look like:
+</p>
+<pre>
+  Root element name: root_node
+  Elem3: baz
+  Node path: /root_node/foo/bar[1]         Contents: 1
+  Node path: /root_node/foo/bar[2]         Contents: 2
+  Node path: /root_node/foo/bar[3]         Contents: 3
+  Node path: /root_node/foo/bar[4]         Contents: 4
+  Node path: /root_node/foo/bar[5]         Contents: 5
+  Node path: /root_node/foo/bar[6]         Contents: 6
+  Node path: /root_node/foo/bar[7]         Contents: 7
+  Node path: /root_node/foo/bar[8]         Contents: 8
+  Node path: /root_node/foo/bar[9]         Contents: 9
+  Node path: /root_node/foo/bar[10]        Contents: 10
+</pre>
+<h3>WRITING</h3>
+<p>
+To write a simple document:
+</p>
+<pre>
+  require 'xml'
+
+  doc = XML::Document.new()
+  doc.root = XML::Node.new('root_node')
+  root = doc.root
+
+  root &lt;&lt; elem1 = XML::Node.new('elem1')
+  elem1['attr1'] = 'val1'
+  elem1['attr2'] = 'val2'
+
+  root &lt;&lt; elem2 = XML::Node.new('elem2')
+  elem2['attr1'] = 'val1'
+  elem2['attr2'] = 'val2'
+
+  root &lt;&lt; elem3 = XML::Node.new('elem3')
+  elem3 &lt;&lt; elem4 = XML::Node.new('elem4')
+  elem3 &lt;&lt; elem5 = XML::Node.new('elem5')
+
+  elem5 &lt;&lt; elem6 = XML::Node.new('elem6')
+  elem6 &lt;&lt; 'Content for element 6'
+
+  elem3['attr'] = 'baz'
+
+  format = true
+  doc.save('output.xml', format)
+</pre>
+<p>
+The file output.xml contains:
+</p>
+<pre>
+  &lt;?xml version=&quot;1.0&quot;?&gt;
+  &lt;root_node&gt;
+    &lt;elem1 attr1=&quot;val1&quot; attr2=&quot;val2&quot;/&gt;
+    &lt;elem2 attr1=&quot;val1&quot; attr2=&quot;val2&quot;/&gt;
+    &lt;elem3 attr=&quot;baz&quot;&gt;
+      &lt;elem4/&gt;
+      &lt;elem5&gt;
+        &lt;elem6&gt;Content for element 6&lt;/elem6&gt;
+      &lt;/elem5&gt;
+    &lt;/elem3&gt;
+    &lt;foo&gt;
+      &lt;bar&gt;1&lt;/bar&gt;
+      &lt;bar&gt;2&lt;/bar&gt;
+      &lt;bar&gt;3&lt;/bar&gt;
+      &lt;bar&gt;4&lt;/bar&gt;
+      &lt;bar&gt;5&lt;/bar&gt;
+      &lt;bar&gt;6&lt;/bar&gt;
+      &lt;bar&gt;7&lt;/bar&gt;
+      &lt;bar&gt;8&lt;/bar&gt;
+      &lt;bar&gt;9&lt;/bar&gt;
+      &lt;bar&gt;10&lt;/bar&gt;
+    &lt;/foo&gt;
+  &lt;/root_node&gt;
+</pre>
+<h2>DOCUMENTATION</h2>
+<p>
+RDoc comments are included - run &#8216;rake doc&#8217; to generate
+documentation. You can find the latest documentation at:
+</p>
+<ul>
+<li><a href="http://libxml.rubyforge.org/rdoc">libxml.rubyforge.org/rdoc</a>/
+
+</li>
+</ul>
+<h2>License</h2>
+<p>
+See LICENSE for license information.
+</p>
+<h2>MORE INFORMATION</h2>
+<p>
+For more information please refer to the documentation. If you have any
+questions, please send email to libxml-devel@rubyforge.org.
+</p>
+
+    </div>
+
+
+   </div>
+
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+
+
+
+      
+
+
+    <!-- if method_list -->
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

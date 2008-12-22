@@ -1,0 +1,2264 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: LibXML::XML::Reader</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">LibXML::XML::Reader</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../../files/ext/libxml/libxml_c.html">
+                ext/libxml/libxml.c
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                Object
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+Rdoc needs to know.
+</p>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000302">[]</a>&nbsp;&nbsp;
+      <a href="#M000289">attribute_count</a>&nbsp;&nbsp;
+      <a href="#M000293">base_uri</a>&nbsp;&nbsp;
+      <a href="#M000307">byte_consumed</a>&nbsp;&nbsp;
+      <a href="#M000270">close</a>&nbsp;&nbsp;
+      <a href="#M000308">column_number</a>&nbsp;&nbsp;
+      <a href="#M000310">default?</a>&nbsp;&nbsp;
+      <a href="#M000298">depth</a>&nbsp;&nbsp;
+      <a href="#M000311">empty_element?</a>&nbsp;&nbsp;
+      <a href="#M000292">encoding</a>&nbsp;&nbsp;
+      <a href="#M000306">expand</a>&nbsp;&nbsp;
+      <a href="#M000266">file</a>&nbsp;&nbsp;
+      <a href="#M000301">has_attributes?</a>&nbsp;&nbsp;
+      <a href="#M000303">has_value?</a>&nbsp;&nbsp;
+      <a href="#M000267">io</a>&nbsp;&nbsp;
+      <a href="#M000309">line_number</a>&nbsp;&nbsp;
+      <a href="#M000291">local_name</a>&nbsp;&nbsp;
+      <a href="#M000305">lookup_namespace</a>&nbsp;&nbsp;
+      <a href="#M000271">move_to_attribute</a>&nbsp;&nbsp;
+      <a href="#M000274">move_to_element</a>&nbsp;&nbsp;
+      <a href="#M000272">move_to_first_attribute</a>&nbsp;&nbsp;
+      <a href="#M000273">move_to_next_attribute</a>&nbsp;&nbsp;
+      <a href="#M000290">name</a>&nbsp;&nbsp;
+      <a href="#M000312">namespace_declaration?</a>&nbsp;&nbsp;
+      <a href="#M000294">namespace_uri</a>&nbsp;&nbsp;
+      <a href="#M000269">new</a>&nbsp;&nbsp;
+      <a href="#M000275">next</a>&nbsp;&nbsp;
+      <a href="#M000276">next_sibling</a>&nbsp;&nbsp;
+      <a href="#M000287">node_type</a>&nbsp;&nbsp;
+      <a href="#M000288">normalization</a>&nbsp;&nbsp;
+      <a href="#M000297">prefix</a>&nbsp;&nbsp;
+      <a href="#M000299">quote_char</a>&nbsp;&nbsp;
+      <a href="#M000277">read</a>&nbsp;&nbsp;
+      <a href="#M000278">read_attribute_value</a>&nbsp;&nbsp;
+      <a href="#M000279">read_inner_xml</a>&nbsp;&nbsp;
+      <a href="#M000280">read_outer_xml</a>&nbsp;&nbsp;
+      <a href="#M000281">read_state</a>&nbsp;&nbsp;
+      <a href="#M000282">read_string</a>&nbsp;&nbsp;
+      <a href="#M000285">relax_ng_validate</a>&nbsp;&nbsp;
+      <a href="#M000284">reset_error_handler</a>&nbsp;&nbsp;
+      <a href="#M000286">schema_validate</a>&nbsp;&nbsp;
+      <a href="#M000283">set_error_handler</a>&nbsp;&nbsp;
+      <a href="#M000300">standalone</a>&nbsp;&nbsp;
+      <a href="#M000313">valid?</a>&nbsp;&nbsp;
+      <a href="#M000304">value</a>&nbsp;&nbsp;
+      <a href="#M000268">walker</a>&nbsp;&nbsp;
+      <a href="#M000295">xml_lang</a>&nbsp;&nbsp;
+      <a href="#M000296">xml_version</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+    <div id="constants-list">
+      <h3 class="section-bar">Constants</h3>
+
+      <div class="name-list">
+        <table summary="Constants">
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">LOADDTD</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_LOADDTD)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">DEFAULTATTRS</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_DEFAULTATTRS)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">VALIDATE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_VALIDATE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SUBST_ENTITIES</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_SUBST_ENTITIES)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SEVERITY_VALIDITY_WARNING</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_SEVERITY_VALIDITY_WARNING)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SEVERITY_VALIDITY_ERROR</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_SEVERITY_VALIDITY_ERROR)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SEVERITY_WARNING</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_SEVERITY_WARNING)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">SEVERITY_ERROR</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_PARSER_SEVERITY_ERROR)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_NONE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_NONE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_ELEMENT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_ELEMENT)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_ATTRIBUTE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_ATTRIBUTE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_TEXT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_TEXT)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_CDATA</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_CDATA)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_ENTITY_REFERENCE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_ENTITY_REFERENCE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_ENTITY</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_ENTITY)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_PROCESSING_INSTRUCTION</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_PROCESSING_INSTRUCTION)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_COMMENT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_COMMENT)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_DOCUMENT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_DOCUMENT)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_DOCUMENT_TYPE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_DOCUMENT_TYPE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_DOCUMENT_FRAGMENT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_DOCUMENT_FRAGMENT)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_NOTATION</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_NOTATION)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_WHITESPACE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_WHITESPACE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_SIGNIFICANT_WHITESPACE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_SIGNIFICANT_WHITESPACE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_END_ELEMENT</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_END_ELEMENT)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_END_ENTITY</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_END_ENTITY)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">TYPE_XML_DECLARATION</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_READER_TYPE_XML_DECLARATION)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">MODE_INITIAL</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_TEXTREADER_MODE_INITIAL)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">MODE_INTERACTIVE</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_TEXTREADER_MODE_INTERACTIVE)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">MODE_ERROR</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_TEXTREADER_MODE_ERROR)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">MODE_EOF</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_TEXTREADER_MODE_EOF)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">MODE_CLOSED</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_TEXTREADER_MODE_CLOSED)</td>
+        </tr>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">MODE_READING</td>
+          <td>=</td>
+          <td class="context-item-value">INT2FIX(XML_TEXTREADER_MODE_READING)</td>
+        </tr>
+        </table>
+      </div>
+    </div>
+
+
+
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Class methods</h3>
+
+      <div id="method-M000266" class="method-detail">
+        <a name="M000266"></a>
+
+        <div class="method-heading">
+          <a href="#M000266" class="method-signature">
+          <span class="method-name">XML::Reader.file(path, encoding=nil, options=0) &rarr; reader<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Parse an <a href="../XML.html">XML</a> <a
+href="Reader.html#M000266">file</a> from the filesystem or the network. The
+parsing flags options are a combination of xmlParserOption.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000266-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000266-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Reader.file(path, encoding=nil, options=0) -&gt; reader
+ *
+ * Parse an XML file from the filesystem or the network. The parsing flags 
+ * options are a combination of xmlParserOption. 
+ */
+static VALUE
+ruby_xml_reader_new_file(int argc, VALUE *argv, VALUE self)
+{
+  xmlTextReaderPtr reader;
+  VALUE path, encoding, options;
+
+  rb_scan_args(argc, argv, &quot;12&quot;, &amp;path, &amp;encoding, &amp;options);
+
+  reader = xmlReaderForFile(RVAL2CSTR(path), 
+                            NIL_P(encoding) ? NULL : RVAL2CSTR(encoding), 
+                            NIL_P(options) ? 0 : FIX2INT(options));
+  if (reader == NULL)
+    rb_raise(rb_eRuntimeError, 
+             &quot;cannot create text reader for given XML file at path '%s'&quot;, 
+             RVAL2CSTR(path));
+
+  return ruby_xml_reader_new(self, reader); 
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000267" class="method-detail">
+        <a name="M000267"></a>
+
+        <div class="method-heading">
+          <a href="#M000267" class="method-signature">
+          <span class="method-name">XML::Reader.io(io, url=nil, encoding=nil, options=0) &rarr; reader<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Parse an <a href="../XML.html">XML</a> <a
+href="Reader.html#M000266">file</a> from a <a
+href="Reader.html#M000266">file</a> handle. The parsing flags options are a
+combination of xmlParserOption.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000267-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000267-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Reader.io(io, url=nil, encoding=nil, options=0) -&gt; reader
+ *
+ * Parse an XML file from a file handle. The parsing flags options are
+ * a combination of xmlParserOption. 
+ */
+static VALUE
+ruby_xml_reader_new_io(int argc, VALUE *argv, VALUE self)
+{
+  xmlTextReaderPtr reader;
+  VALUE io, url, encoding, options;
+  OpenFile *fptr;
+  FILE *f;
+
+  #ifdef _WIN32
+    rb_raise(rb_eRuntimeError, &quot;Reading an io stream is not supported on Windows&quot;);
+  #endif             
+
+  rb_scan_args(argc, argv, &quot;13&quot;, &amp;io, &amp;url, &amp;encoding, &amp;options);
+
+  if (!rb_obj_is_kind_of(io, rb_cIO))
+    rb_raise(rb_eTypeError, &quot;need an IO object&quot;);
+
+  GetOpenFile(io, fptr);
+  rb_io_check_readable(fptr);
+  f = GetWriteFile(fptr);
+
+  reader = xmlReaderForIO((xmlInputReadCallback) ctxtRead, NULL, f,
+                          NIL_P(url) ? NULL : RVAL2CSTR(url),
+                          NIL_P(encoding) ? NULL : RVAL2CSTR(encoding), 
+                          NIL_P(options) ? 0 : FIX2INT(options));
+  if (reader == NULL)
+    rb_raise(rb_eRuntimeError, &quot;cannot create text reader for given stream&quot;);
+
+  return ruby_xml_reader_new(self, reader); 
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000269" class="method-detail">
+        <a name="M000269"></a>
+
+        <div class="method-heading">
+          <a href="#M000269" class="method-signature">
+          <span class="method-name">XML::Reader.new(data, url=nil, encoding=nil, options=0) &rarr; reader<br />
+XML::Reader.string(data, url=nil, encoding=nil, options=0) &rarr; reader<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create an <a href="../XML.html">XML</a> text reader for an <a
+href="../XML.html">XML</a> in-memory document. The parsing flags options
+are a combination of xmlParserOption.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000269-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000269-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Reader.new(data, url=nil, encoding=nil, options=0) -&gt; reader
+ *    XML::Reader.string(data, url=nil, encoding=nil, options=0) -&gt; reader
+ *
+ * Create an XML text reader for an XML in-memory document. The parsing flags
+ * options are a combination of xmlParserOption.
+ */
+static VALUE
+ruby_xml_reader_new_data(int argc, VALUE *argv, VALUE self)
+{
+  xmlTextReaderPtr reader;
+  VALUE data, url, encoding, options;
+  char *c_data;
+
+  rb_scan_args(argc, argv, &quot;13&quot;, &amp;data, &amp;url, &amp;encoding, &amp;options);
+
+  c_data = RVAL2CSTR(data);
+  reader = xmlReaderForMemory(c_data,
+                              strlen(c_data), 
+                              NIL_P(url) ? NULL : RVAL2CSTR(url),
+                              NIL_P(encoding) ? NULL : RVAL2CSTR(encoding), 
+                              NIL_P(options) ? 0 : FIX2INT(options));
+  if (reader == NULL)
+    rb_raise(rb_eRuntimeError, &quot;cannot create text reader for given data&quot;);
+
+  return ruby_xml_reader_new(self, reader); 
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000268" class="method-detail">
+        <a name="M000268"></a>
+
+        <div class="method-heading">
+          <a href="#M000268" class="method-signature">
+          <span class="method-name">XML::Reader.walker(doc) &rarr; reader<br />
+XML::Reader.document(doc) &rarr; reader<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create an <a href="../XML.html">XML</a> text reader for a preparsed
+document.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000268-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000268-source">
+<pre>
+/*
+ * call-seq:
+ *    XML::Reader.walker(doc) -&gt; reader
+ *    XML::Reader.document(doc) -&gt; reader
+ *
+ * Create an XML text reader for a preparsed document.
+ */
+VALUE
+ruby_xml_reader_new_walker(VALUE self, VALUE doc)
+{
+  ruby_xml_document_t *rxd;
+  xmlTextReaderPtr reader;
+  
+  Data_Get_Struct(doc, ruby_xml_document_t, rxd);
+ 
+  reader = xmlReaderWalker(rxd-&gt;doc);  
+  if (reader == NULL)
+    rb_raise(rb_eRuntimeError, &quot;cannot create text reader for given document&quot;);
+
+  return ruby_xml_reader_new(self, reader); 
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000302" class="method-detail">
+        <a name="M000302"></a>
+
+        <div class="method-heading">
+          <a href="#M000302" class="method-signature">
+          <span class="method-name">reader[key] &rarr; value<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Provide the <a href="Reader.html#M000304">value</a> of the attribute with
+the specified index (if <tt>key</tt> is an integer) or with the specified
+<a href="Reader.html#M000290">name</a> (if <tt>key</tt> is a string)
+relative to the containing element, as a string.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000302-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000302-source">
+<pre>
+/*
+ * call-seq:
+ *    reader[key] -&gt; value
+ *
+ * Provide the value of the attribute with the specified index (if +key+ is an 
+ * integer) or with the specified name (if +key+ is a string) relative to the 
+ * containing element, as a string.
+ */
+static VALUE
+ruby_xml_reader_attribute(VALUE self, VALUE key)
+{
+  xmlTextReaderPtr reader;
+  xmlChar *attr;
+
+  reader = ruby_xml_text_reader_get(self);
+
+  if (TYPE(key) == T_FIXNUM) {
+    attr = xmlTextReaderGetAttributeNo(reader, FIX2INT(key));
+  }
+  else {
+    attr = xmlTextReaderGetAttribute(reader, (const xmlChar *)RVAL2CSTR(key));
+  }
+  return CSTR2RVAL2(attr);
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000289" class="method-detail">
+        <a name="M000289"></a>
+
+        <div class="method-heading">
+          <a href="#M000289" class="method-signature">
+          <span class="method-name">reader.attribute_count &rarr; count<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Provide the number of attributes of the current node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000289-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000289-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.attribute_count -&gt; count
+ *
+ * Provide the number of attributes of the current node.
+ */
+static VALUE
+ruby_xml_reader_attr_count(VALUE self)
+{
+  return INT2FIX(xmlTextReaderAttributeCount(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000293" class="method-detail">
+        <a name="M000293"></a>
+
+        <div class="method-heading">
+          <a href="#M000293" class="method-signature">
+          <span class="method-name">reader.base_uri &rarr; URI<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine the base URI of the node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000293-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000293-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.base_uri -&gt; URI
+ *
+ * Determine the base URI of the node.
+ */
+static VALUE
+ruby_xml_reader_base_uri(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstBaseUri(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000307" class="method-detail">
+        <a name="M000307"></a>
+
+        <div class="method-heading">
+          <a href="#M000307" class="method-signature">
+          <span class="method-name">reader.byte_consumed &rarr; value<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+This method provides the current index of the parser used by the reader,
+relative to the start of the current entity.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000307-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000307-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.byte_consumed -&gt; value
+ *
+ * This method provides the current index of the parser used by the reader, 
+ * relative to the start of the current entity. 
+ */
+static VALUE
+ruby_xml_reader_byte_consumed(VALUE self)
+{
+  return INT2NUM(xmlTextReaderByteConsumed(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000270" class="method-detail">
+        <a name="M000270"></a>
+
+        <div class="method-heading">
+          <a href="#M000270" class="method-signature">
+          <span class="method-name">parser.close &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+This method releases any resources allocated by the current instance
+changes the state to Closed and <a href="Reader.html#M000270">close</a> any
+underlying input.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000270-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000270-source">
+<pre>
+/*
+ * call-seq:
+ *    parser.close -&gt; code
+ *
+ * This method releases any resources allocated by the current instance 
+ * changes the state to Closed and close any underlying input.
+ */
+static VALUE
+ruby_xml_reader_close(VALUE self)
+{
+  return INT2FIX(xmlTextReaderClose(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000308" class="method-detail">
+        <a name="M000308"></a>
+
+        <div class="method-heading">
+          <a href="#M000308" class="method-signature">
+          <span class="method-name">reader.column_number &rarr; number<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Provide the column number of the current parsing point.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000308-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000308-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.column_number -&gt; number
+ *
+ * Provide the column number of the current parsing point.
+ */
+static VALUE
+ruby_xml_reader_column_number(VALUE self)
+{
+  return INT2NUM(xmlTextReaderGetParserColumnNumber(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000310" class="method-detail">
+        <a name="M000310"></a>
+
+        <div class="method-heading">
+          <a href="#M000310" class="method-signature">
+          <span class="method-name">reader.default? &rarr; bool<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Return whether an Attribute node was generated from the default <a
+href="Reader.html#M000304">value</a> defined in the DTD or schema.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000310-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000310-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.default? -&gt; bool
+ *
+ * Return whether an Attribute node was generated from the default value 
+ * defined in the DTD or schema.
+ */
+static VALUE
+ruby_xml_reader_default(VALUE self)
+{
+  return xmlTextReaderIsDefault(ruby_xml_text_reader_get(self)) ? Qtrue : Qfalse;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000298" class="method-detail">
+        <a name="M000298"></a>
+
+        <div class="method-heading">
+          <a href="#M000298" class="method-signature">
+          <span class="method-name">reader.depth &rarr; depth<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get the <a href="Reader.html#M000298">depth</a> of the node in the tree.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000298-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000298-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.depth -&gt; depth
+ *
+ * Get the depth of the node in the tree.
+ */
+static VALUE
+ruby_xml_reader_depth(VALUE self)
+{
+  return INT2FIX(xmlTextReaderDepth(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000311" class="method-detail">
+        <a name="M000311"></a>
+
+        <div class="method-heading">
+          <a href="#M000311" class="method-signature">
+          <span class="method-name">reader.empty_element? &rarr; bool<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Check if the current node is empty.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000311-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000311-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.empty_element? -&gt; bool
+ *
+ * Check if the current node is empty.
+ */
+static VALUE
+ruby_xml_reader_empty_element(VALUE self)
+{
+  return xmlTextReaderIsEmptyElement(ruby_xml_text_reader_get(self)) ? Qtrue : Qfalse;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000292" class="method-detail">
+        <a name="M000292"></a>
+
+        <div class="method-heading">
+          <a href="#M000292" class="method-signature">
+          <span class="method-name">reader.encoding &rarr; encoding<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine the <a href="Reader.html#M000292">encoding</a> of the document
+being <a href="Reader.html#M000277">read</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000292-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000292-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.encoding -&gt; encoding
+ *
+ * Determine the encoding of the document being read.
+ */
+static VALUE
+ruby_xml_reader_encoding(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstEncoding(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000306" class="method-detail">
+        <a name="M000306"></a>
+
+        <div class="method-heading">
+          <a href="#M000306" class="method-signature">
+          <span class="method-name">reader.expand &rarr; node<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Read the contents of the current node and the full subtree. It then makes
+the subtree available until the <a href="Reader.html#M000275">next</a> <a
+href="Reader.html#M000277">read</a> call.
+</p>
+<p>
+Return an <a href="Node.html">XML::Node</a> object, or nil in case of
+error.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000306-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000306-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.expand -&gt; node
+ *
+ * Read the contents of the current node and the full subtree. It then makes 
+ * the subtree available until the next read call.
+ *
+ * Return an XML::Node object, or nil in case of error.
+ */
+static VALUE
+ruby_xml_reader_expand(VALUE self)
+{
+  xmlNodePtr node;
+  xmlDocPtr doc;
+  xmlTextReaderPtr reader = ruby_xml_text_reader_get(self);
+  node = xmlTextReaderExpand(reader);
+  
+  if (!node)
+    return Qnil;
+    
+  /* Okay this is tricky.  By accessing the returned node, we
+     take ownership of the reader's document.  Thus we need to
+     tell the reader to not free it.  Otherwise it will be
+     freed twice - once when the Ruby document wrapper goes
+     out of scope and once when the reader goes out of scope. */
+
+  xmlTextReaderPreserve(reader);
+  doc = xmlTextReaderCurrentDoc(reader);
+  ruby_xml_document_wrap(doc);
+
+  return ruby_xml_node2_wrap(cXMLNode, node);
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000301" class="method-detail">
+        <a name="M000301"></a>
+
+        <div class="method-heading">
+          <a href="#M000301" class="method-signature">
+          <span class="method-name">reader.has_attributes? &rarr; bool<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get whether the node has attributes.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000301-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000301-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.has_attributes? -&gt; bool
+ *
+ * Get whether the node has attributes.
+ */
+static VALUE
+ruby_xml_reader_has_attributes(VALUE self)
+{
+  return xmlTextReaderHasAttributes(ruby_xml_text_reader_get(self)) ? Qtrue : Qfalse;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000303" class="method-detail">
+        <a name="M000303"></a>
+
+        <div class="method-heading">
+          <a href="#M000303" class="method-signature">
+          <span class="method-name">reader.has_value? &rarr; bool<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get whether the node can have a text <a
+href="Reader.html#M000304">value</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000303-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000303-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.has_value? -&gt; bool
+ *
+ * Get whether the node can have a text value.
+ */
+static VALUE
+ruby_xml_reader_has_value(VALUE self)
+{
+  return xmlTextReaderHasValue(ruby_xml_text_reader_get(self)) ? Qtrue : Qfalse;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000309" class="method-detail">
+        <a name="M000309"></a>
+
+        <div class="method-heading">
+          <a href="#M000309" class="method-signature">
+          <span class="method-name">reader.line_number &rarr; number<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Provide the line number of the current parsing point.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000309-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000309-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.line_number -&gt; number
+ *
+ * Provide the line number of the current parsing point.
+ */
+static VALUE
+ruby_xml_reader_line_number(VALUE self)
+{
+  return INT2NUM(xmlTextReaderGetParserLineNumber(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000291" class="method-detail">
+        <a name="M000291"></a>
+
+        <div class="method-heading">
+          <a href="#M000291" class="method-signature">
+          <span class="method-name">reader.local_name &rarr; name<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Return the local <a href="Reader.html#M000290">name</a> of the node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000291-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000291-source">
+<pre>
+/* 
+ * call-seq:
+ *    reader.local_name -&gt; name
+ *
+ * Return the local name of the node.
+ */
+static VALUE
+ruby_xml_reader_local_name(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstLocalName(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000305" class="method-detail">
+        <a name="M000305"></a>
+
+        <div class="method-heading">
+          <a href="#M000305" class="method-signature">
+          <span class="method-name">reader.lookup_namespace(prefix) &rarr; value<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Resolve a namespace <a href="Reader.html#M000297">prefix</a> in the scope
+of the current element. To return the default namespace, specify nil as
+<tt><a href="Reader.html#M000297">prefix</a></tt>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000305-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000305-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.lookup_namespace(prefix) -&gt; value
+ *
+ * Resolve a namespace prefix in the scope of the current element.
+ * To return the default namespace, specify nil as +prefix+.
+ */
+static VALUE
+ruby_xml_reader_lookup_namespace(VALUE self, VALUE prefix)
+{
+  return CSTR2RVAL2(xmlTextReaderLookupNamespace(ruby_xml_text_reader_get(self), (const xmlChar *)RVAL2CSTR(prefix)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000271" class="method-detail">
+        <a name="M000271"></a>
+
+        <div class="method-heading">
+          <a href="#M000271" class="method-signature">
+          <span class="method-name">parser.move_to_attribute(val) &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Move the position of the current instance to the attribute with the
+specified index (if <tt>val</tt> is an integer) or <a
+href="Reader.html#M000290">name</a> (if <tt>val</tt> is a string) relative
+to the containing element.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000271-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000271-source">
+<pre>
+/*
+ * call-seq:
+ *   parser.move_to_attribute(val) -&gt; code
+ *
+ * Move the position of the current instance to the attribute with the 
+ * specified index (if +val+ is an integer) or name (if +val+ is a string) 
+ * relative to the containing element.
+ */
+static VALUE
+ruby_xml_reader_move_to_attr(VALUE self, VALUE val)
+{
+  xmlTextReaderPtr reader;
+  int ret;
+
+  reader = ruby_xml_text_reader_get(self);
+
+  if (TYPE(val) == T_FIXNUM) {
+    ret = xmlTextReaderMoveToAttributeNo(reader, FIX2INT(val));
+  }
+  else {
+    ret = xmlTextReaderMoveToAttribute(reader, (const xmlChar *)RVAL2CSTR(val));
+  }
+
+  return INT2FIX(ret);
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000274" class="method-detail">
+        <a name="M000274"></a>
+
+        <div class="method-heading">
+          <a href="#M000274" class="method-signature">
+          <span class="method-name">reader.move_to_element &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Move the position of the current instance to the node that contains the
+current attribute node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000274-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000274-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.move_to_element -&gt; code
+ *
+ * Move the position of the current instance to the node that contains the 
+ * current attribute node.
+ */
+static VALUE
+ruby_xml_reader_move_to_element(VALUE self)
+{
+  return INT2FIX(xmlTextReaderMoveToElement(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000272" class="method-detail">
+        <a name="M000272"></a>
+
+        <div class="method-heading">
+          <a href="#M000272" class="method-signature">
+          <span class="method-name">reader.move_to_first_attribute &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Move the position of the current instance to the first attribute associated
+with the current node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000272-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000272-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.move_to_first_attribute -&gt; code
+ *
+ * Move the position of the current instance to the first attribute associated
+ * with the current node.
+ */
+static VALUE
+ruby_xml_reader_move_to_first_attr(VALUE self)
+{
+  return INT2FIX(xmlTextReaderMoveToFirstAttribute(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000273" class="method-detail">
+        <a name="M000273"></a>
+
+        <div class="method-heading">
+          <a href="#M000273" class="method-signature">
+          <span class="method-name">reader.move_to_next_attribute &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Move the position of the current instance to the <a
+href="Reader.html#M000275">next</a> attribute associated with the current
+node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000273-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000273-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.move_to_next_attribute -&gt; code
+ *
+ * Move the position of the current instance to the next attribute associated 
+ * with the current node.
+ */
+static VALUE
+ruby_xml_reader_move_to_next_attr(VALUE self)
+{
+  return INT2FIX(xmlTextReaderMoveToNextAttribute(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000290" class="method-detail">
+        <a name="M000290"></a>
+
+        <div class="method-heading">
+          <a href="#M000290" class="method-signature">
+          <span class="method-name">reader.name &rarr; name<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Return the qualified <a href="Reader.html#M000290">name</a> of the node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000290-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000290-source">
+<pre>
+/* 
+ * call-seq:
+ *    reader.name -&gt; name
+ *
+ * Return the qualified name of the node.
+ */
+static VALUE
+ruby_xml_reader_name(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstName(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000312" class="method-detail">
+        <a name="M000312"></a>
+
+        <div class="method-heading">
+          <a href="#M000312" class="method-signature">
+          <span class="method-name">reader.namespace_declaration? &rarr; bool<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine whether the current node is a namespace declaration rather than a
+regular attribute.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000312-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000312-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.namespace_declaration? -&gt; bool
+ *
+ * Determine whether the current node is a namespace declaration rather than a 
+ * regular attribute.
+ */
+static VALUE
+ruby_xml_reader_namespace_declaration(VALUE self)
+{
+  return xmlTextReaderIsNamespaceDecl(ruby_xml_text_reader_get(self)) ? Qtrue : Qfalse;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000294" class="method-detail">
+        <a name="M000294"></a>
+
+        <div class="method-heading">
+          <a href="#M000294" class="method-signature">
+          <span class="method-name">reader.namespace_uri &rarr; URI<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine the namespace URI of the node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000294-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000294-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.namespace_uri -&gt; URI
+ *
+ * Determine the namespace URI of the node.
+ */
+static VALUE
+ruby_xml_reader_namespace_uri(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstNamespaceUri(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000275" class="method-detail">
+        <a name="M000275"></a>
+
+        <div class="method-heading">
+          <a href="#M000275" class="method-signature">
+          <span class="method-name">reader.next &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Skip to the node following the current one in document order while avoiding
+the subtree if any.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000275-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000275-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.next -&gt; code
+ *
+ * Skip to the node following the current one in document order while avoiding 
+ * the subtree if any.
+ */
+static VALUE
+ruby_xml_reader_next(VALUE self)
+{
+  return INT2FIX(xmlTextReaderNext(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000276" class="method-detail">
+        <a name="M000276"></a>
+
+        <div class="method-heading">
+          <a href="#M000276" class="method-signature">
+          <span class="method-name">reader.next_sibling &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Skip to the node following the current one in document order while avoiding
+the subtree if any. Currently implemented only for Readers built on a
+document.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000276-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000276-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.next_sibling -&gt; code
+ *
+ * Skip to the node following the current one in document order while avoiding 
+ * the subtree if any. Currently implemented only for Readers built on a 
+ * document.
+ */
+static VALUE
+ruby_xml_reader_next_sibling(VALUE self)
+{
+  return INT2FIX(xmlTextReaderNextSibling(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000287" class="method-detail">
+        <a name="M000287"></a>
+
+        <div class="method-heading">
+          <a href="#M000287" class="method-signature">
+          <span class="method-name">reader.node_type &rarr; type<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get the node type of the current node. Reference: <a
+href="http://dotgnu.org/pnetlib-doc/System/Xml/XmlNodeType.html">dotgnu.org/pnetlib-doc/System/Xml/XmlNodeType.html</a>
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000287-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000287-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.node_type -&gt; type
+ *
+ * Get the node type of the current node. Reference: 
+ * http://dotgnu.org/pnetlib-doc/System/Xml/XmlNodeType.html
+ */
+static VALUE
+ruby_xml_reader_node_type(VALUE self)
+{
+  return INT2FIX(xmlTextReaderNodeType(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000288" class="method-detail">
+        <a name="M000288"></a>
+
+        <div class="method-heading">
+          <a href="#M000288" class="method-signature">
+          <span class="method-name">reader.normalization &rarr; value<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+The <a href="Reader.html#M000304">value</a> indicating whether to normalize
+white space and attribute values. Since attribute <a
+href="Reader.html#M000304">value</a> and end of line normalizations are a
+MUST in the <a href="../XML.html">XML</a> specification only the <a
+href="Reader.html#M000304">value</a> true is accepted. The broken bahaviour
+of accepting out of range character entities like &amp;0; is of course not
+supported either.
+</p>
+<p>
+Return 1 or -1 in case of error.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000288-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000288-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.normalization -&gt; value
+ *
+ * The value indicating whether to normalize white space and attribute values. 
+ * Since attribute value and end of line normalizations are a MUST in the XML 
+ * specification only the value true is accepted. The broken bahaviour of 
+ * accepting out of range character entities like &amp;#0; is of course not 
+ * supported either.
+ *
+ * Return 1 or -1 in case of error.
+ */
+static VALUE
+ruby_xml_reader_normalization(VALUE self)
+{
+  return INT2FIX(xmlTextReaderNormalization(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000297" class="method-detail">
+        <a name="M000297"></a>
+
+        <div class="method-heading">
+          <a href="#M000297" class="method-signature">
+          <span class="method-name">reader.prefix &rarr; prefix<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get a shorthand reference to the namespace associated with the node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000297-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000297-source">
+<pre>
+/* 
+ * call-seq:
+ *    reader.prefix -&gt; prefix
+ *
+ * Get a shorthand reference to the namespace associated with the node.
+ */
+static VALUE
+ruby_xml_reader_prefix(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstPrefix(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000299" class="method-detail">
+        <a name="M000299"></a>
+
+        <div class="method-heading">
+          <a href="#M000299" class="method-signature">
+          <span class="method-name">reader.quote_char &rarr; char<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get the quotation mark character used to enclose the <a
+href="Reader.html#M000304">value</a> of an attribute, as an integer <a
+href="Reader.html#M000304">value</a> (and -1 in case of error).
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000299-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000299-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.quote_char -&gt; char
+ *
+ * Get the quotation mark character used to enclose the value of an attribute,
+ * as an integer value (and -1 in case of error).
+ */
+static VALUE
+ruby_xml_reader_quote_char(VALUE self)
+{
+  return INT2FIX(xmlTextReaderQuoteChar(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000277" class="method-detail">
+        <a name="M000277"></a>
+
+        <div class="method-heading">
+          <a href="#M000277" class="method-signature">
+          <span class="method-name">reader.read &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Move the position of the current instance to the <a
+href="Reader.html#M000275">next</a> node in the stream, exposing its
+properties.
+</p>
+<p>
+Return 1 if the node was <a href="Reader.html#M000277">read</a>
+successfully, 0 if there is no more nodes to <a
+href="Reader.html#M000277">read</a>, or -1 in case of error.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000277-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000277-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.read -&gt; code
+ *
+ * Move the position of the current instance to the next node in the stream, 
+ * exposing its properties.
+ *
+ * Return 1 if the node was read successfully, 0 if there is no more nodes to 
+ * read, or -1 in case of error.
+ */
+static VALUE
+ruby_xml_reader_read(VALUE self)
+{
+  return INT2FIX(xmlTextReaderRead(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000278" class="method-detail">
+        <a name="M000278"></a>
+
+        <div class="method-heading">
+          <a href="#M000278" class="method-signature">
+          <span class="method-name">reader.read_attribute_value &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Parse an attribute <a href="Reader.html#M000304">value</a> into one or more
+Text and EntityReference nodes.
+</p>
+<p>
+Return 1 in case of success, 0 if the reader was not positionned on an
+attribute node or all the attribute values have been <a
+href="Reader.html#M000277">read</a>, or -1 in case of error.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000278-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000278-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.read_attribute_value -&gt; code
+ *
+ * Parse an attribute value into one or more Text and EntityReference nodes.
+ *
+ * Return 1 in case of success, 0 if the reader was not positionned on an 
+ * attribute node or all the attribute values have been read, or -1 in case of 
+ * error.
+ */
+static VALUE
+ruby_xml_reader_read_attr_value(VALUE self)
+{
+  return INT2FIX(xmlTextReaderReadAttributeValue(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000279" class="method-detail">
+        <a name="M000279"></a>
+
+        <div class="method-heading">
+          <a href="#M000279" class="method-signature">
+          <span class="method-name">reader.read_inner_xml &rarr; data<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Read the contents of the current node, including child nodes and markup.
+</p>
+<p>
+Return a string containing the <a href="../XML.html">XML</a> content, or
+nil if the current node is neither an element nor attribute, or has no
+child nodes.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000279-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000279-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.read_inner_xml -&gt; data
+ *
+ * Read the contents of the current node, including child nodes and markup.
+ *
+ * Return a string containing the XML content, or nil if the current node is 
+ * neither an element nor attribute, or has no child nodes. 
+ */
+static VALUE
+ruby_xml_reader_read_inner_xml(VALUE self)
+{
+  return CSTR2RVAL2(xmlTextReaderReadInnerXml(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000280" class="method-detail">
+        <a name="M000280"></a>
+
+        <div class="method-heading">
+          <a href="#M000280" class="method-signature">
+          <span class="method-name">reader.read_outer_xml &rarr; data<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Read the contents of the current node, including child nodes and markup.
+</p>
+<p>
+Return a string containing the <a href="../XML.html">XML</a> content, or
+nil if the current node is neither an element nor attribute, or has no
+child nodes.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000280-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000280-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.read_outer_xml -&gt; data
+ *
+ * Read the contents of the current node, including child nodes and markup.
+ *
+ * Return a string containing the XML content, or nil if the current node is 
+ * neither an element nor attribute, or has no child nodes. 
+ */
+static VALUE
+ruby_xml_reader_read_outer_xml(VALUE self)
+{
+  return CSTR2RVAL2(xmlTextReaderReadOuterXml(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000281" class="method-detail">
+        <a name="M000281"></a>
+
+        <div class="method-heading">
+          <a href="#M000281" class="method-signature">
+          <span class="method-name">reader.read_state &rarr; state<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get the <a href="Reader.html#M000277">read</a> state of the reader.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000281-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000281-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.read_state -&gt; state
+ *
+ * Get the read state of the reader.
+ */
+static VALUE
+ruby_xml_reader_read_state(VALUE self)
+{
+  return INT2FIX(xmlTextReaderReadState(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000282" class="method-detail">
+        <a name="M000282"></a>
+
+        <div class="method-heading">
+          <a href="#M000282" class="method-signature">
+          <span class="method-name">reader.read_string &rarr; string<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Read the contents of an element or a text node as a string.
+</p>
+<p>
+Return a string containing the contents of the Element or Text node, or nil
+if the reader is positioned on any other type of node.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000282-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000282-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.read_string -&gt; string
+ *
+ * Read the contents of an element or a text node as a string.
+ *
+ * Return a string containing the contents of the Element or Text node, or nil 
+ * if the reader is positioned on any other type of node.
+ */
+static VALUE
+ruby_xml_reader_read_string(VALUE self)
+{
+  return CSTR2RVAL2(xmlTextReaderReadString(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000285" class="method-detail">
+        <a name="M000285"></a>
+
+        <div class="method-heading">
+          <a href="#M000285" class="method-signature">
+          <span class="method-name">reader.relax_ng_validate(rng) &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Use <a href="RelaxNG.html">RelaxNG</a> to validate the document as it is
+processed. Activation is only possible before the first <a
+href="Reader.html#M000277">read</a>. If <tt>rng</tt> is nil, the <a
+href="RelaxNG.html">RelaxNG</a> validation is desactivated.
+</p>
+<p>
+Return 0 in case the <a href="RelaxNG.html">RelaxNG</a> validation could be
+(des)activated and -1 in case of error.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000285-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000285-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.relax_ng_validate(rng) -&gt; code
+ *
+ * Use RelaxNG to validate the document as it is processed. Activation is only 
+ * possible before the first read. If +rng+ is nil, the RelaxNG validation is
+ * desactivated.
+ *
+ * Return 0 in case the RelaxNG validation could be (des)activated and -1 in 
+ * case of error.
+ */ 
+static VALUE
+ruby_xml_reader_relax_ng_validate(VALUE self, VALUE rng)
+{
+  return INT2FIX(xmlTextReaderRelaxNGValidate(ruby_xml_text_reader_get(self), NIL_P(rng) ? NULL : RVAL2CSTR(rng)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000284" class="method-detail">
+        <a name="M000284"></a>
+
+        <div class="method-heading">
+          <a href="#M000284" class="method-signature">
+          <span class="method-name">reader.reset_error_handler<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Restore the default error and warning handlers.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000284-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000284-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.reset_error_handler
+ *
+ * Restore the default error and warning handlers.
+ */
+static VALUE
+ruby_xml_reader_reset_error_handler(VALUE self)
+{
+  xmlTextReaderSetErrorHandler(ruby_xml_text_reader_get(self), NULL, NULL);
+  return self;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000286" class="method-detail">
+        <a name="M000286"></a>
+
+        <div class="method-heading">
+          <a href="#M000286" class="method-signature">
+          <span class="method-name">reader.schema_validate(schema) &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Use W3C XSD schema to validate the document as it is processed. Activation
+is only possible before the first <a href="Reader.html#M000277">read</a>.
+If <tt>schema</tt> is nil, then <a href="../XML.html">XML</a> <a
+href="Schema.html">Schema</a> validation is desactivated.
+</p>
+<p>
+Return 0 in case the schemas validation could be (de)activated and -1 in
+case of error.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000286-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000286-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.schema_validate(schema) -&gt; code
+ * 
+ * Use W3C XSD schema to validate the document as it is processed. Activation 
+ * is only possible before the first read. If +schema+ is nil, then XML Schema
+ * validation is desactivated.
+ *
+ * Return 0 in case the schemas validation could be (de)activated and -1 in 
+ * case of error.
+ */
+static VALUE
+ruby_xml_reader_schema_validate(VALUE self, VALUE xsd)
+{
+  return INT2FIX(xmlTextReaderSchemaValidate(ruby_xml_text_reader_get(self), NIL_P(xsd) ? NULL : RVAL2CSTR(xsd)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000283" class="method-detail">
+        <a name="M000283"></a>
+
+        <div class="method-heading">
+          <a href="#M000283" class="method-signature">
+          <span class="method-name">reader.set_error_handler { ... }<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Register a callback block that will be called on error and warnings. The
+block will be called with 5 parameters: the reader, the error message, the
+severity, the base URI and the line number.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000283-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000283-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.set_error_handler { ... }
+ *
+ * Register a callback block that will be called on error and warnings. The
+ * block will be called with 5 parameters: the reader, the error message, the 
+ * severity, the base URI and the line number.
+ */
+static VALUE
+ruby_xml_reader_set_error_handler(VALUE self)
+{
+  VALUE block;
+  xmlTextReaderPtr reader;
+
+  if (rb_block_given_p() == Qfalse)
+    rb_raise(rb_eRuntimeError, &quot;No block given&quot;);
+
+  block = rb_block_proc();
+ 
+  /* Embed the block within the parser object to avoid it to be collected.
+   * Previous handler if exits is overwritten. 
+   */
+  rb_ivar_set(self, error_handler_block_ivar_id, block); 
+  reader = ruby_xml_text_reader_get(self);
+  xmlTextReaderSetErrorHandler(reader, __xml_reader_error_cb, (void *)self); 
+  
+  return self;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000300" class="method-detail">
+        <a name="M000300"></a>
+
+        <div class="method-heading">
+          <a href="#M000300" class="method-signature">
+          <span class="method-name">reader.standalone &rarr; code<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine the <a href="Reader.html#M000300">standalone</a> status of the
+document being <a href="Reader.html#M000277">read</a>.
+</p>
+<p>
+Return 1 if the document was declared to be <a
+href="Reader.html#M000300">standalone</a>, 0 if it was declared to be not
+<a href="Reader.html#M000300">standalone</a>, or -1 if the document did not
+specify its <a href="Reader.html#M000300">standalone</a> status or in case
+of error.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000300-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000300-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.standalone -&gt; code
+ *
+ * Determine the standalone status of the document being read.
+ *
+ * Return 1 if the document was declared to be standalone, 0 if it was 
+ * declared to be not standalone, or -1 if the document did not specify its 
+ * standalone status or in case of error.
+ */
+static VALUE
+ruby_xml_reader_standalone(VALUE self)
+{
+  return INT2FIX(xmlTextReaderStandalone(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000313" class="method-detail">
+        <a name="M000313"></a>
+
+        <div class="method-heading">
+          <a href="#M000313" class="method-signature">
+          <span class="method-name">reader.valid? &rarr; bool<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Retrieve the validity status from the parser context.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000313-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000313-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.valid? -&gt; bool
+ *
+ * Retrieve the validity status from the parser context.
+ */
+static VALUE
+ruby_xml_reader_valid(VALUE self)
+{
+  return xmlTextReaderIsValid(ruby_xml_text_reader_get(self)) ? Qtrue : Qfalse;
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000304" class="method-detail">
+        <a name="M000304"></a>
+
+        <div class="method-heading">
+          <a href="#M000304" class="method-signature">
+          <span class="method-name">reader.value &rarr; text<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Provide the text <a href="Reader.html#M000304">value</a> of the node if
+present.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000304-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000304-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.value -&gt; text
+ *
+ * Provide the text value of the node if present.
+ */
+static VALUE
+ruby_xml_reader_value(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstValue(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000295" class="method-detail">
+        <a name="M000295"></a>
+
+        <div class="method-heading">
+          <a href="#M000295" class="method-signature">
+          <span class="method-name">reader.xml_lang &rarr; value<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Get the xml:lang scope within which the node resides.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000295-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000295-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.xml_lang -&gt; value
+ *
+ * Get the xml:lang scope within which the node resides.
+ */
+static VALUE
+ruby_xml_reader_xml_lang(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstXmlLang(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000296" class="method-detail">
+        <a name="M000296"></a>
+
+        <div class="method-heading">
+          <a href="#M000296" class="method-signature">
+          <span class="method-name">reader.xml_version &rarr; version<br />
+</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Determine the <a href="../XML.html">XML</a> version of the document being
+<a href="Reader.html#M000277">read</a>.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000296-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000296-source">
+<pre>
+/*
+ * call-seq:
+ *    reader.xml_version -&gt; version
+ *
+ * Determine the XML version of the document being read.
+ */
+static VALUE
+ruby_xml_reader_xml_version(VALUE self)
+{
+  return CSTR2RVAL(xmlTextReaderConstXmlVersion(ruby_xml_text_reader_get(self)));
+}
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>
