@@ -1,13 +1,15 @@
 #!/usr/bin/ruby
 
 if File.symlink?(__FILE__)
-  $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
+  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
 else
-  $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
+  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
 end
+$:.unshift("#{File.dirname(__FILE__)}/usr/lib64/ruby/site_ruby/1.8/x86_64-linux") 
 
 require 'optparse'
 require 'workflow.rb'
+require 'lockfile/lib/lockfile.rb'
 
 UPDATE_INTERVAL=60
 
@@ -18,19 +20,16 @@ shutdown=false
 shutdowncycles=nil
 doloop=false
 
-ctrl_opts={ 
-          :retries => 1000000,          
-          :sleep_inc => 2,
-          :min_sleep => 2, 
-          :max_sleep => 10,
-          :max_age => 900,
-          :suspend => 30,
-          :refresh => 5,
-          :timeout => 45,
-          :poll_retries => 16,
-          :poll_max_sleep => 0.08,
-          :debug => false
+lock_opts={
+        :retries => 1,
+        :max_age => 900,
+        :refresh => 60,
+        :timeout => 10,
+        :poll_retries => 16,
+        :poll_max_sleep => 0.08,
+        :debug => false
 }
+
 
 # Define the valid options
 opts=OptionParser.new
@@ -67,19 +66,30 @@ rescue
   exit
 end
 
-# Process the workflow
-if shutdown
-  workflow=Workflow.new(xmlfile,storefile,ctrl_opts)
-  workflow.halt(shutdowncycles,ctrl_opts)
-#  shutdowncycles.each { |cycle|
-#    File.new("#{File.dirname(xmlfile)}/HALTED_#{cycle.getgm.strftime('%Y%m%d%H')}","w")
-#  }
-else
-  loop do
-    workflow=Workflow.new(xmlfile,storefile)
-    workflow.run
-    break unless doloop
-    break if workflow.done?
-    sleep UPDATE_INTERVAL
+# Run the workflow
+begin
+  lockfile="#{storefile}.lock"
+  Lockfile.new(lockfile,lock_opts) do
+
+    if shutdown
+      workflow=Workflow.new(xmlfile,storefile)
+      workflow.halt(shutdowncycles,ctrl_opts)
+    else
+      loop do
+        workflow=Workflow.new(xmlfile,storefile)
+        workflow.run
+        break unless doloop
+        break if workflow.done?
+        sleep UPDATE_INTERVAL
+      end
+    end
+
+#    workflow=Workflow.new(xmlfile,storefile)
+#    workflow.run
   end
+rescue Lockfile::MaxTriesLockError,Lockfile::TimeoutLockError,Lockfile::StackingLockError
+  puts "The workflow is locked."
+  puts 
+  puts $!
+  exit
 end
