@@ -67,6 +67,7 @@ class Job
     
     begin
 
+      return if @id.nil?
       result=@scheduler.qdel(@id)
       if result != 0
         puts "Attempt to delete job #{@id} failed"
