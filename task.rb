@@ -5,7 +5,7 @@ if File.symlink?(__FILE__)
 else
   $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
 end
-$:.unshift("#{File.dirname(__FILE__)}/usr/lib64/ruby/site_ruby/1.8/x86_64-linux") 
+$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
 
 ##########################################
 #

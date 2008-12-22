@@ -1,5 +1,11 @@
 unless defined? $__nobatchsystem__
 
+if File.symlink?(__FILE__)
+  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+else
+  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
+end
+$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml") 
 
 ##########################################
 #
@@ -7,12 +13,6 @@ unless defined? $__nobatchsystem__
 #
 ##########################################
 class NoBatchSystem
-
-  if File.symlink?(__FILE__)
-    $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
-  else
-    $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
-  end
 
   require 'command.rb'
   require 'exceptions.rb'
