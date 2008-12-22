@@ -1,17 +1,18 @@
 unless defined? $__task__
 
+if File.symlink?(__FILE__)
+  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+else
+  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
+end
+$:.unshift("#{File.dirname(__FILE__)}/usr/lib64/ruby/site_ruby/1.8/x86_64-linux") 
+
 ##########################################
 #
 # Class Task
 #
 ##########################################
 class Task
-
-  if File.symlink?(__FILE__)
-    $:.insert($:.size-1,File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__)))
-  else
-    $:.insert($:.size-1,File.dirname(__FILE__)) << File.dirname(__FILE__) unless $:.include?(File.dirname(__FILE__))
-  end
 
   require 'job.rb'
 
@@ -24,7 +25,7 @@ class Task
   #
   #####################################################
 #  def initialize(name,command,scheduler,tries,throttle,properties,environment,dependencies,keepalive,log=nil)
-  def initialize(name,command,scheduler,cyclecrons,tries,throttle,properties,environment,dependencies,log=nil)
+  def initialize(name,command,scheduler,cyclecrons,tries,throttle,properties,environment,dependencies,hangdependencies,deadlinedependencies,log=nil)
 
     @name=name
     @command=command
@@ -35,8 +36,10 @@ class Task
     @properties=properties
     @environment=environment
     @dependencies=dependencies
-#    @keepalive=keepalive
+    @hangdependencies=hangdependencies
+    @deadlinedependencies=deadlinedependencies
     @log=log
+    @expired=Hash.new
     @ntries=Hash.new
     @nthrottle=0
     @jobs=Hash.new
@@ -52,7 +55,7 @@ class Task
   #
   #####################################################
 #  def alter(name,command,scheduler,tries,throttle,properties,environment,dependencies,keepalive,log=nil)
-  def alter(name,command,scheduler,cyclecrons,tries,throttle,properties,environment,dependencies,log=nil)
+  def alter(name,command,scheduler,cyclecrons,tries,throttle,properties,environment,dependencies,hangdependencies,deadlinedependencies,log=nil)
 
     @name=name
     @command=command
@@ -63,7 +66,8 @@ class Task
     @properties=properties
     @environment=environment
     @dependencies=dependencies
- #   @keepalive=keepalive
+    @hangdependencies=hangdependencies
+    @deadlinedependencies=deadlinedependencies
     @log=log
 
   end
@@ -76,7 +80,7 @@ class Task
   #####################################################
   def running?(cycle)
 
-    return false if @jobs[cycle].nil? 
+    return false if (@jobs[cycle].nil? || @jobs[cycle].id.nil?)
     return !done?(cycle)
  
   end
@@ -89,7 +93,6 @@ class Task
   #####################################################
   def done?(cycle)
 
-    return false if @jobs[cycle].nil? 
     return done_okay?(cycle) || crashed?(cycle)
  
   end
@@ -120,6 +123,18 @@ class Task
  
   end
 
+  #####################################################
+  #
+  # expired?
+  #
+  #####################################################
+  def expired?(cycle)
+
+    @expired=Hash.new if @expired.nil? 
+    return false if @expired[cycle].nil?
+    return @expired[cycle]
+
+  end
 
   #####################################################
   #
@@ -235,11 +250,24 @@ class Task
     # Don't do anything if the task is already done for this cycle
     return if self.done?(cycle)
 
+    # Don't do anthing if the task is expired
+    return if self.expired?(cycle)
+
+    # Determine if the task has expired
+    if @deadlinedependencies.nil?
+      @expired[cycle]=false
+    else
+      @expired[cycle]=@deadlinedependencies.resolved?(cycle)
+    end
+
     # Update and check the status of the task's job if it already exists
     unless @jobs[cycle].nil?
 
       # Update the state of the task for this cycle
       self.update_state(cycle)
+
+      # If the job finished ok, simply return
+      return if @jobs[cycle].done_okay?
 
       # If the job crashed, attempt to resubmit it
       if @jobs[cycle].crashed?
@@ -252,16 +280,64 @@ class Task
         if @tries > 0 && @ntries[cycle] >= @tries
           @log.log(cycle,"#{@name} has been tried #{@ntries[cycle]} times, giving up")
           puts "Cycle #{cycle.strftime("%Y%m%d%H")}:: #{@name} has been tried #{@ntries[cycle]} times, giving up"
-          return
-        end
-   
         # Check to make sure throttle is not exceeded
-        if (@nthrottle >= @throttle && @throttle > 0)
+        elsif (@nthrottle >= @throttle && @throttle > 0)
           @log.log(cycle,"#{@name} cannot be resubmitted now because the maximum throttle (#{@throttle}) has been reached")
-          return
+        # Resubmit task if it isn't expired
+        elsif !self.expired?(cycle)
+          self.submit(cycle)
         end
 
-        self.submit(cycle)
+      end
+
+      # If the job is running, check to see if it has hung
+      unless @hangdependencies.nil?
+        if @jobs[cycle].running?
+          if @hangdependencies.resolved?(cycle)
+
+            # Log the hang
+            @log.log(cycle,"#{@name} job id=#{@jobs[cycle].id} has hung")
+            puts "Cycle #{cycle.strftime("%Y%m%d%H")}:: #{@name} job id=#{@jobs[cycle].id} hung"
+
+            # Delete the hung job
+            @jobs[cycle].qdel
+            @log.log(cycle,"Killed #{@name} job id=#{@jobs[cycle].id}")            
+
+            # Check resubmit counter
+            if @tries > 0 && @ntries[cycle] >= @tries
+              @log.log(cycle,"#{@name} has been tried #{@ntries[cycle]} times, giving up")
+              puts "Cycle #{cycle.strftime("%Y%m%d%H")}:: #{@name} has been tried #{@ntries[cycle]} times, giving up"
+            # Check to make sure throttle is not exceeded
+            elsif (@nthrottle >= @throttle && @throttle > 0)
+              @log.log(cycle,"#{@name} cannot be resubmitted now because the maximum throttle (#{@throttle}) has been reached")
+            # Resubmit if it isn't expired
+            elsif !self.expired?(cycle)
+              self.submit(cycle)
+            end
+
+          end
+        end
+      end
+
+    end
+
+    # If this task has expired, kill any jobs associated with it and log it
+    if self.expired?(cycle)
+      @log.log(cycle,"#{@name} has expired!")
+      puts "Cycle #{cycle.strftime("%Y%m%d%H")}:: #{@name} has expired"
+     
+      # Delete the expired job if it exists
+      if @jobs[cycle].nil?
+        return
+      else
+        @jobs[cycle].qdel
+        @log.log(cycle,"Killed #{@name} job id=#{@jobs[cycle].id} because it expired")            
+        puts "Cycle #{cycle.strftime("%Y%m%d%H")}:: Killed #{@name} job id=#{@jobs[cycle].id} because it expired"
+
+        # Decrement the throttle
+        if !@jobs[cycle].done?
+          @nthrottle-=1
+        end
 
       end
 
