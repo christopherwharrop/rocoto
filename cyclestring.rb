@@ -24,8 +24,9 @@ class CycleString
   def initialize(element)
 
     @strarray=element.collect {|e|
-      if e.node_type==LibXML::XML::Node::TEXT_NODE
-#      if e.kind_of?(REXML::Text)
+      if e.is_a?(String)
+        e
+      elsif e.node_type==LibXML::XML::Node::TEXT_NODE
         e.content
       else
         offset=e.attributes["offset"].to_i
