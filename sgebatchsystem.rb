@@ -948,14 +948,7 @@ class SGEBatchSystem
         cmd="#{@sge_path}/qsub"
       end
       attributes.each { |attr,value|
-        if attr=~/^-l /
-          cmd=cmd+" #{attr}"
-          unless value.nil? || value.empty?
-            cmd=cmd+"=#{value}"
-          end
-        else
-          cmd=cmd+" #{attr} #{value}"
-        end
+        cmd=cmd+" #{attr} #{value}"
       } 
       cmd=cmd+" #{script}"
 
