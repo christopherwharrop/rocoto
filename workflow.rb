@@ -379,7 +379,7 @@ class Workflow
     end
 
     taskproperties=Hash.new
-    taskenvironments=Hash.new
+    taskenvironments={"__WORKFLOWMGR__"=>Environment.new("__WORKFLOWMGR__",CycleString.new(@xmlfile))}
     taskdependency=nil
     taskhangdependency=nil
     taskdeadlinedependency=nil
