@@ -542,17 +542,27 @@ class Workflow
   def parse_task_filedep(element)
 
     # Get the age attribute
-    theAge=element.attributes["age"]
-    case theAge
-      when /^[0-9]+$/
-        age=theAge.to_i
+    age_str=element.attributes["age"]
+    case age_str
+      when /^[0-9:]+$/
+        age_sec=0
+        age_str.split(":").reverse.each_with_index {|i,index| 
+          if index==3
+            age_sec+=i.to_i*3600*24
+          elsif index < 3
+            age_sec+=i.to_i*60**index
+          else
+            raise "Invalid age, '#{age_str}' inside of #{e}"
+          end           
+        }
+
       when nil
-        age=0
+        age_sec=0
       else
-        raise XMLError,"<filedep> attribute 'age' must be a non-negative integer"
+        raise XMLError,"<filedep> attribute 'age' must be a non-negative time given in dd:hh:mm:ss format"
     end
 
-    return FileDependency.new(CycleString.new(element),age)
+    return FileDependency.new(CycleString.new(element),age_sec)
 
   end
 

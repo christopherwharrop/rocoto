@@ -29,24 +29,39 @@ class CycleString
       elsif e.node_type==LibXML::XML::Node::TEXT_NODE
         e.content
       else
-        offset=e.attributes["offset"].to_i
+        offset_str=e.attributes["offset"]
+        offset_sec=0
+        unless offset_str.nil?
+          offset_sign=offset_str[/^-/].nil? ? 1 : -1
+          offset_str.split(":").reverse.each_with_index {|i,index| 
+            if index==3
+              offset_sec+=i.to_i.abs*3600*24
+            elsif index < 3
+              offset_sec+=i.to_i.abs*60**index
+            else
+              raise "Invalid offset, '#{offset_str}' inside of #{e}"
+            end           
+          }
+          offset_sec*=offset_sign
+        end
+
         case e.name
           when "cycle_Y"
-            Cycle_Y.new(offset)
+            Cycle_Y.new(offset_sec)
           when "cycle_y"
-            Cycle_y.new(offset)
+            Cycle_y.new(offset_sec)
           when "cycle_j"
-            Cycle_j.new(offset)
+            Cycle_j.new(offset_sec)
           when "cycle_m"
-            Cycle_m.new(offset)
+            Cycle_m.new(offset_sec)
           when "cycle_d"
-            Cycle_d.new(offset)
+            Cycle_d.new(offset_sec)
           when "cycle_H"
-            Cycle_H.new(offset)
+            Cycle_H.new(offset_sec)
           when "cycle_M"
-            Cycle_M.new(offset)
+            Cycle_M.new(offset_sec)
           when "cycle_S"
-            Cycle_S.new(offset)
+            Cycle_S.new(offset_sec)
           else
             raise "Invalid tag <#{e.name}> inside #{element}"
         end
