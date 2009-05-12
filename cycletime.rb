@@ -209,5 +209,42 @@ class Cycle_j < CycleTime
 
 end
 
+
+##########################################
+#
+# Class CycleFormat
+#
+##########################################
+class CycleFormat < CycleTime
+
+
+  #####################################################
+  #
+  # initialize
+  #
+  #####################################################
+  def initialize(format,offset)
+
+    @format=format
+    @offset=offset
+
+  end
+
+
+  #####################################################
+  #
+  # to_s
+  #
+  #####################################################
+  def to_s(cycle)
+
+    return (cycle.gmtime+@offset).strftime(@format)
+
+  end
+
+
+end
+
+
 $__cycletime__ == __FILE__
 end

@@ -62,6 +62,8 @@ class CycleString
             Cycle_M.new(offset_sec)
           when "cycle_S"
             Cycle_S.new(offset_sec)
+          when "cyclestr"
+            CycleFormat.new(e.content,offset_sec)
           else
             raise "Invalid tag <#{e.name}> inside #{element}"
         end
