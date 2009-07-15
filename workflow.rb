@@ -170,6 +170,86 @@ class Workflow
 
   #####################################################
   #
+  # pexit
+  #
+  #####################################################
+
+  def pexit(msg)
+    puts msg
+    exit!
+  end
+
+  #####################################################
+  #
+  # traverse
+  #
+  #####################################################
+
+  def traverse(node, id_table, index)
+    
+    if node.node_type_name == "text"
+      cont = node.content
+      id_table.each{|id, value|
+	next while cont.sub!("#"+id+"#", id_table[id][index])
+      }
+      node.content = cont
+      
+    else
+      node.attributes.each{|attr|
+	val = attr.value
+	id_table.each{|id, value|
+	  next while val.sub!("#"+id+"#", id_table[id][index])
+	}
+        attr.value = val
+      }
+      node.children.each{|ch| traverse(ch, id_table, index)}
+    end
+
+  end
+
+  
+  #####################################################
+  #
+  # pre-parse
+  #
+  #####################################################
+  
+  def pre_parse(metatask)
+    
+    id_table = {}
+    var_length = -1
+
+    metatask.children.each {|ch|
+      pre_parse(ch) if ch.name == "metatask"
+    }
+
+    metatask.children.each {|e|
+      if e.name == "var"
+	eval "#{e["id"]} = e.content.split"
+        var_length = eval "#{e["id"]}.length" if var_length == -1
+        pexit("unequal variables") if (eval "#{e["id"]}.length") != var_length
+        id_table[e["id"]] = eval "#{e['id']}"
+      end
+    }
+    pexit("no <var> tag or values specified in one or more metatasks") if var_length < 1
+
+    task_list = Array.new
+    0.upto(var_length - 1) {|index|
+      metatask.children.each{|e|
+        if e.name == "task"
+          task_copy = e.copy("deep")
+          traverse(task_copy,id_table, index)
+          task_list << task_copy
+        end
+      }
+    }
+
+    (task_list.length - 1).downto(0) {|x| metatask.next = task_list[x]}
+
+  end
+
+  #####################################################
+  #
   # parseXML
   #
   #####################################################
@@ -179,10 +259,17 @@ class Workflow
     @xmlparsetime=Time.now
 
     # Get the workflow element in the XML file
-#    workflowdoc=REXML::Document.new(File.new(@xmlfile))
     workflowdoc=LibXML::XML::Document.file(@xmlfile)
 
     workflow=workflowdoc.root
+
+    # Parse and expand metatasks
+    workflow.children.each {|ch|
+      if ch.name == "metatask"
+	pre_parse(ch)
+        ch.remove!
+      end
+    }
 
     # Get the workflow realtime attribute
     case workflow.attributes["realtime"]
