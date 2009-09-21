@@ -10,6 +10,7 @@ $:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
 require 'optparse'
 require 'workflow.rb'
 require 'lockfile/lib/lockfile.rb'
+require 'debug'
 
 UPDATE_INTERVAL=60
 
@@ -19,6 +20,7 @@ haltfile=nil
 shutdown=false
 shutdowncycles=nil
 doloop=false
+verbose=0
 
 lock_opts={
         :retries => 1,
@@ -53,6 +55,12 @@ opts.on("--halt","=[YYYYMMDDHH,...]",
                    shutdowncycles=cycles.collect { |cycle| Time.gm(cycle[0..3],cycle[4..5],cycle[6..7],cycle[8..9]) }
                  end
                }
+#opts.on("-v","--verbose","=N",
+#        "Turn on verbose messages at level N.\n",
+#        String) { |val| ENV["__WFM_VERBOSE__"]=val.to_i }
+
+opts.on("-v","--verbose","=N","Turn on verbose messages at level N.\n",String) { |val| ENV["__WFM_VERBOSE__"]=val }
+
 opts.on("--loop",
         "Run the workflowmgr in an infinite loop.") { |val| doloop=true }
 
@@ -68,12 +76,14 @@ end
 
 # Run the workflow
 begin
+  Debug::message(sprintf("Running in debug verbose level '%03d'",ENV["__WFM_VERBOSE__"].to_i),1)
   lockfile="#{storefile}.lock"
   Lockfile.new(lockfile,lock_opts) do
 
     if shutdown
       workflow=Workflow.new(xmlfile,storefile)
-      workflow.halt(shutdowncycles,ctrl_opts)
+#      workflow.halt(shutdowncycles,ctrl_opts)
+      workflow.halt(shutdowncycles)
     else
       loop do
         workflow=Workflow.new(xmlfile,storefile)

@@ -114,12 +114,14 @@ $:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
 class SGEBatchSystem
 
   require 'etc'
+  require 'timeout'
   require 'command.rb'
   require 'exceptions.rb'
 
   @@qstat_refresh_rate=30
   @@max_history=3600*1
   @@qsub_wrapper="/usr/local/fsl/bin/qsub"
+  @@refresh_timeout=15
 
   #####################################################
   #
@@ -283,69 +285,61 @@ class SGEBatchSystem
       min_end_time=Time.now-max_history
 
       # Loop over files reading each one backwards
-      count=0
-      files.each { |file|
+      timeout(@@refresh_timeout) do
+        catch(:done) do
+          count=0
+          files.each { |file|
 
-        # Read the file 1000 records at a time
-        line_count=0
-        while true
-
-          # Build the command to retrieve the records
-          if (!@acct_local && server!= host)
-            if file=~/\.gz$/          
-              cmd="ssh #{server} 'echo BEGIN\;gunzip -c #{file} | tac | awk \"NR>#{line_count} && NR<=#{line_count+1000}\"'"
+            # Build the command to retrieve the records
+            if (!@acct_local && server!= host)
+              if file=~/\.gz$/          
+                cmd="ssh #{server} 'gunzip -c #{file} | tac'"
+              else
+                cmd="ssh #{server} 'tac #{file}'"
+              end
             else
-              cmd="ssh #{server} 'echo BEGIN\;tac #{file} | awk \"NR>#{line_count} && NR<=#{line_count+1000}\"'"
-            end
-          else
-            if file=~/\.gz$/          
-              cmd="echo BEGIN;gunzip -c #{file} | tac | awk 'NR>#{line_count} && NR<=#{line_count+1000}'"
-            else
-              cmd="echo BEGIN;tac #{file} | awk 'NR>#{line_count} && NR<=#{line_count+1000}'"
-#              cmd="echo BEGIN;tac #{file} | head -#{line_count+1000} | tail -1000"
-            end
-          end
-
-          # Run the command to get the 1000 records
-          output=Command.run(cmd)
-          if output[1] != 0
-            raise output[0]
-          else
-            lines=output[0].split(/\n/)
-            records=lines.slice(lines.index("BEGIN")+1..-1)
-            break if records.nil? || records.empty?
-          end
-
-          records.each { |record|
-            fields=record.split(/:/)
-
-            # Skip bogus records
-            next unless fields.length==43 || fields.length==44
-            next unless fields[8].to_i > 0
-
-            # Quit if we've reached the minimum end_time
-            end_time=Time.at(fields[10].to_i)
-
-            if end_time > Time.at(0) && end_time < Time.at(min_end_time)
-              count=count+1
-            else
-              count=0
-            end
-            if count > 10
-              return
+              if file=~/\.gz$/          
+                cmd="gunzip -c #{file} | tac "
+              else
+                cmd="tac #{file}"
+              end
             end
 
-            # Add the record if it hasn't already been added
-            @exit_records[fields[5].to_i]=record unless @exit_records.has_key?(fields[5].to_i)
-          }
+            # Open a pipe to the command
+            IO.popen(cmd,"r") {|pipe|
+              while !pipe.eof?
+                record=pipe.gets
+                fields=record.split(/:/)
 
-          # Increment line_count
-          line_count=line_count+1000
+                # Skip bogus records
+                next unless fields.length==43 || fields.length==44 || fields.length==45
+                next unless fields[8].to_i > 0
 
-        end  # while true
+                # Quit if we've reached the minimum end_time
+                end_time=Time.at(fields[10].to_i)
+                if end_time > Time.at(0) && end_time < Time.at(min_end_time)
+                  count=count+1
+                else
+                  count=0
+                end
+                if count > 10
+                  throw :done
+                end
 
-      }  # files.each
+                # Add the record if it hasn't already been added
+                @exit_records[fields[5].to_i]=record unless @exit_records.has_key?(fields[5].to_i)
+              end # while !eof
+            } # popen
 
+          }  # files.each
+
+        end # catch :done
+
+      end # timeout
+
+    rescue TimeoutError
+      puts "WARNING: Timeout while running '#{cmd}'"
+      return
     rescue
       puts $!
       return
@@ -953,6 +947,8 @@ class SGEBatchSystem
       cmd=cmd+" #{script}"
 
       # Issue the submit command
+      Debug::message("    Running '#{cmd} 2>&1'",1)
+
       output=Command.run("#{cmd} 2>&1")
       if output[1] != 0
         raise "#{output[0]}"

@@ -204,7 +204,13 @@ class TaskDoneOkayDependency < Dependency_Operand
   #####################################################
   def resolved?(cycleTime)
 
-    return @trigger.done_okay?(cycleTime+@cycle)
+    resolved=@trigger.done_okay?(cycleTime+@cycle)
+    if resolved
+      Debug::message("    Dependency on task '#{@trigger.name}' is satisfied",10)
+    else
+      Debug::message("    Dependency on task '#{@trigger.name}' is not satisfied",10)
+    end
+    return resolved
 
   end
 
@@ -225,13 +231,21 @@ class TimeDependency < Dependency_Operand
   def resolved?(cycleTime)
 
     timestr=@trigger.to_s(cycleTime)
-    return Time.now > Time.gm(timestr[0..3],
+    
+    resolved= Time.now > Time.gm(timestr[0..3],
                               timestr[4..5],
                               timestr[6..7],
                               timestr[8..9],
                               timestr[10..11],
                               timestr[12..13])                  
+    if resolved
+      Debug::message("    Dependency on time '#{@trigger.to_s(cycleTime)}' is satisfied",10)
+    else
+      Debug::message("    Dependency on time '#{@trigger.to_s(cycleTime)}' is not satisfied",10)
+    end
+    return resolved
 
+    
   end
 
 end
@@ -269,12 +283,20 @@ class FileDependency < Dependency_Operand
     begin
       status = Timeout::timeout(5) {
         if File.exists?(filename)
-          return Time.now > (File.mtime(filename) + @age)
+          resolved=Time.now > (File.mtime(filename) + @age)
+          if resolved
+            Debug::message("    Dependency on file '#{@trigger.to_s(cycleTime)}' is satisfied",10)
+          else
+            Debug::message("    Dependency on file '#{@trigger.to_s(cycleTime)}' is not satisfied (file is not old enough)",10)
+          end
+          return resolved
         else
+          Debug::message("    Dependency on file '#{@trigger.to_s(cycleTime)}' is not satisfied (file does not exist)",10)
           return false
         end
       }
     rescue Timeout::Error
+      Debug::message("    Dependency on file '#{@trigger.to_s(cycleTime)}' is not satisfied (filesystem may be slow or hung)",10)
       return false
     end
 

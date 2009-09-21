@@ -52,14 +52,14 @@ class JetUsageReport
       pes=output[0].chomp
     end
     case pes
-      when /ncomp/
-        @machine="iJET"
-        @ncores=@@ijet_cores
-      when /ecomp/
-        @machine="eJET"
-        @ncores=@@ejet_cores
-      when /wcomp/
-        @machine="wJET"
+#      when /ncomp/
+#        @machine="iJET"
+#        @ncores=@@ijet_cores
+#      when /ecomp/
+#        @machine="eJET"
+#        @ncores=@@ejet_cores
+      when /wcomp/,/hcomp/
+        @machine="w+hJET"
         @ncores=@@wjet_cores
     end
 

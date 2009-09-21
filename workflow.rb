@@ -225,10 +225,15 @@ class Workflow
 
     metatask.children.each {|e|
       if e.name == "var"
-	eval "#{e["id"]} = e.content.split"
-        var_length = eval "#{e["id"]}.length" if var_length == -1
-        pexit("unequal variables") if (eval "#{e["id"]}.length") != var_length
-        id_table[e["id"]] = eval "#{e['id']}"
+	var_values = e.content.split
+        var_length = var_values.length if var_length == -1
+        pexit("unequal variables") if var_values.length != var_length
+        id_table[e["id"]] = var_values
+
+#	eval "#{e["id"]} = e.content.split"
+#        var_length = eval "#{e["id"]}.length" if var_length == -1
+#        pexit("unequal variables") if (eval "#{e["id"]}.length") != var_length
+#        id_table[e["id"]] = eval "#{e['id']}"
       end
     }
     pexit("no <var> tag or values specified in one or more metatasks") if var_length < 1
@@ -665,7 +670,7 @@ class Workflow
     raise XMLError,"<taskdep> is missing the mandatory 'task' attribute" if taskref.nil?
 
     # Make sure the task attribute refers to a previously defined <task> tag
-    raise XMLError,"<taskdep> task attribute refers to a task that has not been previously defined" if @taskorder[taskref].nil?
+    raise XMLError,"<taskdep> task attribute refers to a task, #{taskref}, that has not been previously defined" if @taskorder[taskref].nil?
 
     # Get the cycle attribute
     cycle=element.attributes["cycle"]
@@ -818,8 +823,11 @@ class Workflow
           # Don't run this cycle unless the cycle status is "RUN"
           next unless @status[cycle]=="RUN"
 
+          Debug::message("Processing cycle #{cycle}",5)
+
           # Run tasks in XML tree breadth-first order
           @tasks.keys.sort {|a,b| @taskorder[a]<=>@taskorder[b]}.each { |task|
+            Debug::message("  Processing task #{task}",5)
             @tasks[task].run(cycle)
           }
 
@@ -849,7 +857,7 @@ class Workflow
   #####################################################
   def halt(cycles,opts=@@ctrl_opts)
 
-    Lockfile.new(@lockfile,opts) do
+#    Lockfile.new(@lockfile,opts) do
       begin
         if cycles.nil?
           shutdowncycles=@cycles.keys
@@ -873,7 +881,7 @@ class Workflow
           @store['STATUS']=@status
         end        
       end      
-    end
+#    end
 
   end
 
