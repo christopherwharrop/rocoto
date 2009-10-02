@@ -5,7 +5,8 @@ if File.symlink?(__FILE__)
 else
   $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
 end
-$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
+$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby/lib")
+$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby/ext/libxml")
 
 require 'optparse'
 require 'workflow.rb'

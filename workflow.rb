@@ -1,14 +1,5 @@
 unless defined? $__workflow__
 
-if File.symlink?(__FILE__)
-  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
-else
-  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
-end
-$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/lib")
-$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
-
-
 ##########################################
 #
 # Class Workflow
@@ -264,7 +255,7 @@ class Workflow
     @xmlparsetime=Time.now
 
     # Get the workflow element in the XML file
-    workflowdoc=LibXML::XML::Document.file(@xmlfile)
+    workflowdoc=LibXML::XML::Document.file(@xmlfile,:options => LibXML::XML::Parser::Options::NOENT)
 
     workflow=workflowdoc.root
 

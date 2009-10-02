@@ -1,11 +1,4 @@
-#unless defined? $__loadlevelerbatchsystem__
-
-if File.symlink?(__FILE__)
-  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
-else
-  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
-end
-$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
+unless defined? $__loadlevelerbatchsystem__
 
 ##########################################
 #
@@ -406,7 +399,8 @@ class LoadLevelerBatchSystem
 
   end
 
-#$__loadlevelerbatchsystem__ == __FILE__
 end
 
+$__loadlevelerbatchsystem__ == __FILE__
 
+end

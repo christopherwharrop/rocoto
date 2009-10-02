@@ -1,12 +1,5 @@
 unless defined? $__cyclestring__
 
-if File.symlink?(__FILE__)
-  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
-else
-  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
-end
-$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
-
 ##########################################
 #
 # Class CycleString
@@ -28,6 +21,8 @@ class CycleString
         e
       elsif e.node_type==LibXML::XML::Node::TEXT_NODE
         e.content
+#      elsif e.node_type==LibXML::XML::Node::ENTITY_REF_NODE
+#        CycleString.new(e.content)
       else
         offset_str=e.attributes["offset"]
         offset_sec=0
@@ -65,7 +60,7 @@ class CycleString
           when "cyclestr"
             CycleFormat.new(e.content,offset_sec)
           else
-            raise "Invalid tag <#{e.name}> inside #{element}"
+            raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"
         end
       end
     } 

@@ -1,12 +1,5 @@
 unless defined? $__task__
 
-if File.symlink?(__FILE__)
-  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
-else
-  $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) 
-end
-$:.unshift("#{File.dirname(__FILE__)}/libxml-ruby-0.8.3/ext/libxml")
-
 ##########################################
 #
 # Class Task
@@ -24,7 +17,6 @@ class Task
   # initialize
   #
   #####################################################
-#  def initialize(name,command,scheduler,tries,throttle,properties,environment,dependencies,keepalive,log=nil)
   def initialize(name,command,scheduler,cyclecrons,tries,throttle,properties,environment,dependencies,hangdependencies,deadlinedependencies,log=nil)
 
     @name=name
