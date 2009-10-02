@@ -1,0 +1,238 @@
+<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+
+  <start>
+
+    <element name="workflow">
+
+      <!-- Realtime workflow attribute -->
+      <attribute name="realtime">
+        <choice>
+          <value>f</value>
+          <value>F</value>
+          <value>false</value>
+          <value>False</value>
+          <value>t</value>
+          <value>T</value>
+          <value>true</value>
+          <value>True</value>
+        </choice>
+      </attribute>
+
+      <!-- Order of log and cycle tags does not matter -->
+      <interleave>
+
+        <!-- Must have exactly one log tag -->
+        <element name="log">
+          <ref name="cyclestring"/>
+        </element>
+
+        <!-- Must have at least one cycle tag -->
+        <oneOrMore>
+          <element name="cycle">
+            <!-- id attribute is optional -->
+            <optional>
+              <attribute name="id">
+                <data type="string"/>
+              </attribute>
+            </optional>
+            <list>
+              <data type="string"/>
+              <data type="string"/>
+              <data type="string"/>
+              <data type="string"/>
+              <data type="string"/>
+              <data type="string"/>
+            </list>
+          </element>
+        </oneOrMore>
+
+      </interleave>
+
+      <!-- Must have at least one task or metatask tag.  Task tags must follow log and cycle tags -->
+      <oneOrMore>
+        <choice>
+          <ref name="task"/>
+          <ref name="metatask"/>
+        </choice>
+      </oneOrMore>
+
+    </element>  
+
+  </start>
+
+  <define name="cyclestring">
+    <oneOrMore>
+      <choice>
+        <text/>
+        <element name="cycle_Y"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cycle_y"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cycle_m"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cycle_d"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cycle_j"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cycle_H"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cycle_M"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cycle_S"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
+        <element name="cyclestr"><optional><attribute name="offset"><text/></attribute></optional><text/></element>
+      </choice>
+    </oneOrMore>
+  </define>
+
+  <define name="name_value_pair">
+    <interleave>
+      <element name="name">
+        <ref name="cyclestring"/>
+      </element>
+      <optional>
+        <element name="value">
+          <ref name="cyclestring"/>
+        </element>                    
+      </optional>
+    </interleave>
+  </define>
+
+  <define name="dependency_tree">
+    <choice>
+      <element name="taskdep">
+        <attribute name="task">
+          <data type="string"/>          
+        </attribute>
+        <empty/>
+      </element>
+      <element name="filedep">
+        <optional>
+          <attribute name="age">
+            <data type="string"/>          
+          </attribute>
+        </optional>
+        <ref name="cyclestring"/>
+      </element>
+      <element name="timedep">
+        <ref name="cyclestring"/>
+      </element>
+      <element name="and">
+        <optional>
+          <attribute name="max_missing">
+            <data type="string"/>          
+          </attribute>
+        </optional>
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="or">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="not">
+        <ref name="dependency_tree"/>
+      </element>
+    </choice>
+  </define>
+
+  <define name="task">
+    <element name="task">
+
+      <!-- Task id attribute -->
+      <attribute name="id">
+        <data type="string"/>          
+      </attribute>
+
+      <!-- Task action attribute -->
+      <attribute name="action">
+        <data type="string"/>          
+      </attribute>
+
+      <!-- Task cycle attribute -->
+      <optional>
+        <attribute name="cycle">
+          <data type="string"/>          
+        </attribute>
+      </optional>
+
+      <!-- Task scheduler attribute -->
+      <attribute name="scheduler">
+        <data type="string"/>          
+      </attribute>
+
+      <!-- Task throttle attribute -->
+      <optional>
+        <attribute name="throttle">
+          <data type="string"/>          
+        </attribute>
+      </optional>
+
+      <!-- Task tries attribute -->
+      <optional>
+        <attribute name="tries">
+          <data type="string"/>          
+        </attribute>
+      </optional>
+
+      <!-- Order of property, environment, and dependency tags does not matter -->
+      <interleave>
+
+        <!-- Zero or more property tags -->
+        <zeroOrMore>
+          <element name="property">
+            <ref name="name_value_pair"/>
+          </element>
+        </zeroOrMore>
+
+        <!-- Zero or more environment tags -->
+        <zeroOrMore>
+          <element name="environment">
+            <ref name="name_value_pair"/>
+          </element>
+        </zeroOrMore>
+
+        <!-- Zero or one hangdependency tag -->
+        <optional>
+          <element name="hangdependency">
+            <ref name="dependency_tree"/>   
+          </element>
+        </optional>
+
+        <!-- Zero or one deadlinedependency tag -->
+        <optional>
+          <element name="deadlinedependency">
+            <ref name="dependency_tree"/>   
+          </element>
+        </optional>
+
+        <!-- Zero or one dependency tag -->
+        <optional>
+          <element name="dependency">
+            <ref name="dependency_tree"/>   
+          </element>
+        </optional>
+
+      </interleave>
+
+    </element>
+  </define>
+
+  <define name="metatask">
+    <element name="metatask">
+      <!-- Metatasks must have at least one var tag -->
+      <oneOrMore>
+        <element name="var">
+          <!-- Each var tag must have the id attribute set -->
+          <attribute name="id">
+            <data type="string"/>
+          </attribute>
+          <text/>
+        </element>
+      </oneOrMore>
+      <!-- Each metatask must contain at least one metatask or task -->
+      <oneOrMore>
+        <choice>
+          <ref name="metatask"/>
+          <ref name="task"/>
+        </choice>
+      </oneOrMore>
+    </element>
+  </define>
+
+</grammar>
+
