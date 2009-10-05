@@ -1,5 +1,5 @@
-<grammar xmlns="http://relaxng.org/ns/structure/1.0">
-
+<grammar xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+                                                                      
   <start>
 
     <element name="workflow">
@@ -60,19 +60,42 @@
 
   </start>
 
+  <define name="SS">
+    <data type="string"><param name="pattern">-?\d+</param></data>
+  </define>
+  <define name="MMSS">
+    <data type="string"><param name="pattern">-?\d+:\d+</param></data>
+  </define>
+  <define name="HHMMSS">
+    <data type="string"><param name="pattern">-?\d+:\d+:\d+</param></data>
+  </define>
+  <define name="DDHHMMSS">
+    <data type="string"><param name="pattern">-?\d+:\d+:\d+:\d+</param></data>
+  </define>
+
+  <define name="offset_type">
+    <choice>
+      <ref name="SS"/>
+      <ref name="MMSS"/>
+      <ref name="HHMMSS"/>
+      <ref name="DDHHMMSS"/>
+    </choice>
+  </define>
+
+
   <define name="cyclestring">
     <oneOrMore>
       <choice>
         <text/>
-        <element name="cycle_Y"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cycle_y"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cycle_m"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cycle_d"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cycle_j"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cycle_H"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cycle_M"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cycle_S"><optional><attribute name="offset"><text/></attribute></optional><empty/></element>
-        <element name="cyclestr"><optional><attribute name="offset"><text/></attribute></optional><text/></element>
+        <element name="cycle_Y"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cycle_y"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cycle_m"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cycle_d"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cycle_j"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cycle_H"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cycle_M"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cycle_S"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><empty/></element>
+        <element name="cyclestr"><optional><attribute name="offset"><ref name="offset_type"/></attribute></optional><text/></element>
       </choice>
     </oneOrMore>
   </define>
@@ -101,7 +124,7 @@
       <element name="filedep">
         <optional>
           <attribute name="age">
-            <data type="string"/>          
+            <ref name="offset_type"/>
           </attribute>
         </optional>
         <ref name="cyclestring"/>
@@ -112,7 +135,7 @@
       <element name="and">
         <optional>
           <attribute name="max_missing">
-            <data type="string"/>          
+            <data type="integer"/>          
           </attribute>
         </optional>
         <oneOrMore>
@@ -152,20 +175,24 @@
 
       <!-- Task scheduler attribute -->
       <attribute name="scheduler">
-        <data type="string"/>          
+        <choice>
+          <value>sge</value>
+          <value>lsf</value>
+          <value>ll</value>
+        </choice>
       </attribute>
 
       <!-- Task throttle attribute -->
       <optional>
         <attribute name="throttle">
-          <data type="string"/>          
+          <data type="integer"/>          
         </attribute>
       </optional>
 
       <!-- Task tries attribute -->
       <optional>
         <attribute name="tries">
-          <data type="string"/>          
+          <data type="integer"/>          
         </attribute>
       </optional>
 
