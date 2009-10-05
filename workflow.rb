@@ -254,18 +254,32 @@ class Workflow
     # Set the parsetime
     @xmlparsetime=Time.now
 
-    # Get the workflow element in the XML file
+    # Parse the Relax NG schemas as XML document ("_m" means it validates metatask tags)
+    relaxng_document_m = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema_m.rng")
+    relaxng_document = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema.rng")
+
+    # Prepare the Relax NG schemas for validation
+    relaxng_schema_m = LibXML::XML::RelaxNG.document(relaxng_document_m)
+    relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
+
+    # Parse the workflow xml document
     workflowdoc=LibXML::XML::Document.file(@xmlfile,:options => LibXML::XML::Parser::Options::NOENT)
 
-    workflow=workflowdoc.root
+    # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
+    workflowdoc.validate_relaxng(relaxng_schema_m)
 
     # Parse and expand metatasks
+    workflow=workflowdoc.root
     workflow.children.each {|ch|
       if ch.name == "metatask"
 	pre_parse(ch)
         ch.remove!
       end
     }
+
+    # Validate the workflow XML file again against the Relax NG Schema that does not include metatasks
+    # This helps to verify the correctness ater/of the metatask expansion
+    workflowdoc.validate_relaxng(relaxng_schema)
 
     # Get the workflow realtime attribute
     case workflow.attributes["realtime"]
