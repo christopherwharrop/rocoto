@@ -809,7 +809,7 @@ class Workflow
         end
 
         # Loop over cycles
-        @cycles.keys.each { |cycle|
+        @cycles.keys.sort.each { |cycle|
 
           # Don't run this cycle unless the cycle status is "RUN"
           next unless @status[cycle]=="RUN"
