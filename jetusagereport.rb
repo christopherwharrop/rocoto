@@ -7,9 +7,12 @@ unless defined? $__jetusagereport__
 ##########################################
 class JetUsageReport
 
-  @@wjet_cores=1392+1952  # wjet + hjet
-  @@ejet_cores=616
-  @@ijet_cores=1154
+  @@cores={'wjet'=>1392,
+           'hjet'=>1952,
+           'njet'=>3520}
+  @@pes={'wjet'=>["w.*","serial"],
+         'hjet'=>["h.*","serial"],
+         'njet'=>["n.*"]}
   @@smtpserver="10.1.99.99"
 
   require 'sgebatchsystem.rb'
@@ -20,7 +23,7 @@ class JetUsageReport
   # initialize
   #
   #####################################################
-  def initialize(stime,etime,users=nil,projects=nil)
+  def initialize(machines,stime,etime,users=nil,projects=nil)
 
     # Make sure $SGE_ROOT is defined
     sge_root=ENV['SGE_ROOT']
@@ -37,24 +40,14 @@ class JetUsageReport
       sge_path="#{sge_root}/bin/#{bin}"
     end
 
-    # Figure out what machine this report is for
-    output=Command.run("#{sge_path}/qconf -spl | grep comp")
-    if output[1] != 0
-      raise output[0]
-    else
-      pes=output[0].chomp
-    end
-    case pes
-#      when /ncomp/
-#        @machine="iJET"
-#        @ncores=@@ijet_cores
-#      when /ecomp/
-#        @machine="eJET"
-#        @ncores=@@ejet_cores
-      when /wcomp/,/hcomp/
-        @machine="w+hJET"
-        @ncores=@@wjet_cores
-    end
+    # Get the list of machines for this report
+    @machines=machines
+
+    # Calculate the total number of cores for this report
+    @ncores=@machines.collect {|machine| @@cores[machine] }.inject { |sum, n| sum + n }
+
+    # Calculate an array of PEs for this report
+    @pes=@machines.collect {|machine| @@pes[machine]}.flatten.uniq
 
     # Convert start and end time strings into Time objects
     @start_time=Time.gm(*(stime.gsub(/[-_:]/,":").split(":")))
@@ -70,7 +63,7 @@ class JetUsageReport
     sge=SGEBatchSystem.new()
 
     # Get the job statistics from the accounting logs
-    @stats=sge.collect_job_stats(stime,etime,projects,users).split(/%/)
+    @stats=sge.collect_job_stats(stime,etime,projects,users,@pes).split(/%/)
 
     # Reconstitute overall_stats
     @overall_stats=Hash.new
@@ -167,7 +160,7 @@ class JetUsageReport
     end_str=@end_time.strftime("%m/%d/%Y %H:%M:%S %Z")
 
     msg=sprintf  "\n"
-    msg+=sprintf "#{@machine} Usage Report For: #{start_str} thru #{end_str}\n"
+    msg+=sprintf "#{@machines.join(",")} Usage Report For: #{start_str} thru #{end_str}\n"
     msg+=sprintf  "\n"
 
     return msg

@@ -558,47 +558,10 @@ class SGEBatchSystem
   # collect_job_stats
   #
   #####################################################
-  def collect_job_stats(stime,etime,accounts,users)
+  def collect_job_stats(stime,etime,accounts,users,pes)
 
     # Set the SGE_ROOT 
     ENV['SGE_ROOT']=@sge_root
-
-    unless @acct_local
-
-      # Get the current SGE server's hostname
-      output=Command.run("#{@sge_path}/qconf -sss")
-      if output[1] != 0
-        raise output[0]
-      end
-      server=output[0].split(".")[0].chomp
-
-      # Get our hostname
-      host=`hostname -s`.chomp
-
-      # If we are not on the server, invoke this method through an ssh tunnel to the server
-      if (!@acct_local && server != host)
-        if File.symlink?(__FILE__)
-          requirefile=File.expand_path(File.readlink(__FILE__))
-        else
-          requirefile=File.expand_path(__FILE__)
-        end
-#        cmd="ssh #{server} /usr/bin/ruby -r #{File.expand_path(__FILE__)} -e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").collect_job_stats(\"#{stime}\",\"#{etime}\",\"#{accounts}\",\"#{users}\")'\\'"
-        cmd="ssh #{server} /usr/bin/ruby -r #{requirefile} -e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").collect_job_stats(\"#{stime}\",\"#{etime}\",\"#{accounts}\",\"#{users}\")'\\'"
-        output=Command.run(cmd,600)
-        if output[1] != 0
-          raise output[0]
-        else
-          # Attempt to get rid of the !@#$ banner messages from the ssh command output
-          record=output[0].chomp.split(/\n/).last
-          if record=="nil"
-            return nil
-          else
-            return record
-          end
-        end
-      end
-
-    end
 
     # Get the start and end times in seconds since epoch
     ssecs=Time.gm(*(stime.gsub(/[-_:]/,":").split(":"))).to_i
@@ -672,7 +635,11 @@ class SGEBatchSystem
         unless users.nil?
           next if users.index(fields[3]).nil?
         end
-     
+
+        # Skip records for pe not specified
+        pattern=/^q(#{pes.join("|")}).q$/
+        next unless fields[0]=~pattern
+
         # Get the relevant stats from the record
         user=fields[3]
         project=fields[6]

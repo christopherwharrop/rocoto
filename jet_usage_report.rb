@@ -14,6 +14,7 @@ require "date"
 opts= GetoptLong.new(
 #  ["--users",      GetoptLong::REQUIRED_ARGUMENT],
 #  ["--projects",   GetoptLong::REQUIRED_ARGUMENT],
+  ["--machines",   GetoptLong::REQUIRED_ARGUMENT],
   ["--sge-root",   GetoptLong::REQUIRED_ARGUMENT],
   ["--help",       GetoptLong::NO_ARGUMENT],
   ["--mail",       GetoptLong::REQUIRED_ARGUMENT],
@@ -37,6 +38,7 @@ months=0
 weeks=0
 days=0
 hours=0
+machines="wjet,hjet"
 
 # Parse the options
 opts.each { |option,arg|
@@ -45,6 +47,7 @@ opts.each { |option,arg|
     puts "jet_usage_report.rb [options]\n"
     puts
     puts "   --help                Print this message\n"
+    puts "   --machines            Specify a comma separated list of machines to be included in the report (wjet, hjet, njet)\n"
     puts "   --sge-root            Set the value of SGE_ROOT when running the report, used mostly when running from cron\n"
     puts "                         The default is the contents of $SGE_ROOT, which is always set except when run from cron\n"
     puts "   --mail [emp,project]  Email EMP, Project, or both EMP and Project, reports to PIs of those groups\n"
@@ -66,6 +69,10 @@ opts.each { |option,arg|
 #  if option=="--projects"
 #    projects=arg.split(/,/)
 #  end
+
+  if option=="--machines"
+    machines=arg.split(/,/).collect {|machine| machine.downcase }
+  end
 
   if option=="--sge-root"
     ENV['SGE_ROOT']=arg
@@ -147,7 +154,7 @@ elsif !end_str.nil?
   start_str=start_time.strftime("%Y-%m-%d_%H:%M:%S")
 end
 
-report=JetUsageReport.new(start_str,end_str,nil,nil)
+report=JetUsageReport.new(machines,start_str,end_str,nil,nil)
 if email.nil?
   report.print_full_report
 else
