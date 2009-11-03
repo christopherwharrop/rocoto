@@ -24,32 +24,6 @@ class Workflow
   class XMLError < StandardError; end
 
   @@update_interval=60
-  @@opts={ 
-          :retries => 1,
-          :sleep_inc => 2,
-          :min_sleep => 2, 
-          :max_sleep => 10,
-          :max_age => 900,
-          :suspend => 30,
-          :refresh => 5,
-          :timeout => 45,
-          :poll_retries => 16,
-          :poll_max_sleep => 0.08,
-          :debug => false
-  }
-  @@ctrl_opts={ 
-          :retries => nil,
-          :sleep_inc => 2,
-          :min_sleep => 2, 
-          :max_sleep => 10,
-          :max_age => 900,
-          :suspend => 30,
-          :refresh => 5,
-          :timeout => 45,
-          :poll_retries => 16,
-          :poll_max_sleep => 0.08,
-          :debug => false
-  }
 
   attr_reader :state
  
@@ -58,72 +32,65 @@ class Workflow
   # initialize
   #
   #####################################################
-  def initialize(xmlfile,store,opts=@@opts)
+  def initialize(xmlfile,store)
 
     @store=PStore.new(store)
-    @lockfile="#{store}.lock"
 
     begin
-#      Lockfile.new(@lockfile,opts) do
 
-        # Retrieve the previous XML filename and parse time
+      # Retrieve the previous XML filename and parse time
+      @store.transaction do
+        @xmlfile=@store['XMLFILE']
+        @xmlparsetime=@store['XMLPARSETIME']
+        @realtime=@store['REALTIME']
+        @log=@store['LOG']
+        @cyclecrons=@store['CYCLECRONS'].nil?   ? Hash.new : @store['CYCLECRONS']
+        @cycles=@store['CYCLES'].nil?           ? Hash.new : @store['CYCLES']
+        @maxflowrate=@store['MAXFLOWRATE'].nil? ? 0.0      : @store['MAXFLOWRATE']
+        @tasks=@store['TASKS'].nil?             ? Hash.new : @store['TASKS']
+        @taskorder=@store['TASKORDER'].nil?     ? Hash.new : @store['TASKORDER']
+        @schedulers=@store['SCHEDULERS'].nil?   ? Hash.new : @store['SCHEDULERS']
+        @status=@store['STATUS'].nil?           ? Hash.new : @store['STATUS']
+        @reservation_lead_time=@store['RESERVATION_LEAD_TIME'].nil? ? 0 : @store['RESERVATION_LEAD_TIME']
+      end
+
+      # For backward compatibility where store files use a string instead of a Hash for @status
+      # This code should be removed at some point
+      unless @status.class==Hash
+        @status=Hash.new
+        @cycles.keys.each { |cycle| @status[cycle]="RUN" }
+      end 
+
+      # Update @xmlfile and @xmlparsetime if the xml filename has changed
+      if @xmlfile != xmlfile
+        @xmlfile=xmlfile
+        @xmlparsetime=nil
+      end
+
+      # If the XML file was modified or has changed...
+      if self.dirty? 
+
+        # Parse the XML file
+        self.parseXML
+
+        # Save updated workflow to store file
         @store.transaction do
-          @xmlfile=@store['XMLFILE']
-          @xmlparsetime=@store['XMLPARSETIME']
-          @realtime=@store['REALTIME']
-          @log=@store['LOG']
-          @cyclecrons=@store['CYCLECRONS'].nil?   ? Hash.new : @store['CYCLECRONS']
-          @cycles=@store['CYCLES'].nil?           ? Hash.new : @store['CYCLES']
-          @maxflowrate=@store['MAXFLOWRATE'].nil? ? 0.0      : @store['MAXFLOWRATE']
-          @tasks=@store['TASKS'].nil?             ? Hash.new : @store['TASKS']
-          @taskorder=@store['TASKORDER'].nil?     ? Hash.new : @store['TASKORDER']
-          @schedulers=@store['SCHEDULERS'].nil?   ? Hash.new : @store['SCHEDULERS']
-          @status=@store['STATUS'].nil?           ? Hash.new : @store['STATUS']
-          @reservation_lead_time=@store['RESERVATION_LEAD_TIME'].nil? ? 0 : @store['RESERVATION_LEAD_TIME']
+          @store['XMLFILE']=@xmlfile
+          @store['XMLPARSETIME']=@xmlparsetime
+          @store['REALTIME']=@realtime
+          @store['LOG']=@log
+          @store['CYCLECRONS']=@cyclecrons
+          @store['CYCLES']=@cycles
+          @store['MAXFLOWRATE']=@maxflowrate
+          @store['TASKS']=@tasks
+          @store['TASKORDER']=@taskorder
+          @store['SCHEDULERS']=@schedulers
+          @store['STATUS']=@status
+          @store['RESERVATION_LEAD_TIME']=@reservation_lead_time
         end
 
-        # For backward compatibility where store files use a string instead of a Hash for @status
-        # This code should be removed at some point
-        unless @status.class==Hash
-          @status=Hash.new
-          @cycles.keys.each { |cycle| @status[cycle]="RUN" }
-        end 
+      end
 
-        # Update @xmlfile and @xmlparsetime if the xml filename has changed
-        if @xmlfile != xmlfile
-          @xmlfile=xmlfile
-          @xmlparsetime=nil
-        end
-
-        # If the XML file was modified or has changed...
-        if self.dirty? 
-
-          # Parse the XML file
-          self.parseXML
-
-          # Save updated workflow to store file
-          @store.transaction do
-            @store['XMLFILE']=@xmlfile
-            @store['XMLPARSETIME']=@xmlparsetime
-            @store['REALTIME']=@realtime
-            @store['LOG']=@log
-            @store['CYCLECRONS']=@cyclecrons
-            @store['CYCLES']=@cycles
-            @store['MAXFLOWRATE']=@maxflowrate
-            @store['TASKS']=@tasks
-            @store['TASKORDER']=@taskorder
-            @store['SCHEDULERS']=@schedulers
-            @store['STATUS']=@status
-            @store['RESERVATION_LEAD_TIME']=@reservation_lead_time
-          end
-
-        end
-
-#      end
-
-    rescue Lockfile::MaxTriesLockError
-      puts "The workflow is locked."
-      raise
     rescue ArgumentError
       if $!.message=~/marshal data too short/
         puts
@@ -741,104 +708,99 @@ class Workflow
   # run
   #
   #####################################################
-  def run(opts=@@opts)
+  def run()
 
     begin
 
-      # Lock the workflow while working on tasks and cycles
-#      Lockfile.new(@lockfile,opts) do
-
-        # Calculate a new cycle to add if we are doing realtime
-        if @realtime
+      # Calculate a new cycle to add if we are doing realtime
+      if @realtime
 
 # NOTE: this doesn't work for subhourly cycles!!!! 
-          # Get the latest cycle not greater than the current time
-          0.step(@reservation_lead_time,3600) {|i|
-            nextcycles=@cyclecrons.values.collect { |cyclecron| cyclecron.prev(Time.now+i) }.compact
-            if nextcycles.empty?
-              newcycle=nil
-            else
-              newcycle=nextcycles.max
-            end
-
-            # Add the new cycle if there is one
-            unless newcycle.nil?
-              unless @cycles.has_key?(newcycle)
-                @cycles[newcycle]=Time.now
-                @status[newcycle]="RUN"
-              end
-            end
-          }
-
-        # Calculate a new cycle to add if we are doing retrospective
-        else
-
-          # If the maxflowrate is undefined, then add a cycle every time we run
-          if @maxflowrate.nil? || @maxflowrate <= 0
-            numcycles=1
+        # Get the latest cycle not greater than the current time
+        0.step(@reservation_lead_time,3600) {|i|
+          nextcycles=@cyclecrons.values.collect { |cyclecron| cyclecron.prev(Time.now+i) }.compact
+          if nextcycles.empty?
+            newcycle=nil
           else
-            denominator=(@maxflowrate-@maxflowrate.to_i).zero? ? 1 : @maxflowrate-@maxflowrate.to_i
-
-            # Calculate how far back to look
-            lookback_hours=(1.0/denominator).round
-
-            # Calculate the max cycles per lookback_hours
-            max_cycles=(@maxflowrate/denominator).round
-
-            # Calculate the number of cycles to add
-            numcycles=max_cycles - @cycles.values.find_all { |add_time| add_time > Time.now - lookback_hours*3600 }.size
-
+            newcycle=nextcycles.max
           end
 
-          # Add numcycles cycles
-          numcycles.times {
-            if @cycles.empty?
-              latest_cycle=Time.at(0).getgm
-            else
-              latest_cycle=@cycles.keys.max
+          # Add the new cycle if there is one
+          unless newcycle.nil?
+            unless @cycles.has_key?(newcycle)
+              @cycles[newcycle]=Time.now
+              @status[newcycle]="RUN"
             end
-
-            # Get the earliest cycle not less than the latest cycle already added
-            nextcycles=@cyclecrons.values.collect { |cyclecron| cyclecron.next(latest_cycle) }.compact
-            if nextcycles.empty?
-              newcycle=nil
-            else
-              newcycle=nextcycles.min
-            end
-
-            # Add the new cycle if it hasn't been added yet
-            unless newcycle.nil?
-              unless @cycles.has_key?(newcycle)
-                @cycles[newcycle]=Time.now
-                @status[newcycle]="RUN"
-              end
-            end
-          }
-
-        end
-
-        @store.transaction do
-          @store['CYCLES']=@cycles
-          @store['STATUS']=@status
-        end
-
-        # Loop over cycles
-        @cycles.keys.sort.each { |cycle|
-
-          # Don't run this cycle unless the cycle status is "RUN"
-          next unless @status[cycle]=="RUN"
-
-          Debug::message("Processing cycle #{cycle}",5)
-
-          # Run tasks in XML tree breadth-first order
-          @tasks.keys.sort {|a,b| @taskorder[a]<=>@taskorder[b]}.each { |task|
-            Debug::message("  Processing task #{task}",5)
-            @tasks[task].run(cycle)
-          }
-
+          end
         }
 
-#      end
+      # Calculate a new cycle to add if we are doing retrospective
+      else
+
+        # If the maxflowrate is undefined, then add a cycle every time we run
+        if @maxflowrate.nil? || @maxflowrate <= 0
+          numcycles=1
+        else
+          denominator=(@maxflowrate-@maxflowrate.to_i).zero? ? 1 : @maxflowrate-@maxflowrate.to_i
+
+          # Calculate how far back to look
+          lookback_hours=(1.0/denominator).round
+
+          # Calculate the max cycles per lookback_hours
+          max_cycles=(@maxflowrate/denominator).round
+
+          # Calculate the number of cycles to add
+          numcycles=max_cycles - @cycles.values.find_all { |add_time| add_time > Time.now - lookback_hours*3600 }.size
+
+        end
+
+        # Add numcycles cycles
+        numcycles.times {
+          if @cycles.empty?
+          latest_cycle=Time.at(0).getgm
+          else
+            latest_cycle=@cycles.keys.max
+          end
+
+          # Get the earliest cycle not less than the latest cycle already added
+          nextcycles=@cyclecrons.values.collect { |cyclecron| cyclecron.next(latest_cycle) }.compact
+          if nextcycles.empty?
+            newcycle=nil
+          else
+            newcycle=nextcycles.min
+          end
+
+          # Add the new cycle if it hasn't been added yet
+          unless newcycle.nil?
+            unless @cycles.has_key?(newcycle)
+              @cycles[newcycle]=Time.now
+              @status[newcycle]="RUN"
+            end
+          end
+        }
+
+      end
+
+      @store.transaction do
+        @store['CYCLES']=@cycles
+        @store['STATUS']=@status
+      end
+
+      # Loop over cycles
+      @cycles.keys.sort.each { |cycle|
+
+        # Don't run this cycle unless the cycle status is "RUN"
+        next unless @status[cycle]=="RUN"
+
+        Debug::message("Processing cycle #{cycle}",5)
+
+        # Run tasks in XML tree breadth-first order
+        @tasks.keys.sort {|a,b| @taskorder[a]<=>@taskorder[b]}.each { |task|
+          Debug::message("  Processing task #{task}",5)
+          @tasks[task].run(cycle)
+        }
+
+      }
 
     rescue
       puts $!
@@ -860,33 +822,31 @@ class Workflow
   # halt
   #
   #####################################################
-  def halt(cycles,opts=@@ctrl_opts)
+  def halt(cycles)
 
-#    Lockfile.new(@lockfile,opts) do
-      begin
-        if cycles.nil?
-          shutdowncycles=@cycles.keys
-        else
-          shutdowncycles=cycles
-        end
-        shutdowncycles.collect! {|cycle| cycle.getgm}
-        shutdowncycles.each { |shutdowncycle|
-          @log.log(shutdowncycle,"Attempting to halt this cycle")
-          @tasks.each_value { |task| 
-            task.halt(shutdowncycle)
-          }
-          @status[shutdowncycle]="HALT"
-          @log.log(shutdowncycle,"This cycle has been halted")
+    begin
+      if cycles.nil?
+        shutdowncycles=@cycles.keys
+      else
+        shutdowncycles=cycles
+      end
+      shutdowncycles.collect! {|cycle| cycle.getgm}
+      shutdowncycles.each { |shutdowncycle|
+        @log.log(shutdowncycle,"Attempting to halt this cycle")
+        @tasks.each_value { |task| 
+          task.halt(shutdowncycle)
         }
-      rescue
-        raise $!
-      ensure
-        @store.transaction do
-          @store['TASKS']=@tasks
-          @store['STATUS']=@status
-        end        
-      end      
-#    end
+        @status[shutdowncycle]="HALT"
+        @log.log(shutdowncycle,"This cycle has been halted")
+      }
+    rescue
+      raise $!
+    ensure
+      @store.transaction do
+        @store['TASKS']=@tasks
+        @store['STATUS']=@status
+      end        
+    end      
 
   end
 
@@ -896,15 +856,12 @@ class Workflow
   # pause
   #
   #####################################################
-  def pause(cycles,opts=@@ctrl_opts)
+  def pause(cycles)
   
-    Lockfile.new(@lockfile,opts) do
-
-      @status="PAUSE"
-      @store.transaction do
-        @store['STATUS']=@status
-      end        
-    end
+    @status="PAUSE"
+    @store.transaction do
+      @store['STATUS']=@status
+    end        
 
   end
 
@@ -913,34 +870,30 @@ class Workflow
   # resume
   #
   #####################################################
-  def resume(cycles,opts=@@ctrl_opts)
+  def resume(cycles)
   
-    Lockfile.new(@lockfile,@@opts) do
+    begin
+      if cycles.nil?
+        resumecycles=@cycles.keys
+      else
+        resumecycles=cycles
+      end
+      resumecycles.each { |resumecycle|
 
-      begin
-        if cycles.nil?
-          resumecycles=@cycles.keys
-        else
-          resumecycles=cycles
-        end
-        resumecycles.each { |resumecycle|
+        # Make sure we don't resume a cycle that doesn't exist
+        next if @cycles[resumecycle].nil?
 
-          # Make sure we don't resume a cycle that doesn't exist
-          next if @cycles[resumecycle].nil?
-
-          @log.log(resumecycle,"Cycle has been resumed")
-          @status[resumecycle]="RUN"
-        }
-      rescue
-        raise $!
-      ensure
-        @store.transaction do
-          @store['TASKS']=@tasks
-          @store['STATUS']=@status
-        end        
-      end      
-
-    end
+        @log.log(resumecycle,"Cycle has been resumed")
+        @status[resumecycle]="RUN"
+      }
+    rescue
+      raise $!
+    ensure
+      @store.transaction do
+        @store['TASKS']=@tasks
+        @store['STATUS']=@status
+      end        
+    end      
 
   end
 

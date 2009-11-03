@@ -56,12 +56,7 @@ opts.on("--halt","=[YYYYMMDDHH,...]",
                    shutdowncycles=cycles.collect { |cycle| Time.gm(cycle[0..3],cycle[4..5],cycle[6..7],cycle[8..9]) }
                  end
                }
-#opts.on("-v","--verbose","=N",
-#        "Turn on verbose messages at level N.\n",
-#        String) { |val| ENV["__WFM_VERBOSE__"]=val.to_i }
-
 opts.on("-v","--verbose","=N","Turn on verbose messages at level N.\n",String) { |val| ENV["__WFM_VERBOSE__"]=val }
-
 opts.on("--loop",
         "Run the workflowmgr in an infinite loop.") { |val| doloop=true }
 
@@ -83,7 +78,6 @@ begin
 
     if shutdown
       workflow=Workflow.new(xmlfile,storefile)
-#      workflow.halt(shutdowncycles,ctrl_opts)
       workflow.halt(shutdowncycles)
     else
       loop do
@@ -95,8 +89,6 @@ begin
       end
     end
 
-#    workflow=Workflow.new(xmlfile,storefile)
-#    workflow.run
   end
 rescue Lockfile::MaxTriesLockError,Lockfile::TimeoutLockError,Lockfile::StackingLockError
   puts "The workflow is locked."
