@@ -185,16 +185,11 @@ class Workflow
       if e.name == "var"
 	var_values = e.content.split
         var_length = var_values.length if var_length == -1
-        pexit("unequal variables") if var_values.length != var_length
+        raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
         id_table[e["id"]] = var_values
-
-#	eval "#{e["id"]} = e.content.split"
-#        var_length = eval "#{e["id"]}.length" if var_length == -1
-#        pexit("unequal variables") if (eval "#{e["id"]}.length") != var_length
-#        id_table[e["id"]] = eval "#{e['id']}"
       end
     }
-    pexit("no <var> tag or values specified in one or more metatasks") if var_length < 1
+    raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
 
     task_list = Array.new
     0.upto(var_length - 1) {|index|

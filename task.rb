@@ -236,14 +236,22 @@ class Task
   #####################################################
   def run(cycle)
 
+    Debug::message("      Entering Task::run for cycle #{cycle}",10)
+
     # Make sure cycle is valid for this task
     return unless @cyclecrons.any? { |cyclecron| cyclecron.has_cycle?(cycle) }
+
+    Debug::message("      Task is valid for this cycle",10)
     
     # Don't do anything if the task is already done for this cycle
     return if self.done?(cycle)
 
+    Debug::message("      Task is NOT done for this cycle",10)
+
     # Don't do anthing if the task is expired
     return if self.expired?(cycle)
+
+    Debug::message("      Task is NOT expired for this cycle",10)
 
     # Determine if the task has expired
     if @deadlinedependencies.nil?
