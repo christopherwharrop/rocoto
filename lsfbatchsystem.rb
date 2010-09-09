@@ -309,6 +309,10 @@ class LSFBatchSystem
       cmd="bsub"
       attributes.each { |attr,value|
         cmd=cmd+" #{attr} #{value}"
+	# Create the path for the log file
+	if (attr == "-o" or attr == "-e") then
+	  FileUtils.mkdir_p(File.dirname(value))
+	end
       }
       cmd=cmd+" #{script}"
 

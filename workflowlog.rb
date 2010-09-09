@@ -7,6 +7,7 @@ unless defined? $__workflowlog__
 ##########################################
 class WorkflowLog
 
+  require 'fileutils.rb'
 
   #####################################################
   #
@@ -27,7 +28,8 @@ class WorkflowLog
   def log(cycle,msg)
 
     host=`hostname -s`.chomp
-    logfile=File.new(@name.to_s(cycle),"a")
+    FileUtils.mkdir_p(File.dirname(@name.to_s(cycle)))
+    logfile=File.new(@name.to_s(cycle),"a+")
     logfile.puts("#{Time.now} :: #{host} :: #{msg}")
     logfile.close
 

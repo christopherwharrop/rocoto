@@ -110,6 +110,7 @@ class SGEBatchSystem
   require 'timeout'
   require 'command.rb'
   require 'exceptions.rb'
+  require 'fileutils.rb'
 
   @@qstat_refresh_rate=30
   @@max_history=3600*1
@@ -903,6 +904,10 @@ class SGEBatchSystem
       end
       attributes.each { |attr,value|
         cmd=cmd+" #{attr} #{value}"
+	# Create the path for the log file
+        if (attr == "-o" or attr == "-e") then
+          FileUtils.mkdir_p(File.dirname(value))
+        end
       } 
       cmd=cmd+" #{script}"
 
