@@ -7,12 +7,27 @@ unless defined? $__jetusagereport__
 ##########################################
 class JetUsageReport
 
-  @@cores={'wjet'=>1392,
-           'hjet'=>1952,
-           'njet'=>3520}
-  @@pes={'wjet'=>["w.*","serial"],
-         'hjet'=>["h.*","serial"],
-         'njet'=>["n.*"]}
+#  @@cores={'wjet'=>1392,
+#           'hjet'=>1952,
+#           'njet'=>3520}
+#  @@pes={'wjet'=>["w.*","serial"],
+#         'hjet'=>["h.*","serial"],
+#         'njet'=>["n.*"]}
+
+#  @@cores={'hjet'=>2016,
+#           'njet'=>3584,
+#           'tjet'=>10128}
+#  @@pes={'hjet'=>["h.*","serial"],
+#         'njet'=>["n.*","serial"],
+#         'tjet'=>["t.*"]}
+
+  @@cores={'hfip'=>10504,
+           'rdhpcs'=>4968,
+           'all'=>15472}
+  @@pes={'hfip'=>["njet.*", ".*hfipserial.*", ".*tjet.*"],
+         'rdhpcs'=>["hcomp.*","hserial.*","ncomp.*","nserial.*"],
+         'all'=>["njet.*", ".*hfipserial.*", ".*tjet.*", "hcomp.*","hserial.*","ncomp.*","nserial.*"]}
+
   @@smtpserver="10.1.99.99"
 
   require 'sgebatchsystem.rb'
