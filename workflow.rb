@@ -228,7 +228,14 @@ class Workflow
     workflowdoc=LibXML::XML::Document.file(@xmlfile,:options => LibXML::XML::Parser::Options::NOENT)
 
     # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-    workflowdoc.validate_relaxng(relaxng_schema_m)
+    begin
+      workflowdoc.validate_relaxng(relaxng_schema_m)
+    rescue
+      puts "WARNING: This XML document does not pass validation checking."
+      puts "         Fix this as soon as possible.  The next release of"
+      puts "         the Workflow Manager will reject this XML document."
+      puts 
+    end
 
     # Parse and expand metatasks
     workflow=workflowdoc.root
@@ -241,7 +248,14 @@ class Workflow
 
     # Validate the workflow XML file again against the Relax NG Schema that does not include metatasks
     # This helps to verify the correctness ater/of the metatask expansion
-    workflowdoc.validate_relaxng(relaxng_schema)
+    begin
+      workflowdoc.validate_relaxng(relaxng_schema)
+    rescue
+      puts "WARNING: This XML document does not pass validation checking."
+      puts "         Fix this as soon as possible.  The next release of"
+      puts "         the Workflow Manager will reject this XML document."
+      puts
+    end
 
     # Get the workflow realtime attribute
     case workflow.attributes["realtime"]
