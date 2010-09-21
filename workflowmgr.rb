@@ -14,6 +14,7 @@ require 'optparse'
 require 'workflow.rb'
 require 'lockfile/lib/lockfile.rb'
 require 'debug'
+require 'digest/md5'
 
 UPDATE_INTERVAL=60
 
@@ -75,6 +76,13 @@ end
 # Run the workflow
 begin
   Debug::message(sprintf("Running in debug verbose level '%03d'",ENV["__WFM_VERBOSE__"].to_i),1)
+
+  # If we are running from cron, add a delay to spread workflowmgr processes even across each minute
+  if ENV['TERM'].nil?
+    delay=3 + Digest::MD5.hexdigest(storefile).to_i(16) % 57
+    sleep (delay)
+  end
+
   lockfile="#{storefile}.lock"
   Lockfile.new(lockfile,lock_opts) do
 
