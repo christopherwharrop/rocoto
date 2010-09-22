@@ -2,12 +2,14 @@
 
 if File.symlink?(__FILE__)
   $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+  $:.unshift("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/lib") unless $:.include?("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/lib") 
+  $:.unshift("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/ext/libxml") unless $:.include?("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/ext/libxml") 
 else
   $:.unshift(File.expand_path(File.dirname(__FILE__))) unless $:.include?(File.expand_path(File.dirname(__FILE__)))
+  $:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/lib") unless $:.include?("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/lib")
+  $:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/ext/libxml") unless $:.include?("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/ext/libxml")
 end
 
-$:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/lib")
-$:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/ext/libxml")
 
 
 require 'optparse'
