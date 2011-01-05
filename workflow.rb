@@ -14,6 +14,7 @@ class Workflow
   require 'sgebatchsystem.rb'
   require 'loadlevelerbatchsystem.rb'
   require 'lsfbatchsystem.rb'
+  require 'moabtorquebatchsystem.rb'
   require 'task.rb'
   require 'property.rb'
   require 'environment.rb'
@@ -408,6 +409,8 @@ class Workflow
         @schedulers[scheduler.upcase]=LoadLevelerBatchSystem.new() if @schedulers[scheduler.upcase].nil?
       when /^lsf$/i
         @schedulers[scheduler.upcase]=LSFBatchSystem.new() if @schedulers[scheduler.upcase].nil?
+      when /^moabtorque$/i
+        @schedulers[scheduler.upcase]=MoabTorqueBatchSystem.new() if @schedulers[scheduler.upcase].nil?
       when nil
         raise XMLError,"<task> is missing the mandatory 'scheduler' attribute" 
       else
@@ -664,7 +667,19 @@ class Workflow
         raise XMLError,"<taskdep> attribute 'cycle' must be a positive or negative integer"
     end
 
-    return TaskDoneOkayDependency.new(@tasks[taskref],cycleref)
+    # Get the status attribute
+    status=element.attributes["status"]
+    case status
+      when /^successful$/i
+        return TaskDoneOkayDependency.new(@tasks[taskref],cycleref)
+      when /^done$/i
+        return TaskDoneDependency.new(@tasks[taskref],cycleref)
+      when nil
+        return TaskDoneOkayDependency.new(@tasks[taskref],cycleref)
+      else
+        raise XMLError,"<taskdep> attribute 'status' must be one of: successful, done"
+    end
+
 
   end
 

@@ -218,6 +218,46 @@ end
 
 ##########################################
 #
+# Class TaskDoneDependency
+#
+##########################################
+class TaskDoneDependency < Dependency_Operand
+
+  #####################################################
+  #
+  # initialize
+  #
+  #####################################################
+  def initialize(trigger,cycle=0)
+
+    super(trigger)
+    @cycle=cycle
+
+  end
+
+  #####################################################
+  #
+  # Resolved?
+  #
+  #####################################################
+  def resolved?(cycleTime)
+
+    resolved=@trigger.done?(cycleTime+@cycle)
+    if resolved
+      Debug::message("    Dependency on task '#{@trigger.name}' is satisfied",10)
+    else
+      Debug::message("    Dependency on task '#{@trigger.name}' is not satisfied",10)
+    end
+    return resolved
+
+  end
+
+end
+
+
+
+##########################################
+#
 # Class TimeDependency
 #
 ##########################################
@@ -231,20 +271,18 @@ class TimeDependency < Dependency_Operand
   def resolved?(cycleTime)
 
     timestr=@trigger.to_s(cycleTime)
-    
-    resolved= Time.now > Time.gm(timestr[0..3],
-                              timestr[4..5],
-                              timestr[6..7],
-                              timestr[8..9],
-                              timestr[10..11],
-                              timestr[12..13])                  
+    resolved= Time.now.getutc > Time.gm(timestr[0..3],
+                                        timestr[4..5],
+                                        timestr[6..7],
+                                        timestr[8..9],
+                                        timestr[10..11],
+                                        timestr[12..13])                  
     if resolved
       Debug::message("    Dependency on time '#{@trigger.to_s(cycleTime)}' is satisfied",10)
     else
       Debug::message("    Dependency on time '#{@trigger.to_s(cycleTime)}' is not satisfied",10)
     end
     return resolved
-
     
   end
 
