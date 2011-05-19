@@ -1,16 +1,16 @@
 #!/usr/bin/ruby
 
+# Get the base directory of the WFM installation
 if File.symlink?(__FILE__)
-  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
-  $:.unshift("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/lib") unless $:.include?("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/lib") 
-  $:.unshift("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/ext/libxml") unless $:.include?("#{File.dirname(File.readlink(__FILE__))}/libxml-ruby/ext/libxml") 
+  __WFMDIR__=File.dirname(File.expand_path(File.readlink(__FILE__),File.dirname(__FILE__)))
 else
-  $:.unshift(File.expand_path(File.dirname(__FILE__))) unless $:.include?(File.expand_path(File.dirname(__FILE__)))
-  $:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/lib") unless $:.include?("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/lib")
-  $:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/ext/libxml") unless $:.include?("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/ext/libxml")
+  __WFMDIR__=File.expand_path(File.dirname(__FILE__))
 end
 
-
+# Add include paths for WFM and libxml-ruby libraries
+$:.unshift(__WFMDIR__)
+$:.unshift("#{__WFMDIR__}/libxml-ruby/lib")
+$:.unshift("#{__WFMDIR__}/libxml-ruby/ext/libxml")
 
 require 'optparse'
 require 'workflow.rb'
