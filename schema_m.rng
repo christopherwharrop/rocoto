@@ -18,9 +18,11 @@
         </choice>
       </attribute>
 
-      <attribute name="maxflowrate">
-        <data type="float"/>
-      </attribute>
+      <optional>
+        <attribute name="maxflowrate">
+          <data type="float"/>
+        </attribute>
+      </optional>
 
       <!-- Order of log and cycle tags does not matter -->
       <interleave>
