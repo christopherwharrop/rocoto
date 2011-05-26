@@ -109,8 +109,18 @@ class LSFBatchSystem
       # Calculate the minimum end time we should look at
       min_end_time=Time.now-max_history
 
+      # LSF on Bluefire seems to have ~6 logfiles per 24 hours.
+      # 3 files for max_history (1hr) should be more than enough.
+      # If not parse 10 log files.
+      if max_history == @@max_history
+       n_logfiles = 3
+      else
+       n_logfiles = 10
+      end
+
       # run bhist to obtain the current status of queued jobs
-      output=Command.run(". #{@lsf_env}/profile.lsf; bhist -n 3 -l -d -w -C #{min_end_time.strftime("%Y/%m/%d/%H:%M")}, 2>&1")
+      output=Command.run(". #{@lsf_env}/profile.lsf; bhist -n #{n_logfiles} -l -d -w -C #{min_end_time.strftime("%Y/%m/%d/%H:%M")}, 2>&1")
+
       if output[1] != 0
         raise output[0]
       else
