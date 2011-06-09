@@ -57,9 +57,6 @@ class MoabTorqueBatchSystem
       @qstat_refresh_rate=qstat_refresh_rate
       @qstat_available=true
 
-      # Initialize the qstat table with current data
-#      self.refresh_qstat
-
     rescue
       raise "MoabTorqueBatchSystem object could not be initialized\n\n#{$!}"
     end
@@ -86,20 +83,15 @@ class MoabTorqueBatchSystem
       username=Etc.getpwuid(Process.uid).name
 
       # run bjobs to obtain the current status of queued jobs
-      output=Command.run("#{@torque_root}/qstat -u #{username}")
+      output=Command.run("#{@moab_root}/showq --noblock --xml -u #{username} 2>&1")
       if output[1] != 0
         raise output[0]
       else
         @qstat_update_time=Time.now
-        output[0].each { |s|
-          jobdata=s.strip.split(/\s+/)
-          next unless jobdata[0]=~/^\d+/
-
-          # Put state into a form wfm understands
-          if jobdata[9] == "C"
-	    jobdata[9]="done"
-          end
-          @qstat[jobdata[0].gsub(".nc","")]=jobdata[9]
+        recordxmldoc=LibXML::XML::Parser.string(output[0]).parse
+        recordxml=recordxmldoc.root
+        recordxml.find('//job').each { |job|
+          @qstat[job.attributes['JobID']]=job.attributes['State']                 
         }        
       end
 
@@ -128,8 +120,7 @@ class MoabTorqueBatchSystem
       username=Etc.getpwuid(Process.uid).name
 
       # run showq to obtain the current status of queued jobs
-#      output=Command.run("#{@moab_root}/showq -c -u #{username} 2>&1")
-      output=Command.run("#{@moab_root}/showq -c --xml -u #{username} 2>&1")
+      output=Command.run("#{@moab_root}/showq --noblock -c --xml -u #{username} 2>&1")
       if output[1] != 0
         raise output[0]
       else
@@ -137,7 +128,11 @@ class MoabTorqueBatchSystem
         recordxml=recordxmldoc.root
         recordxml.find('//job').each { |job|
           fields=Hash.new
-          fields['exit_status']=job.attributes['CompletionCode'].to_i
+          if job.attributes['CompletionCode']=="CNCLD"
+	    fields['exit_status']=255
+	  else
+            fields['exit_status']=job.attributes['CompletionCode'].to_i
+          end
           fields['submit_time']=Time.at(job.attributes['SubmissionTime'].to_i)
           fields['start_time']=Time.at(job.attributes['StartTime'].to_i)
           fields['end_time']=Time.at(job.attributes['CompletionTime'].to_i)
@@ -188,10 +183,7 @@ class MoabTorqueBatchSystem
   # get_job_exit_record
   #
   #####################################################
-  def get_job_exit_record(torque_jid,max_age=86400)
-
-    # Get moab jid from torque jid
-    jid=torque_jid.split(".")[0]
+  def get_job_exit_record(jid,max_age=86400)
 
     # If the exit record is not in the table, refresh the table
     unless @exit_records.has_key?(jid)
@@ -249,20 +241,20 @@ class MoabTorqueBatchSystem
     begin
 
       # Build the submit command
-      cmd="qsub"
+      cmd="msub"
       attributes.each { |attr,value|
         cmd=cmd+" #{attr} #{value}"
       }
       cmd=cmd+" #{script}"
 
       # Issue the submit command
-      output=Command.run("#{@torque_root}/#{cmd} 2>&1")
+      output=Command.run("#{@moab_root}/#{cmd} 2>&1")
       if output[1] != 0
         raise "#{output[0]}"
       end
 
       # Check for success
-      if (output[0]=~/(\d+\.\w+)/)
+      if (output[0]=~/(\w+\.\d+)/)
         return $1
       else
         raise "#{output[0]}"
@@ -283,15 +275,15 @@ class MoabTorqueBatchSystem
 
     begin
 
-      # Run bkill to delete the job
-      output=Command.run("#{@torque_root}/qdel #{jid}")
+      # Run mjobctl to delete the job
+      output=Command.run("#{@moab_root}/mjobctl -c #{jid}")
       if output[1] != 0
         raise output[0]
       end
       return 0
 
     rescue
-      puts "ERROR: qdel #{jid} failed"
+      puts "ERROR: mjobctl -c #{jid} failed"
       puts $!
       return 1
     end
