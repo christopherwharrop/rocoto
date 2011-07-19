@@ -1,19 +1,22 @@
 #!/usr/bin/ruby
 
+# Get the base directory of the WFM installation
 if File.symlink?(__FILE__)
-  $:.unshift(File.dirname(File.readlink(__FILE__))) unless $:.include?(File.dirname(File.readlink(__FILE__))) 
+  __WFMDIR__=File.dirname(File.expand_path(File.readlink(__FILE__),File.dirname(__FILE__)))
 else
-  $:.unshift(File.expand_path(File.dirname(__FILE__))) unless $:.include?(File.expand_path(File.dirname(__FILE__)))
+  __WFMDIR__=File.expand_path(File.dirname(__FILE__))
 end
 
-$:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/lib")
-$:.unshift("#{File.expand_path(File.dirname(__FILE__))}/libxml-ruby/ext/libxml")
-
+# Add include paths for WFM and libxml-ruby libraries
+$:.unshift(__WFMDIR__)
+$:.unshift("#{__WFMDIR__}/libxml-ruby/lib")
+$:.unshift("#{__WFMDIR__}/libxml-ruby/ext/libxml")
 
 require 'optparse'
 require 'workflow.rb'
 require 'lockfile/lib/lockfile.rb'
 require 'debug'
+require 'digest/md5'
 
 UPDATE_INTERVAL=60
 
@@ -75,6 +78,13 @@ end
 # Run the workflow
 begin
   Debug::message(sprintf("Running in debug verbose level '%03d'",ENV["__WFM_VERBOSE__"].to_i),1)
+
+  # If we are running from cron, add a delay to spread workflowmgr processes even across each minute
+  if ENV['TERM'].nil?
+    delay=3 + Digest::MD5.hexdigest(storefile).to_i(16) % 57
+    sleep (delay)
+  end
+
   lockfile="#{storefile}.lock"
   Lockfile.new(lockfile,lock_opts) do
 

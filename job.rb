@@ -138,7 +138,7 @@ class Job
   #####################################################
   def running?
 
-    return (@state=="r" || @state=="t")
+    return (@state.downcase=="r" || @state.downcase=="t")
 
   end
 

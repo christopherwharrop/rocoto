@@ -14,6 +14,7 @@ class Workflow
   require 'sgebatchsystem.rb'
   require 'loadlevelerbatchsystem.rb'
   require 'lsfbatchsystem.rb'
+  require 'moabtorquebatchsystem.rb'
   require 'task.rb'
   require 'property.rb'
   require 'environment.rb'
@@ -228,7 +229,14 @@ class Workflow
     workflowdoc=LibXML::XML::Document.file(@xmlfile,:options => LibXML::XML::Parser::Options::NOENT)
 
     # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-    workflowdoc.validate_relaxng(relaxng_schema_m)
+    begin
+      workflowdoc.validate_relaxng(relaxng_schema_m)
+    rescue
+      puts "WARNING: This XML document does not pass validation checking."
+      puts "         Fix this as soon as possible.  The next release of"
+      puts "         the Workflow Manager will reject this XML document."
+      puts 
+    end
 
     # Parse and expand metatasks
     workflow=workflowdoc.root
@@ -241,7 +249,14 @@ class Workflow
 
     # Validate the workflow XML file again against the Relax NG Schema that does not include metatasks
     # This helps to verify the correctness ater/of the metatask expansion
-    workflowdoc.validate_relaxng(relaxng_schema)
+    begin
+      workflowdoc.validate_relaxng(relaxng_schema)
+    rescue
+      puts "WARNING: This XML document does not pass validation checking."
+      puts "         Fix this as soon as possible.  The next release of"
+      puts "         the Workflow Manager will reject this XML document."
+      puts
+    end
 
     # Get the workflow realtime attribute
     case workflow.attributes["realtime"]
@@ -394,6 +409,8 @@ class Workflow
         @schedulers[scheduler.upcase]=LoadLevelerBatchSystem.new() if @schedulers[scheduler.upcase].nil?
       when /^lsf$/i
         @schedulers[scheduler.upcase]=LSFBatchSystem.new() if @schedulers[scheduler.upcase].nil?
+      when /^moabtorque$/i
+        @schedulers[scheduler.upcase]=MoabTorqueBatchSystem.new() if @schedulers[scheduler.upcase].nil?
       when nil
         raise XMLError,"<task> is missing the mandatory 'scheduler' attribute" 
       else
@@ -650,7 +667,19 @@ class Workflow
         raise XMLError,"<taskdep> attribute 'cycle' must be a positive or negative integer"
     end
 
-    return TaskDoneOkayDependency.new(@tasks[taskref],cycleref)
+    # Get the status attribute
+    status=element.attributes["status"]
+    case status
+      when /^successful$/i
+        return TaskDoneOkayDependency.new(@tasks[taskref],cycleref)
+      when /^done$/i
+        return TaskDoneDependency.new(@tasks[taskref],cycleref)
+      when nil
+        return TaskDoneOkayDependency.new(@tasks[taskref],cycleref)
+      else
+        raise XMLError,"<taskdep> attribute 'status' must be one of: successful, done"
+    end
+
 
   end
 
