@@ -7,15 +7,18 @@ module WorkflowMgr
 
   ##########################################  
   #
-  # Class WFMYAMLConfig
+  # Class WorkflowYAMLConfig
   #
   ##########################################
-  class WFMYAMLConfig
+  class WorkflowYAMLConfig
 
     require 'yaml'
     require 'workflowmgr/forkit'
 
-    DEFAULT_CONFIG={ :DatabaseType => "SQLite" }
+    DEFAULT_CONFIG={ 
+                    :DatabaseType => "SQLite", 
+                    :WorkflowDocType => "XML"
+                   }
 
     ##########################################  
     #
@@ -29,7 +32,7 @@ module WorkflowMgr
 
       # Load the configuration
       begin
-        @config=forkit(1) do
+        @config=WorkflowMgr.forkit(1) do
           if File.exists?(@config_file)
             config=YAML.load_file(@config_file)
             if config.is_a?(Hash)
@@ -45,6 +48,6 @@ module WorkflowMgr
 
     end  # initialize
 
-  end  # Class WFMYAMLConfig
+  end  # Class WorkflowYAMLConfig
 
 end  # Module WorkflowMgr

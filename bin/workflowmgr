@@ -11,13 +11,15 @@ end
 $:.unshift("#{__WFMDIR__}/lib")
 $:.unshift("#{__WFMDIR__}/libxml-ruby/lib")
 $:.unshift("#{__WFMDIR__}/libxml-ruby/ext/libxml")
+$:.unshift("#{__WFMDIR__}/sqlite3-ruby/lib")
+$:.unshift("#{__WFMDIR__}/sqlite3-ruby/ext")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
 
+WorkflowMgr::VERSION="0.0.1"
+
 # Create workflow engine and run it
 workflowengine=WorkflowMgr::WorkflowEngine.new(ARGV)
 workflowengine.run
-
-puts workflowengine.inspect
 

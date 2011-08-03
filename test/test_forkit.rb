@@ -1,29 +1,38 @@
 #!/usr/bin/ruby
 
-require 'forkit'
+require '/whome/harrop/workflowmgr_dev/lib/workflowmgr/forkit.rb'
 
 #filename='/lfs1/jetmgmt/harrop/test/x'
 #filename='/pan1/jetmgmt/harrop/test/x'
 filename='/home/harrop/test/x'
 
-result=forkit(5) do
+# Open and write to a file
+result=forkit(2) do
+  File.open(filename,"w") do |file|
+    file.puts("hello from #{Process.pid}")
+  end
+end
+puts result.inspect
+
+exit
+
+# File exists?
+result=forkit(2) do
   File.exists?(filename)
 end
 puts result
+
+# File mtime
 if result
-  result=forkit(5) do
+  result=forkit(2) do
     File.mtime(filename)
   end
   puts result
 end
-File.open(filename,"w") do |file|
-  result=forkit(5) do
-    file.puts("hello")
-  end
-end
 
-100.times do
-  result=forkit(5) do
+# Performance test of forking
+10.times do
+  result=forkit(1) do
     File.exists?(filename)
   end
 end
