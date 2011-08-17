@@ -32,7 +32,7 @@ module WorkflowMgr
 
       # Load the configuration
       begin
-        @config=WorkflowMgr.forkit(1) do
+        @config=WorkflowMgr.forkit(2) do
           if File.exists?(@config_file)
             config=YAML.load_file(@config_file)
             if config.is_a?(Hash)
@@ -44,6 +44,9 @@ module WorkflowMgr
 	    DEFAULT_CONFIG
           end
         end
+      rescue WorkflowMgr::ForkitTimeoutException => e
+        WorkflowMgr.ioerr(@config_file)
+        raise e
       end
 
     end  # initialize
