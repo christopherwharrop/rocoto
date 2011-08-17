@@ -16,6 +16,7 @@ module WorkflowMgr
     
     attr_reader :database
     attr_reader :workflowdoc
+    attr_reader :verbose
 
     ##########################################  
     #
@@ -26,6 +27,7 @@ module WorkflowMgr
 
       @database=nil
       @workflowdoc=nil
+      @verbose=0
       parse(args)
 
     end  # initialize
@@ -45,7 +47,7 @@ module WorkflowMgr
         opts.banner = "Usage:  workflowmgr -d database_file -w workflow_document [options]"
 
         # Handle option for specifying the database file
-        opts.on("-dARG","-d=ARG","-d ARG","--database=ARG","--database ARG",String,"Path to database store file") do |db|
+        opts.on("-d","--database PATH",String,"Path to database store file") do |db|
           @database=db
         end
 
@@ -55,14 +57,23 @@ module WorkflowMgr
           exit
         end
 
+        # Handle option for verbose
+        opts.on("-v","--verbose [LEVEL]",/^[0-9]+$/,"Run Workflow Manager in verbose mode") do |verbose|
+          if verbose.nil?
+            @verbose=1
+          else
+            @verbose=verbose.to_i
+          end
+        end
+
         # Handle option for version
-        opts.on("-v","--version","Show Workflow Manager version") do
+        opts.on("--version","Show Workflow Manager version") do
           puts "Workflow Manager Version #{WorkflowMgr::VERSION}"
           exit
         end
 
         # Handle option for specifying the workflow document
-        opts.on("-wARG","-w=ARG","-w ARG","--workflow=ARG","--workflow ARG",String,"Path to workflow definition file") do |workflowdoc|
+        opts.on("-w","--workflow PATH",String,"Path to workflow definition file") do |workflowdoc|
           @workflowdoc=workflowdoc
         end
 
