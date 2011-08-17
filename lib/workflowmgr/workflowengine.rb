@@ -24,12 +24,13 @@ module WorkflowMgr
     ##########################################
     def initialize(args)
 
-      @config=WorkflowYAMLConfig.new
       @options=WorkflowOption.new(args)
+      @config=WorkflowYAMLConfig.new
       @workflowdoc=WorkflowXMLDoc.new(@options.workflowdoc)
       @workflowdb=WorkflowSQLite3DB.new(@options.database)
 
     end  # initialize
+
 
     ##########################################
     #
@@ -38,16 +39,12 @@ module WorkflowMgr
     ##########################################
     def run
 
-      pids=[]    
-      1.times do
-        pids << Process.fork do
-          100.times do
-            @workflowdb.test
-          end
-        end
+      begin
+        @workflowdb.lock_workflow
+      ensure
+        @workflowdb.unlock_workflow
       end
-      pids.each { |pid| Process.waitpid(pid) }
-
+ 
     end  # run
 
   end  # Class WorkflowEngine
