@@ -92,4 +92,18 @@ module WorkflowMgr
 
   end  # def forkit
 
+  ##########################################
+  #
+  # WorkflowMgr.ioerr
+  #
+  ##########################################
+  def WorkflowMgr.ioerr(path)
+
+    STDERR.puts
+    STDERR.puts "ERROR: An I/O operation timed out while reading, writing, or testing for the existence of '#{path}'"
+    STDERR.puts "       The filesystem containing '#{path}' may be offline."
+    STDERR.puts
+
+  end
+
 end  # module workflowmgr
