@@ -1,0 +1,55 @@
+<grammar xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+                                                                      
+  <start>
+
+    <element name="workflow">
+
+      <!-- Realtime workflow attribute -->
+      <attribute name="realtime">
+        <choice>
+          <value>f</value>
+          <value>F</value>
+          <value>false</value>
+          <value>False</value>
+          <value>t</value>
+          <value>T</value>
+          <value>true</value>
+          <value>True</value>
+        </choice>
+      </attribute>
+
+      <optional>
+        <attribute name="cyclethrottle">
+          <data type="integer"/>
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="maxcycleage">
+          <ref name="age_type"/>
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="scheduler">
+          <data type="string"/>
+        </attribute>
+      </optional>
+
+    </element>  
+
+  </start>
+
+  <!-- Type definitions -->
+
+  <define name="age_type">
+    <choice>
+      <data type="string"><param name="pattern">\d+</param></data>
+      <data type="string"><param name="pattern">\d+:\d+</param></data>
+      <data type="string"><param name="pattern">\d+:\d+:\d+</param></data>
+      <data type="string"><param name="pattern">\d+:\d+:\d+:\d+</param></data>
+    </choice>
+  </define>
+
+</grammar>
+
