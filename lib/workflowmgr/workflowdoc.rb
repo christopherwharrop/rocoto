@@ -13,6 +13,7 @@ module WorkflowMgr
   class WorkflowXMLDoc
 
     require 'libxml'
+    require 'cycle'
 
     ##########################################
     #
@@ -43,15 +44,90 @@ module WorkflowMgr
 
     end  # initialize
 
+    ##########################################
+    #
+    # realtime?
+    #
+    ##########################################
+    def realtime?
+
+      realtime=@workflowdoc.root.attributes['realtime'].downcase =~ /^t|true$/
+      !realtime.nil?
+
+    end
+
+    ##########################################
+    #
+    # cyclethrottle
+    #
+    ##########################################
+    def cyclethrottle
+
+      cyclethrottle=@workflowdoc.root.attributes['cyclethrottle']
+      if cyclethrottle.nil?
+        return 0
+      else
+        return cyclethrottle.to_i
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # scheduler
+    #
+    ##########################################
+    def scheduler
+
+      scheduler=@workflowdoc.root.attributes['scheduler']
+      if scheduler.nil?
+        return "auto"
+      else
+        return scheduler.downcase
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # cycles
+    #
+    ##########################################
+    def cycles
+
+      cycles=[]
+      cyclenodes=@workflowdoc.find('/workflow/cycle')
+      cyclenodes.each { |cyclenode|
+        cyclefields=cyclenode.content.split
+        if cyclefields.size==3
+          cycles << CycleInterval.new(cyclenode.attributes['group'],cyclefields)
+        elsif cyclefields.size==6
+          cycles << CycleCron.new(cyclenode.attributes['group'],cyclefields)
+        else
+	  raise "ERROR: Unsupported <cycle> type!"
+        end
+      }
+      return cycles
+
+    end
+
+
   private
 
 
     ##########################################
     #
     # validate_with_metatasks
-    #
+    # 
     ##########################################
     def validate_with_metatasks
+
+      # This method is not wrapped inside a WorkflowMgr.forkit 
+      # because it is reading the schemas from the same directory
+      # as this source file.  If the schema validation was going to hang,
+      # then this code would not be running anyway
 
       # Parse the Relax NG schema XML document
       relaxng_document = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
@@ -72,7 +148,12 @@ module WorkflowMgr
     ##########################################
     def validate_without_metatasks
 
-      # Parse the Relax NG schema XML document ("_m" means it validates metatask tags)
+      # This method is not wrapped inside a WorkflowMgr.forkit 
+      # because it is reading the schemas from the same directory
+      # as this source file.  If the schema validation was going to hang,
+      # then this code would not be running anyway
+
+      # Parse the Relax NG schema XML document
       relaxng_document = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
 
       # Prepare the Relax NG schemas for validation
