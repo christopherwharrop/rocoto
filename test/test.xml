@@ -1,4 +1,13 @@
-<workflow realtime="T" scheduler="sge" maxcycleage="1:00:00:00">
+<workflow realtime="FALSE" scheduler="AUTO" maxcycleage="1:00:00:00" cyclethrottle="10">
+
+  <cycle group="group1">* * * * * *</cycle>
+  <cycle group="group1">*/2 * * * * *</cycle>
+  <cycle group="group1">0 * * * * *</cycle>
+  <cycle group="group1">0,1,2,3 * * * * *</cycle>
+  <cycle group="group1">0-10 0-10,20 1,10-20 * * *</cycle>
+  <cycle group="group1">0-10/2 0-10/2,20 1,10-20/2 * * *</cycle>
+  <cycle group="group1">0-10/2,20-30,40 1,2-6,8-12/2 1-5/2,10,20-30/2 * * *</cycle>
+  <cycle group="group1">201108171200 201208171200 1:00:00</cycle>
 
 
 </workflow>
