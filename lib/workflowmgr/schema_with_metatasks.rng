@@ -4,37 +4,74 @@
 
     <element name="workflow">
 
-      <!-- Realtime workflow attribute -->
+      <!-- Realtime workflow attribute is required-->
       <attribute name="realtime">
         <choice>
           <value>f</value>
           <value>F</value>
           <value>false</value>
           <value>False</value>
+          <value>FALSE</value>
           <value>t</value>
           <value>T</value>
           <value>true</value>
           <value>True</value>
+          <value>TRUE</value>
         </choice>
       </attribute>
 
+      <!-- cyclethrottle workflow attribute is optional and must be a non negative integer -->
       <optional>
         <attribute name="cyclethrottle">
-          <data type="integer"/>
+          <data type="nonNegativeInteger"/>
         </attribute>
       </optional>
 
+      <!-- maxcycleage workflow attribute is optional and must be a nonNegativeTime defined below-->
       <optional>
         <attribute name="maxcycleage">
-          <ref name="age_type"/>
+          <ref name="nonNegativeTime"/>
         </attribute>
       </optional>
 
+      <!-- scheduler workflow attribute is optional and must be a string -->
       <optional>
         <attribute name="scheduler">
           <data type="string"/>
         </attribute>
       </optional>
+
+      <!-- Order of log, cycle, task, and metatask tags does not matter -->
+      <interleave>
+
+        <!-- Must have at least one cycle tag -->
+        <oneOrMore>
+          <element name="cycle">
+            <!-- group attribute is optional and must be a string -->
+            <optional>
+              <attribute name="group">
+                <data type="string"/>
+              </attribute>
+            </optional>
+            <choice>
+              <list>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+              </list>
+              <list>
+                <ref name="YYYYMMDDHHMM"/>
+                <ref name="YYYYMMDDHHMM"/>
+                <ref name="nonNegativeTime"/>
+              </list>
+            </choice>
+          </element>
+        </oneOrMore>
+
+      </interleave>
 
     </element>  
 
@@ -42,12 +79,24 @@
 
   <!-- Type definitions -->
 
-  <define name="age_type">
+  <define name="nonNegativeTime">
     <choice>
       <data type="string"><param name="pattern">\d+</param></data>
       <data type="string"><param name="pattern">\d+:\d+</param></data>
       <data type="string"><param name="pattern">\d+:\d+:\d+</param></data>
       <data type="string"><param name="pattern">\d+:\d+:\d+:\d+</param></data>
+    </choice>
+  </define>
+
+  <define name="YYYYMMDDHHMM">
+    <data type="string"><param name="pattern">\d\d\d\d\d\d\d\d\d\d\d\d</param></data>
+  </define>
+
+  <define name="cronField">
+    <choice>
+      <data type="string"><param name="pattern">\*</param></data>
+      <data type="string"><param name="pattern">\*/\d+</param></data>
+      <data type="string"><param name="pattern">(\d+|\d+-\d+|\d+-\d+/\d+)(,\d+|,\d+-\d+|,\d+-\d+/\d+)*</param></data>
     </choice>
   </define>
 
