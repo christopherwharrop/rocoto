@@ -270,7 +270,7 @@ module WorkflowMgr
         when :month
           (1..12)
         when :year
-          (1970..2099)
+          (999..2099)
         when :weekday
           (0..6)
         else
