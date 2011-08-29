@@ -270,7 +270,7 @@ module WorkflowMgr
         when :month
           (1..12)
         when :year
-          (999..2099)
+          (999..9999)
         when :weekday
           (0..6)
         else
@@ -341,7 +341,13 @@ module WorkflowMgr
     ##########################################
     def next(reftime)
 
-      localnext=Time.at(reftime - ((reftime.to_i - @start.to_i) % @interval) + @interval)
+      offset=(reftime.to_i - @start.to_i) % @interval
+      if offset==0
+        localnext=reftime
+      else
+        localnext=Time.at(reftime + @interval - offset)
+      end
+
       return localnext - localnext.gmt_offset
 
     end  # next
