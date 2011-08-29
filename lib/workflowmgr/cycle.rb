@@ -64,7 +64,7 @@ module WorkflowMgr
         nexthr+=1
       end
       nextmin=min
-#puts "nextmin :: #{nextmin}"
+
       # Find the first hour >= ref hour, carry over to next day 
       hr=@fields[:hour].find { |hour| hour >= nexthr }
       if hr.nil?
@@ -76,9 +76,6 @@ module WorkflowMgr
         nextmin=@fields[:minute].first
       end
       nexthr = hr
-#puts "nextmin :: #{nextmin}"
-#puts "nexthr :: #{nexthr}"
-#puts "nextday :: #{nextday}"
 
       # Check if all days are specified in the cronspec
       alldays=@fields[:day] == get_field_range(:day).to_a
@@ -137,9 +134,6 @@ module WorkflowMgr
           # Inefficient, but will loop no more than 6 times
           while !@fields[:day].member?(nextday) && !@fields[:weekday].member?(nextwday) do
             done=false
-#puts "nextyear :: #{nextyear}"
-#puts "nextmonth :: #{nextmonth}"
-#puts "nextday :: #{nextday}"
             nexttime=Time.gm(nextyear,nextmonth,nextday) + (24 * 3600)
             nextmin=@fields[:minute].first
             nexthr=@fields[:hour].first
@@ -150,9 +144,6 @@ module WorkflowMgr
           end
 
         end
-#puts "nextmin :: #{nextmin}"
-#puts "nexthr :: #{nexthr}"
-#puts "nextday :: #{nextday}"
 
         # Find the first month >= ref month, carry over to next year
         month=@fields[:month].find { |month| month >= nextmonth }
@@ -167,10 +158,6 @@ module WorkflowMgr
           nextday=1
         end
         nextmonth=month
-#puts "nextmin :: #{nextmin}"
-#puts "nexthr :: #{nexthr}"
-#puts "nextday :: #{nextday}"
-#puts "nextmonth :: #{nextmonth}"
         
         # Find the first year >= ref year, carry over to next year
         year=@fields[:year].find { |year| year >= nextyear }
@@ -185,13 +172,6 @@ module WorkflowMgr
           nextmonth=@fields[:month].first
         end
         nextyear=year
-#puts "nextmin :: #{nextmin}"
-#puts "nexthr :: #{nexthr}"
-#puts "nextday :: #{nextday}"
-#puts "nextmonth :: #{nextmonth}"
-#puts "nextyear :: #{nextyear}"
-
-#puts "valid_civil(#{Date.valid_civil?(nextyear,nextmonth,nextday).inspect}) :: #{Time.gm(nextyear,nextmonth,nextday,nexthr,nextmin)} :: #{done}"
 
         if Date.valid_civil?(nextyear,nextmonth,nextday)
           return Time.gm(nextyear,nextmonth,nextday,nexthr,nextmin) if done
