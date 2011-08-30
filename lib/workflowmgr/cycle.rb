@@ -379,6 +379,45 @@ module WorkflowMgr
 
     end  #  previous
       
+    ##########################################
+    #
+    # member?
+    #
+    ##########################################
+    def member?(reftime)
+
+      gmreftime=reftime.getgm
+      if @fields[:month].member?(gmreftime.month)
+        if @fields[:hour].member?(gmreftime.hour)
+
+          # Check if all days are specified in the cronspec
+          alldays=@fields[:day] == get_field_range(:day).to_a
+
+          # Check if all weekdays are specified in the cronspec
+          allweekdays=@fields[:weekday] == get_field_range(:weekday).to_a
+
+          daymember=false
+          if alldays
+            daymember=@fields[:weekday].member?(gmreftime.wday)
+          elsif allweekdays
+            daymember=@fields[:day].member?(gmreftime.day)
+          else
+            daymember=@fields[:day].member?(gmreftime.day) || @fields[:weekday].member?(gmreftime.wday)
+          end
+
+          if daymember
+            if @fields[:minute].member?(gmreftime.min)
+              if @fields[:year].member?(gmreftime.year)
+                return true
+              end
+            end # if hour
+          end # if day
+        end # if month
+      end # if year
+
+      return false
+
+    end
 
 
   private
@@ -554,6 +593,18 @@ module WorkflowMgr
         localprev=Time.at(reftime - offset)
         return localprev.getgm
       end
+    end
+
+    ##########################################
+    #
+    # member?
+    #
+    ##########################################
+    def member?(reftime)
+
+      return false if reftime < @start || reftime > @finish
+      return ((reftime.to_i - @start.to_i) % @interval) == 0
+
     end
 
   end  # Class CycleInterval

@@ -122,6 +122,31 @@ class TestCycle < Test::Unit::TestCase
 
   end
 
+  def test_cyclecron_member
+
+    cycle1=WorkflowMgr::CycleCron.new("test",["*","*","*","*","*","*"])
+    assert_equal(true,cycle1.member?(Time.now))
+
+    cycle1=WorkflowMgr::CycleCron.new("test",["*","*","*","*","1970","*"])
+    assert_equal(false,cycle1.member?(Time.now))
+
+    cycle1=WorkflowMgr::CycleCron.new("test",["*","*","*","*","2011","2-5"])
+    assert_equal(true,cycle1.member?(Time.gm(2011,8,30)))
+
+    cycle1=WorkflowMgr::CycleCron.new("test",["*","*","*","*","2011","2-5"])
+    assert_equal(false,cycle1.member?(Time.gm(2011,8,29)))
+
+    cycle1=WorkflowMgr::CycleCron.new("test",["*","*","10-15","*","2011","2-5"])
+    assert_equal(true,cycle1.member?(Time.gm(2011,8,15)))
+
+    cycle1=WorkflowMgr::CycleCron.new("test",["*","*","10-15","*","2011","2-5"])
+    assert_equal(true,cycle1.member?(Time.gm(2011,8,30)))
+
+    cycle1=WorkflowMgr::CycleCron.new("test",["*","*","10-15","*","2011","2-5"])
+    assert_equal(false,cycle1.member?(Time.gm(2011,8,1)))
+
+  end
+
   def test_cycleinterval_init
 
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00:00"])
@@ -133,11 +158,11 @@ class TestCycle < Test::Unit::TestCase
   def test_cycleinterval_first
 
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00:00"])
-    assert_equal(Time.gm(2011,01,01,00),cycle1.first)
+    assert_equal(Time.gm(2011,1,1,0),cycle1.first)
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00"])
-    assert_equal(Time.gm(2011,01,01,00),cycle1.first)
+    assert_equal(Time.gm(2011,1,1,0),cycle1.first)
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00"])
-    assert_equal(Time.gm(2011,01,01,00),cycle1.first)
+    assert_equal(Time.gm(2011,1,1,0),cycle1.first)
 
   end
 
@@ -146,35 +171,35 @@ class TestCycle < Test::Unit::TestCase
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00:00"])
 
     cycle2=cycle1.next(cycle1.first)
-    assert_equal(Time.gm(2011,01,01,00),cycle2)
+    assert_equal(Time.gm(2011,1,1,0),cycle2)
 
     cycle2=cycle1.next(cycle1.first+1)
-    assert_equal(Time.gm(2011,01,02,00),cycle2)
+    assert_equal(Time.gm(2011,1,2,0),cycle2)
 
     cycle2=cycle1.next(cycle1.first-1)
-    assert_equal(Time.gm(2011,01,01,00),cycle2)
+    assert_equal(Time.gm(2011,1,1,0),cycle2)
 
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00"])
 
     cycle2=cycle1.next(cycle1.first)
-    assert_equal(Time.gm(2011,01,01,00),cycle2)
+    assert_equal(Time.gm(2011,1,1,0),cycle2)
 
     cycle2=cycle1.next(cycle1.first+1)
-    assert_equal(Time.gm(2011,01,01,01),cycle2)
+    assert_equal(Time.gm(2011,1,1,1),cycle2)
 
     cycle2=cycle1.next(cycle1.first-1)
-    assert_equal(Time.gm(2011,01,01,00),cycle2)
+    assert_equal(Time.gm(2011,1,1,0),cycle2)
 
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00"])
 
     cycle2=cycle1.next(cycle1.first)
-    assert_equal(Time.gm(2011,01,01,00,00),cycle2)
+    assert_equal(Time.gm(2011,1,1,0,0),cycle2)
 
     cycle2=cycle1.next(cycle1.first+1)
-    assert_equal(Time.gm(2011,01,01,00,01),cycle2)
+    assert_equal(Time.gm(2011,1,1,0,1),cycle2)
 
     cycle2=cycle1.next(cycle1.first-1)
-    assert_equal(Time.gm(2011,01,01,00,00),cycle2)
+    assert_equal(Time.gm(2011,1,1,0,0),cycle2)
 
   end
 
@@ -184,38 +209,56 @@ class TestCycle < Test::Unit::TestCase
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00:00"])
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0))
-    assert_equal(Time.gm(2011,03,01,00),cycle2)
+    assert_equal(Time.gm(2011,3,1,0),cycle2)
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0)+1)
-    assert_equal(Time.gm(2011,03,01,00),cycle2)
+    assert_equal(Time.gm(2011,3,1,0),cycle2)
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0)-1)
-    assert_equal(Time.gm(2011,02,28,00),cycle2)
+    assert_equal(Time.gm(2011,2,28,0),cycle2)
 
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00"])
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0))
-    assert_equal(Time.gm(2011,03,01,00),cycle2)
+    assert_equal(Time.gm(2011,3,1,0),cycle2)
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0)+1)
-    assert_equal(Time.gm(2011,03,01,00),cycle2)
+    assert_equal(Time.gm(2011,3,1,0),cycle2)
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0)-1)
-    assert_equal(Time.gm(2011,02,28,23),cycle2)
+    assert_equal(Time.gm(2011,2,28,23),cycle2)
 
     cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00"])
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0))
-    assert_equal(Time.gm(2011,03,01,00,00),cycle2)
+    assert_equal(Time.gm(2011,3,1,0,0),cycle2)
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0)+1)
-    assert_equal(Time.gm(2011,03,01,00,00),cycle2)
+    assert_equal(Time.gm(2011,3,1,0,0),cycle2)
 
     cycle2=cycle1.previous(Time.gm(2011,3,1,0,0,0)-1)
-    assert_equal(Time.gm(2011,02,28,23,59),cycle2)
+    assert_equal(Time.gm(2011,2,28,23,59),cycle2)
 
   end
 
 
+  def test_cycleinterval_member
+
+    cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00:00"])
+    assert_equal(false,cycle1.member?(Time.gm(1970,1,1)))
+
+    cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00:00"])
+    assert_equal(false,cycle1.member?(Time.gm(2100,1,1)))
+
+    cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","1:00:00:00"])
+    assert_equal(true,cycle1.member?(Time.gm(2011,8,1)))
+
+    cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","2:00:00:00"])
+    assert_equal(false,cycle1.member?(Time.gm(2011,1,2)))
+
+    cycle1=WorkflowMgr::CycleInterval.new("test",["201101010000","201201010000","2:00:00:00"])
+    assert_equal(true,cycle1.member?(Time.gm(2011,1,3)))
+
+  end
 
 end
