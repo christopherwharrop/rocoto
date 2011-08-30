@@ -69,8 +69,19 @@ module WorkflowMgr
       hr=@fields[:hour].find { |hour| hour >= nexthr }
       if hr.nil?
         hr=@fields[:hour].first
-        nextday+=1
         nextwday = (nextwday + 1) % 7
+        nextday+=1
+        while !Date.valid_civil?(nextyear,nextmonth,nextday)
+          nextday += 1
+          if nextday > 31
+            nextday = 1
+            nextmonth += 1
+            if nextmonth > 12
+              nextmonth = 1
+              nextyear += 1
+            end
+          end
+        end
       end
       if nexthr != hr
         nextmin=@fields[:minute].first
@@ -168,30 +179,196 @@ module WorkflowMgr
           done=false
           nextmin=@fields[:minute].first
           nexthr=@fields[:hour].first
-          nextday=1
+          nextday = 1
           nextmonth=@fields[:month].first
         end
         nextyear=year
 
-        if Date.valid_civil?(nextyear,nextmonth,nextday)
-          return Time.gm(nextyear,nextmonth,nextday,nexthr,nextmin) if done
-          nextwday=Time.gm(nextyear,nextmonth,nextday).wday
-        else
+        while !Date.valid_civil?(nextyear,nextmonth,nextday)
+          done=false
           nextday += 1
           if nextday > 31
-            nextday=1
-            nextmonth +=1
+            nextday = 1
+            nextmonth += 1
             if nextmonth > 12
-              nextmonth=1
+              nextmonth = 1
               nextyear += 1
             end
           end
         end
+        return Time.gm(nextyear,nextmonth,nextday,nexthr,nextmin) if done
+        nextwday=Time.gm(nextyear,nextmonth,nextday).wday
 
       end  #  while true
 
     end  #  next
       
+
+    ##########################################
+    #
+    # previous
+    #
+    ##########################################
+    def previous(reftime)
+
+      # Get date/time components for the reference time
+      prevmin=reftime.min
+      prevhr=reftime.hour
+      prevday=reftime.day
+      prevwday=reftime.wday
+      prevmonth=reftime.month
+      prevyear=reftime.year
+    
+      # Find the last minute <= ref minute, carry over to prev hour if none found
+      min=@fields[:minute].reverse.find { |minute| minute <= prevmin }
+      if min.nil?
+        min=@fields[:minute].last
+        prevhr -= 1
+      end
+      prevmin=min
+
+      # Find the last hour <= ref hour, carry over to prev day 
+      hr=@fields[:hour].reverse.find { |hour| hour <= prevhr }
+      if hr.nil?
+        hr=@fields[:hour].last
+        prevwday = (prevwday + 6) % 7
+        prevday -= 1
+        while !Date.valid_civil?(prevyear,prevmonth,prevday)
+          prevday -= 1
+          if prevday < 1
+	    prevday=31
+            prevmonth -=1
+            if prevmonth < 1
+              prevmonth=12
+              prevyear -= 1
+            end
+          end
+        end
+      end
+      if prevhr != hr
+        prevmin=@fields[:minute].last
+      end
+      prevhr = hr
+
+      # Check if all days are specified in the cronspec
+      alldays=@fields[:day] == get_field_range(:day).to_a
+
+      # Check if all weekdays are specified in the cronspec
+      allweekdays=@fields[:weekday] == get_field_range(:weekday).to_a
+
+      # Find the prev valid year,month,day
+      while (true) do
+
+        # Set done to true
+        done=true
+
+        # If day spec is *, then find the prev wday
+        if alldays
+
+          # Find the first weekday <= ref weekday, subtract that many days from reftime
+          wday=@fields[:weekday].reverse.find { |weekday| weekday <= prevwday }
+          if wday.nil?
+            ndays=prevwday - @fields[:weekday].first + 7
+          else
+            ndays=prevwday - wday
+          end
+          if ndays > 0
+            prevmin=@fields[:minute].last
+            prevhr=@fields[:hour].last
+            done=false
+          end
+
+          prevtime=Time.gm(prevyear,prevmonth,prevday) - (24 * 3600 * ndays)
+          prevday=prevtime.day
+          prevwday=prevtime.wday
+          prevmonth=prevtime.month
+          prevyear=prevtime.year
+ 
+        # If weekday spec is *, and day spec is not *, find prev day
+        elsif allweekdays
+
+          # Find the first day <= ref day, carry over to prev month
+          day=@fields[:day].reverse.find { |day| day <= prevday }
+
+          if day.nil?
+            day=@fields[:day].last
+            prevmonth -= 1
+          end
+          if prevday != day
+            done=false
+            prevmin=@fields[:minute].last
+            prevhr=@fields[:hour].last
+          end
+          prevday=day
+
+        # If neither weekday nor day spec is *, find prev day that satisfies one or the other
+        else          
+
+          # Add one day until either days or weekdays is satisfied
+          # Inefficient, but will loop no more than 6 times
+          while !@fields[:day].member?(prevday) && !@fields[:weekday].member?(prevwday) do
+            done=false
+            prevtime=Time.gm(prevyear,prevmonth,prevday) - (24 * 3600)
+            prevmin=@fields[:minute].last
+            prevhr=@fields[:hour].last
+            prevday=prevtime.day
+            prevwday=prevtime.wday
+            prevmonth=prevtime.month
+            prevyear=prevtime.year
+          end
+
+        end
+
+        # Find the first month <= ref month, carry over to prev year
+        month=@fields[:month].reverse.find { |month| month <= prevmonth }
+        if month.nil?
+          month=@fields[:month].last
+          prevyear -= 1
+        end
+        if prevmonth != month
+          done=false
+          prevmin=@fields[:minute].last
+          prevhr=@fields[:hour].last
+          prevday=31
+        end
+        prevmonth=month
+        
+        # Find the first year <= ref year, carry over to prev year
+        year=@fields[:year].reverse.find { |year| year <= prevyear }
+        if year.nil?
+          return nil  # There is no date in the cron spec <= to the reftime 
+        end
+        if prevyear != year
+          done=false
+          prevmin=@fields[:minute].last
+          prevhr=@fields[:hour].last
+          prevday=31
+          prevmonth=@fields[:month].last
+        end
+        prevyear=year
+
+        while !Date.valid_civil?(prevyear,prevmonth,prevday)
+          done=false
+          prevday -= 1
+          if prevday < 1
+            prevday=31
+            prevmonth -=1
+            if prevmonth < 1
+              prevmonth=12
+              prevyear -= 1
+            end
+          end
+        end
+
+        return Time.gm(prevyear,prevmonth,prevday,prevhr,prevmin) if done
+        prevwday=Time.gm(prevyear,prevmonth,prevday).wday
+
+      end  #  while true
+
+    end  #  previous
+      
+
+
   private
 
     ##########################################
@@ -321,18 +498,39 @@ module WorkflowMgr
     ##########################################
     def next(reftime)
 
-      offset=(reftime.to_i - @start.to_i) % @interval
-      if offset==0
-        localnext=reftime
+      if reftime > @finish
+        return nil
+      elsif reftime < @start
+        return @start.getgm
       else
-        localnext=Time.at(reftime + @interval - offset)
+        offset=(reftime.to_i - @start.to_i) % @interval
+        if offset==0
+          localnext=reftime
+        else
+          localnext=Time.at(reftime - offset + @interval)
+        end
+        return localnext.getgm
       end
-
-      return localnext - localnext.gmt_offset
 
     end  # next
 
+    ##########################################
+    #
+    # previous
+    #
+    ##########################################
+    def previous(reftime)
 
+      if reftime < @start
+        return nil
+      elsif reftime > @finish
+        return @finish
+      else
+        offset=(reftime.to_i - @start.to_i) % @interval
+        localprev=Time.at(reftime - offset)
+        return localprev.getgm
+      end
+    end
 
   end  # Class CycleInterval
 
