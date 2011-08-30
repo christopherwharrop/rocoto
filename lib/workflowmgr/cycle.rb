@@ -14,6 +14,8 @@ module WorkflowMgr
 
     require 'date'
 
+    attr_reader :group 
+
     ##########################################
     #
     # initialize
@@ -497,6 +499,8 @@ module WorkflowMgr
   #
   ##########################################
   class CycleInterval
+
+    attr_reader :group 
 
     ##########################################
     #
