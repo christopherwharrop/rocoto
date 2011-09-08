@@ -7,30 +7,24 @@ module WorkflowMgr
 
   ########################################## 
   #
-  # Class CycleCron
+  # Class CycleSpec
   #
   ##########################################
-  class CycleCron
+  class CycleSpec
 
-    require 'date'
-
-    attr_reader :group 
+    attr_reader :group
+    attr_reader :fieldstr
 
     ##########################################
     #
-    # initialize
+    # dirty?
     #
     ##########################################
-    def initialize(group,fields)
+    def dirty?
 
-      @group=group
-      @fields={}
-      [:minute,:hour,:day,:month,:year,:weekday].each_with_index { |field,i|
-        @fields[field]=cronstr_to_a(fields[i],field)
-      }
+      return @dirty != 0
 
-    end  # initialize
-
+    end
 
     ##########################################
     #
@@ -54,6 +48,35 @@ module WorkflowMgr
       self.previous(Time.gm(9999,12,31,59,59))
 
     end  # first
+
+  end
+
+
+  ########################################## 
+  #
+  # Class CycleCron
+  #
+  ##########################################
+  class CycleCron < CycleSpec
+
+    require 'date'
+
+    ##########################################
+    #
+    # initialize
+    #
+    ##########################################
+    def initialize(group,fields,dirty=1)
+
+      @group=group
+      @fields={}
+      @fieldstr=fields.join(" ")
+      [:minute,:hour,:day,:month,:year,:weekday].each_with_index { |field,i|
+        @fields[field]=cronstr_to_a(fields[i],field)
+      }
+      @dirty=dirty
+
+    end  # initialize
 
 
     ##########################################
@@ -498,18 +521,17 @@ module WorkflowMgr
   # Class CycleInterval
   #
   ##########################################
-  class CycleInterval
-
-    attr_reader :group 
+  class CycleInterval < CycleSpec
 
     ##########################################
     #
     # initialize
     #
     ##########################################
-    def initialize(group,fields)
+    def initialize(group,fields,dirty=1)
 
       @group=group
+      @fieldstr=fields.join(" ")
       @start=Time.gm(fields[0][0..3],
                      fields[0][4..5],
                      fields[0][6..7],
@@ -531,31 +553,9 @@ module WorkflowMgr
           raise "Invalid cycle interval, '#{fields[2]}'"
         end           
       }
+      @dirty=dirty
 
     end  # initialize
-
-    ##########################################
-    #
-    # first
-    #
-    ##########################################
-    def first
-
-      return @start.gmtime
-
-    end  # first
-
-
-    ##########################################
-    #
-    # last
-    #
-    ##########################################
-    def last
-
-      return @finish.gmtime
-
-    end  # last
 
 
     ##########################################
@@ -567,7 +567,7 @@ module WorkflowMgr
 
       if reftime > @finish
         return nil
-      elsif reftime < @start
+      elsif reftime <= @start
         return @start.getgm
       else
         offset=(reftime.to_i - @start.to_i) % @interval
@@ -590,7 +590,7 @@ module WorkflowMgr
 
       if reftime < @start
         return nil
-      elsif reftime > @finish
+      elsif reftime >= @finish
         return @finish
       else
         offset=(reftime.to_i - @start.to_i) % @interval
