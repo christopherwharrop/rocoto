@@ -13,7 +13,6 @@ module WorkflowMgr
   class WorkflowXMLDoc
 
     require 'libxml'
-    require 'cycle'
 
     ##########################################
     #
@@ -99,16 +98,9 @@ module WorkflowMgr
 
       cycles=[]
       cyclenodes=@workflowdoc.find('/workflow/cycle')
-      cyclenodes.each { |cyclenode|
-        cyclefields=cyclenode.content.split
-        if cyclefields.size==3
-          cycles << CycleInterval.new(cyclenode.attributes['group'],cyclefields)
-        elsif cyclefields.size==6
-          cycles << CycleCron.new(cyclenode.attributes['group'],cyclefields)
-        else
-	  raise "ERROR: Unsupported <cycle> type!"
-        end
-      }
+      cyclenodes.each do |cyclenode|
+        cycles << { :group => cyclenode.attributes['group'], :fieldstr => cyclenode.content }
+      end
       return cycles
 
     end
