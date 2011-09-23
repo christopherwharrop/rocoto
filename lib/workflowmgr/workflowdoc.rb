@@ -64,7 +64,7 @@ module WorkflowMgr
 
       cyclethrottle=@workflowdoc.root.attributes['cyclethrottle']
       if cyclethrottle.nil?
-        return 0
+        return 1
       else
         return cyclethrottle.to_i
       end
