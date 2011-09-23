@@ -54,7 +54,7 @@ class TestCycle < Test::Unit::TestCase
   def test_cyclecron_first
 
     cycle1=WorkflowMgr::CycleCron.new("test",["*","*","*","*","*","*"])
-    assert_equal(Time.gm(999,1,1,0,0),cycle1.first)
+    assert_equal(Time.gm(1900,1,1,0,0),cycle1.first)
     cycle1=WorkflowMgr::CycleCron.new("test",["0","*/6","*","*","2008-2012","*"])
     assert_equal(Time.gm(2008,1,1,0,0),cycle1.first)
     cycle1=WorkflowMgr::CycleCron.new("test",["30","12","15-31","4,8","2010","*"])
