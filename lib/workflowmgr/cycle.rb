@@ -28,12 +28,24 @@ module WorkflowMgr
 
     ##########################################
     #
+    # clean!
+    #
+    ##########################################
+    def clean!
+
+      @dirty=0
+      return self
+
+    end
+
+    ##########################################
+    #
     # first
     #
     ##########################################
     def first
 
-      self.next(Time.gm(999,1,1,0,0))
+      self.next(Time.gm(1900,1,1,0,0))
 
     end  # first
 
@@ -503,7 +515,7 @@ module WorkflowMgr
         when :month
           (1..12)
         when :year
-          (999..9999)
+          (1900..9999)
         when :weekday
           (0..6)
         else
