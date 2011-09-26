@@ -74,6 +74,33 @@ module WorkflowMgr
 
     ##########################################
     #
+    # cyclelifespan
+    #
+    ##########################################
+    def cyclelifespan
+
+      cyclelifespan=@workflowdoc.root.attributes['cyclelifespan']
+      if cyclelifespan.nil?
+        return nil
+      else
+        lifespan=0
+        cyclelifespan.split(":").reverse.each_with_index {|i,index|
+          if index==3
+            lifespan+=i.to_i.abs*3600*24
+          elsif index < 3
+            lifespan+=i.to_i.abs*60**index
+  	  else
+            raise "Invalid cycle life span, '#{cyclelifespan}'"
+          end
+        }
+        return lifespan
+      end      
+
+    end
+
+
+    ##########################################
+    #
     # scheduler
     #
     ##########################################

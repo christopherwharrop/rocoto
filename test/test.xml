@@ -1,4 +1,4 @@
-<workflow realtime="FALSE" scheduler="AUTO" maxcycleage="1:00:00:00" cyclethrottle="10">
+<workflow realtime="FALSE" scheduler="AUTO" cyclelifespan="1:00:00:00" cyclethrottle="10">
 
   <cycle group="group1">* * * * * *</cycle>
   <cycle group="group1">*/2 * * * * *</cycle>

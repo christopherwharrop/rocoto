@@ -61,7 +61,6 @@ module WorkflowMgr
 
         # Get active cycles
         @active_cycles=@workflowdb.get_active_cycles
-puts @active_cycles.inspect
 
       ensure
 
@@ -141,7 +140,7 @@ puts @active_cycles.inspect
         cleaned_cyclespecs=[]
 
         # Get number of active cycles
-        nactive_cycles=@workflowdb.get_active_cycles.size
+        nactive_cycles=@workflowdb.get_active_cycles(@workflowdoc.cyclelifespan).size
 
         # Get the set of new cycles to be added
         (@workflowdoc.cyclethrottle - nactive_cycles).times do
@@ -201,7 +200,12 @@ puts @active_cycles.inspect
             new_cycles << new_cycle
 
             # Set the latest cycle to the cycle we just added
-            latest_cycle={ :cycle=>new_cycle }
+            if new_cycle > latest_cycle[:cycle]
+              latest_cycle={ :cycle=>new_cycle }
+            end
+
+            # Add the cycle to the list of all cycles if it exists (at least one cyclespec was dirty when we started)
+            allcycles << { :cycle=>new_cycle } unless allcycles.nil?
 
           end  # if cyclepool.empty?
 

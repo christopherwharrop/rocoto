@@ -27,9 +27,9 @@
         </attribute>
       </optional>
 
-      <!-- maxcycleage workflow attribute is optional and must be a nonNegativeTime defined below-->
+      <!-- cyclelifespan workflow attribute is optional and must be a nonNegativeTime defined below-->
       <optional>
-        <attribute name="maxcycleage">
+        <attribute name="cyclelifespan">
           <ref name="nonNegativeTime"/>
         </attribute>
       </optional>
