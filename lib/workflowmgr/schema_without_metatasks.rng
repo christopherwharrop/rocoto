@@ -27,6 +27,27 @@
         </attribute>
       </optional>
 
+      <!-- taskthrottle workflow attribute is optional and must be a non negative integer -->
+      <optional>
+        <attribute name="taskthrottle">
+          <data type="nonNegativeInteger"/>
+        </attribute>
+      </optional>
+
+      <!-- corethrottle workflow attribute is optional and must be a non negative integer -->
+      <optional>
+        <attribute name="corethrottle">
+          <data type="nonNegativeInteger"/>
+        </attribute>
+      </optional>
+
+      <!-- duthrottle workflow attribute is optional and must be a non negative integer -->
+      <optional>
+        <attribute name="duthrottle">
+          <data type="nonNegativeInteger"/>
+        </attribute>
+      </optional>
+
       <!-- cyclelifespan workflow attribute is optional and must be a nonNegativeTime defined below-->
       <optional>
         <attribute name="cyclelifespan">
