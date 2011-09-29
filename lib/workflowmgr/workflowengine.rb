@@ -16,6 +16,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowoption'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/workflowdb'
+    require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/cycle'
 
 
@@ -52,6 +53,14 @@ module WorkflowMgr
 
         # Initialize the workflow document
         @workflowdoc=WorkflowXMLDoc.new(@options.workflowdoc)
+
+        # Initialize a scheduler
+        case @workflowdoc.scheduler
+          when /sge/i
+            @scheduler=SGEBatchSystem.new
+          else
+            raise "ERROR: Unspported scheduler '#{@workflowdoc.scheduler}'"
+        end
 
         # Make sure the database contains the current cycle specs
         @workflowdb.update_cyclespecs(@workflowdoc.cycles)
