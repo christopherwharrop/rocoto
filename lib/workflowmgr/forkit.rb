@@ -106,4 +106,19 @@ module WorkflowMgr
 
   end
 
+
+  ##########################################
+  #
+  # WorkflowMgr.cmderr(cmd)
+  #
+  ##########################################
+  def WorkflowMgr.cmderr(cmd)
+
+    STDERR.puts
+    STDERR.puts "ERROR: The command '#{cmd}' timed out."
+    STDERR.puts "       The process may have hung due to an unresponsive server or may be due to heavy load"
+    STDERR.puts
+
+  end
+
 end  # module workflowmgr
