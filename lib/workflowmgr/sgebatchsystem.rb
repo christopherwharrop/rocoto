@@ -173,7 +173,7 @@ module WorkflowMgr
     # status
     #
     #####################################################
-    def status(jobid=nil)
+    def status(jobid)
 
       # Populate the jobs status table if it is empty
       refresh_jobqueue if @jobqueue.empty?
@@ -333,7 +333,7 @@ module WorkflowMgr
 		  record[:submit_time]=Time.at(fields[8].to_i).getgm
 		  record[:start_time]=Time.at(fields[9].to_i).getgm
 		  record[:end_time]=Time.at(fields[10].to_i).getgm
-		  record[:exit_status]=fields[12].to_i==0 ? fields[13].to_i : fields[12].to_i
+		  record[:exit_status]=fields[12].to_i==0 ? fields[11].to_i : fields[12].to_i
 		  record[:priority]=fields[7].to_f
 
 		  # Add the record if it hasn't already been added
