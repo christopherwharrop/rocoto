@@ -16,21 +16,21 @@ module WorkflowMgr
     #
     # SGE accounting record format (fields are separated by colons)
     #
-    #  0     qname		Name of the queue in which the job has run.
+    #  0    qname		Name of the queue in which the job has run.
     # 
-    #  1	hostname	Name of the execution host.
+    #  1    hostname		Name of the execution host.
     # 
     #  2    group  		The effective group id of the job owner when 
-    #			executing the job.
+    #				executing the job.
     # 
     #  3    owner  		Owner of the Grid Engine job.
     # 
-    #  4    job_name	Job name.
+    #  4    job_name		Job name.
     # 
-    #  5    job_number      Job identifier - job number.
+    #  5    job_number      	Job identifier - job number.
     # 
-    #  6    account         An account string as specified by the qsub(1) or 
-    #			qalter(1) -A option.
+    #  6    account         	An account string as specified by the qsub(1) or 
+    #				qalter(1) -A option.
     # 
     #  7    priority	Priority value assigned to the job corresponding to 
     #			the priority parameter in the queue configuration
@@ -199,6 +199,34 @@ module WorkflowMgr
       return { :jobid => jobid, :state => "unknown" }
 
     end
+
+    #####################################################
+    #
+    # submit
+    #
+    #####################################################
+    def submit(command,options)
+
+      # Initialize the submit command
+      cmd="#{@sge_bin}/qsub"
+
+      # Add SGE batch system options translated from the generic options specification
+
+      # Add the command to submit
+      cmd += " #{command}"
+
+      # Run the submit command
+      output=`#{cmd} 2>&1`.chomp
+
+      # Parse the output of the submit command
+      if output=~/Your job (\d+) \(".*"\) has been submitted/
+        return $1,output
+      else
+ 	return nil,output
+      end
+
+    end
+
 
   private
 
