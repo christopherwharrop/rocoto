@@ -12,11 +12,13 @@ module WorkflowMgr
   ##########################################
   class WorkflowEngine
 
+    require 'drb'
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/workflowoption'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/jobsubmitter'
     require 'workflowmgr/cycle'
 
 
@@ -231,6 +233,85 @@ module WorkflowMgr
       @workflowdb.add_cycles(new_cycles)
 
     end  # activate_new_cycles
+
+
+    ##########################################
+    #
+    # submit_job
+    #
+    ##########################################
+    def submit_job(cmd,options)
+
+      # Open a double ended pipe
+      r,w = IO.pipe
+
+      # Fork a child process to submit the job
+      child = fork {
+
+        # Attach the child process's STDOUT to the write end of the pipe
+        STDOUT.reopen w
+
+        # Start a Drb Server that will manage the job submission
+        DRb.start_service nil,JobSubmitter.new(@scheduler)
+
+        # Write the URI for the job submission server to the pipe so the main
+	# thread can get it and use it to connect to the job sumission server process
+        STDOUT.puts "#{DRb.uri}"
+        STDOUT.flush
+
+        # Allow INT signal to cleanly terminate the server process
+        trap("INT") { DRb.stop_service }
+
+        # Wait forever for the server to quit
+        DRb.thread.join
+
+      }
+
+      # Close the write end of the pipe in the parent
+      w.close
+
+      # Read the URI of the job submission server sent from the child process
+      uri=r.gets
+
+      # Connect to the job submission server
+      submitter = DRbObject.new nil, uri
+
+      # Send the job submission server a request to submit our job
+      submitter.submit(cmd,options)
+
+      # Return the URI of the job submission server so we can reconnect to it later
+      # to retrieve the job id or error returned from the batch system
+      return uri
+
+    end
+
+    ##########################################
+    #
+    # get_job_submit_status
+    #
+    ##########################################
+    def get_job_submit_status(uri)
+
+      # Connect to the job submission server
+      submitter = DRbObject.new(nil, uri)
+
+      # Ask for the output of the submission
+      output=submitter.getoutput
+
+      # If there's output, ask for the jobid
+      if output.nil?
+        jobid=nil
+      else
+        jobid=submitter.getjobid
+      end
+
+      # Stop the job submission server if there was output
+      submitter.stop! unless output.nil?
+
+      # Return the jobid and output
+      return jobid,output
+
+    end
 
   end  # Class WorkflowEngine
 
