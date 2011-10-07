@@ -133,6 +133,27 @@ module WorkflowMgr
     end
 
 
+    ##########################################
+    #
+    # tasks
+    #
+    ##########################################
+    def tasks
+
+      tasks=[]
+      tasknodes=@workflowdoc.find('/workflow/task')
+      tasknodes.each do |tasknode|
+        task={}
+        tasknode.attributes.each { |attr| task[attr.name.to_sym]=attr.value }
+        tasknode.each_element do |e|
+          task[e.name.to_sym]=e.content
+        end
+        tasks << task
+      end
+      return tasks
+    end
+
+
   private
 
 

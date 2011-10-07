@@ -205,15 +205,30 @@ module WorkflowMgr
     # submit
     #
     #####################################################
-    def submit(command,options)
+    def submit(task)
 
       # Initialize the submit command
-      cmd="#{@sge_bin}/qsub"
+#      cmd="#{@sge_bin}/qsub"
+      cmd="/usr/local/esrl/bin/qsub"
 
       # Add SGE batch system options translated from the generic options specification
+      task.each do |option,value|
+        case option
+          when :account
+            cmd += " -A #{value}"
+          when :queue            
+            unless cmd =~/ -pe \S+ \d+/
+              cmd += " -pe #{value} #{task[:cores]}"
+            end
+          when :cores
+            unless cmd =~/ -pe \S+ \d+/
+              cmd += " -pe #{task[:queue]} #{value}"
+            end           
+        end
+      end
 
       # Add the command to submit
-      cmd += " #{command}"
+      cmd += " #{task[:command]}"
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
@@ -260,7 +275,7 @@ module WorkflowMgr
 	  if jobstat.element?
 	    case jobstat.name
 	      when /JB_job_number/
-		record[:jobid]=jobstat.content.to_i
+		record[:jobid]=jobstat.content
 	      when /state/
 		record[:state]=jobstat.content
 	      when /JB_name/

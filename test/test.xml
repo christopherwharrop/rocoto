@@ -9,5 +9,17 @@
   <cycle group="group1">0-10/2,20-30,40 1,2-6,8-12/2 1-5/2,10,20-30/2 * * *</cycle>
   <cycle group="group1">201108171200 201208171200 1:00:00</cycle>
 
+  <task id="test1">
+
+    <command>/home/harrop/test/bin/test_a.ksh</command>
+
+    <account>jetmgmt</account>
+
+    <queue>nserial</queue>
+
+    <cores>1</cores>
+
+  </task>
+
 
 </workflow>

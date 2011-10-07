@@ -73,6 +73,9 @@ module WorkflowMgr
         # Get active cycles
         @active_cycles=@workflowdb.get_active_cycles
 
+        # Get the workflow tasks
+        @tasks=@workflowdoc.tasks
+
       ensure
 
         # Make sure we release the workflow lock in the database
@@ -237,10 +240,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # submit_job
+    # submit_task
     #
     ##########################################
-    def submit_job(cmd,options)
+    def submit_task(task)
 
       # Open a double ended pipe
       r,w = IO.pipe
@@ -277,7 +280,7 @@ module WorkflowMgr
       submitter = DRbObject.new nil, uri
 
       # Send the job submission server a request to submit our job
-      submitter.submit(cmd,options)
+      submitter.submit(task)
 
       # Return the URI of the job submission server so we can reconnect to it later
       # to retrieve the job id or error returned from the batch system
@@ -287,10 +290,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_job_submit_status
+    # get_task_submit_status
     #
     ##########################################
-    def get_job_submit_status(uri)
+    def get_task_submit_status(uri)
 
       # Connect to the job submission server
       submitter = DRbObject.new(nil, uri)

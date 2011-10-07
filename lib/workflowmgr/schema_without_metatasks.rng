@@ -92,6 +92,11 @@
           </element>
         </oneOrMore>
 
+        <!-- Must have at least one task or metatask tag.  Task tags must follow log and cycle tags -->
+        <oneOrMore>
+          <ref name="task"/>
+        </oneOrMore>
+
       </interleave>
 
     </element>  
@@ -120,6 +125,50 @@
       <data type="string"><param name="pattern">(\d+|\d+-\d+|\d+-\d+/\d+)(,\d+|,\d+-\d+|,\d+-\d+/\d+)*</param></data>
     </choice>
   </define>
+
+  <define name="task">
+    <element name="task">
+
+      <!-- Exactly one task id attribute -->
+      <attribute name="id">
+        <data type="string"/>          
+      </attribute>
+
+      <!-- Order of task property tags does not matter -->
+      <interleave>
+
+        <!-- Exactly one command tag -->
+        <element name="command">
+          <data type="string"/>          
+        </element>
+
+        <!-- Zero or one account tag -->
+        <optional>
+          <element name="account">
+            <data type="string"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one queue tag -->
+        <optional>
+          <element name="queue">
+            <data type="string"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one cores tag -->
+        <optional>
+          <element name="cores">
+            <data type="positiveInteger"/>          
+          </element>
+        </optional>
+
+
+      </interleave>
+
+    </element>
+  </define>
+
 
 </grammar>
 

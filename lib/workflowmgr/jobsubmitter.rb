@@ -30,9 +30,9 @@ module WorkflowMgr
     # submit
     #
     ##########################################
-    def submit(command,options)
+    def submit(task)
       Thread.new { 
-        @jobid,@output=@scheduler.submit(command,options)
+        @jobid,@output=@scheduler.submit(task)
       }
     end
 
