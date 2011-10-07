@@ -367,7 +367,7 @@ module WorkflowMgr
 
 		  # Extract relevant fields
 		  record={}
-		  record[:jobid]=fields[5].to_i
+		  record[:jobid]=fields[5]
 		  record[:state]="done"
 		  record[:jobname]=fields[4]
 		  record[:user]=fields[3]
@@ -380,7 +380,7 @@ module WorkflowMgr
 		  record[:priority]=fields[7].to_f
 
 		  # Add the record if it hasn't already been added
-		  job_records[fields[5].to_i]=record unless job_records.has_key?(fields[5].to_i)
+		  job_records[fields[5]]=record unless job_records.has_key?(fields[5].to_i)
 
 		end  # while !pipe.eof?
 

@@ -432,7 +432,7 @@ module WorkflowMgr
 
             # Update each cycle in the database
             cycles.each { |newcycle|
-              dbcycles=db.execute("UPDATE cycles SET activated=#{newcycle[:activated].to_i},done=#{newcycle[:done].to_i} WHERE cycle=#{newcycle[:cycle].to_i};")
+              db.execute("UPDATE cycles SET activated=#{newcycle[:activated].to_i},done=#{newcycle[:done].to_i} WHERE cycle=#{newcycle[:cycle].to_i};")
             }
 
           end  # database transaction
@@ -493,6 +493,132 @@ module WorkflowMgr
 
     end
 
+
+    ##########################################
+    #
+    # get_jobs
+    #
+    ##########################################
+    def get_jobs
+
+      begin
+
+        # Fork a process to access the database to retrieve the cyclespecs
+        WorkflowMgr.forkit(2) do
+
+          dbjobs=[]
+
+          # Get a handle to the database
+          database = SQLite3::Database.new(@database_file)
+
+          # Start a transaction so that the database will be locked
+          database.transaction do |db|
+
+            # Retrieve all jobs from the cycle table
+            dbjobs=db.execute("SELECT jobid,taskid,cycle,state,exit_status,tries FROM jobs;")
+
+          end  # database transaction
+
+          # Return an array of jobs
+          dbjobs.collect { |job| { :jobid=>job[0], :taskid=>job[1], :cycle=>Time.at(job[2]).getgm, :state=>job[3], :exit_status=>job[4].to_i, :tries=>job[5].to_i } }
+
+        end  # forkit
+
+      rescue SQLite3::BusyException => e
+        STDERR.puts
+        STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
+        STDERR.puts "       The database is locked by SQLite."
+        STDERR.puts
+        exit 1
+      rescue WorkflowMgr::ForkitTimeoutException
+        WorkflowMgr.ioerr(@database_file)
+        return nil
+      end  # begin
+
+    end
+
+
+    ##########################################
+    #
+    # add_jobs
+    #
+    ##########################################
+    def add_jobs(jobs)
+
+      begin
+
+        # Fork a process to access the database to retrieve the cyclespecs
+        WorkflowMgr.forkit(2) do
+
+          # Get a handle to the database
+          database = SQLite3::Database.new(@database_file)
+
+          # Start a transaction so that the database will be locked
+          database.transaction do |db|
+
+            # Add or update each job in the database
+            jobs.each do |job|
+              db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskid]}',#{job[:cycle].to_i},'#{job[:state]}',#{job[:exit_status]},#{job[:tries]});")
+            end
+
+          end  # database transaction
+
+        end  # forkit
+
+      rescue SQLite3::BusyException => e
+        STDERR.puts
+        STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
+        STDERR.puts "       The database is locked by SQLite."
+        STDERR.puts
+        exit 1
+      rescue WorkflowMgr::ForkitTimeoutException
+        WorkflowMgr.ioerr(@database_file)
+        return nil
+      end  # begin
+
+    end
+
+
+
+    ##########################################
+    #
+    # update_jobs
+    #
+    ##########################################
+    def update_jobs(jobs)
+
+      begin
+
+        # Fork a process to access the database to retrieve the cyclespecs
+        WorkflowMgr.forkit(2) do
+
+          # Get a handle to the database
+          database = SQLite3::Database.new(@database_file)
+
+          # Start a transaction so that the database will be locked
+          database.transaction do |db|
+
+            # Add or update each job in the database
+            jobs.each do |job|
+              db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]} WHERE cycle=#{job[:cycle].to_i} AND taskid='#{job[:taskid]}';")
+            end
+
+          end  # database transaction
+
+        end  # forkit
+
+      rescue SQLite3::BusyException => e
+        STDERR.puts
+        STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
+        STDERR.puts "       The database is locked by SQLite."
+        STDERR.puts
+        exit 1
+      rescue WorkflowMgr::ForkitTimeoutException
+        WorkflowMgr.ioerr(@database_file)
+        return nil
+      end  # begin
+
+    end
 
 
     ##########################################
@@ -593,7 +719,12 @@ module WorkflowMgr
       # Create the cycles table
       unless tables.member?("cycles")
         db.execute("CREATE TABLE cycles (id INTEGER PRIMARY KEY, cycle DATETIME, activated DATETIME, done DATETIME);")
-      end
+     end
+
+     # Create the jobs table
+      unless tables.member?("jobs")
+        db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskid VARCHAR(64), cycle DATETIME, state VARCHAR[64], exit_status INTEGER, tries INTEGER);")
+     end
 
     end  # create_tables
 
