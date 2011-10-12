@@ -188,7 +188,12 @@ module WorkflowMgr
 
           case e.name
             when "cyclestr"
-              CycleFormat.new(e.content.gsub(/@/,"%").gsub("%%","@"),offset_sec)
+puts e.content.inspect
+#              formatstr=e.content.gsub(/@(\^?[aAbBcdHIjmMpPsSUWwxXyYZ])/,'%\1').gsub(/@@/,'@')
+              formatstr=e.content.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
+puts formatstr.inspect
+
+              CycleFormat.new(formatstr,offset_sec)
             else
               raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"
           end
