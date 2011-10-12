@@ -11,7 +11,7 @@
 
   <task id="test1">
 
-    <command>/home/harrop/test/bin/test_a.ksh</command>
+    <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_@X @@@</cyclestr></command>
 
     <account>jetmgmt</account>
 

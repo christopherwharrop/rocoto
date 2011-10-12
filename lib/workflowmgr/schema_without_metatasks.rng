@@ -114,6 +114,15 @@
     </choice>
   </define>
 
+  <define name="time">
+    <choice>
+      <data type="string"><param name="pattern">-?\d+</param></data>
+      <data type="string"><param name="pattern">-?\d+:\d+</param></data>
+      <data type="string"><param name="pattern">-?\d+:\d+:\d+</param></data>
+      <data type="string"><param name="pattern">-?\d+:\d+:\d+:\d+</param></data>
+    </choice>
+  </define>
+
   <define name="YYYYMMDDHHMM">
     <data type="string"><param name="pattern">\d\d\d\d\d\d\d\d\d\d\d\d</param></data>
   </define>
@@ -124,6 +133,15 @@
       <data type="string"><param name="pattern">\*/\d+</param></data>
       <data type="string"><param name="pattern">(\d+|\d+-\d+|\d+-\d+/\d+)(,\d+|,\d+-\d+|,\d+-\d+/\d+)*</param></data>
     </choice>
+  </define>
+
+  <define name="compoundTimeString">
+    <oneOrMore>
+      <choice>
+        <text/>
+        <element name="cyclestr"><optional><attribute name="offset"><ref name="time"/></attribute></optional><text/></element>
+      </choice>
+    </oneOrMore>
   </define>
 
   <define name="task">
@@ -139,7 +157,7 @@
 
         <!-- Exactly one command tag -->
         <element name="command">
-          <data type="string"/>          
+          <ref name="compoundTimeString"/>
         </element>
 
         <!-- Zero or one account tag -->

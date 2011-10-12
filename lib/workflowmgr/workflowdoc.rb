@@ -13,6 +13,8 @@ module WorkflowMgr
   class WorkflowXMLDoc
 
     require 'libxml'
+    require 'workflowmgr/compoundtimestring'
+    require 'workflowmgr/cycleformat'
 
     ##########################################
     #
@@ -146,7 +148,7 @@ module WorkflowMgr
         task={}
         tasknode.attributes.each { |attr| task[attr.name.to_sym]=attr.value }
         tasknode.each_element do |e|
-          task[e.name.to_sym]=e.content
+          task[e.name.to_sym]=get_compound_time_string(e)
         end
         tasks << task
       end
@@ -155,6 +157,48 @@ module WorkflowMgr
 
 
   private
+
+
+    ##########################################
+    #
+    # get_compound_time_string
+    # 
+    ##########################################
+    def get_compound_time_string(element)
+
+      strarray=element.collect { |e|
+        if e.node_type==LibXML::XML::Node::TEXT_NODE
+          CycleFormat.new(e.content,0)
+        else
+          offset_str=e.attributes["offset"]
+          offset_sec=0
+          unless offset_str.nil?
+            offset_sign=offset_str[/^-/].nil? ? 1 : -1
+            offset_str.split(":").reverse.each_with_index {|i,index| 
+              if index==3
+                offset_sec+=i.to_i.abs*3600*24
+              elsif index < 3
+                offset_sec+=i.to_i.abs*60**index
+              else
+                raise "Invalid offset, '#{offset_str}' inside of #{e}"
+              end           
+            }
+            offset_sec*=offset_sign
+          end
+
+          case e.name
+            when "cyclestr"
+              CycleFormat.new(e.content.gsub(/@/,"%").gsub("%%","@"),offset_sec)
+            else
+              raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"
+          end
+        end
+      } 
+
+      return CompoundTimeString.new(strarray)
+
+    end
+
 
 
     ##########################################
