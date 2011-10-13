@@ -240,6 +240,34 @@ module WorkflowMgr
 
     ##########################################
     #
+    # localize_task
+    #
+    ##########################################
+    def localize_task(t,cycle)
+
+      # Walk the task and evaluate all CompoundTimeStrings using the input cycle time
+      lt={}
+      t.each { |key,value|
+        if key.is_a?(CompoundTimeString)
+          lkey=key.to_s(cycle)
+        else
+          lkey=key
+        end
+        if value.is_a?(CompoundTimeString)
+          lvalue=value.to_s(cycle)
+        elsif value.is_a?(Hash)
+          lvalue=localize_task(value,cycle)
+        else
+          lvalue=value
+        end
+        lt[lkey]=lvalue        
+      }
+      return lt
+
+    end
+
+    ##########################################
+    #
     # submit_task
     #
     ##########################################

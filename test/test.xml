@@ -11,13 +11,16 @@
 
   <task id="test1">
 
-    <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_@X @@@</cyclestr></command>
+    <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_%X @^p</cyclestr></command>
 
     <account>jetmgmt</account>
 
     <queue>nserial</queue>
 
     <cores>1</cores>
+
+    <envar><name><cyclestr>test1_@H</cyclestr></name><value><cyclestr>hello world! %X</cyclestr></value></envar>
+    <envar><name><cyclestr>test2_@H</cyclestr></name><value><cyclestr offset="1:00:00">goodbye cruel world! %X</cyclestr></value></envar>
 
   </task>
 

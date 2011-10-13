@@ -148,7 +148,14 @@ module WorkflowMgr
         task={}
         tasknode.attributes.each { |attr| task[attr.name.to_sym]=attr.value }
         tasknode.each_element do |e|
-          task[e.name.to_sym]=get_compound_time_string(e)
+          case e.name
+            when /^envar$/
+              task[e.name.to_sym] = {} if task[e.name.to_sym].nil?
+              task[e.name.to_sym][get_compound_time_string(e.find('name').first)] = get_compound_time_string(e.find('value').first)
+            when /^dependency$/
+            else
+              task[e.name.to_sym]=get_compound_time_string(e)
+          end
         end
         tasks << task
       end
@@ -188,11 +195,7 @@ module WorkflowMgr
 
           case e.name
             when "cyclestr"
-puts e.content.inspect
-#              formatstr=e.content.gsub(/@(\^?[aAbBcdHIjmMpPsSUWwxXyYZ])/,'%\1').gsub(/@@/,'@')
               formatstr=e.content.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
-puts formatstr.inspect
-
               CycleFormat.new(formatstr,offset_sec)
             else
               raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"

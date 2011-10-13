@@ -144,6 +144,19 @@
     </oneOrMore>
   </define>
 
+  <define name="nameValuePair">
+    <interleave>
+      <element name="name">
+        <ref name="compoundTimeString"/>
+      </element>
+      <optional>
+        <element name="value">
+          <ref name="compoundTimeString"/>
+        </element>
+      </optional>
+    </interleave>
+  </define>
+
   <define name="task">
     <element name="task">
 
@@ -181,6 +194,12 @@
           </element>
         </optional>
 
+        <!-- Zero or more envar tags -->
+        <oneOrMore>
+          <element name="envar">
+            <ref name="nameValuePair"/>
+          </element>
+        </oneOrMore>
 
       </interleave>
 
