@@ -1,5 +1,7 @@
 <workflow realtime="FALSE" scheduler="sge" cyclelifespan="1:00:00:00" cyclethrottle="10">
 
+  <log verbosity="10">test.log</log>
+
   <cycle group="group1">* * * * * *</cycle>
   <cycle group="group1">*/2 * * * * *</cycle>
   <cycle group="group1">0 * * * * *</cycle>

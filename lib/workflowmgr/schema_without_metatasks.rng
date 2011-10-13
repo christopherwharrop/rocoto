@@ -65,6 +65,16 @@
       <!-- Order of log, cycle, task, and metatask tags does not matter -->
       <interleave>
 
+        <!-- Must have exactly one log tag -->
+        <element name="log">
+          <optional>
+            <attribute name="verbosity">
+              <data type="nonNegativeInteger"/>
+            </attribute>
+          </optional>
+          <ref name="compoundTimeString"/>
+        </element>
+
         <!-- Must have at least one cycle tag -->
         <oneOrMore>
           <element name="cycle">
@@ -92,7 +102,7 @@
           </element>
         </oneOrMore>
 
-        <!-- Must have at least one task or metatask tag.  Task tags must follow log and cycle tags -->
+        <!-- Must have at least one task or metatask tag  -->
         <oneOrMore>
           <ref name="task"/>
         </oneOrMore>

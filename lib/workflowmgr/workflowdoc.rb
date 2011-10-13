@@ -103,6 +103,25 @@ module WorkflowMgr
 
     ##########################################
     #
+    # log
+    #
+    ##########################################
+    def log
+
+      lognode=@workflowdoc.find('/workflow/log').first
+      path=get_compound_time_string(lognode)
+      verbosity=lognode.attributes['verbosity']
+      if verbosity.nil?
+        verbosity=0
+      else
+        verbosity=verbosity.to_i
+      end
+      return { :logpath => path, :verbosity => verbosity }
+
+    end
+
+    ##########################################
+    #
     # scheduler
     #
     ##########################################

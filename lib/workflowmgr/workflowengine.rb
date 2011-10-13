@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'drb'
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/workflowoption'
+    require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/sgebatchsystem'
@@ -55,6 +56,9 @@ module WorkflowMgr
 
         # Initialize the workflow document
         @workflowdoc=WorkflowXMLDoc.new(@options.workflowdoc)
+
+        # Initialize the workflow log
+        @workflowlog=WorkflowLog.new(@workflowdoc.log)
 
         # Initialize a scheduler
         case @workflowdoc.scheduler
