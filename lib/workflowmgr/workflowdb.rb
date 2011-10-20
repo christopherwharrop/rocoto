@@ -506,6 +506,7 @@ module WorkflowMgr
         # Fork a process to access the database to retrieve the cyclespecs
         WorkflowMgr.forkit(2) do
 
+          jobs={}
           dbjobs=[]
 
           # Get a handle to the database
@@ -519,8 +520,25 @@ module WorkflowMgr
 
           end  # database transaction
 
-          # Return an array of jobs
-          dbjobs.collect { |job| { :jobid=>job[0], :taskid=>job[1], :cycle=>Time.at(job[2]).getgm, :state=>job[3], :exit_status=>job[4].to_i, :tries=>job[5].to_i } }
+          dbjobs.each do |job|
+            jobid=job[0]
+            jobtask=job[1]
+            jobcycle=Time.at(job[2]).getgm
+            jobstate=job[3]
+            jobstatus=job[4].to_i
+            jobtries=job[5].to_i
+            jobs[jobtask]={} if jobs[jobtask].nil?
+            jobs[jobtask][jobcycle]={} if jobs[jobtask][jobcycle].nil?
+            jobs[jobtask][jobcycle][:jobid]=jobid
+            jobs[jobtask][jobcycle][:taskid]=jobtask
+            jobs[jobtask][jobcycle][:cycle]=jobcycle
+            jobs[jobtask][jobcycle][:state]=jobstate
+            jobs[jobtask][jobcycle][:exit_status]=jobstatus
+            jobs[jobtask][jobcycle][:tries]=jobtries
+          end
+
+          # Return jobs hash
+          jobs
 
         end  # forkit
 

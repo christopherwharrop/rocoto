@@ -167,6 +167,41 @@
     </interleave>
   </define>
 
+  <define name="dependency_tree">
+    <choice>
+      <element name="taskdep">
+        <attribute name="task">
+          <data type="string"/>
+        </attribute>
+        <empty/>
+      </element>
+      <element name="datadep">
+	<optional>
+          <attribute name="age">
+            <ref name="nonNegativeTime"/>
+          </attribute>
+	</optional>
+        <ref name="compoundTimeString"/>
+      </element>
+      <element name="timedep">
+	<ref name="compoundTimeString"/>
+      </element>
+      <element name="and">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="or">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="not">
+	<ref name="dependency_tree"/>
+      </element>
+    </choice>
+  </define>
+
   <define name="task">
     <element name="task">
 
@@ -210,6 +245,13 @@
             <ref name="nameValuePair"/>
           </element>
         </oneOrMore>
+
+        <!-- Zero or one dependency tag -->
+        <optional>
+          <element name="dependency">
+            <ref name="dependency_tree"/>
+          </element>
+        </optional>
 
       </interleave>
 

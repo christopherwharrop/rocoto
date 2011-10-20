@@ -77,8 +77,17 @@ module WorkflowMgr
         # Get active cycles
         @active_cycles=@workflowdb.get_active_cycles
 
+        # Get the active jobs
+        @jobs=@workflowdb.get_jobs
+
         # Get the workflow tasks
-        @tasks=@workflowdoc.tasks
+        @tasks=@workflowdoc.tasks(@jobs)
+
+        @active_cycles.each do |cycle|
+          @tasks.each do |task|
+          
+          end
+        end
 
       ensure
 

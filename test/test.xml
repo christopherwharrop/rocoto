@@ -1,3 +1,9 @@
+<?xml version="1.0"?> 
+<!DOCTYPE workflow
+[
+ <!ENTITY CYCLE_TIME "@Y@m@d@H">
+]>
+
 <workflow realtime="FALSE" scheduler="sge" cyclelifespan="1:00:00:00" cyclethrottle="10">
 
   <log verbosity="10">test.log</log>
@@ -21,8 +27,12 @@
 
     <cores>1</cores>
 
-    <envar><name><cyclestr>test1_@H</cyclestr></name><value><cyclestr>hello world! %X</cyclestr></value></envar>
+    <envar><name><cyclestr>test1_@H</cyclestr></name><value><cyclestr>hello world! &CYCLE_TIME;</cyclestr></value></envar>
     <envar><name><cyclestr>test2_@H</cyclestr></name><value><cyclestr offset="1:00:00">goodbye cruel world! %X</cyclestr></value></envar>
+
+    <dependency>
+      <datadep age="2:00">/home/harrop/workflowmgr_dev/test/test.dat</datadep>
+    </dependency>
 
   </task>
 

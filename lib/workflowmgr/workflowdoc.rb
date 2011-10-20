@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'libxml'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/cycleformat'
+    require 'workflowmgr/dependency'
 
     ##########################################
     #
@@ -73,7 +74,6 @@ module WorkflowMgr
 
     end
 
-
     ##########################################
     #
     # cyclelifespan
@@ -99,7 +99,6 @@ module WorkflowMgr
       end      
 
     end
-
 
     ##########################################
     #
@@ -159,7 +158,7 @@ module WorkflowMgr
     # tasks
     #
     ##########################################
-    def tasks
+    def tasks(joblist)
 
       tasks=[]
       tasknodes=@workflowdoc.find('/workflow/task')
@@ -172,13 +171,19 @@ module WorkflowMgr
               task[e.name.to_sym] = {} if task[e.name.to_sym].nil?
               task[e.name.to_sym][get_compound_time_string(e.find('name').first)] = get_compound_time_string(e.find('value').first)
             when /^dependency$/
+              e.each_element do |element|
+                raise "ERROR: <dependency> tag contains too many elements" unless task[e.name.to_sym].nil?
+                task[e.name.to_sym] = Dependency.new(get_dependency_node(element))
+              end
             else
               task[e.name.to_sym]=get_compound_time_string(e)
           end
         end
+        task[:jobs]=joblist[task[:id]]
         tasks << task
       end
       return tasks
+
     end
 
 
@@ -223,6 +228,98 @@ module WorkflowMgr
       } 
 
       return CompoundTimeString.new(strarray)
+
+    end
+
+    ##########################################
+    #
+    # get_dependency_node
+    # 
+    ##########################################
+    def get_dependency_node(element)
+
+      # Build a dependency tree
+      children=[]
+      element.each_element { |e| children << e }
+      case element.name
+        when "not"
+          return Dependency_NOT_Operator.new(children.collect { |child| get_dependency_node(child) })
+        when "and"
+          return Dependency_AND_Operator.new(children.collect { |child| get_dependency_node(child) })
+        when "or"
+          return Dependency_OR_Operator.new(children.collect { |child|  get_dependency_node(child) })
+        when "taskdep"
+          return get_taskdep(element)
+        when "datadep"
+          return get_datadep(element)
+        when "timedep"
+          return get_timedep(element)
+        else
+          raise "Invalid tag, <#{element.name}>"
+      end
+
+    end
+
+    #####################################################
+    #
+    # get_datadep
+    #
+    #####################################################
+    def get_datadep(element)
+
+      # Get the age attribute
+      age_str=element.attributes["age"]
+      case age_str
+        when /^[0-9:]+$/
+          age_sec=0
+          age_str.split(":").reverse.each_with_index {|i,index|
+            if index==3
+              age_sec+=i.to_i*3600*24
+            elsif index < 3
+              age_sec+=i.to_i*60**index
+            else
+              raise "Invalid age, '#{age_str}' inside of #{e}"
+            end
+          }
+        when nil
+          age_sec=0
+        else
+          raise "<datadep> attribute 'age' must be a non-negative time given in dd:hh:mm:ss format"
+      end
+
+      return DataDependency.new(get_compound_time_string(element),age_sec)
+
+    end
+
+    #####################################################
+    #
+    # get_taskdep
+    #
+    #####################################################
+    def get_taskdep(element)
+
+      # Get the mandatory task attribute
+      task=element.attributes["task"]
+
+      # Get the status attribute
+      status=element.attributes["status"]
+
+      # Get the cycle tag, if there is one
+      cycle=get_compound_time_string(element.find('cycle').first)
+
+      return TaskDependency.new(task,status,cycle)
+
+    end
+
+    #####################################################
+    #
+    # get_timedep
+    #
+    #####################################################
+    def get_timedep(element)
+
+      # Get the time cycle string
+      return TimeDependency.new(get_compound_time_string(element))
 
     end
 
@@ -278,7 +375,7 @@ module WorkflowMgr
 
     ##########################################
     #
-    # validate_with_metatasks
+    # expand_metatasks
     #
     ##########################################
     def expand_metatasks
