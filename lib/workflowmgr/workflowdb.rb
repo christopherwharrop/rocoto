@@ -167,17 +167,17 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_cyclespecs
+    # get_cycledefs
     #
     ##########################################
-    def get_cyclespecs
+    def get_cycledefs
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
-          dbspecs=[]
+          dbcycledefs=[]
 
           # Get a handle to the database
           database = SQLite3::Database.new(@database_file)
@@ -186,12 +186,18 @@ module WorkflowMgr
           database.transaction do |db|
 
             # Access the workflow lock maintained by the workflow manager
-            dbspecs=db.execute("SELECT groupname,fieldstr,dirty FROM cyclespec;")
+            dbcycledefs=db.execute("SELECT groupname,cycledef,dirty FROM cycledef;")
 
           end  # database transaction
           
-          # Return the array of cycle specs
-          dbspecs.collect { |spec| {:group=>spec[0], :fieldstr=>spec[1], :dirty=>spec[2]} }
+          # Return the array of cycledefs
+          dbcycledefs.collect do |cycledef| 
+            if cycledef[2].nil?
+              {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>nil} 
+            else
+              {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>Time.at(cycledef[2]).getgm} 
+            end
+          end  # 
 
         end  # forkit
 
@@ -211,14 +217,14 @@ module WorkflowMgr
 
     ##########################################
     #
-    # update_cyclespecs
+    # set_cycledefs
     #
     ##########################################
-    def update_cyclespecs(newspecs)
+    def set_cycledefs(cycledefs)
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
@@ -227,33 +233,15 @@ module WorkflowMgr
           # Start a transaction so that the database will be locked
           database.transaction do |db|
 
-            # Retreive the current cycle specs from the database
-            dbspecs=db.execute("SELECT groupname,fieldstr FROM cyclespec;")
+            # Delete all current cycledefs from the database
+            dbspecs=db.execute("DELETE FROM cycledef;")
  
-            # Delete cycles specs from the database that are not in the new cycle spec list
-            # Update dirty flag for cycle specs in the new cycle spec list that are already in the database
-            dbspecs.each do |dbspec|
-              
-              # Find the matching new cycle spec, if there is one, for this database cycle spec
-              newspec=newspecs.find { |newspec| newspec[:group]==dbspec[0] && newspec[:fieldstr]==dbspec[1] }
-
-              # If no such cycle spec was found, delete the cycle spec from the database
-              if newspec.nil?
-                db.execute("DELETE FROM cyclespec WHERE groupname='#{dbspec[0]}' and fieldstr='#{dbspec[1]}';")
-
-              # Otherwise, update the :dirty field of the cycle spec in the database
-              else               
-                unless newspec[:dirty].nil?
-                  db.execute("UPDATE cyclespec SET dirty=#{newspec[:dirty]} WHERE groupname='#{newspec[:group]}' and fieldstr='#{newspec[:fieldstr]}';")
-                end
-              end
-
-            end
-
-            # Add incoming cycles that are not in database and initialize them as dirty
-            newspecs.each do |spec|
-              unless dbspecs.member?([spec[:group],spec[:fieldstr]])
-                db.execute("INSERT INTO cyclespec VALUES (NULL,'#{spec[:group]}','#{spec[:fieldstr]}',1);")
+            # Add new cycledefs to the database
+            cycledefs.each do |cycledef|
+              if cycledef[:position].nil?
+                db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',NULL);")
+              else
+                db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',#{cycledef[:position].to_i});")
               end
             end
 
@@ -277,14 +265,14 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_all_cycles
+    # get_cycles
     #
     ##########################################
-    def get_all_cycles
+    def get_cycles(reftime=Time.gm(1900,1,1,0,0))
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           dbcycles=[]
@@ -296,7 +284,7 @@ module WorkflowMgr
           database.transaction do |db|
 
             # Retrieve all cycles from the cycle table
-            dbcycles=db.execute("SELECT cycle,activated,done FROM cycles;")
+            dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE cycle >= #{reftime.getgm.to_i};")
 
           end  # database transaction
           
@@ -328,7 +316,7 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
@@ -374,7 +362,7 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
@@ -421,7 +409,7 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
@@ -462,7 +450,7 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
@@ -503,7 +491,7 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           jobs={}
@@ -565,7 +553,7 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
@@ -607,7 +595,7 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cyclespecs
+        # Fork a process to access the database to retrieve the cycledefs
         WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
@@ -650,8 +638,8 @@ module WorkflowMgr
 
         tables={}
 
-        # Fork a process to access the database to retrieve the cyclespecs
-        cyclespecs=WorkflowMgr.forkit(2) do
+        # Fork a process to access the database to retrieve the cycledefs
+        cycledefs=WorkflowMgr.forkit(2) do
 
           # Get a handle to the database
           database = SQLite3::Database.new(@database_file)
@@ -729,9 +717,9 @@ module WorkflowMgr
         db.execute("CREATE TABLE lock (pid INTEGER, host VARCHAR(64), time DATETIME);")
       end
 
-      # Create the cyclespec table
-      unless tables.member?("cyclespec")
-        db.execute("CREATE TABLE cyclespec (id INTEGER PRIMARY KEY, groupname VARCHAR(64), fieldstr VARCHAR(256), dirty BOOLEAN);")
+      # Create the cycledef table
+      unless tables.member?("cycledef")
+        db.execute("CREATE TABLE cycledef (id INTEGER PRIMARY KEY, groupname VARCHAR(64), cycledef VARCHAR(256), dirty BOOLEAN);")
       end
 
       # Create the cycles table

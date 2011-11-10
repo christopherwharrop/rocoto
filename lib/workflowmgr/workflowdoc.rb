@@ -13,8 +13,10 @@ module WorkflowMgr
   class WorkflowXMLDoc
 
     require 'libxml'
+    require 'yaml'
+    require 'workflowmgr/utilities'
     require 'workflowmgr/compoundtimestring'
-    require 'workflowmgr/cycleformat'
+    require 'workflowmgr/cyclestring'
     require 'workflowmgr/dependency'
 
     ##########################################
@@ -24,165 +26,43 @@ module WorkflowMgr
     ##########################################
     def initialize(workflowdoc)
 
-      @xmlfile=workflowdoc
-
       # Get the text from the xml file and put it into a string
-      @xmlstring=WorkflowMgr.forkit(2) do
-        IO.readlines(@xmlfile,nil)[0]
+      xmlstring=WorkflowMgr.forkit(2) do
+        IO.readlines(workflowdoc,nil)[0]
       end
 
       # Parse the workflow xml string, set option to replace entities
-      @workflowdoc=LibXML::XML::Document.string(@xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
+      workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
 
       # Validate the workflow xml document before metatask expansion
-      validate_with_metatasks
+      validate_with_metatasks(workflowdoc)
 
       # Expand metatasks
       expand_metatasks
 
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
-      validate_without_metatasks
+      validate_without_metatasks(workflowdoc)
+
+      # Convert the XML tree into a hash
+      @workflow=to_h(workflowdoc)
 
     end  # initialize
 
-    ##########################################
-    #
-    # realtime?
-    #
-    ##########################################
-    def realtime?
-
-      realtime=@workflowdoc.root.attributes['realtime'].downcase =~ /^t|true$/
-      !realtime.nil?
-
-    end
 
     ##########################################
     #
-    # cyclethrottle
-    #
+    # method_missing
+    # 
     ##########################################
-    def cyclethrottle
+    def method_missing(name,*args)
 
-      cyclethrottle=@workflowdoc.root.attributes['cyclethrottle']
-      if cyclethrottle.nil?
-        return 1
+      dockey=name.to_sym
+      if @workflow.has_key?(dockey)
+        return @workflow[dockey]
       else
-        return cyclethrottle.to_i
+	super
       end
-
-    end
-
-    ##########################################
-    #
-    # cyclelifespan
-    #
-    ##########################################
-    def cyclelifespan
-
-      cyclelifespan=@workflowdoc.root.attributes['cyclelifespan']
-      if cyclelifespan.nil?
-        return nil
-      else
-        lifespan=0
-        cyclelifespan.split(":").reverse.each_with_index {|i,index|
-          if index==3
-            lifespan+=i.to_i.abs*3600*24
-          elsif index < 3
-            lifespan+=i.to_i.abs*60**index
-  	  else
-            raise "Invalid cycle life span, '#{cyclelifespan}'"
-          end
-        }
-        return lifespan
-      end      
-
-    end
-
-    ##########################################
-    #
-    # log
-    #
-    ##########################################
-    def log
-
-      lognode=@workflowdoc.find('/workflow/log').first
-      path=get_compound_time_string(lognode)
-      verbosity=lognode.attributes['verbosity']
-      if verbosity.nil?
-        verbosity=0
-      else
-        verbosity=verbosity.to_i
-      end
-      return { :logpath => path, :verbosity => verbosity }
-
-    end
-
-    ##########################################
-    #
-    # scheduler
-    #
-    ##########################################
-    def scheduler
-
-      scheduler=@workflowdoc.root.attributes['scheduler']
-      if scheduler.nil?
-        return "auto"
-      else
-        return scheduler.downcase
-      end
-
-    end
-
-
-    ##########################################
-    #
-    # cycles
-    #
-    ##########################################
-    def cycles
-
-      cycles=[]
-      cyclenodes=@workflowdoc.find('/workflow/cycle')
-      cyclenodes.each do |cyclenode|
-        cycles << { :group => cyclenode.attributes['group'], :fieldstr => cyclenode.content }
-      end
-      return cycles
-
-    end
-
-
-    ##########################################
-    #
-    # tasks
-    #
-    ##########################################
-    def tasks(joblist)
-
-      tasks=[]
-      tasknodes=@workflowdoc.find('/workflow/task')
-      tasknodes.each do |tasknode|
-        task={}
-        tasknode.attributes.each { |attr| task[attr.name.to_sym]=attr.value }
-        tasknode.each_element do |e|
-          case e.name
-            when /^envar$/
-              task[e.name.to_sym] = {} if task[e.name.to_sym].nil?
-              task[e.name.to_sym][get_compound_time_string(e.find('name').first)] = get_compound_time_string(e.find('value').first)
-            when /^dependency$/
-              e.each_element do |element|
-                raise "ERROR: <dependency> tag contains too many elements" unless task[e.name.to_sym].nil?
-                task[e.name.to_sym] = Dependency.new(get_dependency_node(element))
-              end
-            else
-              task[e.name.to_sym]=get_compound_time_string(e)
-          end
-        end
-        task[:jobs]=joblist[task[:id]]
-        tasks << task
-      end
-      return tasks
 
     end
 
@@ -192,137 +72,248 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_compound_time_string
+    # to_h
     # 
     ##########################################
-    def get_compound_time_string(element)
+    def to_h(doc)
 
-      strarray=element.collect { |e|
-        if e.node_type==LibXML::XML::Node::TEXT_NODE
-          CycleFormat.new(e.content,0)
-        else
-          offset_str=e.attributes["offset"]
-          offset_sec=0
-          unless offset_str.nil?
-            offset_sign=offset_str[/^-/].nil? ? 1 : -1
-            offset_str.split(":").reverse.each_with_index {|i,index| 
-              if index==3
-                offset_sec+=i.to_i.abs*3600*24
-              elsif index < 3
-                offset_sec+=i.to_i.abs*60**index
-              else
-                raise "Invalid offset, '#{offset_str}' inside of #{e}"
-              end           
-            }
-            offset_sec*=offset_sign
-          end
+      # Initialize the workflow hash to contain the <workflow> attributes
+      workflow=get_node_attributes(doc.root)
 
-          case e.name
-            when "cyclestr"
-              formatstr=e.content.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
-              CycleFormat.new(formatstr,offset_sec)
-            else
-              raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"
-          end
+      # Build hashes for the <workflow> child elements
+      doc.root.each_element do |child|
+        key=child.name.to_sym
+	case key
+          when :log
+            value=log_to_h(child)
+          when :cycledef
+            value=cycledef_to_h(child)
+          when :task
+            value=task_to_h(child)
         end
-      } 
+        if workflow.has_key?(key)
+          workflow[key]=([workflow[key]] + [value]).flatten
+        else
+	  workflow[key]=value
+        end
 
-      return CompoundTimeString.new(strarray)
+      end
+
+      return workflow
 
     end
 
+
     ##########################################
     #
-    # get_dependency_node
+    # get_node_attributes
     # 
     ##########################################
-    def get_dependency_node(element)
+    def get_node_attributes(node)
 
-      # Build a dependency tree
-      children=[]
-      element.each_element { |e| children << e }
-      case element.name
-        when "not"
-          return Dependency_NOT_Operator.new(children.collect { |child| get_dependency_node(child) })
-        when "and"
-          return Dependency_AND_Operator.new(children.collect { |child| get_dependency_node(child) })
-        when "or"
-          return Dependency_OR_Operator.new(children.collect { |child|  get_dependency_node(child) })
-        when "taskdep"
-          return get_taskdep(element)
-        when "datadep"
-          return get_datadep(element)
-        when "timedep"
-          return get_timedep(element)
+      # Initialize empty hash
+      nodehash={}
+
+      # Loop over node's attributes and set hash key/value pairs
+      node.each_attr { |attr| nodehash[attr.name.to_sym]=attr.value }
+
+      return nodehash
+
+    end
+
+
+    ##########################################
+    #
+    # log_to_h
+    # 
+    ##########################################
+    def log_to_h(node)
+
+      # Get the log attributes
+      log=get_node_attributes(node)
+      
+      # Get the log path
+      log[:path]=compound_time_string_to_h(node)
+
+      return log
+
+    end
+
+
+    ##########################################
+    #
+    # cycledef_to_h
+    # 
+    ##########################################
+    def cycledef_to_h(node)
+
+      # Get the cycle attributes
+      cycledef=get_node_attributes(node)
+      
+      # Get the cycle field string
+      cycledef[:cycledef]=node.content.strip
+
+      return cycledef
+
+    end
+
+
+    ##########################################
+    #
+    # task_to_h
+    # 
+    ##########################################
+    def task_to_h(node)
+
+      # Get the task attributes
+      task=get_node_attributes(node)
+      
+      # Get the task elements
+      node.each_element do |child|
+        key=child.name.to_sym
+        case key
+          when :envar
+            value=envar_to_h(child)
+          when :dependency
+            value=dependency_to_h(child).first
+          when :cores                              # List integer-only attributes here
+	    value=child.content.to_i
+          when :id                                 # List string attributes that can't be compound time strings	here
+            value=child.content.strip              
+          else                                     # Everything else is a compound time string
+            value=compound_time_string_to_h(child)
+        end
+
+        if task.has_key?(key)
+          task[key]=([task[key]] + [value]).flatten
         else
-          raise "Invalid tag, <#{element.name}>"
+          task[key]=value
+        end
+
       end
 
+      return task
+
     end
 
-    #####################################################
-    #
-    # get_datadep
-    #
-    #####################################################
-    def get_datadep(element)
 
-      # Get the age attribute
-      age_str=element.attributes["age"]
-      case age_str
-        when /^[0-9:]+$/
-          age_sec=0
-          age_str.split(":").reverse.each_with_index {|i,index|
-            if index==3
-              age_sec+=i.to_i*3600*24
-            elsif index < 3
-              age_sec+=i.to_i*60**index
-            else
-              raise "Invalid age, '#{age_str}' inside of #{e}"
-            end
-          }
-        when nil
-          age_sec=0
-        else
-          raise "<datadep> attribute 'age' must be a non-negative time given in dd:hh:mm:ss format"
+    ##########################################
+    #
+    # envar_to_h
+    # 
+    ##########################################
+    def envar_to_h(node)
+
+      # Get the envar attributes
+      envar=get_node_attributes(node)
+
+      # Get the envar elements
+      node.each_element do |child|
+        envar[child.name.to_sym]=compound_time_string_to_h(child)
       end
 
-      return DataDependency.new(get_compound_time_string(element),age_sec)
+      return envar
 
     end
 
-    #####################################################
+
+    ##########################################
     #
-    # get_taskdep
-    #
-    #####################################################
-    def get_taskdep(element)
+    # dependency_to_h
+    # 
+    ##########################################
+    def dependency_to_h(node)
 
-      # Get the mandatory task attribute
-      task=element.attributes["task"]
+      dependency=[]
+      node.each_element do |child|
+        key=child.name.to_sym
+        case key
+          when :datadep
+            value=datadep_to_h(child)
+          when :timedep
+            value=timedep_to_h(child)
+          when :taskdep
+            value=taskdep_to_h(child)
+          else
+            value=get_node_attributes(child)
+            value[key]=dependency_to_h(child)
+        end
+        dependency << value
+      end
 
-      # Get the status attribute
-      status=element.attributes["status"]
-
-      # Get the cycle tag, if there is one
-      cycle=get_compound_time_string(element.find('cycle').first)
-
-      return TaskDependency.new(task,status,cycle)
+      return dependency
 
     end
 
+
     #####################################################
     #
-    # get_timedep
+    # datadep_to_h
     #
     #####################################################
-    def get_timedep(element)
+    def datadep_to_h(node)
+
+      # Get the datadeo attributes
+      datadep=get_node_attributes(node)
+
+      datadep[node.name.to_sym]=compound_time_string_to_h(node)
+
+      return datadep
+
+    end
+
+
+    #####################################################
+    #
+    # taskdep_to_h
+    #
+    #####################################################
+    def taskdep_to_h(node)
+
+      taskdep=get_node_attributes(node)
+      taskdep[node.name.to_sym]=taskdep[:task]
+      taskdep.delete(:task)
+
+      return taskdep
+
+    end
+
+
+    #####################################################
+    #
+    # timedep_to_h
+    #
+    #####################################################
+    def timedep_to_h(node)
+
+      timedep=get_node_attributes(node)
 
       # Get the time cycle string
-      return TimeDependency.new(get_compound_time_string(element))
+      timedep[node.name.to_sym]=compound_time_string_to_h(node)
+
+      return timedep
 
     end
 
+
+    ##########################################
+    #
+    # compound_time_string_to_h
+    # 
+    ##########################################
+    def compound_time_string_to_h(node)
+
+      # Build an array of strings/hashes
+      compound_time_string=node.collect do |child|       
+        next if child.content.strip.empty?
+        if child.name.to_sym==:text
+          child.content.strip
+        else          
+          { child.name.to_sym=>child.content.strip.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@') }.merge(get_node_attributes(child))
+        end
+      end
+      
+    end
 
 
     ##########################################
@@ -330,7 +321,7 @@ module WorkflowMgr
     # validate_with_metatasks
     # 
     ##########################################
-    def validate_with_metatasks
+    def validate_with_metatasks(doc)
 
       # This method is not wrapped inside a WorkflowMgr.forkit 
       # because it is reading the schemas from the same directory
@@ -344,17 +335,17 @@ module WorkflowMgr
       relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
 
       # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-      @workflowdoc.validate_relaxng(relaxng_schema)
+      doc.validate_relaxng(relaxng_schema)
 
     end
 
 
     ##########################################
     #
-    # validate_with_metatasks
+    # validate_without_metatasks
     #
     ##########################################
-    def validate_without_metatasks
+    def validate_without_metatasks(doc)
 
       # This method is not wrapped inside a WorkflowMgr.forkit 
       # because it is reading the schemas from the same directory
@@ -368,7 +359,7 @@ module WorkflowMgr
       relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
 
       # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-      @workflowdoc.validate_relaxng(relaxng_schema)
+      doc.validate_relaxng(relaxng_schema)
 
     end
 

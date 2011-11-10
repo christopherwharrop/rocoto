@@ -18,9 +18,9 @@ module WorkflowMgr
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/workflowdb'
+    require 'workflowmgr/cycledef'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/jobsubmitter'
-    require 'workflowmgr/cycle'
 
 
     ##########################################
@@ -47,7 +47,7 @@ module WorkflowMgr
     def run
 
       # Initialize the database
-      @workflowdb=WorkflowSQLite3DB.new(@options.database)
+      @workflowdb=eval "Workflow#{@config.DatabaseType}DB.new(@options.database)"
 
       # Acquire a lock on the workflow in the database
       @workflowdb.lock_workflow
@@ -55,38 +55,45 @@ module WorkflowMgr
       begin
 
         # Initialize the workflow document
-        @workflowdoc=WorkflowXMLDoc.new(@options.workflowdoc)
+        @workflowdoc=eval "Workflow#{@config.WorkflowDocType}Doc.new(@options.workflowdoc)"
 
-        # Initialize the workflow log
-        @workflowlog=WorkflowLog.new(@workflowdoc.log)
+        # Build the workflow from the workflow document
+        build_workflow
 
-        # Initialize a scheduler
-        case @workflowdoc.scheduler
-          when /sge/i
-            @scheduler=SGEBatchSystem.new
-          else
-            raise "ERROR: Unspported scheduler '#{@workflowdoc.scheduler}'"
-        end
-
-        # Make sure the database contains the current cycle specs
-        @workflowdb.update_cyclespecs(@workflowdoc.cycles)
+        # Get active cycles from the database
+        @active_cycles=@workflowdb.get_active_cycles(@cyclelifespan)
 
         # Activate new cycles if possible
         activate_new_cycles
 
-        # Get active cycles
-        @active_cycles=@workflowdb.get_active_cycles
+        # Get active jobs from the database
+        @active_jobs=@workflowdb.get_jobs
 
-        # Get the active jobs
-        @jobs=@workflowdb.get_jobs
+        # Update the status of all active jobs
+        @active_jobs.each do |job|
 
-        # Get the workflow tasks
-        @tasks=@workflowdoc.tasks(@jobs)
+        end
 
+        # Submit new tasks where possible
+        uris=[]
         @active_cycles.each do |cycle|
           @tasks.each do |task|
-          
+
+            if task[:dependency].resolved?(cycle[:cycle])
+              uris << submit_task(localize_task(task,cycle[:cycle]))
+            end
           end
+        end
+
+        # Harvest job ids for submitted tasks
+        uris.each do |uri|
+        
+          output=nil
+          while output.nil?
+            jobid,output=get_task_submit_status(uri)
+            sleep 1
+          end
+
         end
 
       ensure
@@ -100,6 +107,105 @@ module WorkflowMgr
 
   private
 
+
+    ##########################################
+    #
+    # build_workflow
+    #
+    ##########################################
+    def build_workflow
+
+      # Get the realtime flag
+      @realtime=!(@workflowdoc.realtime.downcase =~ /^t|true$/).nil?
+
+      # Get the cycle life span
+      @cyclelifespan=WorkflowMgr.ddhhmmss_to_seconds(@workflowdoc.cyclelifespan)
+
+      # Get the cyclethrottle
+      @cyclethrottle=@workflowdoc.cyclethrottle.to_i
+
+      # Get the scheduler
+      @scheduler=eval "#{@workflowdoc.scheduler.upcase}BatchSystem.new"
+
+      # Get the workflow log
+      @log=WorkflowLog.new(@workflowdoc.log)
+
+      # Get the cycle defs
+      @cycledefs=@workflowdoc.cycledef.collect do |cycledef|
+        fields=cycledef[:cycledef].split
+        case fields.size
+          when 6
+            CycleCron.new(cycledef)
+          when 3
+            CycleInterval.new(cycledef)
+        end
+      end
+
+      # Get the tasks 
+      @tasks=[]
+      @workflowdoc.task.each do |task|
+        newtask=task
+        task.each do |attr,val|        
+          case attr
+            when :envar
+              newtask[attr].collect! do |envar|
+                envar[:name]=CompoundTimeString.new(envar[:name])
+                envar[:value]=CompoundTimeString.new(envar[:value])
+                envar
+              end
+            when :dependency
+              newtask[attr]=build_dependency(val)
+            when :id,:cores
+            else
+                newtask[attr]=CompoundTimeString.new(val)
+          end
+        end
+        @tasks << newtask
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # build_dependency
+    #
+    ##########################################
+    def build_dependency(node)
+
+      # Build a dependency tree
+      node.each { |nodekey,nodeval|
+        case nodekey
+          when :not
+            return Dependency_NOT_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
+          when :and
+            return Dependency_AND_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
+          when :or
+            return Dependency_OR_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
+          when :nand
+            return Dependency_NAND_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
+          when :nor
+            return Dependency_NOR_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
+          when :xor
+            return Dependency_XOR_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
+          when :some
+            return Dependency_SOME_Operator.new(nodeval.collect { |operand| build_dependency(operand) }, node[:threshold] )
+          when :datadep
+            age=WorkflowMgr.ddhhmmss_to_seconds(node[:age])
+            return DataDependency.new(CompoundTimeString.new(nodeval),age)
+          when :taskdep
+            task=@tasks.find {|t| t[:id]==nodeval }
+            status=node[:status]
+            cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(node[:cycle_offset])
+            return TaskDependency.new(task,status,cycle_offset)
+          when :timedep
+            return TimeDependency.new(CompoundTimeString.new(nodeval))
+        end
+      }
+
+    end
+
+
     ##########################################
     #
     # activate_new_cycles
@@ -107,146 +213,140 @@ module WorkflowMgr
     ##########################################
     def activate_new_cycles
 
-      # Get the cycle specs from the database       
-      cyclespecs=@workflowdb.get_cyclespecs.collect do |cyclespec|
-        fieldstr=cyclespec[:fieldstr].split(/\s+/)
-        if fieldstr.size==3
-          CycleInterval.new(cyclespec[:group],fieldstr,cyclespec[:dirty])
-        elsif fieldstr.size==6
-          CycleCron.new(cyclespec[:group],fieldstr,cyclespec[:dirty])
-        else
-          raise "ERROR: Unsupported <cycle> type!"
-        end
+      if @realtime
+        newcycles=get_new_realtime_cycle
+      else
+        newcycles=get_new_retro_cycles
       end
 
-      # Initialize the list of new cycles to activate
-      new_cycles=[]
+      unless newcycles.empty?
 
-      # Find new cycles to activate
-      if @workflowdoc.realtime?
+        # Add the new cycles to the database
+        @workflowdb.add_cycles(newcycles)
 
-        # For realtime workflows, find the most recent cycle less than or equal to 
-        # the current time and activate it if it has not already been activated
+        # Add the new cycles to the list of active cycles
+        @active_cycles += newcycles.collect { |cycle| {:cycle=>cycle} }
 
-        # Get the most recent cycle <= now from cycle specs
-        now=Time.now.getgm
-        new_cycle=cyclespecs.collect { |c| c.previous(now) }.max
+      end
+    
+    end
 
-        # Get the latest cycle from the database or initialize it to a very long time ago
-	latest_cycle=@workflowdb.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
 
-        # Activate the new cycle if it hasn't already been activated
-        if new_cycle > latest_cycle[:cycle]
-          new_cycles << new_cycle
-        end
+    ##########################################
+    #
+    # get_new_realtime_cycle
+    #
+    ##########################################
+    def get_new_realtime_cycle
 
+      # For realtime workflows, find the most recent cycle less than or equal to 
+      # the current time and activate it if it has not already been activated
+
+      # Get the most recent cycle <= now from cycle specs
+      now=Time.now.getgm
+      new_cycle=@cycledefs.collect { |c| c.previous(now) }.max
+
+      # Get the latest cycle from the database or initialize it to a very long time ago
+      latest_cycle=@workflowdb.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
+
+      # Return the new cycle if it hasn't already been activated
+      if new_cycle > latest_cycle[:cycle]
+        return [new_cycle]
       else
+        return []
+      end
 
-        # For retrospective workflows, find the next N cycles in chronological
-        # order that have never been activated.  If the cycle spec has changed,
-        # cycles may be added that are older than previously activated cycles.
-        # N is the cyclethrottle minus the number of currently active cycles.
+    end
 
-        # If any cycle specs are dirty get all cycles from the database.
-        # Also get the latest cycle, regardless if any cycle specs are dirty.
-        if cyclespecs.any? { |cyclespec| cyclespec.dirty? }
+    ##########################################
+    #
+    # get_new_retro_cycles
+    #
+    ##########################################
+    def get_new_retro_cycles
 
-          allcycles=@workflowdb.get_all_cycles.sort { |a,b| a[:cycle] <=> b[:cycle] }
+      # For retrospective workflows, find the next N cycles in chronological
+      # order that have never been activated.  If any cycledefs have changed,
+      # cycles may be returned that are older than previously activated cycles.
+      # N is the cyclethrottle minus the number of currently active cycles.
 
-          # Get the latest cycle from the list of cycles or initialize it to a very long time ago
-          latest_cycle=allcycles.last || { :cycle=>Time.gm(1900,1,1,0,0,0) }
+      # Get the cycledefs from the database so that we can get their last known positions
+      dbcycledefs=@workflowdb.get_cycledefs.collect do |dbcycledef|
+        case dbcycledef[:cycledef].split.size
+          when 6
+            CycleCron.new(dbcycledef)
+          when 3
+            CycleInterval.new(dbcycledef)
+        end
+      end
+        
+      # Update the positions of the current cycledefs (loaded from the workflowdoc) 
+      # with their last known positions that are stored in the database
+      @cycledefs.each do |cycledef|
+        dbcycledef=dbcycledefs.find { |dbcycledef| dbcycledef.group==cycledef.group && dbcycledef.cycledef==cycledef.cycledef }
+        next if dbcycledef.nil?
+        cycledef.seek(dbcycledef.position)
+      end
+
+      # Get the set of cycles that are >= the earliest cycledef position
+      cycleset=@workflowdb.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
+
+      # Sort the cycleset
+      cycleset.sort { |a,b| a[:cycle] <=> b[:cycle] }
+
+      # Find N new cycles to be added
+      newcycles=[]
+      (@cyclethrottle - @active_cycles.size).times do
+
+        # Initialize the pool of new cycle candidates
+        cyclepool=[]
+
+        # Get the next new cycle for each cycle spec, and add it to the cycle pool
+        @cycledefs.each do |cycledef|
+
+          # Start looking for new cycles at the last known position for the cycledef
+          next_cycle=cycledef.position
+
+          # Iterate through cycles until we find a cycle that has not ever been activated
+          # or we have tried all the cycles represented by the cycledef
+          while !next_cycle.nil? do
+            match=cycleset.find { |c| c[:cycle]==next_cycle }
+            break if match.nil?
+            next_cycle=cycledef.next(next_cycle + 60)
+          end
+
+          # If we found a new cycle, add it to the new cycle pool
+          cyclepool << next_cycle unless next_cycle.nil?
+
+          # Update cycledef position
+          cycledef.seek(next_cycle)
+
+        end  # cycledefs.each
+
+        if cyclepool.empty?
+
+          # If we didn't find any cycles that could be added, stop looking for more
+          break
 
         else
-  
-          # Get the latest cycle from the database or initialize it to a very long time ago
-	  latest_cycle=@workflowdb.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
 
-        end
+          # The new cycle is the earlies cycle in the cycle pool
+          newcycle=cyclepool.min
 
-        # Initialize the set of cleaned cycle specs
-        cleaned_cyclespecs=[]
+          # Add the earliest cycle in the cycle pool to the list of cycles to activate
+          newcycles << newcycle
 
-        # Get number of active cycles
-        nactive_cycles=@workflowdb.get_active_cycles(@workflowdoc.cyclelifespan).size
+          # Add the new cycle to the cycleset so that we don't try to add it again
+          cycleset << { :cycle=>newcycle }
 
-        # Get the set of new cycles to be added
-        (@workflowdoc.cyclethrottle - nactive_cycles).times do
+        end  # if cyclepool.empty?
 
-          # Initialize the pool of new cycle candidates
-          cyclepool=[]
+      end  # .times do
 
-          # Get the next new cycle for each cycle spec, and add it to the cycle pool
-          cyclespecs.each do |cyclespec|
+      # Save the workflowdoc cycledefs with their updated positions to the database
+      @workflowdb.set_cycledefs(@cycledefs.collect { |cycledef| { :group=>cycledef.group, :cycledef=>cycledef.cycledef, :position=>cycledef.position } } )
 
-            if cyclespec.dirty?
-
-              # This is a dirty cycle spec so we must start with the first cycle in it
-              nexttime=cyclespec.first
-              match=allcycles.find { |c| c[:cycle]==nexttime }
-
-              # Get the next cycle until we find a cycle that has not ever been activated
-              while !match.nil? do
-                nexttime=cyclespec.next(nexttime + 60)
-                break if nexttime.nil?
-                match=allcycles.find { |c| c[:cycle]==nexttime }           
-              end
-
-              # If we found one, add it to the pool of new cycle candidates
-              unless nexttime.nil?
-
-                cyclepool << nexttime
-
-                # If the cycle we found is bigger than the latest cycle, mark the cycle spec as clean
-                if nexttime >= latest_cycle[:cycle]
-                  cleaned_cyclespecs << cyclespec.clean!
-                end
-
-              end
-
-            else  # if cyclespec.dirty?
-
-              # This is a clean cycle spec, so get the next cycle > the latest cycle
-              nexttime=cyclespec.next(latest_cycle[:cycle] + 60)
-
-              # If we found a cycle, add it to the pool of cycle candidates
-              cyclepool << nexttime unless nexttime.nil?
-
-            end  # if cyclespec.dirty?        
-
-          end  # cyclespecs.each
-
-          if cyclepool.empty?
-
-            # If we didn't find any cycles that could be added, stop looking for more
-            break
-
-          else
-
-            # Add the earliest cycle in the cycle pool to the list of cycles to activate
-            new_cycle=cyclepool.min
-            new_cycles << new_cycle
-
-            # Set the latest cycle to the cycle we just added
-            if new_cycle > latest_cycle[:cycle]
-              latest_cycle={ :cycle=>new_cycle }
-            end
-
-            # Add the cycle to the list of all cycles if it exists (at least one cyclespec was dirty when we started)
-            allcycles << { :cycle=>new_cycle } unless allcycles.nil?
-
-          end  # if cyclepool.empty?
-
-        end  # .times do
-
-        # Update all the cleaned cycle specs in the database
-        unless cleaned_cyclespecs.empty?
-          @workflowdb.update_cyclespecs(cleaned_cyclespecs.collect { |spec| { :group=>spec.group, :fieldstr=>spec.fieldstr, :dirty=>0 } } )
-        end
-
-      end  # if realtime
-
-      # Add the new cycles to the database
-      @workflowdb.add_cycles(new_cycles)
+      return newcycles
 
     end  # activate_new_cycles
 
@@ -259,25 +359,39 @@ module WorkflowMgr
     def localize_task(t,cycle)
 
       # Walk the task and evaluate all CompoundTimeStrings using the input cycle time
-      lt={}
-      t.each { |key,value|
-        if key.is_a?(CompoundTimeString)
-          lkey=key.to_s(cycle)
-        else
-          lkey=key
+      if t.is_a?(Hash)
+        lt={}
+        t.each do |key,value|
+          if key.is_a?(CompoundTimeString)
+            lkey=key.to_s(cycle)
+          else
+            lkey=key
+          end
+          if value.is_a?(CompoundTimeString)
+            lvalue=value.to_s(cycle)
+          elsif value.is_a?(Hash) || value.is_a?(Array)
+            lvalue=localize_task(value,cycle)
+          else
+            lvalue=value
+          end
+          lt[lkey]=lvalue        
         end
-        if value.is_a?(CompoundTimeString)
-          lvalue=value.to_s(cycle)
-        elsif value.is_a?(Hash)
-          lvalue=localize_task(value,cycle)
-        else
-          lvalue=value
+      elsif t.is_a?(Array)
+        lt=t.collect do |value|
+          if value.is_a?(CompoundTimeString)
+            value.to_s(cycle)
+          elsif value.is_a?(Hash) || value.is_a?(Array)
+            localize_task(value,cycle)
+          else
+            value
+          end
         end
-        lt[lkey]=lvalue        
-      }
+      end 
+
       return lt
 
     end
+
 
     ##########################################
     #
