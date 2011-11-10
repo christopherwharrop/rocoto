@@ -16,7 +16,7 @@ module WorkflowMgr
     require 'workflowmgr/forkit'
 
     DEFAULT_CONFIG={ 
-                    :DatabaseType => "SQLite", 
+                    :DatabaseType => "SQLite3", 
                     :WorkflowDocType => "XML"
                    }
 
@@ -50,6 +50,23 @@ module WorkflowMgr
       end
 
     end  # initialize
+
+
+    ##########################################
+    #
+    # method_missing
+    #
+    ##########################################
+    def method_missing(name,*args)
+
+      configkey=name.to_sym
+      if @config.has_key?(configkey)
+        return @config[configkey]
+      else
+        super
+      end
+
+    end
 
   end  # Class WorkflowYAMLConfig
 
