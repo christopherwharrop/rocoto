@@ -77,7 +77,7 @@
 
         <!-- Must have at least one cycle tag -->
         <oneOrMore>
-          <element name="cycle">
+          <element name="cycledef">
             <!-- group attribute is optional and must be a string -->
             <optional>
               <attribute name="group">

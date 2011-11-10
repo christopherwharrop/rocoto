@@ -75,9 +75,9 @@
           <ref name="compoundTimeString"/>
         </element>
 
-        <!-- Must have at least one cycle tag -->
+        <!-- Must have at least one cycledef tag -->
         <oneOrMore>
-          <element name="cycle">
+          <element name="cycledef">
             <!-- group attribute is optional and must be a string -->
             <optional>
               <attribute name="group">
