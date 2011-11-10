@@ -4,20 +4,58 @@
  <!ENTITY CYCLE_TIME "@Y@m@d@H">
 ]>
 
-<workflow realtime="FALSE" scheduler="sge" cyclelifespan="1:00:00:00" cyclethrottle="10">
+<workflow realtime="FALSE" scheduler="sge" cyclelifespan="0:00:01:00" cyclethrottle="10">
 
-  <log verbosity="10">test.log</log>
+  <log verbosity="10">/home/harrop/workflowmgr_dev/<cyclestr>test_@Y@m@d@H.log</cyclestr></log>
 
-  <cycle group="group1">* * * * * *</cycle>
-  <cycle group="group1">*/2 * * * * *</cycle>
-  <cycle group="group1">0 * * * * *</cycle>
-  <cycle group="group1">0,1,2,3 * * * * *</cycle>
-  <cycle group="group1">0-10 0-10,20 1,10-20 * * *</cycle>
-  <cycle group="group1">0-10/2 0-10/2,20 1,10-20/2 * * *</cycle>
-  <cycle group="group1">0-10/2,20-30,40 1,2-6,8-12/2 1-5/2,10,20-30/2 * * *</cycle>
-  <cycle group="group1">201108171200 201208171200 1:00:00</cycle>
+  <cycledef group="group1">* * * * * *</cycledef>
+  <cycledef group="group1">*/2 * * * * *</cycledef>
+  <cycledef group="group1">0 * * * * *</cycledef>
+  <cycledef group="group1">0,1,2,3 * * * * *</cycledef>
+  <cycledef group="group1">0-10 0-10,20 1,10-20 * * *</cycledef>
+  <cycledef group="group1">0-10/2 0-10/2,20 1,10-20/2 * * *</cycledef>
+  <cycledef group="group1">0-10/2,20-30,40 1,2-6,8-12/2 1-5/2,10,20-30/2 * * *</cycledef>
+  <cycledef group="group1">201108171200 201208171200 1:00:00</cycledef>
 
   <task id="test1">
+
+    <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_%X @^p</cyclestr></command>
+
+    <account>jetmgmt</account>
+
+    <queue>nserial</queue>
+
+    <cores>1</cores>
+
+    <envar>
+      <name><cyclestr>test1_@H</cyclestr></name>
+      <value><cyclestr offset="1:00">hello world! &CYCLE_TIME;</cyclestr>This is some text<cyclestr offset="30:00">This is a 2nd cyclestr</cyclestr></value>
+    </envar>
+    <envar>
+      <name><cyclestr>test2_@H</cyclestr></name>
+      <value><cyclestr offset="1:00:00">goodbye cruel world! %X</cyclestr></value>
+    </envar>
+    <envar>
+      <name>name1</name><value>value1</value>
+    </envar>
+
+    <dependency>
+      <or>
+        <and>
+          <datadep age="2:00">/home/harrop/workflowmgr_dev/test/test.dat1</datadep>
+          <datadep age="2:00">/home/harrop/workflowmgr_dev/test/test.dat2</datadep>
+        </and>
+        <and>
+          <timedep>20111031120001</timedep>
+          <timedep>20111031120003</timedep>
+        </and>
+      </or>
+    </dependency>
+
+  </task>
+
+
+  <task id="test2">
 
     <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_%X @^p</cyclestr></command>
 
@@ -31,7 +69,7 @@
     <envar><name><cyclestr>test2_@H</cyclestr></name><value><cyclestr offset="1:00:00">goodbye cruel world! %X</cyclestr></value></envar>
 
     <dependency>
-      <datadep age="2:00">/home/harrop/workflowmgr_dev/test/test.dat</datadep>
+      <taskdep task="test1"></taskdep>
     </dependency>
 
   </task>
