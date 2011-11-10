@@ -22,7 +22,7 @@ module WorkflowMgr
     #####################################################
     def initialize(log)
 
-      @name=log[:logpath]
+      @path=CompoundTimeString.new(log[:path])
       @verbosity=log[:verbosity] || 0
 
     end
@@ -36,7 +36,7 @@ module WorkflowMgr
 
       if level <= @verbosity
 
-        logname=@name.to_s(cycle)
+        logname=@path.to_s(cycle)
         begin
           WorkflowMgr.forkit(1) do
             host=Socket.gethostname
