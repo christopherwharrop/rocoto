@@ -293,11 +293,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(task,status,cycle)
+    def initialize(task,status,cycle_offset)
 
       @task=task
       @status=status
-      @cycle=cycle
+      @cycle_offset=cycle_offset
 
     end
 
@@ -308,7 +308,9 @@ module WorkflowMgr
     #####################################################
     def resolved?(cycle)
 
-      return @task[:jobs][@cycle.to_str(cycle)][:state]==@status
+      return false if @task[:jobs].nil?
+      return false if @task[:jobs][cycle+@cycle_offset].nil?
+      return @task[:jobs][cycle+@cycle_offset][:state]==@status
 
     end
 
