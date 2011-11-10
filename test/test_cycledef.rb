@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 if RUBY_VERSION < "1.9.0"
   require 'require_relative'
 end
@@ -26,39 +25,29 @@ class TestCycle < Test::Unit::TestCase
 
   def test_cyclecron_init
 
-    # Set up tests
-    testfields = []
-
     # Test asterisk forms
-    testfields << "* * * * * *"
-    testfields << "*/2 * * * * *"
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"* * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"*/2 * * * * *"})
 
     # Test each non-asterisk form
-    testfields << "0 * * * * *"
-    testfields << "0-10 * * * * *"
-    testfields << "0-10/2 * * * * *"
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10/2 * * * * *"})
 
     # Test lists for each form that can follow a single integer form
-    testfields << "0,1 * * * * *"
-    testfields << "0,1-10 * * * * *"
-    testfields << "0,1-10/2 * * * * *"
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0,1 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0,1-10 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0,1-10/2 * * * * *"})
 
     # Test lists for each form that can follow a range form
-    testfields << "0-10,11 * * * * *"
-    testfields << "0-10,11-20 * * * * *"
-    testfields << "0-10,11-20/2 * * * * *"
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10,11 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10,11-20 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10,11-20/2 * * * * *"})
 
     # Test lists for each form that can follow a stepped range form
-    testfields << "0-10/2,11 * * * * *"
-    testfields << "0-10/2,11-20 * * * * *"
-    testfields << "0-10/2,11-20/2 * * * * *"
-
-    # Run tests
-    testfields.each do |testfield|
-      cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>testfield})
-      assert_equal(testfield,cycle1.cycledef)
-      assert_equal("test",cycle1.group)
-    end
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10/2,11 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10/2,11-20 * * * * *"})
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0-10/2,11-20/2 * * * * *"})
 
   end
 
@@ -75,117 +64,41 @@ class TestCycle < Test::Unit::TestCase
 
   def test_cyclecron_next
 
-    # tests now
     cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"* * * * * *"})
     reftime=Time.at(Time.now.to_i)
     reftime -= reftime.sec
     nextcycle=cycle1.next(reftime)
     assert_equal(reftime,nextcycle)
 
-    # tests first day of year; specific hour
-    #   next cycle from 0000Z 01 Jan 2011
     cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0 * * * *"})
     reftime=Time.gm(2011,1,1,0,0)
     nextcycle=cycle1.next(reftime)
     assert_equal(Time.gm(2011,1,1,0,0),nextcycle)
 
-    # tests last day of year; specific hour
-    #   next cycle from 1800Z 31 Dec 2010
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0 * * * *"})
-    reftime=Time.gm(2010,12,31,18,0)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2011,1,1,0,0),nextcycle)
-
-    # tests next day after leap year; specific hour
-    #   next cycle from 1800Z 28 Feb 2008
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0 * * * *"})
-    reftime=Time.gm(2008,2,28,18,0)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2008,2,29,0,0),nextcycle)
-
-    # tests next cycle from 1543Z 28 Feb 2009; specific hours
-    #   00Z/12Z, every day of every month of every year
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 * * * *"})
-    reftime=Time.gm(2009,2,28,15,43)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2009,3,1,0,0),nextcycle)
-
-    # tests next cycle from 1123Z 31 Dec 2009; specific hours; partial d-o-m
-    #   00Z/12Z, 15-31 of every month of every year; every day
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 15-31 * * *"})
-    reftime=Time.gm(2009,12,31,11,23)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2009,12,31,12,0),nextcycle)
-
-    # tests next cycle from 1823Z 31 Dec 2009; specific hours; partial d-o-m
-    #   00Z/12Z, 15-31 of every month of every year; every day
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 15-31 * * *"})
-    reftime=Time.gm(2009,12,31,18,23)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2010,1,15,0,0),nextcycle)
-
-    # tests next cycle from 1543Z 31 March 2009; specific hours; partial d-o-m
-    #   00Z/12Z, 31st day of every month of every year; every day
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 31 * * *"})
-    reftime=Time.gm(2009,3,31,15,43)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2009,5,31,0,0),nextcycle)
-
-    # tests next cycle from 1543Z 28 April 2009; specific hours; partial d-o-m
-    #   00Z/12Z, 31st day of every month of every year; every day
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 31 * * *"})
-    reftime=Time.gm(2009,4,28,15,43)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2009,5,31,0,0),nextcycle)
-
-    # tests next cycle from 1543Z 31 August 2008; specific hours; specific months
-    #   12Z, every day of June, July, August of every year
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 12 * 6-8 * *"})
-    reftime=Time.gm(2008,8,31,15,43)
-    nextcycle=cycle1.next(reftime)
-    assert_equal(Time.gm(2009,6,1,12,0),nextcycle)
-
-    # tests next cycle from 1543Z 28 March 2007; specific hours; partial d-o-m; specific month
-    #   00Z/12Z, Feb 01-15 of every year; every day
     cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 1-15 2 * *"})
     reftime=Time.gm(2007,3,28,15,43)
     nextcycle=cycle1.next(reftime)
     assert_equal(Time.gm(2008,2,1,0,0),nextcycle)
 
-    # tests next cycle from 1543Z 28 March 2009; specific hours; partial d-o-m; leap year, specific month
-    #   00Z/12Z, Feb 29 of every year; every day
     cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 29-31 2 * *"})
     reftime=Time.gm(2009,3,28,15,43)
     nextcycle=cycle1.next(reftime)
     assert_equal(Time.gm(2012,2,29,0,0),nextcycle)
 
-    # tests next cycle from 1543Z Sat, 28 Feb 2009; both d-o-m and d-o-w set
-    #   00Z/12Z, February 3-29 OR every Monday in February of every year 
     cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 3-31 2 * 1"})
     reftime=Time.gm(2009,2,28,15,43)
     nextcycle=cycle1.next(reftime)
     assert_equal(Time.gm(2010,2,1,0,0),nextcycle)
 
-    # tests next cycle from 1543Z 28 Feb 2009; both d-o-m and d-o-w set
-    #   00Z/12Z, February 3-29 OR every Saturday in February of every year 
     cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 3-31 2 * 6"})
     reftime=Time.gm(2009,2,28,15,43)
     nextcycle=cycle1.next(reftime)
     assert_equal(Time.gm(2010,2,3,0,0),nextcycle)
 
-    # tests next cycle from 1543Z 31 August 2010; specific hour; specific months; specific year
-    #   12Z, every day of June, July, August of 2010
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 12 * 6-8 2010 *"})
-    reftime=Time.gm(2010,8,31,15,43)
+    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 0,12 * * * *"})
+    reftime=Time.gm(2009,2,28,15,43)
     nextcycle=cycle1.next(reftime)
-    assert_nil(nextcycle)
-
-    # tests next cycle from 2343Z 31 August 2010; all hours, specific months; specific year
-    #   12Z, every day of June, July, August of 2010
-    cycle1=WorkflowMgr::CycleCron.new({:group=>"test", :cycledef=>"0 * * 6-8 2010 *"})
-    reftime=Time.gm(2010,8,31,23,43)
-    nextcycle=cycle1.next(reftime)
-    assert_nil(nextcycle)
+    assert_equal(Time.gm(2009,3,1,0,0),nextcycle)
 
   end
 
