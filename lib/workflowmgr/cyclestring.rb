@@ -7,19 +7,19 @@ module WorkflowMgr
 
   ########################################## 
   #
-  # Class CycleFormat 
+  # Class CycleString
   #
   ##########################################
-  class CycleFormat
+  class CycleString
 
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(format,offset)
+    def initialize(str,offset)
 
-      @format=format
+      @str=str
       @offset=offset
 
     end
@@ -31,7 +31,7 @@ module WorkflowMgr
     #####################################################
     def to_s(cycle)
 
-      return (cycle.gmtime+@offset).strftime(@format)
+      return (cycle.gmtime+@offset).strftime(@str)
 
     end
 
