@@ -23,7 +23,7 @@ module WorkflowMgr
     def initialize(log)
 
       @path=CompoundTimeString.new(log[:path])
-      @verbosity=log[:verbosity] || 0
+      @verbosity=log[:verbosity].to_i || 0
 
     end
 
