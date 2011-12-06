@@ -72,12 +72,13 @@ module WorkflowMgr
 
       @group=cycledef[:group]
       @cycledef=cycledef[:cycledef]
-      @position=cycledef[:position] || Time.gm(1900,1,1,0,0)
 
       @fields={}
       [:minute,:hour,:day,:month,:year,:weekday].each_with_index { |field,i|
         @fields[field]=cronstr_to_a(@cycledef.split[i],field)
       }
+
+      @position=cycledef[:position] || first
 
     end  # initialize
 
@@ -537,7 +538,6 @@ module WorkflowMgr
 
       @group=cycledef[:group]
       @cycledef=cycledef[:cycledef]
-      @position=cycledef[:position] || Time.gm(1900,1,1,0,0)
 
       fields=@cycledef.split
       @start=Time.gm(fields[0][0..3],
@@ -552,6 +552,8 @@ module WorkflowMgr
                       fields[1][10..11])
 
       @interval=WorkflowMgr.ddhhmmss_to_seconds(fields[2])
+
+      @position=cycledef[:position] || first
 
     end  # initialize
 
