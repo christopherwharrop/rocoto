@@ -14,6 +14,7 @@ module WorkflowMgr
   class CompoundTimeString
 
     require 'workflowmgr/cyclestring'
+    require 'workflowmgr/utilities'
 
     #####################################################
     #
