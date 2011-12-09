@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'drb'
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/workflowoption'
+    require 'workflowmgr/launchserver'
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/workflowdb'
@@ -35,6 +36,9 @@ module WorkflowMgr
 
       # Get configuration file options
       @config=WorkflowYAMLConfig.new
+
+      # Get the base directory of the WFM installation
+      @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
     end  # initialize
 
@@ -70,36 +74,81 @@ module WorkflowMgr
         @active_jobs=@workflowdb.get_jobs
 
         # Update the status of all active jobs
-        @active_jobs.each do |job|
-
+        updated_jobs=[]
+        @active_jobs.each_key do |task|
+          @active_jobs[task].each_key do |cycle|
+            jobid=@active_jobs[task][cycle][:jobid]
+            if jobid=~/^druby:/ 
+              uri=jobid
+              jobid,output=get_task_submit_status(jobid)
+              if output.nil?
+                @logserver.log(cycle[:cycle],"Submission status of #{task} is still pending at #{uri}, something may be wrong.  Check to see if the #{uri} process is still alive")
+              else
+                if jobid.nil?
+                  puts output
+                  @logserver.log(cycle,"Submission status of previously pending #{task} is failure!  #{output}")
+                else
+                  @active_jobs[task][cycle][:jobid]=jobid
+                  @logserver.log(cycle,"Submission status of previously pending #{task} is success, jobid=#{jobid}")
+                end
+              end
+            else
+              unless @active_jobs[task][cycle][:state]=="done"
+                status=@scheduler.status(@active_jobs[task][cycle][:jobid])
+                @active_jobs[task][cycle][:state]=status[:state]
+                if status[:state]=="done"
+                  @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}, exit status=#{status[:exit_status]}")
+                else
+                  @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}")
+                end
+              end
+            end         
+            updated_jobs << @active_jobs[task][cycle]
+          end
         end
+        @workflowdb.update_jobs(updated_jobs)
 
         # Submit new tasks where possible
-        uris=[]
+        newjobs=[]
         @active_cycles.each do |cycle|
           @tasks.each do |task|
-
+            unless @active_jobs[task[:id]].nil?
+              next unless @active_jobs[task[:id]][cycle[:cycle]].nil?
+            end
             if task[:dependency].resolved?(cycle[:cycle])
-              uris << submit_task(localize_task(task,cycle[:cycle]))
+              uri=submit_task(localize_task(task,cycle[:cycle]))
+              newjobs << {:jobid=>uri, :taskid=>task[:id], :cycle=>cycle[:cycle], :state=>"Submitting", :exit_status=>0, :tries=>1}
             end
           end
         end
 
         # Harvest job ids for submitted tasks
-        uris.each do |uri|
-        
-          output=nil
-          while output.nil?
-            jobid,output=get_task_submit_status(uri)
-            sleep 1
+        newjobs.each do |job|
+          uri=job[:jobid]
+          jobid,output=get_task_submit_status(job[:jobid])
+          if output.nil?
+            @logserver.log(job[:cycle],"Submitted #{job[:taskid]}.  Submission status is pending at #{job[:jobid]}")
+          else
+            if jobid.nil?
+              puts output
+              @logserver.log(job[:cycle],"Submission of #{job[:taskid]} failed!  #{output}")
+            else
+              job[:jobid]=jobid
+              @logserver.log(job[:cycle],"Submitted #{job[:taskid]}, jobid=#{job[:jobid]}")
+            end
           end
-
         end
+
+        # Add the new jobs to the database
+        @workflowdb.add_jobs(newjobs)
 
       ensure
 
         # Make sure we release the workflow lock in the database
         @workflowdb.unlock_workflow
+
+        # Make sure to kill the workflow log server 
+        @logserver.stop! unless @logserver.nil?
 
       end
  
@@ -127,11 +176,12 @@ module WorkflowMgr
       # Get the scheduler
       @scheduler=eval "#{@workflowdoc.scheduler.upcase}BatchSystem.new"
 
-      # Get the workflow log
-      @log=WorkflowLog.new(@workflowdoc.log)
+      # Get the log parameters
+      @logserver=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowlogserver")
+      @logserver.setup(WorkflowLog.new(@workflowdoc.log))
 
       # Get the cycle defs
-      @cycledefs=@workflowdoc.cycledef.collect do |cycledef|
+      @cycledefs=[@workflowdoc.cycledef].flatten.collect do |cycledef|
         fields=cycledef[:cycledef].split
         case fields.size
           when 6

@@ -14,6 +14,7 @@ module WorkflowMgr
 
     require 'fileutils'
     require 'socket'
+    require 'workflowmgr/compoundtimestring'
 
     #####################################################
     #
@@ -27,6 +28,7 @@ module WorkflowMgr
 
     end
 
+
     #####################################################
     #
     # log
@@ -37,17 +39,11 @@ module WorkflowMgr
       if level <= @verbosity
 
         logname=@path.to_s(cycle)
-        begin
-          WorkflowMgr.forkit(1) do
-            host=Socket.gethostname
-            FileUtils.mkdir_p(File.dirname(logname))
-            logfile=File.new(logname,"a+")
-            logfile.puts("#{Time.now} :: #{host} :: #{msg}")
-            logfile.close
-          end  # forkit
-        rescue WorkflowMgr::ForkitTimeoutException
-          WorkflowMgr.ioerr(logname)
-        end  # begin
+        host=Socket.gethostname
+        FileUtils.mkdir_p(File.dirname(logname))
+        File.open(logname,"a+") do |logfile|
+          logfile.puts("#{Time.now} :: #{host} :: #{msg}")
+        end
 
       end
 

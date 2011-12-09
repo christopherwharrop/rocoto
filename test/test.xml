@@ -6,16 +6,9 @@
 
 <workflow realtime="FALSE" scheduler="sge" cyclelifespan="0:00:01:00" cyclethrottle="10">
 
-  <log verbosity="10">/home/harrop/workflowmgr_dev/<cyclestr>test_@Y@m@d@H.log</cyclestr></log>
+  <log verbosity="10">/home/harrop/workflowmgr_dev/test/<cyclestr>test_@Y@m@d@H@M.log</cyclestr></log>
 
-  <cycledef group="group1">* * * * * *</cycledef>
-  <cycledef group="group1">*/2 * * * * *</cycledef>
-  <cycledef group="group1">0 * * * * *</cycledef>
-  <cycledef group="group1">0,1,2,3 * * * * *</cycledef>
-  <cycledef group="group1">0-10 0-10,20 1,10-20 * * *</cycledef>
-  <cycledef group="group1">0-10/2 0-10/2,20 1,10-20/2 * * *</cycledef>
-  <cycledef group="group1">0-10/2,20-30,40 1,2-6,8-12/2 1-5/2,10,20-30/2 * * *</cycledef>
-  <cycledef group="group1">201108171200 201208171200 1:00:00</cycledef>
+  <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
 
   <task id="test1">
 
