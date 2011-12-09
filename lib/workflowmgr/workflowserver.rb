@@ -13,7 +13,8 @@ module WorkflowMgr
   class WorkflowServer
 
     require 'workflowmgr/workflowlog'
-
+    require 'workflowmgr/workflowdb'
+ 
     #####################################################
     #
     # initialize

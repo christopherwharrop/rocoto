@@ -33,26 +33,31 @@ module WorkflowMgr
 
       @database_file=database_file
 
+    end
+
+
+    ##########################################
+    #
+    # dbopen
+    #
+    ##########################################
+    def dbopen
+
       begin
 
-        # Fork a process to access the database and initialize it
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Get a listing of the database tables
+          tables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
 
-            # Get a listing of the database tables
-            tables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+          # Create all tables that are missing from the database 
+          create_tables(db,tables.flatten)
 
-            # Create all tables that are missing from the database 
-            create_tables(db,tables.flatten)
-
-          end  # database transaction
-
-        end  # forkit
+        end  # database transaction
 
       rescue SQLite3::BusyException => e
         STDERR.puts 
@@ -60,9 +65,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        exit -1
       end  # begin
 
     end  # initialize

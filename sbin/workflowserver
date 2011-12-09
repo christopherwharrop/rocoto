@@ -9,6 +9,11 @@ end
 
 # Add include paths for WFM and libxml-ruby libraries
 $:.unshift("#{__WFMDIR__}/lib")
+$:.unshift("#{__WFMDIR__}/libxml-ruby/lib")
+$:.unshift("#{__WFMDIR__}/libxml-ruby/ext/libxml")
+$:.unshift("#{__WFMDIR__}/sqlite3-ruby/lib")
+$:.unshift("#{__WFMDIR__}/sqlite3-ruby/ext")
+
 
 # Load workflow engine library
 

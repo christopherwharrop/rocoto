@@ -51,10 +51,15 @@ module WorkflowMgr
     def run
 
       # Initialize the database
-      @workflowdb=eval "Workflow#{@config.DatabaseType}DB.new(@options.database)"
+      @dbserver=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowdbserver")
+      database=eval "Workflow#{@config.DatabaseType}DB.new(@options.database)"
+      @dbserver.setup(database)
+      @dbserver.dbopen
+puts @dbserver.public_methods.inspect
+puts @dbserver.__drburi.inspect
 
       # Acquire a lock on the workflow in the database
-      @workflowdb.lock_workflow
+      @dbserver.lock_workflow
 
       begin
 
@@ -65,13 +70,13 @@ module WorkflowMgr
         build_workflow
 
         # Get active cycles from the database
-        @active_cycles=@workflowdb.get_active_cycles(@cyclelifespan)
+        @active_cycles=@dbserver.get_active_cycles(@cyclelifespan)
 
         # Activate new cycles if possible
         activate_new_cycles
 
         # Get active jobs from the database
-        @active_jobs=@workflowdb.get_jobs
+        @active_jobs=@dbserver.get_jobs
 
         # Update the status of all active jobs
         updated_jobs=[]
@@ -106,7 +111,7 @@ module WorkflowMgr
             updated_jobs << @active_jobs[task][cycle]
           end
         end
-        @workflowdb.update_jobs(updated_jobs)
+        @dbserver.update_jobs(updated_jobs)
 
         # Submit new tasks where possible
         newjobs=[]
@@ -140,15 +145,16 @@ module WorkflowMgr
         end
 
         # Add the new jobs to the database
-        @workflowdb.add_jobs(newjobs)
+        @dbserver.add_jobs(newjobs)
 
       ensure
 
         # Make sure we release the workflow lock in the database
-        @workflowdb.unlock_workflow
+        @dbserver.unlock_workflow
 
-        # Make sure to kill the workflow log server 
+        # Make sure to shut down the workflow servers
         @logserver.stop! unless @logserver.nil?
+        @dbserver.stop! unless @dbserver.nil?        
 
       end
  
@@ -272,7 +278,7 @@ module WorkflowMgr
       unless newcycles.empty?
 
         # Add the new cycles to the database
-        @workflowdb.add_cycles(newcycles)
+        @dbserver.add_cycles(newcycles)
 
         # Add the new cycles to the list of active cycles
         @active_cycles += newcycles.collect { |cycle| {:cycle=>cycle} }
@@ -297,7 +303,7 @@ module WorkflowMgr
       new_cycle=@cycledefs.collect { |c| c.previous(now) }.max
 
       # Get the latest cycle from the database or initialize it to a very long time ago
-      latest_cycle=@workflowdb.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
+      latest_cycle=@dbserver.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
 
       # Return the new cycle if it hasn't already been activated
       if new_cycle > latest_cycle[:cycle]
@@ -321,7 +327,7 @@ module WorkflowMgr
       # N is the cyclethrottle minus the number of currently active cycles.
 
       # Get the cycledefs from the database so that we can get their last known positions
-      dbcycledefs=@workflowdb.get_cycledefs.collect do |dbcycledef|
+      dbcycledefs=@dbserver.get_cycledefs.collect do |dbcycledef|
         case dbcycledef[:cycledef].split.size
           when 6
             CycleCron.new(dbcycledef)
@@ -339,7 +345,7 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset=@workflowdb.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
+      cycleset=@dbserver.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
 
       # Sort the cycleset
       cycleset.sort { |a,b| a[:cycle] <=> b[:cycle] }
@@ -394,7 +400,7 @@ module WorkflowMgr
       end  # .times do
 
       # Save the workflowdoc cycledefs with their updated positions to the database
-      @workflowdb.set_cycledefs(@cycledefs.collect { |cycledef| { :group=>cycledef.group, :cycledef=>cycledef.cycledef, :position=>cycledef.position } } )
+      @dbserver.set_cycledefs(@cycledefs.collect { |cycledef| { :group=>cycledef.group, :cycledef=>cycledef.cycledef, :position=>cycledef.position } } )
 
       return newcycles
 
