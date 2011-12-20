@@ -7,7 +7,7 @@ module WorkflowMgr
 
   ##########################################  
   #
-  # WorkflowMgr.forkit
+  # WorkflowMgr.ddhhmmss_to_seconds
   #
   ##########################################
   def WorkflowMgr.ddhhmmss_to_seconds(ddhhmmss)

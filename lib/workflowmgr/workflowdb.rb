@@ -22,7 +22,6 @@ module WorkflowMgr
 
     require 'sqlite3'
     require "socket"
-    require 'workflowmgr/forkit'
 
     ##########################################
     #
@@ -79,28 +78,23 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database and acquire the workflow lock
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Access the workflow lock maintained by the workflow manager
+          lock=db.execute("SELECT * FROM lock;")      
 
-            # Access the workflow lock maintained by the workflow manager
-            lock=db.execute("SELECT * FROM lock;")      
+          # If no lock is present, we have acquired the lock.  Write the WFM's pid and host into the lock table
+          if lock.empty?
+            db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{Socket.gethostname}',#{Time.now.to_i});") 
+          else
+            raise WorkflowMgr::WorkflowLockedException, "ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}"
+          end
 
-            # If no lock is present, we have acquired the lock.  Write the WFM's pid and host into the lock table
-            if lock.empty?
-              db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{Socket.gethostname}',#{Time.now.to_i});") 
-            else
-	      raise WorkflowMgr::WorkflowLockedException, "ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}"
-            end
-
-          end  # database transaction
-
-        end  # forkit
+        end  # database transaction
 
       rescue WorkflowMgr::WorkflowLockedException => e
         STDERR.puts e.message
@@ -111,9 +105,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        exit -1
       end  # begin
 
     end
@@ -128,27 +119,22 @@ module WorkflowMgr
 
       begin
 
-        # Open the database and initialize it if necessary
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          lock=db.execute("SELECT * FROM lock;")      
 
-            lock=db.execute("SELECT * FROM lock;")      
+          if Process.ppid==lock[0][0] && Socket.gethostname==lock[0][1]
+            db.execute("DELETE FROM lock;")      
+          else
+            raise WorkflowMgr::WorkflowLockedException, "ERROR: Process #{Process.ppid} cannot unlock the workflow because it does not own the lock." +
+                                                        "       The workflow is already locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}."
+          end
 
-            if Process.ppid==lock[0][0] && Socket.gethostname==lock[0][1]
-              db.execute("DELETE FROM lock;")      
-            else
-              raise WorkflowMgr::WorkflowLockedException, "ERROR: Process #{Process.ppid} cannot unlock the workflow because it does not own the lock." +
-                                                          "       The workflow is already locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}."
-            end
-
-          end  # database transaction
-
-        end  # forkit
+        end  # database transaction
 
       rescue WorkflowMgr::WorkflowLockedException => e
         STDERR.puts e.message
@@ -158,10 +144,6 @@ module WorkflowMgr
         STDERR.puts "ERROR: Could not unlock the workflow.  The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        exit -1
-
       end  # begin
 
     end
@@ -176,32 +158,29 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        dbcycledefs=[]
 
-          dbcycledefs=[]
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Access the workflow lock maintained by the workflow manager
+          dbcycledefs=db.execute("SELECT groupname,cycledef,dirty FROM cycledef;")
 
-            # Access the workflow lock maintained by the workflow manager
-            dbcycledefs=db.execute("SELECT groupname,cycledef,dirty FROM cycledef;")
-
-          end  # database transaction
+        end  # database transaction
           
-          # Return the array of cycledefs
-          dbcycledefs.collect do |cycledef| 
-            if cycledef[2].nil?
-              {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>nil} 
-            else
-              {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>Time.at(cycledef[2]).getgm} 
-            end
-          end  # 
+        # Return the array of cycledefs
+        dbcycledefs.collect! do |cycledef| 
+          if cycledef[2].nil?
+            {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>nil} 
+          else
+            {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>Time.at(cycledef[2]).getgm} 
+          end
+        end  # 
 
-        end  # forkit
+        return dbcycledefs
 
       rescue SQLite3::BusyException => e
         STDERR.puts 
@@ -209,9 +188,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -226,30 +202,25 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
-
-            # Delete all current cycledefs from the database
-            dbspecs=db.execute("DELETE FROM cycledef;")
+          # Delete all current cycledefs from the database
+          dbspecs=db.execute("DELETE FROM cycledef;")
  
-            # Add new cycledefs to the database
-            cycledefs.each do |cycledef|
-              if cycledef[:position].nil?
-                db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',NULL);")
-              else
-                db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',#{cycledef[:position].to_i});")
-              end
+          # Add new cycledefs to the database
+          cycledefs.each do |cycledef|
+            if cycledef[:position].nil?
+              db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',NULL);")
+            else
+              db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',#{cycledef[:position].to_i});")
             end
+          end
 
-          end  # database transaction
-
-        end  # forkit
+        end  # database transaction
 
       rescue SQLite3::BusyException => e
         STDERR.puts 
@@ -257,9 +228,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
   
     end
@@ -274,26 +242,23 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        dbcycles=[]
 
-          dbcycles=[]
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Retrieve all cycles from the cycle table
+          dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE cycle >= #{reftime.getgm.to_i};")
 
-            # Retrieve all cycles from the cycle table
-            dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE cycle >= #{reftime.getgm.to_i};")
-
-          end  # database transaction
+        end  # database transaction
           
-          # Return an array of cycles
-          dbcycles.collect { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }
+        # Return an array of cycles
+        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }
 
-        end  # forkit
+        return dbcycles
 
       rescue SQLite3::BusyException => e
         STDERR.puts 
@@ -301,9 +266,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -318,29 +280,26 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        dbcycles=[]
 
-          dbcycles=[]
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Get the maximum cycle time from the database
+          max_cycle=db.execute("SELECT MAX(cycle) FROM cycles")[0][0]
+          unless max_cycle.nil?
+            dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE cycle=#{max_cycle}")
+          end
 
-            # Get the maximum cycle time from the database
-            max_cycle=db.execute("SELECT MAX(cycle) FROM cycles")[0][0]
-            unless max_cycle.nil?
-              dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE cycle=#{max_cycle}")
-            end
-
-          end  # database transaction
+        end  # database transaction
           
-          # Return the last cycle
-          dbcycles.collect { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }.first
+        # Return the last cycle
+        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }.first
 
-        end  # forkit
+        return dbcycles
 
       rescue SQLite3::BusyException => e
         STDERR.puts 
@@ -348,9 +307,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -364,30 +320,27 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        dbcycles=[]
 
-          dbcycles=[]
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Get the cycles that are neither done nor expired
+          if cycle_lifespan.nil?
+            dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE done=0;")
+          else
+            dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE done=0 AND activated >= #{Time.now.to_i - cycle_lifespan};")
+          end
 
-            # Get the cycles that are neither done nor expired
-            if cycle_lifespan.nil?
-              dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE done=0;")
-            else
-              dbcycles=db.execute("SELECT cycle,activated,done FROM cycles WHERE done=0 AND activated >= #{Time.now.to_i - cycle_lifespan};")
-            end
-
-          end  # database transaction
+        end  # database transaction
           
-          # Return the array of cycle specs
-          dbcycles.collect { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }
+        # Return the array of cycle specs
+        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }
 
-        end  # forkit
+        return dbcycles
 
       rescue SQLite3::BusyException => e
         STDERR.puts 
@@ -395,9 +348,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -411,33 +361,25 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Update each cycle in the database
+          cycles.each { |newcycle|
+            db.execute("UPDATE cycles SET activated=#{newcycle[:activated].to_i},done=#{newcycle[:done].to_i} WHERE cycle=#{newcycle[:cycle].to_i};")
+          }
 
-            # Update each cycle in the database
-            cycles.each { |newcycle|
-              db.execute("UPDATE cycles SET activated=#{newcycle[:activated].to_i},done=#{newcycle[:done].to_i} WHERE cycle=#{newcycle[:cycle].to_i};")
-            }
-
-          end  # database transaction
+        end  # database transaction
           
-        end  # forkit
-
       rescue SQLite3::BusyException => e
         STDERR.puts 
         STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -452,33 +394,25 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Add each cycle to the database
+          cycles.each { |newcycle|
+            db.execute("INSERT INTO cycles VALUES (NULL,#{newcycle.to_i},#{Time.now.to_i},0);")
+          }
 
-            # Add each cycle to the database
-            cycles.each { |newcycle|
-              db.execute("INSERT INTO cycles VALUES (NULL,#{newcycle.to_i},#{Time.now.to_i},0);")
-            }
-
-          end  # database transaction
+        end  # database transaction
           
-        end  # forkit
-
       rescue SQLite3::BusyException => e
         STDERR.puts 
         STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -493,44 +427,39 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        jobs={}
+        dbjobs=[]
 
-          jobs={}
-          dbjobs=[]
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Retrieve all jobs from the cycle table
+          dbjobs=db.execute("SELECT jobid,taskid,cycle,state,exit_status,tries FROM jobs;")
 
-            # Retrieve all jobs from the cycle table
-            dbjobs=db.execute("SELECT jobid,taskid,cycle,state,exit_status,tries FROM jobs;")
+        end  # database transaction
 
-          end  # database transaction
+        dbjobs.each do |job|
+          jobid=job[0]
+          jobtask=job[1]
+          jobcycle=Time.at(job[2]).getgm
+          jobstate=job[3]
+          jobstatus=job[4].to_i
+          jobtries=job[5].to_i
+          jobs[jobtask]={} if jobs[jobtask].nil?
+          jobs[jobtask][jobcycle]={} if jobs[jobtask][jobcycle].nil?
+          jobs[jobtask][jobcycle][:jobid]=jobid
+          jobs[jobtask][jobcycle][:taskid]=jobtask
+          jobs[jobtask][jobcycle][:cycle]=jobcycle
+          jobs[jobtask][jobcycle][:state]=jobstate
+          jobs[jobtask][jobcycle][:exit_status]=jobstatus
+          jobs[jobtask][jobcycle][:tries]=jobtries
+        end
 
-          dbjobs.each do |job|
-            jobid=job[0]
-            jobtask=job[1]
-            jobcycle=Time.at(job[2]).getgm
-            jobstate=job[3]
-            jobstatus=job[4].to_i
-            jobtries=job[5].to_i
-            jobs[jobtask]={} if jobs[jobtask].nil?
-            jobs[jobtask][jobcycle]={} if jobs[jobtask][jobcycle].nil?
-            jobs[jobtask][jobcycle][:jobid]=jobid
-            jobs[jobtask][jobcycle][:taskid]=jobtask
-            jobs[jobtask][jobcycle][:cycle]=jobcycle
-            jobs[jobtask][jobcycle][:state]=jobstate
-            jobs[jobtask][jobcycle][:exit_status]=jobstatus
-            jobs[jobtask][jobcycle][:tries]=jobtries
-          end
-
-          # Return jobs hash
-          jobs
-
-        end  # forkit
+        # Return jobs hash
+        return jobs
 
       rescue SQLite3::BusyException => e
         STDERR.puts
@@ -538,9 +467,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -555,23 +481,18 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Add or update each job in the database
+          jobs.each do |job|
+            db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskid]}',#{job[:cycle].to_i},'#{job[:state]}',#{job[:exit_status]},#{job[:tries]});")
+          end
 
-            # Add or update each job in the database
-            jobs.each do |job|
-              db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskid]}',#{job[:cycle].to_i},'#{job[:state]}',#{job[:exit_status]},#{job[:tries]});")
-            end
-
-          end  # database transaction
-
-        end  # forkit
+        end  # database transaction
 
       rescue SQLite3::BusyException => e
         STDERR.puts
@@ -579,9 +500,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -597,23 +515,18 @@ module WorkflowMgr
 
       begin
 
-        # Fork a process to access the database to retrieve the cycledefs
-        WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Add or update each job in the database
+          jobs.each do |job|
+            db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]} WHERE cycle=#{job[:cycle].to_i} AND taskid='#{job[:taskid]}';")
+          end
 
-            # Add or update each job in the database
-            jobs.each do |job|
-              db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]} WHERE cycle=#{job[:cycle].to_i} AND taskid='#{job[:taskid]}';")
-            end
-
-          end  # database transaction
-
-        end  # forkit
+        end  # database transaction
 
       rescue SQLite3::BusyException => e
         STDERR.puts
@@ -621,9 +534,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
       end  # begin
 
     end
@@ -640,53 +550,48 @@ module WorkflowMgr
 
         tables={}
 
-        # Fork a process to access the database to retrieve the cycledefs
-        cycledefs=WorkflowMgr.forkit(2) do
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
 
-          # Get a handle to the database
-          database = SQLite3::Database.new(@database_file)
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
 
-          # Start a transaction so that the database will be locked
-          database.transaction do |db|
+          # Get a listing of the database tables
+          dbtables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+          dbtables.flatten!
 
-            # Get a listing of the database tables
-            dbtables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
-            dbtables.flatten!
+          # Create an array of rows for each table
+          dbtables.each do |table|
 
-            # Create an array of rows for each table
-            dbtables.each do |table|
+            # Initialize the array of rows to be empty
+            tables[table.to_sym]=[]
 
-              # Initialize the array of rows to be empty
-              tables[table.to_sym]=[]
+            # Get all rows for the table, where first row is column names
+            dbtable=db.execute2("SELECT * FROM #{table};")
 
-              # Get all rows for the table, where first row is column names
-              dbtable=db.execute2("SELECT * FROM #{table};")
+            # Get the table column names
+            columns=dbtable.shift
 
-              # Get the table column names
-              columns=dbtable.shift
+            # Add each table row to the array of rows for this table
+            dbtable.each do |row|
+              rowdata={}
 
-              # Add each table row to the array of rows for this table
-              dbtable.each do |row|
-                rowdata={}
+              # Loop over columns, creating a hash for this row's data
+              columns.each_with_index do |column,idx|
+                rowdata[column.to_sym]=row[idx]
+              end
 
-                # Loop over columns, creating a hash for this row's data
-                columns.each_with_index do |column,idx|
-                  rowdata[column.to_sym]=row[idx]
-                end
+              # Add the hash representing this row to the array of rows for this table
+              tables[table.to_sym] << rowdata
 
-                # Add the hash representing this row to the array of rows for this table
-                tables[table.to_sym] << rowdata
+            end 
 
-              end 
+          end  # dbtables.each
 
-            end  # dbtables.each
+        end  # database transaction
 
-          end  # database transaction
-
-          # Return the tables
-          tables
-
-        end  # forkit
+        # Return the tables
+        tables
 
       rescue SQLite3::BusyException => e
         STDERR.puts
@@ -694,10 +599,6 @@ module WorkflowMgr
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
         exit 1
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.ioerr(@database_file)
-        return nil
-
       end # begin
 
     end

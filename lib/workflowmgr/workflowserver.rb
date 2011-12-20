@@ -14,7 +14,8 @@ module WorkflowMgr
 
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdb'
- 
+    require 'timeout'
+
     #####################################################
     #
     # initialize
@@ -59,7 +60,13 @@ module WorkflowMgr
     def method_missing(name,*args)
 
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
-      return @server.send(name,*args)
+      begin
+        Timeout.timeout(10) do
+          return @server.send(name,*args)
+        end
+      rescue Timeout::Error
+        raise "Server is unresponsive"
+      end
 
     end
 

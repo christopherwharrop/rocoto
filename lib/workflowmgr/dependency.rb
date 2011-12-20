@@ -367,10 +367,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(datapath,age=300)
+    def initialize(datapath,age,filestatserver)
 
       @datapath=datapath
       @age=age
+      @filestatserver=filestatserver
     
     end
 
@@ -382,16 +383,9 @@ module WorkflowMgr
     def resolved?(cycle)
 
       filename=@datapath.to_s(cycle)
-      begin
-        resolved=WorkflowMgr.forkit(1) {
-          if File.exists?(filename)
-            Time.now > (File.mtime(filename) + @age)
-          else
-            false
-          end
-        }
-        return resolved
-      rescue WorkflowMgr::ForkitTimeoutException
+      if @filestatserver.exists?(filename)
+        return Time.now > (@filestatserver.mtime(filename) + @age)
+      else
         return false
       end
 

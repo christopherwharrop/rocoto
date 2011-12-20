@@ -50,18 +50,22 @@ module WorkflowMgr
     ##########################################
     def run
 
-      # Initialize the database
+      # Initialize the database server
       @dbserver=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowdbserver")
       database=eval "Workflow#{@config.DatabaseType}DB.new(@options.database)"
       @dbserver.setup(database)
+
+      # Open/Create the database
       @dbserver.dbopen
-puts @dbserver.public_methods.inspect
-puts @dbserver.__drburi.inspect
 
       # Acquire a lock on the workflow in the database
       @dbserver.lock_workflow
 
       begin
+
+        # Start up a server process to serve requests for file stat info
+        @filestatserver=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowfilestatserver")
+        @filestatserver.setup(File)
 
         # Initialize the workflow document
         @workflowdoc=eval "Workflow#{@config.WorkflowDocType}Doc.new(@options.workflowdoc)"
@@ -97,17 +101,16 @@ puts @dbserver.__drburi.inspect
                   @logserver.log(cycle,"Submission status of previously pending #{task} is success, jobid=#{jobid}")
                 end
               end
-            else
-              unless @active_jobs[task][cycle][:state]=="done"
-                status=@scheduler.status(@active_jobs[task][cycle][:jobid])
-                @active_jobs[task][cycle][:state]=status[:state]
-                if status[:state]=="done"
-                  @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}, exit status=#{status[:exit_status]}")
-                else
-                  @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}")
-                end
+            end
+            unless @active_jobs[task][cycle][:state]=="done"
+              status=@scheduler.status(@active_jobs[task][cycle][:jobid])
+              @active_jobs[task][cycle][:state]=status[:state]
+              if status[:state]=="done"
+                @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}, exit status=#{status[:exit_status]}")
+              else
+                @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}")
               end
-            end         
+            end
             updated_jobs << @active_jobs[task][cycle]
           end
         end
@@ -149,12 +152,17 @@ puts @dbserver.__drburi.inspect
 
       ensure
 
-        # Make sure we release the workflow lock in the database
-        @dbserver.unlock_workflow
+        # Make sure we release the workflow lock in the database and shutdown the dbserver
+        unless @dbserver.nil?
+          @dbserver.unlock_workflow
+          @dbserver.stop!
+        end
 
-        # Make sure to shut down the workflow servers
+        # Make sure to shut down the workflow log servers
         @logserver.stop! unless @logserver.nil?
-        @dbserver.stop! unless @dbserver.nil?        
+
+        # Make sure to shut down the workflow file stat server
+        @filestatserver.stop!
 
       end
  
@@ -248,7 +256,7 @@ puts @dbserver.__drburi.inspect
             return Dependency_SOME_Operator.new(nodeval.collect { |operand| build_dependency(operand) }, node[:threshold] )
           when :datadep
             age=WorkflowMgr.ddhhmmss_to_seconds(node[:age])
-            return DataDependency.new(CompoundTimeString.new(nodeval),age)
+            return DataDependency.new(CompoundTimeString.new(nodeval),age,@filestatserver)
           when :taskdep
             task=@tasks.find {|t| t[:id]==nodeval }
             status=node[:status]
