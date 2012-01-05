@@ -12,9 +12,14 @@ module WorkflowMgr
   ##########################################
   class WorkflowServer
 
+    require 'drb'
+    require 'timeout'
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdb'
-    require 'timeout'
+    require 'workflowmgr/proxybatchsystem'
+    require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/compoundtimestring'
+    require 'workflowmgr/dependency'
 
     #####################################################
     #
