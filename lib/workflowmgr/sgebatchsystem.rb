@@ -111,6 +111,8 @@ module WorkflowMgr
     ###############################################################################
 
     require 'etc'
+    require 'libxml'
+
 
     #####################################################
     #
@@ -127,12 +129,7 @@ module WorkflowMgr
       end
 
       # Get the SGE architecture
-      begin
-	@sge_arch=WorkflowMgr.forkit(2) { `#{ENV['SGE_ROOT']}/util/arch` }.chomp
-      rescue WorkflowMgr::ForkitTimeoutException
-	WorkflowMgr.cmderr("#{@sge_root}/util/arch")
-	raise "Cannot initialize SGE batch system object.  SGE architecture could not be determined!"
-      end  # begin
+      @sge_arch=`#{ENV['SGE_ROOT']}/util/arch`.chomp
 
       # Set the path to the SGE commands
       @sge_bin="#{ENV['SGE_ROOT']}/bin/#{@sge_arch}"
@@ -253,12 +250,7 @@ module WorkflowMgr
     def refresh_jobqueue
 
       # Run qstat to obtain the current status of queued jobs
-      begin
-	queued_jobs=WorkflowMgr::forkit(10) { `#{@sge_bin}/qstat -xml -u \\*` }
-      rescue WorkflowMgr::ForkitTimeoutException
-	WorkflowMgr.cmderr("#{@sge_bin}/qstat -xml")
-	raise "Cannot get job status."
-      end  # begin
+      queued_jobs=`#{@sge_bin}/qstat -xml -u \\*`
 
       # Parse the XML output of the qstat, building job status records for each job
       queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
@@ -323,82 +315,68 @@ module WorkflowMgr
       # Sort the list of accounting files in reverse order by modification time
       acct_files.sort! { |a,b| File.mtime(b) <=> File.mtime(a) }
 
-      begin
+      # Initialize an empty hash of job records
+      @jobacct={}
 
-	# Fork a process to read the accounting files backwards until we read 24 hours worth of data
-	@jobacct=WorkflowMgr::forkit(10) do
+      # Read the accounting files backwards until we read 24 hours worth of data
+      catch(:done) do
 
-	  # Initialize an empty hash of job records
-	  job_records={}
+        acct_files.each { |acct_file|
 
-	  catch(:done) do
+          # Select the command to read the file, depending on whether it is compressed or not
+          if acct_file=~/\.gz$/
+            cmd="gunzip -c #{acct_file} | tac "
+	  else
+	    cmd="tac #{acct_file}"
+	  end
 
-	    acct_files.each { |acct_file|
+	  # Open a pipe to the command that reads the file backward
+	  IO.popen(cmd,"r") {|pipe|
 
-	      # Select the command to read the file, depending on whether it is compressed or not
-	      if acct_file=~/\.gz$/
-		cmd="gunzip -c #{acct_file} | tac "
-	      else
-		cmd="tac #{acct_file}"
-	      end
+	    # Keep reading until we hit the end of the file
+	    while !pipe.eof?
 
-	      # Open a pipe to the command that reads the file backward
-	      IO.popen(cmd,"r") {|pipe|
+	      # Read a record and split it into fields
+	      record=pipe.gets
+	      fields=record.split(/:/)
 
-		# Keep reading until we hit the end of the file
-		while !pipe.eof?
+	      # Skip bogus records
+	      next unless fields.length >= 43 and fields.length <= 45  # Wrong number of fields
+	      next unless fields[10].to_i > 0                          # Invalid completion time
 
-		  # Read a record and split it into fields
-		  record=pipe.gets
-		  fields=record.split(/:/)
+	      # Quit if we've reached the minimum completion time
+	      throw :done if Time.at(fields[10].to_i) < cutoff_time
 
-		  # Skip bogus records
-		  next unless fields.length >= 43 and fields.length <= 45  # Wrong number of fields
-		  next unless fields[10].to_i > 0                          # Invalid completion time
+	      # Skip records for other users' jobs
+	      next unless fields[3]==username
 
-		  # Quit if we've reached the minimum completion time
-		  throw :done if Time.at(fields[10].to_i) < cutoff_time
+	      # Skip bogus records
+	      next unless fields[8].to_i > 0                           # Invalid submit time
 
-		  # Skip records for other users' jobs
-		  next unless fields[3]==username
+	      # Extract relevant fields
+	      record={}
+	      record[:jobid]=fields[5]
+	      record[:state]="done"
+	      record[:jobname]=fields[4]
+	      record[:user]=fields[3]
+	      record[:cores]=fields[34].to_i
+	      record[:queue]=fields[0]
+	      record[:submit_time]=Time.at(fields[8].to_i).getgm
+	      record[:start_time]=Time.at(fields[9].to_i).getgm
+	      record[:end_time]=Time.at(fields[10].to_i).getgm
+	      record[:exit_status]=fields[12].to_i==0 ? fields[11].to_i : fields[12].to_i
+	      record[:priority]=fields[7].to_f
 
-		  # Skip bogus records
-		  next unless fields[8].to_i > 0                           # Invalid submit time
+	      # Add the record if it hasn't already been added
+	      @jobacct[fields[5]]=record unless @jobacct.has_key?(fields[5].to_i)
 
-		  # Extract relevant fields
-		  record={}
-		  record[:jobid]=fields[5]
-		  record[:state]="done"
-		  record[:jobname]=fields[4]
-		  record[:user]=fields[3]
-		  record[:cores]=fields[34].to_i
-		  record[:queue]=fields[0]
-		  record[:submit_time]=Time.at(fields[8].to_i).getgm
-		  record[:start_time]=Time.at(fields[9].to_i).getgm
-		  record[:end_time]=Time.at(fields[10].to_i).getgm
-		  record[:exit_status]=fields[12].to_i==0 ? fields[11].to_i : fields[12].to_i
-		  record[:priority]=fields[7].to_f
+	    end  # while !pipe.eof?
 
-		  # Add the record if it hasn't already been added
-		  job_records[fields[5]]=record unless job_records.has_key?(fields[5].to_i)
+	  }  # IO.popen
 
-		end  # while !pipe.eof?
+        }  # acct_files.each
 
-	      }  # IO.popen
-
-	    }  # acct_files.each
-
-	  end  # catch :done
-
-	  # Return all the job records
-	  job_records
-
-	end  # forkit
-
-      rescue WorkflowMgr::ForkitTimeoutException
-        WorkflowMgr.cmderr("tac <accounting_file>")
-	raise "Cannot get job accounting records."
-      end  # begin
+      end  # catch :done
 
       # Update the hrsback if needed
       @hrsback=hrsback if hrsback > @hrsback
