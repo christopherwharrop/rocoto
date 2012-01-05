@@ -13,11 +13,7 @@ module WorkflowMgr
   class WorkflowXMLDoc
 
     require 'libxml'
-    require 'yaml'
     require 'workflowmgr/utilities'
-    require 'workflowmgr/compoundtimestring'
-    require 'workflowmgr/cyclestring'
-    require 'workflowmgr/dependency'
 
     ##########################################
     #
@@ -27,9 +23,7 @@ module WorkflowMgr
     def initialize(workflowdoc)
 
       # Get the text from the xml file and put it into a string
-      xmlstring=WorkflowMgr.forkit(2) do
-        IO.readlines(workflowdoc,nil)[0]
-      end
+      xmlstring=IO.readlines(workflowdoc,nil)[0]
 
       # Parse the workflow xml string, set option to replace entities
       workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
@@ -323,11 +317,6 @@ module WorkflowMgr
     ##########################################
     def validate_with_metatasks(doc)
 
-      # This method is not wrapped inside a WorkflowMgr.forkit 
-      # because it is reading the schemas from the same directory
-      # as this source file.  If the schema validation was going to hang,
-      # then this code would not be running anyway
-
       # Parse the Relax NG schema XML document
       relaxng_document = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
 
@@ -346,11 +335,6 @@ module WorkflowMgr
     #
     ##########################################
     def validate_without_metatasks(doc)
-
-      # This method is not wrapped inside a WorkflowMgr.forkit 
-      # because it is reading the schemas from the same directory
-      # as this source file.  If the schema validation was going to hang,
-      # then this code would not be running anyway
 
       # Parse the Relax NG schema XML document
       relaxng_document = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
