@@ -5,12 +5,14 @@
 ##########################################
 module WorkflowMgr
 
+
   ##########################################
   #
   # Class WorkflowEngine
   #
   ##########################################
   class WorkflowEngine
+
 
     require 'drb'
     require 'workflowmgr/workflowconfig'
@@ -20,9 +22,8 @@ module WorkflowMgr
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/cycledef'
-    require 'workflowmgr/sgebatchsystem'
-    require 'workflowmgr/jobsubmitter'
-
+    require 'workflowmgr/dependency'
+    require 'workflowmgr/proxybatchsystem'
 
     ##########################################
     #
@@ -40,6 +41,9 @@ module WorkflowMgr
       # Get the base directory of the WFM installation
       @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
+      # Set up an object to serve the workflow database (but do not open the database)
+      setup_db_server
+
     end  # initialize
 
 
@@ -50,119 +54,54 @@ module WorkflowMgr
     ##########################################
     def run
 
-      # Initialize the database server
-      @dbserver=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowdbserver")
-      database=eval "Workflow#{@config.DatabaseType}DB.new(@options.database)"
-      @dbserver.setup(database)
-
-      # Open/Create the database
-      @dbserver.dbopen
-
-      # Acquire a lock on the workflow in the database
-      @dbserver.lock_workflow
-
       begin
 
-        # Start up a server process to serve requests for file stat info
-        @filestatserver=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowfilestatserver")
-        @filestatserver.setup(File)
+        # Open/Create the database
+        @dbServer.dbopen
 
-        # Initialize the workflow document
-        @workflowdoc=eval "Workflow#{@config.WorkflowDocType}Doc.new(@options.workflowdoc)"
+        # Acquire a lock on the workflow in the database
+        @dbServer.lock_workflow
 
-        # Build the workflow from the workflow document
+        # Set up an object to serve file stat info
+        setup_filestat_server
+
+        # Build the workflow objects from the contents of the workflow document
         build_workflow
 
-        # Get active cycles from the database
-        @active_cycles=@dbserver.get_active_cycles(@cyclelifespan)
+        # Get the active cycles, including any new ones that need to be activated now
+        get_active_cycles
 
-        # Activate new cycles if possible
-        activate_new_cycles
-
-        # Get active jobs from the database
-        @active_jobs=@dbserver.get_jobs
+        # Get the active jobs, which may include jobs from cycles that have just expired
+        @active_jobs=@dbServer.get_jobs
 
         # Update the status of all active jobs
-        updated_jobs=[]
-        @active_jobs.each_key do |task|
-          @active_jobs[task].each_key do |cycle|
-            jobid=@active_jobs[task][cycle][:jobid]
-            if jobid=~/^druby:/ 
-              uri=jobid
-              jobid,output=get_task_submit_status(jobid)
-              if output.nil?
-                @logserver.log(cycle[:cycle],"Submission status of #{task} is still pending at #{uri}, something may be wrong.  Check to see if the #{uri} process is still alive")
-              else
-                if jobid.nil?
-                  puts output
-                  @logserver.log(cycle,"Submission status of previously pending #{task} is failure!  #{output}")
-                else
-                  @active_jobs[task][cycle][:jobid]=jobid
-                  @logserver.log(cycle,"Submission status of previously pending #{task} is success, jobid=#{jobid}")
-                end
-              end
-            end
-            unless @active_jobs[task][cycle][:state]=="done"
-              status=@scheduler.status(@active_jobs[task][cycle][:jobid])
-              @active_jobs[task][cycle][:state]=status[:state]
-              if status[:state]=="done"
-                @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}, exit status=#{status[:exit_status]}")
-              else
-                @logserver.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}")
-              end
-            end
-            updated_jobs << @active_jobs[task][cycle]
-          end
-        end
-        @dbserver.update_jobs(updated_jobs)
+        update_active_jobs
 
         # Submit new tasks where possible
-        newjobs=[]
-        @active_cycles.each do |cycle|
-          @tasks.each do |task|
-            unless @active_jobs[task[:id]].nil?
-              next unless @active_jobs[task[:id]][cycle[:cycle]].nil?
-            end
-            if task[:dependency].resolved?(cycle[:cycle])
-              uri=submit_task(localize_task(task,cycle[:cycle]))
-              newjobs << {:jobid=>uri, :taskid=>task[:id], :cycle=>cycle[:cycle], :state=>"Submitting", :exit_status=>0, :tries=>1}
-            end
-          end
-        end
-
-        # Harvest job ids for submitted tasks
-        newjobs.each do |job|
-          uri=job[:jobid]
-          jobid,output=get_task_submit_status(job[:jobid])
-          if output.nil?
-            @logserver.log(job[:cycle],"Submitted #{job[:taskid]}.  Submission status is pending at #{job[:jobid]}")
-          else
-            if jobid.nil?
-              puts output
-              @logserver.log(job[:cycle],"Submission of #{job[:taskid]} failed!  #{output}")
-            else
-              job[:jobid]=jobid
-              @logserver.log(job[:cycle],"Submitted #{job[:taskid]}, jobid=#{job[:jobid]}")
-            end
-          end
-        end
-
-        # Add the new jobs to the database
-        @dbserver.add_jobs(newjobs)
+        submit_new_jobs
 
       ensure
 
         # Make sure we release the workflow lock in the database and shutdown the dbserver
-        unless @dbserver.nil?
-          @dbserver.unlock_workflow
-          @dbserver.stop!
+        unless @dbServer.nil?
+          @dbServer.unlock_workflow
+          @dbServer.stop! if @config.DatabaseServer
         end
 
-        # Make sure to shut down the workflow log servers
-        @logserver.stop! unless @logserver.nil?
-
         # Make sure to shut down the workflow file stat server
-        @filestatserver.stop!
+        unless @fileStatServer.nil?
+          @fileStatServer.stop! if @config.FileStatServer
+        end
+
+        # Make sure to shut down the workflow log server
+        unless @logServer.nil?
+          @logServer.stop! if @config.LogServer
+        end
+
+        # Shut down the batch queue server if it is no longer needed
+        unless @bqServer.nil?
+          @bqServer.stop! if @config.BatchQueueServer && !@bqServer.running?
+        end
 
       end
  
@@ -173,29 +112,169 @@ module WorkflowMgr
 
     ##########################################
     #
+    # setup_db_server
+    #
+    ##########################################
+    def setup_db_server
+
+      begin
+
+        # Initialize the database but do not open it (call dbopen to open it)
+        database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@options.database)
+
+        if @config.DatabaseServer
+	  @dbServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowdbserver")
+          @dbServer.setup(database)
+	else
+          @dbServer=database
+        end
+
+      rescue
+
+        # Print out the exception message
+        puts $!
+
+        # Try to stop the dbserver if something went wrong
+        if @config.DatabaseServer
+          @dbServer.stop! unless @dbServer.nil?
+        end
+
+      end
+
+
+    end
+
+    ##########################################
+    #
+    # setup_filestat_server
+    #
+    ##########################################
+    def setup_filestat_server
+
+      begin
+
+        # Set up an object to serve requests for file stat info
+        if @config.FileStatServer
+          @fileStatServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowfilestatserver")
+          @fileStatServer.setup(File)
+        else
+          @fileStatServer=File
+        end
+
+      rescue
+
+        # Print out the exception message
+        puts $!
+
+        # Try to stop the file stat server if something went wrong
+        if @config.FileStatServer
+          @fileStatServer.stop! unless @fileStatServer.nil?
+        end
+
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # setup_bq_server
+    #
+    ##########################################
+    def setup_bq_server(batchSystemClass)
+
+      begin
+
+        # Set up an object to serve requests for batch queue system services
+        batchsystem=ProxyBatchSystem.new(batchSystemClass)
+
+        if @config.BatchQueueServer
+          @bqServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowbqserver")
+          @bqServer.setup(batchsystem)
+        else
+          @bqServer=batchsystem
+        end
+
+      rescue
+
+        # Print out the exception message
+        puts $!
+
+        # Try to stop the batch queue server if something went wrong
+        if @config.BatchQueueServer
+          @bqServer.stop! unless @bqServer.nil?
+        end
+
+      end    
+
+    end
+
+
+    ##########################################
+    #
+    # setup_log_server
+    #
+    ##########################################
+    def setup_log_server(log)
+
+      begin
+
+        # Set up an object to serve requests for batch queue system services
+        workflowlog=WorkflowLog.new(log)
+        if @config.LogServer
+          @logServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowlogserver")
+          @logServer.setup(workflowlog)
+        else
+          @logServer=workflowlog
+        end
+
+      rescue
+
+        # Print out the exception message
+        puts $!
+
+        # Try to stop the log server if something went wrong
+        if @config.LogServer
+          @logServer.stop! unless @logServer.nil?
+        end
+
+      end    
+
+    end
+
+
+    ##########################################
+    #
     # build_workflow
     #
     ##########################################
     def build_workflow
 
+      # Open the workflow document, parse it, and validate it
+      if @fileStatServer.exists?(@options.workflowdoc)
+        workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc)
+      else
+        puts $!
+        raise "ERROR: Could not read workflow document '#{@options.workflowdoc}'"
+      end
+
       # Get the realtime flag
-      @realtime=!(@workflowdoc.realtime.downcase =~ /^t|true$/).nil?
+      @realtime=!(workflowdoc.realtime.downcase =~ /^t|true$/).nil?
 
       # Get the cycle life span
-      @cyclelifespan=WorkflowMgr.ddhhmmss_to_seconds(@workflowdoc.cyclelifespan)
+      @cyclelifespan=WorkflowMgr.ddhhmmss_to_seconds(workflowdoc.cyclelifespan)
 
       # Get the cyclethrottle
-      @cyclethrottle=@workflowdoc.cyclethrottle.to_i
+      @cyclethrottle=workflowdoc.cyclethrottle.to_i
 
       # Get the scheduler
-      @scheduler=eval "#{@workflowdoc.scheduler.upcase}BatchSystem.new"
+      setup_bq_server(WorkflowMgr::const_get("#{workflowdoc.scheduler.upcase}BatchSystem"))
 
       # Get the log parameters
-      @logserver=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowlogserver")
-      @logserver.setup(WorkflowLog.new(@workflowdoc.log))
+      setup_log_server(workflowdoc.log)
 
       # Get the cycle defs
-      @cycledefs=[@workflowdoc.cycledef].flatten.collect do |cycledef|
+      @cycledefs=[workflowdoc.cycledef].flatten.collect do |cycledef|
         fields=cycledef[:cycledef].split
         case fields.size
           when 6
@@ -207,7 +286,7 @@ module WorkflowMgr
 
       # Get the tasks 
       @tasks=[]
-      @workflowdoc.task.each do |task|
+      workflowdoc.task.each do |task|
         newtask=task
         task.each do |attr,val|        
           case attr
@@ -256,7 +335,7 @@ module WorkflowMgr
             return Dependency_SOME_Operator.new(nodeval.collect { |operand| build_dependency(operand) }, node[:threshold] )
           when :datadep
             age=WorkflowMgr.ddhhmmss_to_seconds(node[:age])
-            return DataDependency.new(CompoundTimeString.new(nodeval),age,@filestatserver)
+            return DataDependency.new(CompoundTimeString.new(nodeval),age,@fileStatServer)
           when :taskdep
             task=@tasks.find {|t| t[:id]==nodeval }
             status=node[:status]
@@ -272,27 +351,32 @@ module WorkflowMgr
 
     ##########################################
     #
-    # activate_new_cycles
+    # get_active_cycles
     #
     ##########################################
-    def activate_new_cycles
+    def get_active_cycles
 
+      # Get active cycles from the database
+      @active_cycles=@dbServer.get_active_cycles(@cyclelifespan)
+
+      # Activate new cycles
       if @realtime
         newcycles=get_new_realtime_cycle
       else
         newcycles=get_new_retro_cycles
       end
 
+      # Add new cycles to active cycle list and database
       unless newcycles.empty?
 
         # Add the new cycles to the database
-        @dbserver.add_cycles(newcycles)
+        @dbServer.add_cycles(newcycles)
 
         # Add the new cycles to the list of active cycles
         @active_cycles += newcycles.collect { |cycle| {:cycle=>cycle} }
 
       end
-    
+
     end
 
 
@@ -311,7 +395,7 @@ module WorkflowMgr
       new_cycle=@cycledefs.collect { |c| c.previous(now) }.max
 
       # Get the latest cycle from the database or initialize it to a very long time ago
-      latest_cycle=@dbserver.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
+      latest_cycle=@dbServer.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
 
       # Return the new cycle if it hasn't already been activated
       if new_cycle > latest_cycle[:cycle]
@@ -335,7 +419,7 @@ module WorkflowMgr
       # N is the cyclethrottle minus the number of currently active cycles.
 
       # Get the cycledefs from the database so that we can get their last known positions
-      dbcycledefs=@dbserver.get_cycledefs.collect do |dbcycledef|
+      dbcycledefs=@dbServer.get_cycledefs.collect do |dbcycledef|
         case dbcycledef[:cycledef].split.size
           when 6
             CycleCron.new(dbcycledef)
@@ -353,7 +437,7 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset=@dbserver.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
+      cycleset=@dbServer.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
 
       # Sort the cycleset
       cycleset.sort { |a,b| a[:cycle] <=> b[:cycle] }
@@ -408,11 +492,116 @@ module WorkflowMgr
       end  # .times do
 
       # Save the workflowdoc cycledefs with their updated positions to the database
-      @dbserver.set_cycledefs(@cycledefs.collect { |cycledef| { :group=>cycledef.group, :cycledef=>cycledef.cycledef, :position=>cycledef.position } } )
+      @dbServer.set_cycledefs(@cycledefs.collect { |cycledef| { :group=>cycledef.group, :cycledef=>cycledef.cycledef, :position=>cycledef.position } } )
 
       return newcycles
 
     end  # activate_new_cycles
+
+
+    ##########################################
+    #
+    # update_active_jobs
+    #
+    ##########################################
+    def update_active_jobs
+
+      begin
+
+        bqservers={}
+        updated_jobs=[]  
+        @active_jobs.each_key do |task|
+          @active_jobs[task].each_key do |cycle|
+            jobid=@active_jobs[task][cycle][:jobid]
+            if jobid=~/^druby:/
+              uri=jobid
+              bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+              jobid,output=bqservers[uri].get_submit_status(task,cycle)
+              if output.nil?
+                @logServer.log(cycle,"Submission status of #{task} is still pending at #{uri}, something may be wrong.  Check to see if the #{uri} process is still alive")
+              else
+                if jobid.nil?
+                  puts output
+                  @logServer.log(cycle,"Submission status of previously pending #{task} is failure!  #{output}")
+                else
+                  @active_jobs[task][cycle][:jobid]=jobid
+                  @logServer.log(cycle,"Submission status of previously pending #{task} is success, jobid=#{jobid}")
+                end
+              end
+            end
+            unless @active_jobs[task][cycle][:state]=="done"
+              status=@bqServer.status(@active_jobs[task][cycle][:jobid])
+              @active_jobs[task][cycle][:state]=status[:state]
+              if status[:state]=="done"
+                @logServer.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}, exit status=#{status[:exit_status]}")
+              else
+                @logServer.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}")
+              end
+            end
+            updated_jobs << @active_jobs[task][cycle]
+          end
+        end
+     
+        @dbServer.update_jobs(updated_jobs)        
+
+      ensure
+
+        unless bqservers.nil?
+          bqservers.values.each { |bqserver| bqserver.stop! unless bqserver.running? }
+        end
+
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # submit_new_jobs
+    #
+    ##########################################
+    def submit_new_jobs
+
+      # Loop over active cycles and tasks, skipping ones that have already been submitted
+      newjobs=[]
+      @active_cycles.each do |cycle|
+        @tasks.each do |task|
+          unless @active_jobs[task[:id]].nil?
+            next unless @active_jobs[task[:id]][cycle[:cycle]].nil?
+          end
+          if task[:dependency].resolved?(cycle[:cycle])
+            @bqServer.submit(localize_task(task,cycle[:cycle]),cycle[:cycle])
+            newjob={:taskid=>task[:id], :cycle=>cycle[:cycle], :state=>"Submitting", :exit_status=>0, :tries=>1}
+            newjob[:jobid]=@bqServer.__drburi if @config.BatchQueueServer
+            newjobs << newjob
+          end
+        end
+      end        
+
+      # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
+      Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+
+      # Harvest job ids for submitted tasks
+      newjobs.each do |job|
+        uri=job[:jobid]
+        jobid,output=@bqServer.get_submit_status(job[:taskid],job[:cycle])
+        if output.nil?
+          @logServer.log(job[:cycle],"Submitted #{job[:taskid]}.  Submission status is pending at #{job[:jobid]}")
+        else
+          if jobid.nil?
+            puts output
+            @logServer.log(job[:cycle],"Submission of #{job[:taskid]} failed!  #{output}")
+          else
+            job[:jobid]=jobid
+            @logServer.log(job[:cycle],"Submitted #{job[:taskid]}, jobid=#{job[:jobid]}")
+          end
+        end
+      end
+
+      # Add the new jobs to the database
+      @dbServer.add_jobs(newjobs)
+
+    end
 
 
     ##########################################
@@ -453,85 +642,6 @@ module WorkflowMgr
       end 
 
       return lt
-
-    end
-
-
-    ##########################################
-    #
-    # submit_task
-    #
-    ##########################################
-    def submit_task(task)
-
-      # Open a double ended pipe
-      r,w = IO.pipe
-
-      # Fork a child process to submit the job
-      child = fork {
-
-        # Attach the child process's STDOUT to the write end of the pipe
-        STDOUT.reopen w
-
-        # Start a Drb Server that will manage the job submission
-        DRb.start_service nil,JobSubmitter.new(@scheduler)
-
-        # Write the URI for the job submission server to the pipe so the main
-	# thread can get it and use it to connect to the job sumission server process
-        STDOUT.puts "#{DRb.uri}"
-        STDOUT.flush
-
-        # Allow INT signal to cleanly terminate the server process
-        trap("INT") { DRb.stop_service }
-
-        # Wait forever for the server to quit
-        DRb.thread.join
-
-      }
-
-      # Close the write end of the pipe in the parent
-      w.close
-
-      # Read the URI of the job submission server sent from the child process
-      uri=r.gets
-
-      # Connect to the job submission server
-      submitter = DRbObject.new nil, uri
-
-      # Send the job submission server a request to submit our job
-      submitter.submit(task)
-
-      # Return the URI of the job submission server so we can reconnect to it later
-      # to retrieve the job id or error returned from the batch system
-      return uri
-
-    end
-
-    ##########################################
-    #
-    # get_task_submit_status
-    #
-    ##########################################
-    def get_task_submit_status(uri)
-
-      # Connect to the job submission server
-      submitter = DRbObject.new(nil, uri)
-
-      # Ask for the output of the submission
-      output=submitter.getoutput
-
-      # If there's output, ask for the jobid
-      if output.nil?
-        jobid=nil
-      else
-        jobid=submitter.getjobid
-      end
-
-      # Stop the job submission server if there was output
-      submitter.stop! unless output.nil?
-
-      # Return the jobid and output
-      return jobid,output
 
     end
 
