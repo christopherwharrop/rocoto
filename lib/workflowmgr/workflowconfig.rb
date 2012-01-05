@@ -17,7 +17,11 @@ module WorkflowMgr
 
     DEFAULT_CONFIG={ 
                     :DatabaseType => "SQLite3", 
-                    :WorkflowDocType => "XML"
+                    :WorkflowDocType => "XML",
+                    :DatabaseServer => true,
+                    :BatchQueueServer => true,
+                    :LogServer => true,
+                    :FileStatServer => true
                    }
 
     ##########################################  
