@@ -14,6 +14,12 @@ module WorkflowMgr
 
     require 'libxml'
     require 'workflowmgr/utilities'
+    require 'workflowmgr/cycledef'
+    require 'workflowmgr/workflowlog'
+    require 'workflowmgr/cycledef'
+    require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/task'
+
 
     ##########################################
     #
@@ -26,22 +32,220 @@ module WorkflowMgr
       xmlstring=IO.readlines(workflowdoc,nil)[0]
 
       # Parse the workflow xml string, set option to replace entities
-      workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
+      @workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
 
       # Validate the workflow xml document before metatask expansion
-      validate_with_metatasks(workflowdoc)
+      validate_with_metatasks(@workflowdoc)
 
       # Expand metatasks
       expand_metatasks
 
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
-      validate_without_metatasks(workflowdoc)
+      validate_without_metatasks(@workflowdoc)
 
       # Convert the XML tree into a hash
-      @workflow=to_h(workflowdoc)
+      @workflow=to_h(@workflowdoc)
 
     end  # initialize
+
+
+    ##########################################
+    #
+    # realtime?
+    # 
+    ##########################################
+    def realtime?
+
+      if @workflowdoc.root["realtime"].nil?
+        return nil
+      else
+        return !(@workflowdoc.root["realtime"].downcase =~ /^t|true$/).nil?
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # cyclelifespan
+    # 
+    ##########################################
+    def cyclelifespan
+
+      if @workflowdoc.root["cyclelifespan"].nil?
+        return nil
+      else
+        return WorkflowMgr.ddhhmmss_to_seconds(@workflowdoc.root["cyclelifespan"])
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # cyclethrottle
+    # 
+    ##########################################
+    def cyclethrottle
+
+      if @workflowdoc.root["cyclethrottle"].nil?
+        return nil
+      else
+        return @workflowdoc.root["cyclethrottle"].to_i
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # taskthrottle
+    # 
+    ##########################################
+    def taskthrottle
+
+      if @workflowdoc.root["taskthrottle"].nil?
+        return nil
+      else
+        return @workflowdoc.root["taskthrottle"].to_i
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # corethrottle
+    # 
+    ##########################################
+    def corethrottle
+
+      if @workflowdoc.root["corethrottle"].nil?
+        return nil
+      else
+        return @workflowdoc.root["corethrottle"].to_i
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # scheduler
+    # 
+    ##########################################
+    def scheduler
+
+      if @workflowdoc.root["scheduler"].nil?
+        return nil
+      else
+        return WorkflowMgr::const_get("#{@workflowdoc.root["scheduler"].upcase}BatchSystem").new
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # log
+    # 
+    ##########################################
+    def log
+ 
+      lognode=@workflowdoc.find('/workflow/log').first
+      path=get_compound_time_string(lognode)
+      verbosity=lognode.attributes['verbosity']
+      verbosity=verbosity.to_i unless verbosity.nil?
+
+      return WorkflowLog.new(path,verbosity)
+
+    end
+
+
+    ##########################################
+    #
+    # cycledefs
+    # 
+    ##########################################
+    def cycledefs
+ 
+      cycles=[]
+      cyclenodes=@workflowdoc.find('/workflow/cycledef')
+      cyclenodes.each { |cyclenode|
+        cyclefields=cyclenode.content
+        nfields=cyclefields.split.size
+        group=cyclenode.attributes['group']
+        if nfields==3
+          cycles << CycleInterval.new(cyclefields,group)
+        elsif nfields==6
+          cycles << CycleCron.new(cyclefields,group)
+        else
+	  raise "ERROR: Unsupported <cycle> type!"
+        end
+      }
+
+      return cycles
+
+    end
+
+
+    ##########################################
+    #
+    # tasks
+    # 
+    ##########################################
+    def tasks
+
+      tasks=[]
+      tasknodes=@workflowdoc.find('/workflow/task')
+      tasknodes.each do |tasknode|
+
+        taskattrs={}
+        taskenvars={}
+        taskdep=nil
+
+        # Get task attributes insde the <task> tag
+        tasknode.attributes.each do |attr|
+          attrkey=attr.name.to_sym
+          case attrkey
+            when :maxtries              # Attributes with integer values go here
+              attrval=attr.value.to_i
+            else                        # Attributes with string values
+              attrval=attr.value
+          end
+          taskattrs[attrkey]=attrval
+        end
+
+        # Get task attributes, envars, and dependencies declared as elements inside <task> element
+        tasknode.each_element do |e|          
+          case e.name
+            when /^envar$/
+              taskenvars[get_compound_time_string(e.find('name').first)] = get_compound_time_string(e.find('value').first)
+            when /^dependency$/
+              e.each_element do |element| 
+                raise "ERROR: <dependency> tag contains too many elements" unless taskdep.nil?
+                taskdep=Dependency.new(get_dependency_node(element))
+              end
+            else
+              attrkey=e.name.to_sym
+              case attrkey
+                when :cores                      # <task> elements with integer values go here
+                  attrval=e.content.to_i
+                else                             # <task> elements with compoundtimestring values
+                  attrval=get_compound_time_string(e)
+              end
+              taskattrs[attrkey]=attrval
+          end
+        end
+
+        tasks << Task.new(taskattrs,taskenvars,taskdep)
+
+      end
+
+      return tasks
+
+    end
 
 
     ##########################################
@@ -62,6 +266,119 @@ module WorkflowMgr
 
 
   private
+
+
+     ##########################################
+     #
+     # get_compound_time_string
+     # 
+     ##########################################
+     def get_compound_time_string(element)
+ 
+       strarray=element.collect do |e|
+         if e.node_type==LibXML::XML::Node::TEXT_NODE
+           CycleString.new(e.content,0)
+         else
+           offset_sec=WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
+           case e.name
+             when "cyclestr"
+               formatstr=e.content.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
+               CycleString.new(formatstr,offset_sec)
+             else
+               raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"
+           end
+         end
+       end
+ 
+       return CompoundTimeString.new(strarray)
+ 
+     end
+
+
+     ##########################################
+     #
+     # get_dependency_node
+     # 
+     ##########################################
+     def get_dependency_node(element)
+ 
+       # Build a dependency tree
+       children=[]
+       element.each_element { |e| children << e }
+       case element.name
+         when "not"
+           return Dependency_NOT_Operator.new(children.collect { |child| get_dependency_node(child) })
+         when "and"
+           return Dependency_AND_Operator.new(children.collect { |child| get_dependency_node(child) })
+         when "or"
+           return Dependency_OR_Operator.new(children.collect { |child|  get_dependency_node(child) })
+         when "nand"
+           return Dependency_NAND_Operator.new(children.collect { |child|  get_dependency_node(child) })
+         when "nor"
+           return Dependency_NOR_Operator.new(children.collect { |child|  get_dependency_node(child) })
+         when "xor"
+           return Dependency_XOR_Operator.new(children.collect { |child|  get_dependency_node(child) })
+         when "some"
+           return Dependency_SOME_Operator.new(children.collect { |child|  get_dependency_node(child) }, element["threshold"])
+         when "taskdep"
+           return get_taskdep(element)
+         when "datadep"
+           return get_datadep(element)
+         when "timedep"
+           return get_timedep(element)
+       end
+
+     end
+
+
+     #####################################################
+     #
+     # get_taskdep
+     #
+     #####################################################
+     def get_taskdep(element)
+ 
+       # Get the mandatory task attribute
+       task=element.attributes["task"]
+ 
+       # Get the status attribute
+       status=element.attributes["status"]
+ 
+       # Get the cycle offset, if there is one
+       cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"])
+ 
+       return TaskDependency.new(task,status,cycle_offset)
+
+     end
+
+
+     ##########################################
+     # 
+     # get_datadep
+     # 
+     ##########################################
+     def get_datadep(element)
+ 
+       # Get the age attribute
+       age_sec=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["age"])
+
+       return DataDependency.new(get_compound_time_string(element),age_sec)
+ 
+     end
+
+ 
+
+     #####################################################
+     #
+     # get_timedep
+     #
+     #####################################################
+     def get_timedep(element)
+ 
+       # Get the time cycle string
+       return TimeDependency.new(get_compound_time_string(element))
+ 
+     end
 
 
     ##########################################
@@ -170,7 +487,7 @@ module WorkflowMgr
             value=envar_to_h(child)
           when :dependency
             value=dependency_to_h(child).first
-          when :cores                              # List integer-only attributes here
+          when :cores,:maxtries                    # List integer-only attributes here
 	    value=child.content.to_i
           when :id                                 # List string attributes that can't be compound time strings	here
             value=child.content.strip              

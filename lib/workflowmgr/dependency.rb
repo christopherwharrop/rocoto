@@ -28,9 +28,9 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
-      return(@root.resolved?(cycle))
+      return(@root.resolved?(cycle,jobList,fileStatServer))
 
     end
 
@@ -60,9 +60,9 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
-      return !@operand.resolved?(cycle)
+      return !@operand.resolved?(cycle,jobList,fileStatServer)
 
     end
 
@@ -92,10 +92,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       @operands.each { |operand|
-        return false unless operand.resolved?(cycle)
+        return false unless operand.resolved?(cycle,jobList,fileStatServer)
       }
       return true
 
@@ -127,10 +127,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       @operands.each { |operand|
-        return true if operand.resolved?(cycle)
+        return true if operand.resolved?(cycle,jobList,fileStatServer)
       }
       return false
 
@@ -162,10 +162,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       @operands.each { |operand|
-        return true if !operand.resolved?(cycle)
+        return true if !operand.resolved?(cycle,jobList,fileStatServer)
       }
       return false
 
@@ -196,10 +196,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       @operands.each { |operand|
-        return false if operand.resolved?(cycle)
+        return false if operand.resolved?(cycle,jobList,fileStatServer)
       }
       return true
 
@@ -230,11 +230,11 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       ntrue=0
       @operands.each { |operand|
-        ntrue += 1 if operand.resolved?(cycle)
+        ntrue += 1 if operand.resolved?(cycle,jobList,fileStatServer)
         return false if ntrue > 1
       }
       return ntrue==1
@@ -267,11 +267,11 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       ntrue=0.0
       @operands.each { |operand|
-        ntrue += 1.0 if operand.resolved?(cycle)
+        ntrue += 1.0 if operand.resolved?(cycle,jobList,fileStatServer)
         return true if ntrue/@operands.size >= threshold
       }
       return false
@@ -306,11 +306,11 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
-      return false if @task[:jobs].nil?
-      return false if @task[:jobs][cycle+@cycle_offset].nil?
-      return @task[:jobs][cycle+@cycle_offset][:state]==@status
+      return false if jobList.nil?
+      return false if jobList[cycle+@cycle_offset].nil?
+      return jobList[cycle+@cycle_offset][:state]==@status
 
     end
 
@@ -341,7 +341,7 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       t=@timestr.to_s(cycle)      
       return Time.now.getgm > Time.gm(t[0..3],
@@ -367,11 +367,10 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(datapath,age,filestatserver)
+    def initialize(datapath,age)
 
       @datapath=datapath
       @age=age
-      @filestatserver=filestatserver
     
     end
 
@@ -380,10 +379,10 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle)
+    def resolved?(cycle,jobList,fileStatServer)
 
       filename=@datapath.to_s(cycle)
-      if @filestatserver.exists?(filename)
+      if fileStatServer.exists?(filename)
         return Time.now > (@filestatserver.mtime(filename) + @age)
       else
         return false

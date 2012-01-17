@@ -23,19 +23,21 @@ module WorkflowMgr
     #####################################################
     def initialize(str_objects)
 
-      @str_objects=str_objects.collect do |str|
-        if str.is_a?(String)
-          str
-        else
-          if str.has_key?(:cyclestr)
-            offset=WorkflowMgr.ddhhmmss_to_seconds(str[:offset])
-            cyclestr=str[:cyclestr].gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
-            CycleString.new(cyclestr,offset)
-          else
-            raise "Invalid compound time string element: #{str.inspect}"
-          end
-        end
-      end
+      @str_objects=str_objects
+
+#      @str_objects=str_objects.collect do |str|
+#        if str.is_a?(String)
+#          str
+#        else
+#          if str.has_key?(:cyclestr)
+#            offset=WorkflowMgr.ddhhmmss_to_seconds(str[:offset])
+#            cyclestr=str[:cyclestr].gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
+#            CycleString.new(cyclestr,offset)
+#          else
+#            raise "Invalid compound time string element: #{str.inspect}"
+#          end
+#        end
+#      end
 
     end
 

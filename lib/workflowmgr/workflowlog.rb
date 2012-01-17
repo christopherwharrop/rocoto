@@ -21,10 +21,10 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(log)
+    def initialize(path,verbosity)
 
-      @path=CompoundTimeString.new(log[:path])
-      @verbosity=log[:verbosity].to_i || 0
+      @path=path
+      @verbosity=verbosity || 0
 
     end
 

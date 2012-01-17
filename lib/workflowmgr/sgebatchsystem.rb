@@ -209,23 +209,23 @@ module WorkflowMgr
       cmd="/usr/local/esrl/bin/qsub"
 
       # Add SGE batch system options translated from the generic options specification
-      task.each do |option,value|
+      task.attributes.each do |option,value|
         case option
           when :account
             cmd += " -A #{value}"
           when :queue            
             unless cmd =~/ -pe \S+ \d+/
-              cmd += " -pe #{value} #{task[:cores]}"
+              cmd += " -pe #{value} #{task.attributes[:cores]}"
             end
           when :cores
             unless cmd =~/ -pe \S+ \d+/
-              cmd += " -pe #{task[:queue]} #{value}"
+              cmd += " -pe #{task.attributes[:queue]} #{value}"
             end           
         end
       end
 
       # Add the command to submit
-      cmd += " #{task[:command]}"
+      cmd += " #{task.attributes[:command]}"
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp

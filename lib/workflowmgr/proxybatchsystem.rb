@@ -19,10 +19,10 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(batchSystemClass)
+    def initialize(batchSystem)
 
       # Set the batch system being proxied
-      @batchsystem=batchSystemClass.new
+      @batchsystem=batchSystem
 
       # Initialize hashes used to keep track of multithreaded job submission
 
@@ -46,14 +46,14 @@ module WorkflowMgr
     def submit(task,cycle)
 
       # Initialize submission status to NOT harvested
-      @harvested[task[:id]]=Hash.new if @harvested[task[:id]].nil?
-      @harvested[task[:id]][cycle]=false
+      @harvested[task.attributes[:name]]=Hash.new if @harvested[task.attributes[:name]].nil?
+      @harvested[task.attributes[:name]][cycle]=false
 
       # Create a thread to submit the task
-      @threads[task[:id]]=Hash.new if @status[task[:id]].nil?      
-      @threads[task[:id]][cycle]=Thread.new {
-        @status[task[:id]]=Hash.new if @status[task[:id]].nil?
-        @status[task[:id]][cycle]=@batchsystem.submit(task)
+      @threads[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?      
+      @threads[task.attributes[:name]][cycle]=Thread.new {
+        @status[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?
+        @status[task.attributes[:name]][cycle]=@batchsystem.submit(task)
       }
 
     end

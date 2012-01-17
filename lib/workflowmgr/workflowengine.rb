@@ -181,12 +181,12 @@ module WorkflowMgr
     # setup_bq_server
     #
     ##########################################
-    def setup_bq_server(batchSystemClass)
+    def setup_bq_server(batchSystem)
 
       begin
 
         # Set up an object to serve requests for batch queue system services
-        batchsystem=ProxyBatchSystem.new(batchSystemClass)
+        batchsystem=ProxyBatchSystem.new(batchSystem)
 
         if @config.BatchQueueServer
           @bqServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowbqserver")
@@ -220,12 +220,11 @@ module WorkflowMgr
       begin
 
         # Set up an object to serve requests for batch queue system services
-        workflowlog=WorkflowLog.new(log)
         if @config.LogServer
           @logServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowlogserver")
-          @logServer.setup(workflowlog)
+          @logServer.setup(log)
         else
-          @logServer=workflowlog
+          @logServer=log
         end
 
       rescue
@@ -259,52 +258,34 @@ module WorkflowMgr
       end
 
       # Get the realtime flag
-      @realtime=!(workflowdoc.realtime.downcase =~ /^t|true$/).nil?
+      @realtime=workflowdoc.realtime?
 
       # Get the cycle life span
-      @cyclelifespan=WorkflowMgr.ddhhmmss_to_seconds(workflowdoc.cyclelifespan)
+      @cyclelifespan=workflowdoc.cyclelifespan
 
       # Get the cyclethrottle
-      @cyclethrottle=workflowdoc.cyclethrottle.to_i
+      @cyclethrottle=workflowdoc.cyclethrottle
+
+      # Get the corethrottle
+      @corethrottle=workflowdoc.corethrottle
+
+      # Get the taskthrottle
+      @taskthrottle=workflowdoc.taskthrottle
 
       # Get the scheduler
-      setup_bq_server(WorkflowMgr::const_get("#{workflowdoc.scheduler.upcase}BatchSystem"))
+      setup_bq_server(workflowdoc.scheduler)
 
       # Get the log parameters
       setup_log_server(workflowdoc.log)
 
       # Get the cycle defs
-      @cycledefs=[workflowdoc.cycledef].flatten.collect do |cycledef|
-        fields=cycledef[:cycledef].split
-        case fields.size
-          when 6
-            CycleCron.new(cycledef)
-          when 3
-            CycleInterval.new(cycledef)
-        end
-      end
+      @cycledefs=workflowdoc.cycledefs
 
       # Get the tasks 
-      @tasks=[]
-      workflowdoc.task.each do |task|
-        newtask=task
-        task.each do |attr,val|        
-          case attr
-            when :envar
-              newtask[attr].collect! do |envar|
-                envar[:name]=CompoundTimeString.new(envar[:name])
-                envar[:value]=CompoundTimeString.new(envar[:value])
-                envar
-              end
-            when :dependency
-              newtask[attr]=build_dependency(val)
-            when :id,:cores
-            else
-                newtask[attr]=CompoundTimeString.new(val)
-          end
-        end
-        @tasks << newtask
-      end
+      @tasks=workflowdoc.tasks
+
+      # Calculate the maximum cycle offset for taskdep
+      
 
     end
 
@@ -340,6 +321,7 @@ module WorkflowMgr
             task=@tasks.find {|t| t[:id]==nodeval }
             status=node[:status]
             cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(node[:cycle_offset])
+            
             return TaskDependency.new(task,status,cycle_offset)
           when :timedep
             return TimeDependency.new(CompoundTimeString.new(nodeval))
@@ -422,9 +404,9 @@ module WorkflowMgr
       dbcycledefs=@dbServer.get_cycledefs.collect do |dbcycledef|
         case dbcycledef[:cycledef].split.size
           when 6
-            CycleCron.new(dbcycledef)
+            CycleCron.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:position])
           when 3
-            CycleInterval.new(dbcycledef)
+            CycleInterval.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:position])
         end
       end
         
@@ -508,44 +490,94 @@ module WorkflowMgr
 
       begin
 
+        # Initialize hash of bqserver processes that are holding pending job ids
         bqservers={}
+
+        # Initialize array of jobs whose job ids have been updated
         updated_jobs=[]  
-        @active_jobs.each_key do |task|
-          @active_jobs[task].each_key do |cycle|
-            jobid=@active_jobs[task][cycle][:jobid]
-            if jobid=~/^druby:/
-              uri=jobid
+
+        # Initialize counters for keeping track of active workflow parameters
+        @active_task_count=0
+        @active_core_count=0
+
+        # Loop over all active jobs and retrieve and update their current status
+        @active_jobs.keys.each do |taskname|
+          @active_jobs[taskname].keys.each do |cycle|
+
+            # No need to query or update the status of jobs that we already know are done
+            next if @active_jobs[taskname][cycle][:state]=="done"
+
+            # If the jobid is a DRb URI, retrieve the job submission status from the workflowbqserver process that submitted it
+            if @active_jobs[taskname][cycle][:jobid]=~/^druby:/
+
+              # Get the URI of the workflowbqserver that submitted the job
+              uri=@active_jobs[taskname][cycle][:jobid]
+
+              # Make a connection to the workflowbqserver at uri
               bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
-              jobid,output=bqservers[uri].get_submit_status(task,cycle)
+
+              # Query the workflowbqserver for the status of the job submission 
+              jobid,output=bqservers[uri].get_submit_status(taskname,cycle)
+
+              # If there is no output from the submission, it means the submission is still pending
               if output.nil?
-                @logServer.log(cycle,"Submission status of #{task} is still pending at #{uri}, something may be wrong.  Check to see if the #{uri} process is still alive")
+                @logServer.log(cycle,"Submission status of #{taskname} is still pending at #{uri}, something may be wrong.  Check to see if the #{uri} process is still alive")
+
+              # Otherwise, the submission either succeeded or failed.
               else
+
+                # If the job submission failed, log the output of the job submission command, and print it to stdout as well
                 if jobid.nil?
                   puts output
-                  @logServer.log(cycle,"Submission status of previously pending #{task} is failure!  #{output}")
+                  @logServer.log(cycle,"Submission status of previously pending #{taskname} is failure!  #{output}")
+
+                # If the job succeeded, record the jobid and log it
                 else
-                  @active_jobs[task][cycle][:jobid]=jobid
-                  @logServer.log(cycle,"Submission status of previously pending #{task} is success, jobid=#{jobid}")
+                  @active_jobs[taskname][cycle][:jobid]=jobid
+                  @logServer.log(cycle,"Submission status of previously pending #{taskname} is success, jobid=#{jobid}")
                 end
               end
             end
-            unless @active_jobs[task][cycle][:state]=="done"
-              status=@bqServer.status(@active_jobs[task][cycle][:jobid])
-              @active_jobs[task][cycle][:state]=status[:state]
-              if status[:state]=="done"
-                @logServer.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}, exit status=#{status[:exit_status]}")
-              else
-                @logServer.log(cycle,"#{task} job id=#{jobid} in state #{status[:state]}")
-              end
+
+            # Don't try to query the status of jobs whose submission is still pending
+            next if @active_jobs[taskname][cycle][:jobid]=~/^druby:/
+
+            # Get the status of the job from the batch system
+            status=@bqServer.status(@active_jobs[taskname][cycle][:jobid])
+
+            # Update the state of the job with its current state
+            @active_jobs[taskname][cycle][:state]=status[:state]
+
+            # Initialize a log message to report the job state
+            logmsg="#{taskname} job id=#{@active_jobs[taskname][cycle][:jobid]} in state #{status[:state]}"
+
+            # If the job has just finished, update exit status and tries and append info to log message
+            if status[:state]=="done"
+              @active_jobs[taskname][cycle][:exit_status]=status[:exit_status]
+              @active_jobs[taskname][cycle][:tries]+=1
+              logmsg+=", ran for #{status[:end_time] - status[:start_time]} seconds, exit status=#{status[:exit_status]}"
+
+            # Otherwise increment counters
+            else
+              @active_task_count+=1
+              @active_core_count+=@active_jobs[taskname][cycle][:cores]
             end
-            updated_jobs << @active_jobs[task][cycle]
-          end
-        end
+
+            # Log the state of the job
+            @logServer.log(cycle,logmsg)
+
+            # Add this job to the list of jobs whose state has been updated
+            updated_jobs << @active_jobs[taskname][cycle]
+
+          end # @active_jobs[taskname].keys.each
+        end # @active_jobs.keys.each
      
+        # Save the updates to the database
         @dbServer.update_jobs(updated_jobs)        
 
       ensure
 
+        # Make sure we always terminate all workflowbqservers that we no longer need
         unless bqservers.nil?
           bqservers.values.each { |bqserver| bqserver.stop! unless bqserver.running? }
         end
@@ -562,19 +594,64 @@ module WorkflowMgr
     ##########################################
     def submit_new_jobs
 
-      # Loop over active cycles and tasks, skipping ones that have already been submitted
+      # Initialize an array of the new jobs that have been submitted
       newjobs=[]
-      @active_cycles.each do |cycle|
+
+      # Loop over active cycles and tasks, looking for eligible tasks to submit
+      @active_cycles.collect { |c| c[:cycle] }.sort.each do |cycle|
         @tasks.each do |task|
-          unless @active_jobs[task[:id]].nil?
-            next unless @active_jobs[task[:id]][cycle[:cycle]].nil?
+
+          # Mqke sure the task is eligible for submission
+          resubmit=false
+          unless @active_jobs[task.attributes[:name]].nil?
+            unless @active_jobs[task.attributes[:name]][cycle].nil?
+
+              # Reject this task unless the existing job for it has completed
+              next unless @active_jobs[task.attributes[:name]][cycle][:state] == "done"
+
+              # Reject this task unless the existing job for it has crashed
+              next unless @active_jobs[task.attributes[:name]][cycle][:exit_status] != 0
+
+              # This task is a resubmission
+              resubmit=true
+
+            end
           end
-          if task[:dependency].resolved?(cycle[:cycle])
-            @bqServer.submit(localize_task(task,cycle[:cycle]),cycle[:cycle])
-            newjob={:taskid=>task[:id], :cycle=>cycle[:cycle], :state=>"Submitting", :exit_status=>0, :tries=>1}
-            newjob[:jobid]=@bqServer.__drburi if @config.BatchQueueServer
-            newjobs << newjob
+
+          # Reject this task if dependencies are not satisfied
+          next unless task.dependency.resolved?(cycle,@active_jobs,@fileStatServer)
+
+          # Reject this task if retries has been exceeded
+          if resubmit
+            if @active_jobs[task.attributes[:name]][cycle][:tries] >= task.attributes[:maxtries]
+              @logServer.log(cycle,"Cannot resubmit #{task.attributes[:name]}, maximum retry count of #{task.attributes[:maxtries]} has been reached")
+              next
+            end
           end
+
+          # Reject this task if core throttle will be exceeded
+          next unless @active_core_count + task.attributes[:cores] < @corethrottle
+
+          # Reject this task if task throttle will be exceeded
+          next unless @active_task_count + 1 < @taskthrottle
+
+          # Submit the task
+          @bqServer.submit(task.localize(cycle),cycle)
+
+          # If we are resubmitting the job, initialize the new job to the old job
+          if resubmit
+            newjob=@active_jobs[task.attributes[:name]][cycle]
+          else
+            newjob={:taskname=>task.attributes[:name], :cycle=>cycle, :tries=>0}
+          end
+          newjob[:state]="Submitting"
+          newjob[:exit_status]=0
+          newjob[:cores]=task.attributes[:cores]
+          newjob[:jobid]=@bqServer.__drburi if @config.BatchQueueServer
+
+          # Append the new job to the list of new jobs that were submitted
+          newjobs << newjob
+
         end
       end        
 
@@ -584,16 +661,16 @@ module WorkflowMgr
       # Harvest job ids for submitted tasks
       newjobs.each do |job|
         uri=job[:jobid]
-        jobid,output=@bqServer.get_submit_status(job[:taskid],job[:cycle])
+        jobid,output=@bqServer.get_submit_status(job[:taskname],job[:cycle])
         if output.nil?
-          @logServer.log(job[:cycle],"Submitted #{job[:taskid]}.  Submission status is pending at #{job[:jobid]}")
+          @logServer.log(job[:cycle],"Submitted #{job[:taskname]}.  Submission status is pending at #{job[:jobid]}")
         else
           if jobid.nil?
             puts output
-            @logServer.log(job[:cycle],"Submission of #{job[:taskid]} failed!  #{output}")
+            @logServer.log(job[:cycle],"Submission of #{job[:taskname]} failed!  #{output}")
           else
             job[:jobid]=jobid
-            @logServer.log(job[:cycle],"Submitted #{job[:taskid]}, jobid=#{job[:jobid]}")
+            @logServer.log(job[:cycle],"Submitted #{job[:taskname]}, jobid=#{job[:jobid]}")
           end
         end
       end
