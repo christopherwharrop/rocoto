@@ -12,8 +12,19 @@ module WorkflowMgr
   ##########################################
   class WorkflowServer
 
+    # Get the base directory of the WFM installation
+    if File.symlink?(__FILE__)
+      __WFMDIR__=File.dirname(File.dirname(File.dirname(File.expand_path(File.readlink(__FILE__),File.dirname(__FILE__)))))
+    else
+      __WFMDIR__=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
+    end
+
+    $:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/lib")
+    $:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/ext/system_timer")
+
     require 'drb'
-    require 'timeout'
+    require 'system_timer'
+
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/proxybatchsystem'
@@ -66,11 +77,11 @@ module WorkflowMgr
 
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
       begin
-        Timeout.timeout(10) do
+        SystemTimer.timeout(10) do
           return @server.send(name,*args)
         end
       rescue Timeout::Error
-        raise "Server is unresponsive"
+        raise "#{@server.name} server is unresponsive"
       end
 
     end

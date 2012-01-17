@@ -35,13 +35,15 @@
     <dependency>
       <or>
         <and>
-          <datadep age="2:00">/home/harrop/workflowmgr_dev/test/test.dat1</datadep>
-          <datadep age="2:00">/home/harrop/workflowmgr_dev/test/test.dat2</datadep>
+          <datadep age="2:00">/lfs1/jetmgmt/harrop/workflowmgr_dev/test/test.dat1</datadep>
+          <datadep age="2:00">/lfs1/jetmgmt/harrop/workflowmgr_dev/test/test.dat2</datadep>
         </and>
+<!--
         <and>
           <timedep>20111031120001</timedep>
           <timedep>20111031120003</timedep>
         </and>
+-->
       </or>
     </dependency>
 

@@ -21,6 +21,18 @@ ${RUBY} extconf.rb
 make clean
 make
 
+# Install SystemTimer
+echo "==========================================="
+echo "= INSTALLING SystemTimer                  ="
+echo "==========================================="
+cd ${WFM_DIR}
+tar -xzvf SystemTimer-1.2.3.tar.gz
+ln -fs SystemTimer-1.2.3 SystemTimer
+cd ${WFM_DIR}/SystemTimer/ext/system_timer
+${RUBY} extconf.rb
+make clean
+make
+
 # Install sqlite3
 echo "==========================================="
 echo "= INSTALLING sqlite3                      ="

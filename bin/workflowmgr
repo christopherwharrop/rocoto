@@ -13,6 +13,8 @@ $:.unshift("#{__WFMDIR__}/libxml-ruby/lib")
 $:.unshift("#{__WFMDIR__}/libxml-ruby/ext/libxml")
 $:.unshift("#{__WFMDIR__}/sqlite3-ruby/lib")
 $:.unshift("#{__WFMDIR__}/sqlite3-ruby/ext")
+$:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/lib")
+$:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/ext/system_timer")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
