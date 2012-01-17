@@ -205,10 +205,17 @@
   <define name="task">
     <element name="task">
 
-      <!-- Exactly one task id attribute -->
-      <attribute name="id">
+      <!-- Exactly one task name attribute -->
+      <attribute name="name">
         <data type="string"/>          
       </attribute>
+
+      <!-- Optional task maxtries attribute -->
+      <optional>
+	<attribute name="maxtries">
+          <data type="positiveInteger"/>
+        </attribute>
+      </optional>
 
       <!-- Order of task property tags does not matter -->
       <interleave>
