@@ -383,7 +383,7 @@ module WorkflowMgr
 
       filename=@datapath.to_s(cycle)
       if fileStatServer.exists?(filename)
-        return Time.now > (@filestatserver.mtime(filename) + @age)
+        return Time.now > (fileStatServer.mtime(filename) + @age)
       else
         return false
       end
