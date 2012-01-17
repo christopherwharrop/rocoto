@@ -297,9 +297,9 @@ module WorkflowMgr
         end  # database transaction
           
         # Return the last cycle
-        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }.first
+        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :done=>Time.at(cycle[2]).getgm} }
 
-        return dbcycles
+        return dbcycles.first
 
       rescue SQLite3::BusyException => e
         STDERR.puts 
@@ -437,7 +437,7 @@ module WorkflowMgr
         database.transaction do |db|
 
           # Retrieve all jobs from the cycle table
-          dbjobs=db.execute("SELECT jobid,taskid,cycle,state,exit_status,tries FROM jobs;")
+          dbjobs=db.execute("SELECT jobid,taskname,cycle,cores,state,exit_status,tries FROM jobs;")
 
         end  # database transaction
 
@@ -445,14 +445,16 @@ module WorkflowMgr
           jobid=job[0]
           jobtask=job[1]
           jobcycle=Time.at(job[2]).getgm
-          jobstate=job[3]
-          jobstatus=job[4].to_i
-          jobtries=job[5].to_i
+          jobcores=job[3].to_i
+          jobstate=job[4]
+          jobstatus=job[5].to_i
+          jobtries=job[6].to_i
           jobs[jobtask]={} if jobs[jobtask].nil?
           jobs[jobtask][jobcycle]={} if jobs[jobtask][jobcycle].nil?
           jobs[jobtask][jobcycle][:jobid]=jobid
-          jobs[jobtask][jobcycle][:taskid]=jobtask
+          jobs[jobtask][jobcycle][:taskname]=jobtask
           jobs[jobtask][jobcycle][:cycle]=jobcycle
+          jobs[jobtask][jobcycle][:cores]=jobcores
           jobs[jobtask][jobcycle][:state]=jobstate
           jobs[jobtask][jobcycle][:exit_status]=jobstatus
           jobs[jobtask][jobcycle][:tries]=jobtries
@@ -489,7 +491,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskid]}',#{job[:cycle].to_i},'#{job[:state]}',#{job[:exit_status]},#{job[:tries]});")
+            db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskname]}',#{job[:cycle].to_i},#{job[:cores]},'#{job[:state]}',#{job[:exit_status]},#{job[:tries]});")
           end
 
         end  # database transaction
@@ -523,7 +525,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]} WHERE cycle=#{job[:cycle].to_i} AND taskid='#{job[:taskid]}';")
+            db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]} WHERE cycle=#{job[:cycle].to_i} AND taskname='#{job[:taskname]}';")
           end
 
         end  # database transaction
@@ -632,7 +634,7 @@ module WorkflowMgr
 
      # Create the jobs table
       unless tables.member?("jobs")
-        db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskid VARCHAR(64), cycle DATETIME, state VARCHAR[64], exit_status INTEGER, tries INTEGER);")
+        db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], exit_status INTEGER, tries INTEGER);")
      end
 
     end  # create_tables
