@@ -173,6 +173,11 @@
         <attribute name="task">
           <data type="string"/>
         </attribute>
+	<optional>
+          <attribute name="cycle_offset">
+            <ref name="time"/>
+          </attribute>
+	</optional>
         <empty/>
       </element>
       <element name="datadep">
