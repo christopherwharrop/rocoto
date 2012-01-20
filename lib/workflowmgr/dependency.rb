@@ -308,9 +308,10 @@ module WorkflowMgr
     #####################################################
     def resolved?(cycle,jobList,fileStatServer)
 
-      return false if jobList.nil?
-      return false if jobList[cycle+@cycle_offset].nil?
-      return jobList[cycle+@cycle_offset][:state]==@status
+      return false if jobList.nil?      
+      return false if jobList[@task].nil?
+      return false if jobList[@task][cycle.getgm+@cycle_offset].nil?
+      return jobList[@task][cycle.getgm+@cycle_offset][:state]==@status
 
     end
 
