@@ -357,6 +357,7 @@
           <value>sge</value>
           <value>lsf</value>
           <value>ll</value>
+          <value>moabtorque</value>
         </choice>
       </attribute>
 
