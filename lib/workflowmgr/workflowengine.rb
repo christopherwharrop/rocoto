@@ -72,10 +72,14 @@ module WorkflowMgr
         get_active_cycles
 
         # Get the active jobs, which may include jobs from cycles that have just expired
-        @active_jobs=@dbServer.get_jobs
+        # as well as jobs needed for evaluating inter cycle dependencies
+        get_active_jobs
 
         # Update the status of all active jobs
         update_active_jobs
+
+        # Expire active cycles that have exceeded the cycle life span
+        expire_cycles
 
         # Submit new tasks where possible
         submit_new_jobs
@@ -284,8 +288,8 @@ module WorkflowMgr
       # Get the tasks 
       @tasks=workflowdoc.tasks
 
-      # Calculate the maximum cycle offset for taskdep
-      
+      # Get the taskdep cycle offsets
+      @taskdep_cycle_offsets=workflowdoc.taskdep_cycle_offsets
 
     end
 
@@ -355,7 +359,7 @@ module WorkflowMgr
         @dbServer.add_cycles(newcycles)
 
         # Add the new cycles to the list of active cycles
-        @active_cycles += newcycles.collect { |cycle| {:cycle=>cycle} }
+        @active_cycles += newcycles.collect { |cycle| {:cycle=>cycle, :activated=>Time.now.getgm} }
 
       end
 
@@ -483,6 +487,38 @@ module WorkflowMgr
 
     ##########################################
     #
+    # get_active_jobs
+    #
+    ##########################################
+    def get_active_jobs
+
+      # Initialize a list of job cycles corresponding to the set of active jobs
+      job_cycles=[]
+
+      # Get jobs for each active cycle and all cycle offsets from them
+      @active_cycles.each do |active_cycle|
+
+        # Add each active cycle to the active job cycles
+        job_cycles << active_cycle[:cycle]
+
+        # Add cycles for each known cycle offset in task dependencies
+        # but only for cycles that have not just expired
+        if Time.now - active_cycle[:activated] < @cyclelifespan
+          @taskdep_cycle_offsets.each do |cycle_offset|
+            job_cycles << active_cycle[:cycle] + cycle_offset
+          end
+        end
+
+      end
+
+      # Get all jobs whose cycle is in the job_cycle list
+      @active_jobs=@dbServer.get_jobs(@active_cycles.collect { |c| c[:cycle] })
+
+    end
+
+
+    ##########################################
+    #
     # update_active_jobs
     #
     ##########################################
@@ -572,10 +608,10 @@ module WorkflowMgr
           end # @active_jobs[taskname].keys.each
         end # @active_jobs.keys.each
      
-        # Save the updates to the database
-        @dbServer.update_jobs(updated_jobs)        
-
       ensure
+
+        # Make sure we save the updates to the database
+        @dbServer.update_jobs(updated_jobs) unless updated_jobs.empty?
 
         # Make sure we always terminate all workflowbqservers that we no longer need
         unless bqservers.nil?
@@ -589,6 +625,55 @@ module WorkflowMgr
 
     ##########################################
     #
+    # expire_cycles
+    #
+    ##########################################
+    def expire_cycles
+
+      active_cycles=[]
+      expired_cycles=[]
+
+      # Loop over all active cycles
+      @active_cycles.each do |cycle|
+
+        # If the cycle has expired, mark it, and delete jobs if necessary
+        if Time.now.getgm - cycle[:activated].getgm > @cyclelifespan
+
+          # Set the expiration time
+          cycle[:expired]=Time.now.getgm
+
+          # Add to list of expired cycles
+          expired_cycles << cycle
+
+        # Otherwise add the cycle to a new list of active cycles
+        else
+          active_cycles << cycle
+        end
+
+      end
+
+      # Delete any jobs for the expired cycles
+      expired_cycles.each do |cycle|          
+        @active_jobs.keys.each do |taskname|
+          unless @active_jobs[taskname][cycle[:cycle]][:state] == "done"
+            @logServer.log(cycle[:cycle],"Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} because this cycle has expired!")
+            @bqServer.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])
+          end
+        end
+        @logServer.log(cycle[:cycle],"This cycle has expired!")
+      end
+
+      # Update the expired cycles in the database 
+      @dbServer.update_cycles(expired_cycles)
+
+      # Update the active cycle list
+      @active_cycles=active_cycles
+
+    end
+
+
+    ##########################################
+    #
     # submit_new_jobs
     #
     ##########################################
@@ -596,6 +681,9 @@ module WorkflowMgr
 
       # Initialize an array of the new jobs that have been submitted
       newjobs=[]
+
+      # Initialize a hash of task cycledefs
+      taskcycledefs={}
 
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.collect { |c| c[:cycle] }.sort.each do |cycle|
@@ -618,6 +706,19 @@ module WorkflowMgr
             end
           end
 
+          # Validate that this cycle is a member of at least one of the cycledefs specified for this task
+          unless task.attributes[:cycledefs].nil?
+
+            # Get the cycledefs associated with this task
+            if taskcycledefs[task].nil?
+              taskcycledefs[task]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+            end
+
+            # Reject this task if the cycle is not a member of the tasks cycle list
+            next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
+
+          end
+          
           # Reject this task if dependencies are not satisfied
           next unless task.dependency.resolved?(cycle,@active_jobs,@fileStatServer)
 
@@ -630,13 +731,23 @@ module WorkflowMgr
           end
 
           # Reject this task if core throttle will be exceeded
-          next unless @active_core_count + task.attributes[:cores] < @corethrottle
+          if @active_core_count + task.attributes[:cores] > @corethrottle
+            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum core throttle of #{@corethrottle} will be violated.")
+            next
+          end
 
           # Reject this task if task throttle will be exceeded
-          next unless @active_task_count + 1 < @taskthrottle
+          if @active_task_count + 1 > @taskthrottle
+            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum task throttle of #{@taskthrottle} will be violated.")
+            next
+          end
 
           # Submit the task
           @bqServer.submit(task.localize(cycle),cycle)
+
+          # Increment counters
+          @active_core_count += task.attributes[:cores]
+          @active_task_count += 1
 
           # If we are resubmitting the job, initialize the new job to the old job
           if resubmit

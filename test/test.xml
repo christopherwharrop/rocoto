@@ -4,7 +4,7 @@
  <!ENTITY CYCLE_TIME "@Y@m@d@H">
 ]>
 
-<workflow realtime="f" scheduler="sge" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="10" taskthrottle="20">
+<workflow realtime="f" scheduler="sge" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="10">
 
   <log verbosity="10">/home/harrop/workflowmgr_dev/test/<cyclestr offset="2:00:00">test_@Y@m@d@H@M.log</cyclestr></log>
 

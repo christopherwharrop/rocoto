@@ -34,7 +34,7 @@ module WorkflowMgr
       begin
 
         # Wait for the uri file to become available, then read it
-        Timeout::timeout(2) do
+        Timeout::timeout(10) do
           while !File.exists?(uri_file) do
             sleep 0.25 
           end

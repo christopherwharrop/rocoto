@@ -45,7 +45,7 @@ module WorkflowMgr
       validate_without_metatasks(@workflowdoc)
 
       # Convert the XML tree into a hash
-      @workflow=to_h(@workflowdoc)
+#      @workflow=to_h(@workflowdoc)
 
     end  # initialize
 
@@ -250,6 +250,23 @@ module WorkflowMgr
 
     ##########################################
     #
+    # taskdep_cycle_offsets
+    # 
+    ##########################################
+    def taskdep_cycle_offsets
+
+      offsets=[]
+      taskdepnodes=@workflowdoc.find('//taskdep')
+      taskdepnodes.each do |taskdepnode|
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode["cycle_offset"]) unless taskdepnode["cycle_offset"].nil?
+      end
+      return offsets.uniq  
+
+    end
+
+
+    ##########################################
+    #
     # method_missing
     # 
     ##########################################
@@ -342,10 +359,10 @@ module WorkflowMgr
        task=element.attributes["task"]
  
        # Get the status attribute
-       status=element.attributes["status"]
+       status=element.attributes["status"] || "done"
  
        # Get the cycle offset, if there is one
-       cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"])
+       cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"]) || 0
  
        return TaskDependency.new(task,status,cycle_offset)
 
