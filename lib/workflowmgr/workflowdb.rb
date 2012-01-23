@@ -555,6 +555,39 @@ module WorkflowMgr
 
     ##########################################
     #
+    # delete_jobs
+    #
+    ##########################################
+    def delete_jobs(jobs)
+
+      begin
+
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
+
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
+
+          # Delete each job from the database
+          jobs.each do |job|
+            db.execute("DELETE FROM jobs WHERE cycle=#{job[:cycle].to_i} AND taskname='#{job[:taskname]}';")
+          end
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException => e
+        STDERR.puts
+        STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
+        STDERR.puts "       The database is locked by SQLite."
+        STDERR.puts
+        exit 1
+      end  # begin
+
+    end
+
+
+    ##########################################
+    #
     # get_tables
     #
     ##########################################

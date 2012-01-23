@@ -564,6 +564,8 @@ module WorkflowMgr
 
                 # If the job submission failed, log the output of the job submission command, and print it to stdout as well
                 if jobid.nil?
+                  # Delete the job from the database since it failed to submit.  It will be retried next time around.
+                  @dbServer.delete_jobs([@active_jobs[taskname][cycle]])
                   puts output
                   @logServer.log(cycle,"Submission status of previously pending #{taskname} is failure!  #{output}")
 
@@ -655,6 +657,7 @@ module WorkflowMgr
       # Delete any jobs for the expired cycles
       expired_cycles.each do |cycle|          
         @active_jobs.keys.each do |taskname|
+          next if @active_jobs[taskname][cycle[:cycle]].nil?
           unless @active_jobs[taskname][cycle[:cycle]][:state] == "done"
             @logServer.log(cycle[:cycle],"Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} because this cycle has expired!")
             @bqServer.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])

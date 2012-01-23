@@ -14,7 +14,7 @@
 
     <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_%X @^p</cyclestr></command>
 
-    <account>jetmgmt</account>
+    <account>wrfruc</account>
 
     <queue>nserial</queue>
 
