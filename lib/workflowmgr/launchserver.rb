@@ -6,7 +6,7 @@
 module WorkflowMgr
 
   require 'drb'
-  require 'timeout'
+  require 'system_timer'
 
   ##########################################
   #
@@ -34,7 +34,7 @@ module WorkflowMgr
       begin
 
         # Wait for the uri file to become available, then read it
-        Timeout::timeout(10) do
+        SystemTimer.timeout(10) do
           while !File.exists?(uri_file) do
             sleep 0.25 
           end
