@@ -20,6 +20,17 @@
         </choice>
       </attribute>
 
+      <!-- scheduler workflow attribute is required and must be one of the values listed -->
+      <attribute name="scheduler">
+        <choice>
+          <value>sge</value>
+          <value>lsf</value>
+          <value>ll</value>
+          <value>moab</value>
+          <value>pbs</value>
+        </choice>
+      </attribute>
+
       <!-- cyclethrottle workflow attribute is optional and must be a non negative integer -->
       <optional>
         <attribute name="cyclethrottle">
@@ -52,13 +63,6 @@
       <optional>
         <attribute name="cyclelifespan">
           <ref name="nonNegativeTime"/>
-        </attribute>
-      </optional>
-
-      <!-- scheduler workflow attribute is optional and must be a string -->
-      <optional>
-        <attribute name="scheduler">
-          <data type="string"/>
         </attribute>
       </optional>
 
