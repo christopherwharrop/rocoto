@@ -13,6 +13,7 @@ module WorkflowMgr
   class ProxyBatchSystem
 
     require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/task'
   
     ##########################################
     #
