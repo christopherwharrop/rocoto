@@ -257,11 +257,13 @@
         </optional>
 
         <!-- Zero or more envar tags -->
-        <oneOrMore>
-          <element name="envar">
-            <ref name="nameValuePair"/>
-          </element>
-        </oneOrMore>
+        <optional>
+          <oneOrMore>
+            <element name="envar">
+              <ref name="nameValuePair"/>
+            </element>
+          </oneOrMore>
+        </optional>
 
         <!-- Zero or one dependency tag -->
         <optional>
