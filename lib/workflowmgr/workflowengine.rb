@@ -78,6 +78,9 @@ module WorkflowMgr
         # Update the status of all active jobs
         update_active_jobs
 
+        # Deactivate completed cycles
+        deactivate_done_cycles
+
         # Expire active cycles that have exceeded the cycle life span
         expire_cycles
 
@@ -512,7 +515,8 @@ module WorkflowMgr
       end
 
       # Get all jobs whose cycle is in the job_cycle list
-      @active_jobs=@dbServer.get_jobs(@active_cycles.collect { |c| c[:cycle] })
+      @active_jobs=@dbServer.get_jobs(job_cycles)
+#      @active_jobs=@dbServer.get_jobs(@active_cycles.collect { |c| c[:cycle] })
 
     end
 
@@ -627,6 +631,101 @@ module WorkflowMgr
 
     ##########################################
     #
+    #  deactivate_done_cycles
+    #
+    ##########################################
+    def deactivate_done_cycles
+
+      active_cycles=[]
+      done_cycles=[]
+
+      # Initialize a hash of task cycledefs
+      taskcycledefs={}
+
+      # Loop over all active cycles
+      @active_cycles.each do |cycle|
+
+        # Initialize done flag to true for this cycle
+        cycle_done=false
+        cycle_success=true
+        
+        catch (:not_done) do
+
+          # Loop over all tasks
+          @tasks.each do |task|
+
+            # Validate that this cycle is a member of at least one of the cycledefs specified for this task
+            unless task.attributes[:cycledefs].nil?
+
+              # Get the cycledefs associated with this task
+              if taskcycledefs[task].nil?
+                taskcycledefs[task]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              end
+
+              # Reject this task if the cycle is not a member of the tasks cycle list
+              next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle[:cycle]) }
+
+            end  # unless
+
+            # The cycle is not done if this task has not been submitted yet for any of the active cycles
+            throw :not_done if @active_jobs[task.attributes[:name]].nil?
+
+            # The cycle is not done if this task has not been submitted yet for this cycle
+            throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]].nil?
+
+            # The cycle is not done if the job for this task and cycle is not in the done state
+            throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:state] != "done"
+
+# For now, only tag cycles as done if they are done successfully, meaning that all tasks are complete and have exit status = 0.
+# If we mark cycles as done when they have tasks that exceeded retries, then increasing retries won't cause them to rerun again
+#
+#            # The cycle is not done if the job for this task and cycle is done, but has crashed and has not yet exceeded the retry count
+#            if @active_jobs[task.attributes[:name]][cycle[:cycle]][:tries] >= task.attributes[:maxtries]
+#              cycle_success=false
+#            else
+              throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:exit_status] != 0 
+#            end
+
+          end  # tasks.each
+
+          cycle_done=true
+          
+        end  # catch
+
+        # If the cycle is done, record the time and update active cycle list
+        if cycle_done
+        
+          # Set the expiration time
+          cycle[:done]=Time.now.getgm
+
+          # Add to list of done cycles
+          done_cycles << cycle
+
+          # Log the done status of this cycle
+          if cycle_success
+            @logServer.log(cycle[:cycle],"This cycle is complete: Success") 
+          else
+            @logServer.log(cycle[:cycle],"This cycle is complete: Failed") 
+          end
+
+        # Otherwise add the cycle to a new list of active cycles
+        else
+          active_cycles << cycle
+        end
+
+      end  # active_cycles.each
+
+      # Update the done cycles in the database 
+      @dbServer.update_cycles(done_cycles)
+
+      # Update the active cycle list
+      @active_cycles=active_cycles
+
+    end
+
+
+    ##########################################
+    #
     # expire_cycles
     #
     ##########################################
@@ -723,7 +822,9 @@ module WorkflowMgr
           end
           
           # Reject this task if dependencies are not satisfied
-          next unless task.dependency.resolved?(cycle,@active_jobs,@fileStatServer)
+          unless task.dependency.nil?
+            next unless task.dependency.resolved?(cycle,@active_jobs,@fileStatServer)
+          end
 
           # Reject this task if retries has been exceeded
           if resubmit

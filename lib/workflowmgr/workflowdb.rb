@@ -330,11 +330,6 @@ module WorkflowMgr
 
           # Get the cycles that are neither done nor expired
           dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE done=0 and expired=0;")
-#          if cycle_lifespan.nil?
-#            dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE done=0;")
-#          else
-#            dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE done=0 AND activated >= #{Time.now.to_i - cycle_lifespan};")
-#          end
 
         end  # database transaction
           
