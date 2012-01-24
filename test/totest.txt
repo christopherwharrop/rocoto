@@ -41,4 +41,8 @@
    d) A log message for taskthrottle violation is written each time a task is denied submission due to taskthrottle violation
    e) Ensure that default taskthrottle works properly
 
-
+7) Workflow dependencies are properly enforced
+   a) Check time dependencies, should only be resolved when Now is >= the time specified 
+   b) Check data dependencies, verify age works properly
+   c) Check task dependencies, verify state and cycle offset attributes work
+   d) Verify that all operators, (not,and,or,nand,nor,xor,some) all work properly
