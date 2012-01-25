@@ -44,9 +44,6 @@ module WorkflowMgr
       # The second validation is needed in case metatask expansion introduced invalid XML
       validate_without_metatasks(@workflowdoc)
 
-      # Convert the XML tree into a hash
-#      @workflow=to_h(@workflowdoc)
-
     end  # initialize
 
 

@@ -551,6 +551,8 @@ module WorkflowMgr
                       fields[1][8..9],
                       fields[1][10..11])
 
+      raise "Invalid <cycledef>  Start time is greater than the end time" if @start > @finish
+
       @interval=WorkflowMgr.ddhhmmss_to_seconds(fields[2])
 
       @position=position || first

@@ -268,16 +268,16 @@ module WorkflowMgr
       @realtime=workflowdoc.realtime?
 
       # Get the cycle life span
-      @cyclelifespan=workflowdoc.cyclelifespan
+      @cyclelifespan=workflowdoc.cyclelifespan || 365:00:00:00
 
       # Get the cyclethrottle
-      @cyclethrottle=workflowdoc.cyclethrottle
+      @cyclethrottle=workflowdoc.cyclethrottle || 1
 
       # Get the corethrottle
-      @corethrottle=workflowdoc.corethrottle
+      @corethrottle=workflowdoc.corethrottle || 9999999
 
       # Get the taskthrottle
-      @taskthrottle=workflowdoc.taskthrottle
+      @taskthrottle=workflowdoc.taskthrottle || 9999999
 
       # Get the scheduler
       setup_bq_server(workflowdoc.scheduler)
