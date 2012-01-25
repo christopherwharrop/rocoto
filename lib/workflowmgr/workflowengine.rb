@@ -268,7 +268,7 @@ module WorkflowMgr
       @realtime=workflowdoc.realtime?
 
       # Get the cycle life span
-      @cyclelifespan=workflowdoc.cyclelifespan || 365:00:00:00
+      @cyclelifespan=workflowdoc.cyclelifespan || WorkflowMgr.ddhhmmss_to_seconds("365:00:00:00")
 
       # Get the cyclethrottle
       @cyclethrottle=workflowdoc.cyclethrottle || 1
