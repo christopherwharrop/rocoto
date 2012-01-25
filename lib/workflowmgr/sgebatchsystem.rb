@@ -113,7 +113,6 @@ module WorkflowMgr
     require 'etc'
     require 'libxml'
 
-
     #####################################################
     #
     # initialize
@@ -193,7 +192,7 @@ module WorkflowMgr
       end
 
       # We didn't find the job, so return an uknown status record
-      return { :jobid => jobid, :state => "unknown" }
+      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "UNKNOWN" }
 
     end
 
@@ -281,7 +280,17 @@ module WorkflowMgr
 	      when /JB_job_number/
 		record[:jobid]=jobstat.content
 	      when /state/
-		record[:state]=jobstat.content
+                case jobstat.content
+                  when /^qw$/
+    	            record[:state]="QUEUED"
+                  when /^[R]*r$/,/^t$/
+    	            record[:state]="RUNNING"
+                  when /^E/
+    	            record[:state]="ERROR"
+                  else
+    	            record[:state]="UNKNOWN"
+                end
+		record[:native_state]=jobstat.content
 	      when /JB_name/
 		record[:jobname]=jobstat.content
 	      when /JB_owner/
@@ -368,7 +377,7 @@ module WorkflowMgr
 	      # Extract relevant fields
 	      record={}
 	      record[:jobid]=fields[5]
-	      record[:state]="done"
+	      record[:native_state]="done"
 	      record[:jobname]=fields[4]
 	      record[:user]=fields[3]
 	      record[:cores]=fields[34].to_i
@@ -378,6 +387,11 @@ module WorkflowMgr
 	      record[:end_time]=Time.at(fields[10].to_i).getgm
 	      record[:exit_status]=fields[12].to_i==0 ? fields[11].to_i : fields[12].to_i
 	      record[:priority]=fields[7].to_f
+              if record[:exit_status]==0
+                record[:state]="SUCCEEDED"
+              else
+                record[:state]="FAILED"
+              end
 
 	      # Add the record if it hasn't already been added
 	      @jobacct[fields[5]]=record unless @jobacct.has_key?(fields[5].to_i)

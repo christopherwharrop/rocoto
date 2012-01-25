@@ -545,7 +545,7 @@ module WorkflowMgr
           @active_jobs[taskname].keys.each do |cycle|
 
             # No need to query or update the status of jobs that we already know are done
-            next if @active_jobs[taskname][cycle][:state]=="done"
+            next if @active_jobs[taskname][cycle][:state]=="SUCCEEDED" || @active_jobs[taskname][cycle][:state]=="FAILED"
 
             # If the jobid is a DRb URI, retrieve the job submission status from the workflowbqserver process that submitted it
             if @active_jobs[taskname][cycle][:jobid]=~/^druby:/
@@ -589,12 +589,13 @@ module WorkflowMgr
 
             # Update the state of the job with its current state
             @active_jobs[taskname][cycle][:state]=status[:state]
+            @active_jobs[taskname][cycle][:native_state]=status[:native_state]            
 
             # Initialize a log message to report the job state
-            logmsg="#{taskname} job id=#{@active_jobs[taskname][cycle][:jobid]} in state #{status[:state]}"
+            logmsg="#{taskname} job id=#{@active_jobs[taskname][cycle][:jobid]} in state #{status[:state]} (#{status[:native_state]})"
 
             # If the job has just finished, update exit status and tries and append info to log message
-            if status[:state]=="done"
+            if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
               @active_jobs[taskname][cycle][:exit_status]=status[:exit_status]
               @active_jobs[taskname][cycle][:tries]+=1
               logmsg+=", ran for #{status[:end_time] - status[:start_time]} seconds, exit status=#{status[:exit_status]}"
@@ -674,7 +675,7 @@ module WorkflowMgr
             throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]].nil?
 
             # The cycle is not done if the job for this task and cycle is not in the done state
-            throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:state] != "done"
+            throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:state] != "SUCCEEDED"
 
 # For now, only tag cycles as done if they are done successfully, meaning that all tasks are complete and have exit status = 0.
 # If we mark cycles as done when they have tasks that exceeded retries, then increasing retries won't cause them to rerun again
@@ -683,7 +684,7 @@ module WorkflowMgr
 #            if @active_jobs[task.attributes[:name]][cycle[:cycle]][:tries] >= task.attributes[:maxtries]
 #              cycle_success=false
 #            else
-              throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:exit_status] != 0 
+#              throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:exit_status] != 0 
 #            end
 
           end  # tasks.each
@@ -757,7 +758,7 @@ module WorkflowMgr
       expired_cycles.each do |cycle|          
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle[:cycle]].nil?
-          unless @active_jobs[taskname][cycle[:cycle]][:state] == "done"
+          unless @active_jobs[taskname][cycle[:cycle]][:state] == "SUCCESS" || @active_jobs[taskname][cycle[:cycle]][:state] == "FAILED"
             @logServer.log(cycle[:cycle],"Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} because this cycle has expired!")
             @bqServer.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])
           end
@@ -796,11 +797,8 @@ module WorkflowMgr
           unless @active_jobs[task.attributes[:name]].nil?
             unless @active_jobs[task.attributes[:name]][cycle].nil?
 
-              # Reject this task unless the existing job for it has completed
-              next unless @active_jobs[task.attributes[:name]][cycle][:state] == "done"
-
               # Reject this task unless the existing job for it has crashed
-              next unless @active_jobs[task.attributes[:name]][cycle][:exit_status] != 0
+              next unless @active_jobs[task.attributes[:name]][cycle][:state] == "FAILED"
 
               # This task is a resubmission
               resubmit=true
@@ -859,7 +857,7 @@ module WorkflowMgr
           else
             newjob={:taskname=>task.attributes[:name], :cycle=>cycle, :tries=>0}
           end
-          newjob[:state]="Submitting"
+          newjob[:state]="SUBMITTING"
           newjob[:exit_status]=0
           newjob[:cores]=task.attributes[:cores]
           newjob[:jobid]=@bqServer.__drburi if @config.BatchQueueServer
