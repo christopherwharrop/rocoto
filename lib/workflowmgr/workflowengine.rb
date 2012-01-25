@@ -326,7 +326,7 @@ module WorkflowMgr
             return DataDependency.new(CompoundTimeString.new(nodeval),age,@fileStatServer)
           when :taskdep
             task=@tasks.find {|t| t[:id]==nodeval }
-            status=node[:status]
+            status=node[:status] | "SUCCEEDED"
             cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(node[:cycle_offset])
             
             return TaskDependency.new(task,status,cycle_offset)
@@ -758,7 +758,7 @@ module WorkflowMgr
       expired_cycles.each do |cycle|          
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle[:cycle]].nil?
-          unless @active_jobs[taskname][cycle[:cycle]][:state] == "SUCCESS" || @active_jobs[taskname][cycle[:cycle]][:state] == "FAILED"
+          unless @active_jobs[taskname][cycle[:cycle]][:state] == "SUCCEEDED" || @active_jobs[taskname][cycle[:cycle]][:state] == "FAILED"
             @logServer.log(cycle[:cycle],"Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} because this cycle has expired!")
             @bqServer.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])
           end
@@ -797,7 +797,7 @@ module WorkflowMgr
           unless @active_jobs[task.attributes[:name]].nil?
             unless @active_jobs[task.attributes[:name]][cycle].nil?
 
-              # Reject this task unless the existing job for it has crashed
+              # Since this task has already been submitted at least once, reject it unless the job for it has failed
               next unless @active_jobs[task.attributes[:name]][cycle][:state] == "FAILED"
 
               # This task is a resubmission
@@ -834,13 +834,13 @@ module WorkflowMgr
 
           # Reject this task if core throttle will be exceeded
           if @active_core_count + task.attributes[:cores] > @corethrottle
-            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum core throttle of #{@corethrottle} will be violated.")
+            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum core throttle of #{@corethrottle} will be violated.",2)
             next
           end
 
           # Reject this task if task throttle will be exceeded
           if @active_task_count + 1 > @taskthrottle
-            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum task throttle of #{@taskthrottle} will be violated.")
+            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum task throttle of #{@taskthrottle} will be violated.",2)
             next
           end
 

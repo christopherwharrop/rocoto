@@ -359,7 +359,7 @@ module WorkflowMgr
        task=element.attributes["task"]
  
        # Get the status attribute
-       status=element.attributes["status"] || "done"
+       status=element.attributes["status"] || "SUCCEEDED"
  
        # Get the cycle offset, if there is one
        cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"]) || 0
@@ -377,7 +377,7 @@ module WorkflowMgr
      def get_datadep(element)
  
        # Get the age attribute
-       age_sec=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["age"])
+       age_sec=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["age"]) || 0
 
        return DataDependency.new(get_compound_time_string(element),age_sec)
  
