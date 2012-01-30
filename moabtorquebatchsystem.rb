@@ -29,8 +29,9 @@ class MoabTorqueBatchSystem
       if moab_root.nil?
         if ENV['MOAB_ROOT'].nil?
 #          @moab_root="/opt/moab/default/bin"
-          @moab_root="/usr/local/bin"
-#           @moab_root="/apps/torque/bin"
+#          @moab_root="/usr/local/bin"
+#          @moab_root="/usr/local/bin"
+           @moab_root="/apps/moab/default/bin"
         else
           @moab_root=ENV['MOAB_ROOT']
         end
@@ -85,7 +86,7 @@ class MoabTorqueBatchSystem
       username=Etc.getpwuid(Process.uid).name
 
       # run bjobs to obtain the current status of queued jobs
-      output=Command.run(". /etc/profile.d/moab_torque.sh; #{@moab_root}/showq --noblock --xml -u #{username} 2>&1")
+      output=Command.run(". /etc/profile.d/gold_moab_torque.sh; #{@moab_root}/showq --noblock --xml -u #{username} 2>&1")
       if output[1] != 0
         raise output[0]
       else
@@ -122,7 +123,7 @@ class MoabTorqueBatchSystem
       username=Etc.getpwuid(Process.uid).name
 
       # run showq to obtain the current status of queued jobs
-      output=Command.run(". /etc/profile.d/moab_torque.sh; #{@moab_root}/showq --noblock -c --xml -u #{username} 2>&1")
+      output=Command.run(". /etc/profile.d/gold_moab_torque.sh; #{@moab_root}/showq --noblock -c --xml -u #{username} 2>&1")
       if output[1] != 0
         raise output[0]
       else
@@ -243,15 +244,16 @@ class MoabTorqueBatchSystem
     begin
 
       # Build the submit command
-      cmd="msub"
-#      cmd="qsub"
+#      cmd="msub"
+      cmd="/apps/torque/default/bin/qsub"
       attributes.each { |attr,value|
         cmd=cmd+" #{attr} #{value}"
       }
       cmd=cmd+" #{script}"
 
       # Issue the submit command
-      output=Command.run(". /etc/profile.d/moab_torque.sh; #{@moab_root}/#{cmd} 2>&1")
+#      output=Command.run(". /etc/profile.d/gold_moab_torque.sh; #{@moab_root}/#{cmd} 2>&1")
+      output=Command.run(". /etc/profile.d/gold_moab_torque.sh; #{cmd} 2>&1")
       if output[1] != 0
         raise "#{output[0]}"
       end
@@ -260,7 +262,8 @@ class MoabTorqueBatchSystem
 #      if (output[0]=~/(\d+)(\.\w)+/)
 #      if (output[0]=~/(\w+\.\d+)/)
 #      if (output[0]=~/^(Moab\.\d+)$/)
-      if (output[0]=~/^(\d+)$/)
+
+      if (output[0].strip=~/^(\d+)[^0-9]+/)
         return $1
       else
         raise "#{output[0]}"
@@ -282,7 +285,7 @@ class MoabTorqueBatchSystem
     begin
 
       # Run mjobctl to delete the job
-      output=Command.run(". /etc/profile.d/moab_torque.sh; #{@moab_root}/mjobctl -c #{jid}")
+      output=Command.run(". /etc/profile.d/gold_moab_torque.sh; #{@moab_root}/mjobctl -c #{jid}")
       if output[1] != 0
         raise output[0]
       end
@@ -307,7 +310,7 @@ class MoabTorqueBatchSystem
     begin
 
       # Run bjobs to get job status info
-      output=Command.run(". /etc/profile.d/moab_torque.sh; showq")
+      output=Command.run(". /etc/profile.d/gold_moab_torque.sh; showq")
       if output[1] != 0
         raise output[0]
       end
