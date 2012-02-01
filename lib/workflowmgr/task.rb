@@ -25,6 +25,9 @@ module WorkflowMgr
       @envars=envars
       @dependency=dependency
 
+      # Set a default value for maxtries
+      @attributes[:maxtries]=9999999 if @attributes[:maxtries].nil?
+
     end
 
 
