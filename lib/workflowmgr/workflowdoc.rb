@@ -355,13 +355,13 @@ module WorkflowMgr
        # Get the mandatory task attribute
        task=element.attributes["task"]
  
-       # Get the status attribute
-       status=element.attributes["status"] || "SUCCEEDED"
+       # Get the state attribute
+       state=element.attributes["state"] || "SUCCEEDED"
  
        # Get the cycle offset, if there is one
        cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"]) || 0
  
-       return TaskDependency.new(task,status,cycle_offset)
+       return TaskDependency.new(task,state,cycle_offset)
 
      end
 
