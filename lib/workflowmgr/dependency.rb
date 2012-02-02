@@ -293,10 +293,10 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(task,status,cycle_offset)
+    def initialize(task,state,cycle_offset)
 
       @task=task
-      @status=status
+      @state=state.upcase
       @cycle_offset=cycle_offset
 
     end
@@ -311,7 +311,7 @@ module WorkflowMgr
       return false if jobList.nil?      
       return false if jobList[@task].nil?
       return false if jobList[@task][cycle.getgm+@cycle_offset].nil?
-      return jobList[@task][cycle.getgm+@cycle_offset][:state]==@status
+      return jobList[@task][cycle.getgm+@cycle_offset][:state]==@state
 
     end
 
