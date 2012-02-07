@@ -21,7 +21,8 @@ module WorkflowMgr
                     :DatabaseServer => true,
                     :BatchQueueServer => true,
                     :LogServer => true,
-                    :FileStatServer => true
+                    :FileStatServer => true,
+                    :MaxUnknowns => 3
                    }
 
     ##########################################  

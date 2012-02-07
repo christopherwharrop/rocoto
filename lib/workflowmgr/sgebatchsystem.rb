@@ -192,7 +192,7 @@ module WorkflowMgr
       end
 
       # We didn't find the job, so return an uknown status record
-      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "UNKNOWN" }
+      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "unknown" }
 
     end
 
