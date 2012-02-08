@@ -106,9 +106,12 @@
           </element>
         </oneOrMore>
 
-        <!-- Must have at least one task or metatask tag  -->
+        <!-- Must have at least one task or metatask tag.  Task tags must follow log and cycle tags -->
         <oneOrMore>
-          <ref name="task"/>
+          <choice>
+            <ref name="task"/>
+            <ref name="metatask"/>
+          </choice>
         </oneOrMore>
 
       </interleave>
@@ -312,6 +315,28 @@
     </element>
   </define>
 
+
+  <define name="metatask">
+    <element name="metatask">
+      <!-- Metatasks must have at least one var tag -->
+      <oneOrMore>
+        <element name="var">
+          <!-- Each var tag must have the id attribute set -->
+          <attribute name="id">
+            <data type="string"/>
+          </attribute>
+          <text/>
+        </element>
+      </oneOrMore>
+      <!-- Each metatask must contain at least one metatask or task -->
+      <oneOrMore>
+        <choice>
+          <ref name="metatask"/>
+          <ref name="task"/>
+        </choice>
+      </oneOrMore>
+    </element>
+  </define>
 
 </grammar>
 

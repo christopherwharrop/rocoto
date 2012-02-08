@@ -686,7 +686,87 @@ module WorkflowMgr
     ##########################################
     def expand_metatasks
 
+      # Parse and expand metatasks
+#      workflow=workflowdoc.root
+#      workflow.children.each {|ch|
+      @workflowdoc.root.children.each {|ch|
+        if ch.name == "metatask"
+	  pre_parse(ch)
+          ch.remove!
+        end
+      }
+
     end
+
+  #####################################################
+  #
+  # traverse
+  #
+  #####################################################
+
+  def traverse(node, id_table, index)
+    
+    if node.node_type_name == "text"
+      cont = node.content
+      id_table.each{|id, value|
+	next while cont.sub!("#"+id+"#", id_table[id][index])
+      }
+      node.content = cont
+      
+    else
+      node.attributes.each{|attr|
+	val = attr.value
+	id_table.each{|id, value|
+	  next while val.sub!("#"+id+"#", id_table[id][index])
+	}
+        attr.value = val
+      }
+      node.children.each{|ch| traverse(ch, id_table, index)}
+    end
+
+  end
+
+  
+  #####################################################
+  #
+  # pre-parse
+  #
+  #####################################################
+  
+  def pre_parse(metatask)
+    
+    id_table = {}
+    var_length = -1
+
+    metatask.children.each {|ch|
+      pre_parse(ch) if ch.name == "metatask"
+    }
+
+    metatask.children.each {|e|
+      if e.name == "var"
+	var_values = e.content.split
+        var_length = var_values.length if var_length == -1
+        raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
+        id_table[e["id"]] = var_values
+      end
+    }
+    raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
+
+    task_list = Array.new
+    0.upto(var_length - 1) {|index|
+      metatask.children.each{|e|
+        if e.name == "task"
+          task_copy = e.copy("deep")
+          traverse(task_copy,id_table, index)
+          task_list << task_copy
+        end
+      }
+    }
+
+    (task_list.length - 1).downto(0) {|x| metatask.next = task_list[x]}
+
+  end
+
 
 
   end  # Class WorkflowXMLDoc
