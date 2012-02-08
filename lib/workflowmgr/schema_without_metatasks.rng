@@ -219,6 +219,9 @@
       <element name="timedep">
 	<ref name="compoundTimeString"/>
       </element>
+      <element name="not">
+	<ref name="dependency_tree"/>
+      </element>
       <element name="and">
         <oneOrMore>
           <ref name="dependency_tree"/>
@@ -229,8 +232,28 @@
           <ref name="dependency_tree"/>
         </oneOrMore>
       </element>
-      <element name="not">
-	<ref name="dependency_tree"/>
+      <element name="nor">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="xor">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="nand">
+	<oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="some">
+        <attribute name="threshold">
+            <data type="float"/>
+        </attribute>
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
       </element>
     </choice>
   </define>

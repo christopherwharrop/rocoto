@@ -333,7 +333,7 @@ module WorkflowMgr
          when "xor"
            return Dependency_XOR_Operator.new(children.collect { |child|  get_dependency_node(child) })
          when "some"
-           return Dependency_SOME_Operator.new(children.collect { |child|  get_dependency_node(child) }, element["threshold"])
+           return Dependency_SOME_Operator.new(children.collect { |child|  get_dependency_node(child) }, element["threshold"].to_f)
          when "taskdep"
            return get_taskdep(element)
          when "datadep"

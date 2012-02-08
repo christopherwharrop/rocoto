@@ -51,7 +51,9 @@ module WorkflowMgr
     #####################################################
     def initialize(operand)
 
-      @operand=operand
+      raise "Not operator contains more than one operand!" if operand.size > 1      
+
+      @operand=operand.first
 
     end
 
@@ -272,7 +274,7 @@ module WorkflowMgr
       ntrue=0.0
       @operands.each { |operand|
         ntrue += 1.0 if operand.resolved?(cycle,jobList,fileStatServer)
-        return true if ntrue/@operands.size >= threshold
+        return true if ntrue/@operands.size >= @threshold
       }
       return false
 
