@@ -678,8 +678,10 @@ module WorkflowMgr
             # Check for maxtries violation and update counters
             if @active_jobs[taskname][cycle][:state]=="SUCCEEDED" || @active_jobs[taskname][cycle][:state]=="FAILED"
               @active_jobs[taskname][cycle][:tries]+=1
-              if @active_jobs[taskname][cycle][:tries] >= task.attributes[:maxtries]
-                @active_jobs[taskname][cycle][:state]="DEAD"
+              if @active_jobs[taskname][cycle][:tries]=="FAILED"
+                if @active_jobs[taskname][cycle][:tries] >= task.attributes[:maxtries]
+                  @active_jobs[taskname][cycle][:state]="DEAD"
+                end
               end
               triesmsg=", try=#{@active_jobs[taskname][cycle][:tries]} (of #{task.attributes[:maxtries]})"
             else
