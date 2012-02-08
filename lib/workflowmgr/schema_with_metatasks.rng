@@ -186,23 +186,11 @@
         <optional>
           <attribute name="state">
             <choice>
-              <value>SUBMITTING</value>
-              <value>QUEUED</value>
-              <value>RUNNING</value>
 	      <value>SUCCEEDED</value>
-              <value>FAILED</value>
               <value>DEAD</value>
-              <value>Submitting</value>
-              <value>Queued</value>
-              <value>Running</value>
 	      <value>Succeeded</value>
-              <value>Failed</value>
               <value>Dead</value>
-              <value>submitting</value>
-              <value>queued</value>
-              <value>running</value>
 	      <value>succeeded</value>
-              <value>failed</value>
               <value>dead</value>
             </choice>
           </attribute>
@@ -249,11 +237,9 @@
         </oneOrMore>
       </element>
       <element name="some">
-        <optional>
-          <attribute name="threshold">
-            <data type="float"/>
-          </attribute>
-        </optional>
+        <attribute name="threshold">
+            <data type="float"><param name="minInclusive">0.0</param><param name="maxInclusive">1.0</param></data>
+        </attribute>
         <oneOrMore>
           <ref name="dependency_tree"/>
         </oneOrMore>
