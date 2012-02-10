@@ -22,6 +22,7 @@ module WorkflowMgr
 
     require 'sqlite3'
     require "socket"
+    require "system_timer"
 
     ##########################################
     #
@@ -89,22 +90,59 @@ module WorkflowMgr
 
           # If no lock is present, we have acquired the lock.  Write the WFM's pid and host into the lock table
           if lock.empty?
-            db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{Socket.gethostname}',#{Time.now.to_i});") 
+            db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]}',#{Time.now.to_i});") 
+ 
+          # Otherwise, we didn't get the lock, but we need to check to make sure the lock is not stale
           else
-            raise WorkflowMgr::WorkflowLockedException, "ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}"
+
+            stale=false
+
+            # If we are on the same host as the owner of the lock, run a simple local check to see if the owner is still running
+            if Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]==lock[0][1]
+              begin
+                Process.getpgid(lock[0][0])
+              rescue Errno::ESRCH
+                stale=true
+              end
+
+            # Otherwise do a kill -0 through an ssh tunnel if the lock is 5 minutes old ## BUG, make this configurable
+            else
+              if Time.now - Time.at(lock[0][2]) > 300
+                begin
+                  SystemTimer.timeout(10) do
+                    system("ssh #{lock[0][1]} kill -0 #{lock[0][0]}")
+                    stale=$?.exitstatus!=0
+                  end
+                rescue Timeout::Error
+                  stale=true
+                end
+              end
+            end
+
+            # If the lock is stale, steal the lock
+            if stale
+              db.execute("DELETE FROM lock;")
+              db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]}',#{Time.now.to_i});")
+              STDERR.puts "WARNING: Workflowmgr pid #{Process.ppid} on host #{Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]} stole stale lock from Workflowmgr pid #{lock[0][0]} on host #{lock[0][1]}"
+            else
+              raise WorkflowMgr::WorkflowLockedException, "ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}"
+            end
           end
 
         end  # database transaction
 
+        # If an exception wasn't thrown, we got the lock
+        return true
+
       rescue WorkflowMgr::WorkflowLockedException => e
         STDERR.puts e.message
-        exit 1
+        return false
       rescue SQLite3::BusyException => e
         STDERR.puts 
         STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
         STDERR.puts "       The database is locked by SQLite."
         STDERR.puts
-        exit 1
+        return false
       end  # begin
 
     end
@@ -127,11 +165,11 @@ module WorkflowMgr
 
           lock=db.execute("SELECT * FROM lock;")      
 
-          if Process.ppid==lock[0][0] && Socket.gethostname==lock[0][1]
+          if Process.ppid==lock[0][0] && Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]==lock[0][1]
             db.execute("DELETE FROM lock;")      
           else
-            raise WorkflowMgr::WorkflowLockedException, "ERROR: Process #{Process.ppid} cannot unlock the workflow because it does not own the lock." +
-                                                        "       The workflow is already locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}."
+#            raise WorkflowMgr::WorkflowLockedException, "ERROR: Process #{Process.ppid} cannot unlock the workflow because it does not own the lock." +
+#                                                        "       The workflow is already locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}."
           end
 
         end  # database transaction
