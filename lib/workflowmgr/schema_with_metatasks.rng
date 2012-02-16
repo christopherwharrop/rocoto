@@ -294,6 +294,56 @@
           </element>
         </optional>
 
+        <!-- Zero or one walltime tag -->
+        <optional>
+          <element name="walltime">
+            <ref name="nonNegativeTime"/>
+          </element>
+        </optional>
+
+        <!-- Zero or one memory tag -->
+        <optional>
+          <element name="memory">
+            <data type="string"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one join, stdout, stderr tags -->
+        <!-- NOTE: join tag cannot be combined with either stdout or stderr tags -->
+        <optional>
+          <choice>
+            <optional>
+              <optional>
+                <element name="stdout">
+                  <data type="string"/>          
+                </element>
+              </optional>
+              <optional>
+                <element name="stderr">
+                  <data type="string"/>          
+                </element>
+              </optional>
+            </optional>
+            <element name="join">
+              <data type="string"/>          
+            </element>
+          </choice>
+        </optional>
+
+        <!-- Zero or one jobname tag -->
+        <optional>
+          <element name="jobname">
+            <data type="string"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one native tag -->
+        <optional>
+          <element name="native">
+            <data type="string"/>          
+          </element>
+        </optional>
+
         <!-- Zero or more envar tags -->
         <optional>
           <oneOrMore>

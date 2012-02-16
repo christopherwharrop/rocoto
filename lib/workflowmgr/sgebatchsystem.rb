@@ -220,12 +220,40 @@ module WorkflowMgr
             unless cmd =~/ -pe \S+ \d+/
               cmd += " -pe #{task.attributes[:queue]} #{value}"
             end           
+          when :walltime
+            cmd += " -l h_rt=#{value}"
+          when :memory
+            cmd += " -l h_vmem=#{value}"
+          when :stdout
+            cmd += " -o #{value}"
+          when :stderr
+            cmd += " -e #{value}"
+          when :join
+            cmd += " -o #{value} -j y"           
+          when :jobname
+            cmd += " -N #{value}"
+          when :native
+	    cmd += " #{value}"
         end
+      end
+
+      # Add environment vars
+      unless task.envars.empty?
+        vars = "" 
+        task.envars.each { |name,env|
+          if vars.empty?
+            vars += " -v #{name}"
+          else
+            vars += ",#{name}"
+          end
+          vars += "=\"#{env}\"" unless env.nil?
+        }
+        cmd += "#{vars}"
       end
 
       # Add the command to submit
       cmd += " #{task.attributes[:command]}"
-
+puts cmd
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
 
