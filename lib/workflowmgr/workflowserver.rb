@@ -81,7 +81,7 @@ module WorkflowMgr
           return @server.send(name,*args)
         end
       rescue Timeout::Error
-        raise "#{@server.name} server is unresponsive"
+        raise "ERROR: #{@server.class} server is unresponsive"
       end
 
     end

@@ -60,7 +60,8 @@ module WorkflowMgr
         @dbServer.dbopen
 
         # Acquire a lock on the workflow in the database
-        Process.exit unless @dbServer.lock_workflow
+        @locked=@dbServer.lock_workflow
+        Process.exit unless @locked
 
         # Set up an object to serve file stat info
         setup_filestat_server
@@ -91,7 +92,7 @@ module WorkflowMgr
 
         # Make sure we release the workflow lock in the database and shutdown the dbserver
         unless @dbServer.nil?
-          @dbServer.unlock_workflow
+          @dbServer.unlock_workflow if @locked
           @dbServer.stop! if @config.DatabaseServer
         end
 
