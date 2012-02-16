@@ -678,7 +678,7 @@ module WorkflowMgr
             # Check for maxtries violation and update counters
             if @active_jobs[taskname][cycle][:state]=="SUCCEEDED" || @active_jobs[taskname][cycle][:state]=="FAILED"
               @active_jobs[taskname][cycle][:tries]+=1
-              if @active_jobs[taskname][cycle][:tries]=="FAILED"
+              if @active_jobs[taskname][cycle][:state]=="FAILED"
                 if @active_jobs[taskname][cycle][:tries] >= task.attributes[:maxtries]
                   @active_jobs[taskname][cycle][:state]="DEAD"
                 end
@@ -905,6 +905,7 @@ module WorkflowMgr
           end
 
           # Reject this task if retries has been exceeded
+          # This code block should never execute since state should be DEAD if retries is exceeded and we should never get here for a DEAD job
           if resubmit
             if @active_jobs[task.attributes[:name]][cycle][:tries] >= task.attributes[:maxtries]
               @logServer.log(cycle,"Cannot resubmit #{task.attributes[:name]}, maximum retry count of #{task.attributes[:maxtries]} has been reached")
