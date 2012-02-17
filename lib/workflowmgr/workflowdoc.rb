@@ -291,12 +291,12 @@ module WorkflowMgr
  
        strarray=element.collect do |e|
          if e.node_type==LibXML::XML::Node::TEXT_NODE
-           CycleString.new(e.content,0)
+           CycleString.new(e.content.strip,0)
          else
            offset_sec=WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
            case e.name
              when "cyclestr"
-               formatstr=e.content.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
+               formatstr=e.content.strip.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
                CycleString.new(formatstr,offset_sec)
              else
                raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"
