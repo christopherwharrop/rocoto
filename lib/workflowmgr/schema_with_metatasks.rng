@@ -320,19 +320,21 @@
         <optional>
           <choice>
             <optional>
-              <optional>
-                <element name="stdout">
-                  <data type="string"/>          
-                </element>
-              </optional>
-              <optional>
-                <element name="stderr">
-                  <data type="string"/>          
-                </element>
-              </optional>
+              <interleave>
+                <optional>
+                  <element name="stdout">
+                    <ref name="compoundTimeString"/>
+                  </element>
+                </optional>
+                <optional>
+                  <element name="stderr">
+                    <ref name="compoundTimeString"/>
+                  </element>
+                </optional>
+              </interleave>
             </optional>
             <element name="join">
-              <data type="string"/>          
+              <ref name="compoundTimeString"/>
             </element>
           </choice>
         </optional>
@@ -340,14 +342,14 @@
         <!-- Zero or one jobname tag -->
         <optional>
           <element name="jobname">
-            <data type="string"/>          
+            <ref name="compoundTimeString"/>
           </element>
         </optional>
 
         <!-- Zero or one native tag -->
         <optional>
           <element name="native">
-            <data type="string"/>          
+            <ref name="compoundTimeString"/>
           </element>
         </optional>
 
