@@ -7,12 +7,12 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class DBProxy
+  # Class LogProxy
   #
   ##########################################
-  class DBProxy
+  class LogProxy
 
-    require 'workflowmgr/workflowdb'
+    require 'workflowmgr/workflowlog'
     require 'system_timer'
     require 'drb'
 
@@ -21,14 +21,14 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(dbFile,config)
+    def initialize(log,config)
 
-      # Store the database creation parameters
-      @dbFile=dbFile
+      # Store the log creation parameters
+      @log=log
       @config=config
 
-      # Initialize the database
-      initdb
+      # Initialize the log
+      initlog
 
     end
 
@@ -42,63 +42,59 @@ module WorkflowMgr
       retries=0
       begin
         SystemTimer.timeout(60) do
-          return @dbServer.send(name,*args)
+          return @logServer.send(name,*args)
         end
       rescue DRb::DRbConnError
         if retries < 1
           retries+=1
-          puts "*** WARNING! *** Database server process died.  Attempting to restart and try again."
-          initdb
+          puts "*** WARNING! *** Log server process died.  Attempting to restart and try again."
+          initlog
           retry
         else
-          raise "*** ERROR! *** Database server process died.  #{retries} attempts to restart the server have failed, giving up."
+          raise "*** ERROR! *** Log server process died.  #{retries} attempts to restart the server have failed, giving up."
 	end
       rescue Timeout::Error
-        raise "*** ERROR! *** Database server process is unresponsive and is probably wedged."
+        raise "*** ERROR! *** Log server process is unresponsive and is probably wedged."
       end
 
     end
-
 
   private
 
     ##########################################
     #
-    # initdb
+    # initlog
     #
     ##########################################
-    def initdb
+    def initlog
 
       # Get the WFM install directory
       wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
-      # Create the database object
       begin
 
-	# Initialize the database but do not open it (call dbopen to open it)
-	database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@dbFile)
-
-	if @config.DatabaseServer
-          @dbServer=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowdbserver")
-          @dbServer.setup(database)
-	else
-          @dbServer=database
+        # Set up an object to serve requests for batch queue system services
+        if @config.LogServer
+          @logServer=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowlogserver")
+          @logServer.setup(@log)
+        else
+          @logServer=@log
         end
 
       rescue
 
         # Print out the exception message
-	puts $!
+        puts $!
 
-        # Try to stop the dbserver if something went wrong
-	if @config.DatabaseServer
-          @dbServer.stop! unless @dbServer.nil?
+        # Try to stop the log server if something went wrong
+        if @config.LogServer
+          @logServer.stop! unless @logServer.nil?
         end
 
       end
 
     end
 
-  end  # Class DBProxy
+  end  # Class LogProxy
 
 end  # Module WorkflowMgr

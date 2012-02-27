@@ -18,7 +18,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/workflowoption'
     require 'workflowmgr/launchserver'
-    require 'workflowmgr/workflowlog'
+    require 'workflowmgr/logproxy'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/dbproxy'
     require 'workflowmgr/cycledef'
@@ -117,41 +117,6 @@ module WorkflowMgr
 
   private
 
-
-    ##########################################
-    #
-    # setup_db_server
-    #
-    ##########################################
-    def setup_db_server
-
-      begin
-
-        # Initialize the database but do not open it (call dbopen to open it)
-        database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@options.database)
-
-        if @config.DatabaseServer
-	  @dbServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowdbserver")
-          @dbServer.setup(database)
-	else
-          @dbServer=database
-        end
-
-      rescue
-
-        # Print out the exception message
-        puts $!
-
-        # Try to stop the dbserver if something went wrong
-        if @config.DatabaseServer
-          @dbServer.stop! unless @dbServer.nil?
-        end
-
-      end
-
-
-    end
-
     ##########################################
     #
     # setup_filestat_server
@@ -220,38 +185,6 @@ module WorkflowMgr
 
     ##########################################
     #
-    # setup_log_server
-    #
-    ##########################################
-    def setup_log_server(log)
-
-      begin
-
-        # Set up an object to serve requests for batch queue system services
-        if @config.LogServer
-          @logServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowlogserver")
-          @logServer.setup(log)
-        else
-          @logServer=log
-        end
-
-      rescue
-
-        # Print out the exception message
-        puts $!
-
-        # Try to stop the log server if something went wrong
-        if @config.LogServer
-          @logServer.stop! unless @logServer.nil?
-        end
-
-      end    
-
-    end
-
-
-    ##########################################
-    #
     # build_workflow
     #
     ##########################################
@@ -284,7 +217,7 @@ module WorkflowMgr
       setup_bq_server(workflowdoc.scheduler)
 
       # Get the log parameters
-      setup_log_server(workflowdoc.log)
+      @logServer=LogProxy.new(workflowdoc.log,@config)
 
       # Get the cycle defs
       @cycledefs=workflowdoc.cycledefs
