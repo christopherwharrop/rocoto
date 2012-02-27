@@ -20,7 +20,7 @@ module WorkflowMgr
     require 'workflowmgr/launchserver'
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdoc'
-    require 'workflowmgr/workflowdb'
+    require 'workflowmgr/dbproxy'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/dependency'
     require 'workflowmgr/proxybatchsystem'
@@ -42,7 +42,7 @@ module WorkflowMgr
       @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
       # Set up an object to serve the workflow database (but do not open the database)
-      setup_db_server
+      @dbServer=DBProxy.new(@options.database,@config)
 
     end  # initialize
 
