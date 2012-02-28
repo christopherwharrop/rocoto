@@ -75,8 +75,16 @@ module WorkflowMgr
 
         # Set up an object to serve requests for batch queue system services
         if @config.LogServer
+
+          # Ignore SIGINT while launching server process
+          Signal.trap("INT",nil)
+
           @logServer=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowlogserver")
           @logServer.setup(@log)
+
+          # Restore default SIGINT handler
+          Signal.trap("INT","DEFAULT")
+
         else
           @logServer=@log
         end

@@ -20,15 +20,17 @@ $:.unshift("#{__WFMDIR__}/sqlite3-ruby/ext")
 require 'drb'
 require 'workflowmgr/workflowserver'
 
+# Turn off SIGINT here because we do not want pending signals from the
+# parent to shutdown the server.  The parent will catch the signal and
+# shutdown the servers correctly.
+Signal.trap("INT",nil)
+
 # Start a Drb Server that will serve the workflow log object
 DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 
 # Write the URI to /tmp so the client can connect
 uri_file="/tmp/workflowmgr_#{$$}_uri"
 File.open(uri_file,"w") { |file| file.puts "#{DRb.uri}" }
-
-# Allow INT signal to cleanly terminate the server process
-trap("INT") { DRb.stop_service }
 
 # Wait forever for the server to quit
 DRb.thread.join

@@ -79,8 +79,17 @@ module WorkflowMgr
 	database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@dbFile)
 
 	if @config.DatabaseServer
+
+          # Ignore SIGINT while launching server process
+          Signal.trap("INT",nil)
+
+          # Launch server process
           @dbServer=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowdbserver")
           @dbServer.setup(database)
+
+          # Restore default SIGINT handler
+          Signal.trap("INT","DEFAULT")
+
 	else
           @dbServer=database
         end
