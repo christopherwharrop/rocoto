@@ -44,6 +44,9 @@ module WorkflowMgr
       # Set up an object to serve the workflow database (but do not open the database)
       @dbServer=DBProxy.new(@options.database,@config)
 
+      # Initialize the workflow lock
+      @locked=false
+
     end  # initialize
 
 
