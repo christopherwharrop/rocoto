@@ -20,7 +20,7 @@ module WorkflowMgr
     require 'workflowmgr/launchserver'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/dbproxy'
-    require 'workflowmgr/filestatproxy'
+    require 'workflowmgr/workflowioproxy'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/dependency'
     require 'workflowmgr/proxybatchsystem'
@@ -67,7 +67,7 @@ module WorkflowMgr
         Process.exit unless @locked
 
         # Set up an object to serve file stat info
-        @fileStatServer=FileStatProxy.new(@dbServer,@config)        
+        @fileStatServer=WorkflowIOProxy.new(@dbServer,@config)        
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
