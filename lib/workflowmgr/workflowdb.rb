@@ -623,6 +623,111 @@ module WorkflowMgr
 
     ##########################################
     #
+    # get_downpaths
+    #
+    ##########################################
+    def get_downpaths
+
+      begin
+
+        dbdownpaths=[]
+
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
+
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
+
+          # Retrieve all downpaths from the job table
+          dbdownpaths=db.execute("SELECT path,downdate,host,pid FROM downpaths;")
+
+        end  # database transaction
+
+        # Return an array of downpaths
+        dbdownpaths.collect! { |downpath| {:path=>downpath[0], :downtime=>Time.at(downpath[1]).getgm, :host=>downpath[2], :pid=>downpath[3]} }
+
+        # Return downpaths hash
+        return dbdownpaths
+
+      rescue SQLite3::BusyException => e
+        STDERR.puts
+        STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
+        STDERR.puts "       The database is locked by SQLite."
+        STDERR.puts
+        exit 1
+      end  # begin
+
+    end
+
+
+    ##########################################
+    #
+    # add_downpaths
+    #
+    ##########################################
+    def add_downpaths(downpaths)
+
+      begin
+
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
+
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
+
+          # Add or update each job in the database
+          downpaths.each do |downpath|
+            db.execute("INSERT INTO downpaths VALUES (NULL,'#{downpath[:path]}',#{downpath[:downtime].to_i},#{downpath[:host]},#{downpath[:pid]});")
+          end
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException => e
+        STDERR.puts
+        STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
+        STDERR.puts "       The database is locked by SQLite."
+        STDERR.puts
+        exit 1
+      end  # begin
+
+    end
+
+
+    ##########################################
+    #
+    # delete_downpaths
+    #
+    ##########################################
+    def delete_downpaths(downpaths)
+
+      begin
+
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
+
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
+
+          # Delete each downpath from the database
+          downpaths.each do |downpath|
+            db.execute("DELETE FROM downpaths WHERE path=#{downpath[:path]};")
+          end
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException => e
+        STDERR.puts
+        STDERR.puts "ERROR: Could not open workflow database file '#{@database_file}'"
+        STDERR.puts "       The database is locked by SQLite."
+        STDERR.puts
+        exit 1
+      end  # begin
+
+    end
+
+
+    ##########################################
+    #
     # get_tables
     #
     ##########################################
@@ -715,6 +820,11 @@ module WorkflowMgr
      # Create the jobs table
       unless tables.member?("jobs")
         db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER);")
+     end
+
+     # Create the downpaths table
+      unless tables.member?("downpaths")
+        db.execute("CREATE TABLE downpaths (id INTEGER PRIMARY KEY, path VARCHAR(1024), downdate DATETIME, host VARCHAR[64], pid INTEGER);")
      end
 
     end  # create_tables
