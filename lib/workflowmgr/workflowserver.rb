@@ -27,6 +27,7 @@ module WorkflowMgr
 
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdb'
+    require 'workflowmgr/workflowio'
     require 'workflowmgr/proxybatchsystem'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/compoundtimestring'
@@ -70,15 +71,30 @@ module WorkflowMgr
 
     ##########################################
     #
+    # respond_to?
+    # 
+    ##########################################
+    def respond_to?(name, priv=false)
+
+      if @setup
+        return @server.respond_to?(name,priv)
+      else
+        super
+      end
+
+    end
+
+    ##########################################
+    #
     # method_missing
     # 
     ##########################################
-    def method_missing(name,*args)
+    def method_missing(name,*args,&block)
 
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
       begin
         SystemTimer.timeout(10) do
-          return @server.send(name,*args)
+          return @server.send(name,*args,&block)
         end
       rescue Timeout::Error
         raise "ERROR: #{@server.class} server is unresponsive"

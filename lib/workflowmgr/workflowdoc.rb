@@ -26,7 +26,10 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(workflowdoc)
+    def initialize(workflowdoc,fileStatServer)
+
+      # Set the fileStatServer
+      @fileStatServer=fileStatServer
 
       # Get the text from the xml file and put it into a string
       xmlstring=IO.readlines(workflowdoc,nil)[0]
@@ -155,7 +158,7 @@ module WorkflowMgr
       verbosity=lognode.attributes['verbosity']
       verbosity=verbosity.to_i unless verbosity.nil?
 
-      return WorkflowLog.new(path,verbosity)
+      return WorkflowLog.new(path,verbosity,@fileStatServer)
 
     end
 

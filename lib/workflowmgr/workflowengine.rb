@@ -18,9 +18,9 @@ module WorkflowMgr
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/workflowoption'
     require 'workflowmgr/launchserver'
-    require 'workflowmgr/logproxy'
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/dbproxy'
+    require 'workflowmgr/filestatproxy'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/dependency'
     require 'workflowmgr/proxybatchsystem'
@@ -67,7 +67,7 @@ module WorkflowMgr
         Process.exit unless @locked
 
         # Set up an object to serve file stat info
-        setup_filestat_server
+        @fileStatServer=FileStatProxy.new(@dbServer,@config)        
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -104,11 +104,6 @@ module WorkflowMgr
           @fileStatServer.stop! if @config.FileStatServer
         end
 
-        # Make sure to shut down the workflow log server
-        unless @logServer.nil?
-          @logServer.stop! if @config.LogServer
-        end
-
         # Shut down the batch queue server if it is no longer needed
         unless @bqServer.nil?
           @bqServer.stop! if @config.BatchQueueServer && !@bqServer.running?
@@ -119,37 +114,6 @@ module WorkflowMgr
     end  # run
 
   private
-
-    ##########################################
-    #
-    # setup_filestat_server
-    #
-    ##########################################
-    def setup_filestat_server
-
-      begin
-
-        # Set up an object to serve requests for file stat info
-        if @config.FileStatServer
-          @fileStatServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowfilestatserver")
-          @fileStatServer.setup(File)
-        else
-          @fileStatServer=File
-        end
-
-      rescue
-
-        # Print out the exception message
-        puts $!
-
-        # Try to stop the file stat server if something went wrong
-        if @config.FileStatServer
-          @fileStatServer.stop! unless @fileStatServer.nil?
-        end
-
-      end
-
-    end
 
 
     ##########################################
@@ -195,7 +159,7 @@ module WorkflowMgr
 
       # Open the workflow document, parse it, and validate it
       if @fileStatServer.exists?(@options.workflowdoc)
-        workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc)
+        workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@fileStatServer)
       else
         puts $!
         raise "ERROR: Could not read workflow document '#{@options.workflowdoc}'"
@@ -220,7 +184,7 @@ module WorkflowMgr
       setup_bq_server(workflowdoc.scheduler)
 
       # Get the log parameters
-      @logServer=LogProxy.new(workflowdoc.log,@config)
+      @logServer=workflowdoc.log
 
       # Get the cycle defs
       @cycledefs=workflowdoc.cycledefs
@@ -230,47 +194,6 @@ module WorkflowMgr
 
       # Get the taskdep cycle offsets
       @taskdep_cycle_offsets=workflowdoc.taskdep_cycle_offsets
-
-    end
-
-
-    ##########################################
-    #
-    # build_dependency
-    #
-    ##########################################
-    def build_dependency(node)
-
-      # Build a dependency tree
-      node.each { |nodekey,nodeval|
-        case nodekey
-          when :not
-            return Dependency_NOT_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
-          when :and
-            return Dependency_AND_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
-          when :or
-            return Dependency_OR_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
-          when :nand
-            return Dependency_NAND_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
-          when :nor
-            return Dependency_NOR_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
-          when :xor
-            return Dependency_XOR_Operator.new(nodeval.collect { |operand| build_dependency(operand) } )
-          when :some
-            return Dependency_SOME_Operator.new(nodeval.collect { |operand| build_dependency(operand) }, node[:threshold] )
-          when :datadep
-            age=WorkflowMgr.ddhhmmss_to_seconds(node[:age])
-            return DataDependency.new(CompoundTimeString.new(nodeval),age,@fileStatServer)
-          when :taskdep
-            task=@tasks.find {|t| t[:id]==nodeval }
-            status=node[:status] | "SUCCEEDED"
-            cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(node[:cycle_offset])
-            
-            return TaskDependency.new(task,status,cycle_offset)
-          when :timedep
-            return TimeDependency.new(CompoundTimeString.new(nodeval))
-        end
-      }
 
     end
 
@@ -784,7 +707,7 @@ module WorkflowMgr
       end
 
       # Update the expired cycles in the database 
-      @dbServer.update_cycles(expired_cycles)
+      @dbServer.update_cycles(expired_cycles) unless expired_cycles.empty?
 
       # Update the active cycle list
       @active_cycles=active_cycles

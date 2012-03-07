@@ -12,7 +12,6 @@ module WorkflowMgr
   ##########################################
   class WorkflowLog
 
-    require 'fileutils'
     require 'socket'
     require 'workflowmgr/compoundtimestring'
 
@@ -21,10 +20,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(path,verbosity)
+    def initialize(path,verbosity,fileStatServer)
 
       @path=path
       @verbosity=verbosity || 0
+      @fileStatServer=fileStatServer
 
     end
 
@@ -37,14 +37,8 @@ module WorkflowMgr
     def log(cycle,msg,level=0)
 
       if level <= @verbosity
-
         logname=@path.to_s(cycle)
-        host=Socket.gethostname
-        FileUtils.mkdir_p(File.dirname(logname))
-        File.open(logname,"a+") do |logfile|
-          logfile.puts("#{Time.now} :: #{host} :: #{msg}")
-        end
-
+        @fileStatServer.log(logname,msg)
       end
 
     end
