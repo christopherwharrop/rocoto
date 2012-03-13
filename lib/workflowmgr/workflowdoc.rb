@@ -32,7 +32,7 @@ module WorkflowMgr
       @fileStatServer=fileStatServer
 
       # Get the text from the xml file and put it into a string
-      xmlstring=IO.readlines(workflowdoc,nil)[0]
+      xmlstring=@fileStatServer.ioreadlines(workflowdoc)
 
       # Parse the workflow xml string, set option to replace entities
       @workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
