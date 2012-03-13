@@ -173,7 +173,7 @@ module WorkflowMgr
       cycles=[]
       cyclenodes=@workflowdoc.find('/workflow/cycledef')
       cyclenodes.each { |cyclenode|
-        cyclefields=cyclenode.content
+        cyclefields=cyclenode.content.strip
         nfields=cyclefields.split.size
         group=cyclenode.attributes['group']
         if nfields==3
