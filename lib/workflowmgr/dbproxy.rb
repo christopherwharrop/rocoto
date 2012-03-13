@@ -30,35 +30,35 @@ module WorkflowMgr
       # Initialize the database
       initdb
 
-    end
+      # Define methods
+      (WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").instance_methods-Object.instance_methods+[:stop!]).each do |m|
+        (class << self; self; end).instance_eval do
+          define_method m do |*args|
+            retries=0
+            begin
+              SystemTimer.timeout(60) do
+                @dbServer.send(m,*args)
+              end
+            rescue DRb::DRbConnError
+              if retries < 1
+                retries+=1
+                puts "*** WARNING! *** WorkflowDB server process died.  Attempting to restart and try again."
+                initdb
+                retry
+              else
+                raise "*** ERROR! *** WorkflowDB server process died.  #{retries} attempts to restart the server have failed, giving up."
+              end
+            rescue Timeout::Error
+              raise "*** ERROR! *** WorkflowDB server process is unresponsive and is probably wedged."
+            end
 
-    ##########################################
-    #
-    # method_missing
-    #
-    ##########################################
-    def method_missing(name,*args)
-
-      retries=0
-      begin
-        SystemTimer.timeout(60) do
-          return @dbServer.send(name,*args)
+          end
         end
-      rescue DRb::DRbConnError
-        if retries < 1
-          retries+=1
-          puts "*** WARNING! *** Database server process died.  Attempting to restart and try again."
-          initdb
-          retry
-        else
-          raise "*** ERROR! *** Database server process died.  #{retries} attempts to restart the server have failed, giving up."
-	end
-      rescue Timeout::Error
-        raise "*** ERROR! *** Database server process is unresponsive and is probably wedged."
       end
 
-    end
 
+
+    end
 
   private
 
