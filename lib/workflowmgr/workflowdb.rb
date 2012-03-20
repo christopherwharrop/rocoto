@@ -677,7 +677,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           downpaths.each do |downpath|
-            db.execute("INSERT INTO downpaths VALUES (NULL,'#{downpath[:path]}',#{downpath[:downtime].to_i},#{downpath[:host]},#{downpath[:pid]});")
+            db.execute("INSERT INTO downpaths VALUES (NULL,'#{downpath[:path]}',#{downpath[:downtime].to_i},'#{downpath[:host]}',#{downpath[:pid]});")
           end
 
         end  # database transaction
@@ -710,7 +710,7 @@ module WorkflowMgr
 
           # Delete each downpath from the database
           downpaths.each do |downpath|
-            db.execute("DELETE FROM downpaths WHERE path=#{downpath[:path]};")
+            db.execute("DELETE FROM downpaths WHERE path='#{downpath[:path]}';")
           end
 
         end  # database transaction
