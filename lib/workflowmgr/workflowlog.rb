@@ -14,6 +14,7 @@ module WorkflowMgr
 
     require 'socket'
     require 'workflowmgr/compoundtimestring'
+    require 'workflowmgr/utilities'
 
     #####################################################
     #
@@ -38,7 +39,13 @@ module WorkflowMgr
 
       if level <= @verbosity
         logname=@path.to_s(cycle)
-        @workflowIOServer.log(logname,msg)
+        begin
+          @workflowIOServer.log(logname,msg)
+        rescue WorkflowIOHang
+          puts $!
+          puts "!!! WARNING !!! Cannot write the following log message to #{logname} because it resides on an unresponsive file system!"
+          puts "#{Time.now} :: #{Socket.gethostname} :: #{msg}"
+        end
       end
 
     end

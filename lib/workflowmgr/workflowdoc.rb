@@ -32,7 +32,16 @@ module WorkflowMgr
       @workflowIOServer=workflowIOServer
 
       # Get the text from the xml file and put it into a string
-      xmlstring=@workflowIOServer.ioreadlines(workflowdoc)
+      begin
+        if @workflowIOServer.exists?(workflowdoc)
+          xmlstring=@workflowIOServer.ioreadlines(workflowdoc)
+        else
+          raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
+        end
+      rescue WorkflowIOHang
+        puts $!
+        raise "Cannot read XML file, #{workflowdoc}, because it resides on an unresponsive filesystem"
+      end
 
       # Parse the workflow xml string, set option to replace entities
       @workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)

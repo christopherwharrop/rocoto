@@ -158,12 +158,7 @@ module WorkflowMgr
     def build_workflow
 
       # Open the workflow document, parse it, and validate it
-      if @workflowIOServer.exists?(@options.workflowdoc)
-        workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@workflowIOServer)
-      else
-        puts $!
-        raise "ERROR: Could not read workflow document '#{@options.workflowdoc}'"
-      end
+      workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@workflowIOServer)
 
       # Get the realtime flag
       @realtime=workflowdoc.realtime?
