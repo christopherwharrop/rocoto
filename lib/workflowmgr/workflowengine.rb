@@ -371,7 +371,6 @@ module WorkflowMgr
 
       # Get all jobs whose cycle is in the job_cycle list
       @active_jobs=@dbServer.get_jobs(job_cycles)
-#      @active_jobs=@dbServer.get_jobs(@active_cycles.collect { |c| c[:cycle] })
 
     end
 

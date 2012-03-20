@@ -193,8 +193,16 @@ module WorkflowMgr
 
         # Set up an object to serve requests for batch queue system services
         if @config.WorkflowIOServer
+
+          # Ignore SIGINT while launching server process
+          Signal.trap("INT",nil)
+
           @workflowIOServer,@workflowIOHost,@workflowIOPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowioserver")
           @workflowIOServer.setup(workflowIO)
+
+          # Restore default SIGINT handler
+          Signal.trap("INT","DEFAULT")
+
         else
           @workflowIOServer=workflowIO
         end
