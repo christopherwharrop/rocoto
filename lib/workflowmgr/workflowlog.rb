@@ -20,11 +20,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(path,verbosity,fileStatServer)
+    def initialize(path,verbosity,workflowIOServer)
 
       @path=path
       @verbosity=verbosity || 0
-      @fileStatServer=fileStatServer
+      @workflowIOServer=workflowIOServer
 
     end
 
@@ -38,7 +38,7 @@ module WorkflowMgr
 
       if level <= @verbosity
         logname=@path.to_s(cycle)
-        @fileStatServer.log(logname,msg)
+        @workflowIOServer.log(logname,msg)
       end
 
     end

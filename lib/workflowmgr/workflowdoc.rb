@@ -26,13 +26,13 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(workflowdoc,fileStatServer)
+    def initialize(workflowdoc,workflowIOServer)
 
-      # Set the fileStatServer
-      @fileStatServer=fileStatServer
+      # Set the workflowIOServer
+      @workflowIOServer=workflowIOServer
 
       # Get the text from the xml file and put it into a string
-      xmlstring=@fileStatServer.ioreadlines(workflowdoc)
+      xmlstring=@workflowIOServer.ioreadlines(workflowdoc)
 
       # Parse the workflow xml string, set option to replace entities
       @workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
@@ -158,7 +158,7 @@ module WorkflowMgr
       verbosity=lognode.attributes['verbosity']
       verbosity=verbosity.to_i unless verbosity.nil?
 
-      return WorkflowLog.new(path,verbosity,@fileStatServer)
+      return WorkflowLog.new(path,verbosity,@workflowIOServer)
 
     end
 

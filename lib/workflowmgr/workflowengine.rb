@@ -67,7 +67,7 @@ module WorkflowMgr
         Process.exit unless @locked
 
         # Set up an object to serve file stat info
-        @fileStatServer=WorkflowIOProxy.new(@dbServer,@config)        
+        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)        
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -100,8 +100,8 @@ module WorkflowMgr
         end
 
         # Make sure to shut down the workflow file stat server
-        unless @fileStatServer.nil?
-          @fileStatServer.stop! if @config.FileStatServer
+        unless @workflowIOServer.nil?
+          @workflowIOServer.stop! if @config.WorkflowIOServer
         end
 
         # Shut down the batch queue server if it is no longer needed
@@ -158,8 +158,8 @@ module WorkflowMgr
     def build_workflow
 
       # Open the workflow document, parse it, and validate it
-      if @fileStatServer.exists?(@options.workflowdoc)
-        workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@fileStatServer)
+      if @workflowIOServer.exists?(@options.workflowdoc)
+        workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@workflowIOServer)
       else
         puts $!
         raise "ERROR: Could not read workflow document '#{@options.workflowdoc}'"
@@ -773,7 +773,7 @@ module WorkflowMgr
 
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
-            next unless task.dependency.resolved?(cycle,@active_jobs,@fileStatServer)
+            next unless task.dependency.resolved?(cycle,@active_jobs,@workflowIOServer)
           end
 
           # Reject this task if retries has been exceeded
