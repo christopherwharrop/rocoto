@@ -5,6 +5,15 @@
 ##########################################
 module WorkflowMgr
 
+  ##########################################
+  #
+  # Class WorkflowIOHang
+  #
+  ##########################################
+  class WorkflowIOHang < RuntimeError
+  end
+
+
   ##########################################  
   #
   # WorkflowMgr.ddhhmmss_to_seconds

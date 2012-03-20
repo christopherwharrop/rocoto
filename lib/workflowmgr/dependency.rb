@@ -12,6 +12,8 @@ module WorkflowMgr
   ##########################################
   class Dependency
 
+    require 'workflowmgr/utilities'
+
     #####################################################
     #
     # initialize
@@ -30,7 +32,12 @@ module WorkflowMgr
     #####################################################
     def resolved?(cycle,jobList,fileStatServer)
 
-      return(@root.resolved?(cycle,jobList,fileStatServer))
+      begin
+        return(@root.resolved?(cycle,jobList,fileStatServer))
+      rescue WorkflowIOHang
+        puts $!
+        return false
+      end
 
     end
 

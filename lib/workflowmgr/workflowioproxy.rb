@@ -13,6 +13,7 @@ module WorkflowMgr
   class WorkflowIOProxy
 
     require 'workflowmgr/workflowio'
+    require 'workflowmgr/utilities'
     require 'system_timer'
     require 'drb'
 
@@ -62,7 +63,7 @@ module WorkflowMgr
               @newdownpaths.each do |downpath|
                 if downpath[:path]==args[0][0,downpath[:path].length]
                   # Don't try to access the path because we just detected that accesses to it hang.  Raise exception.
-                  raise "!!! WARNING !!! Cannot attempt to access #{args[0]}, filesystem unresponsive"
+                  raise WorkflowIOHang, "!!! WARNING !!! Cannot attempt to access #{args[0]}, filesystem unresponsive"
                 end
               end
             end
@@ -73,14 +74,14 @@ module WorkflowMgr
                 if downpath[:path]==args[0][0,downpath[:path].length]
 
                   # Attempt to kill the process that previously hung
-                  system("ssh #{downpath[:host]} kill #{downpath[:pid]} 2>&1 > /dev/null")                  
+                  system("ssh #{downpath[:host]} kill -9 #{downpath[:pid]} 2>&1 > /dev/null")                  
 
                   # Check to see if the process that previously hung is still alive
                   system("ssh #{downpath[:host]} kill -0 #{downpath[:pid]} 2>&1 > /dev/null")        
                   if $?.exitstatus==0
 
                     # The process is still hung, so don't try to access the path because it's still bad.  Raise exception.
-                    raise "!!! WARNING !!! Cannot attempt to access #{args[0]}, filesystem unresponsive"
+                    raise WorkflowIOHang, "!!! WARNING !!! Cannot attempt to access #{args[0]}, filesystem unresponsive"
 
                   else
 
@@ -122,19 +123,29 @@ module WorkflowMgr
               argpath=args[0].split("/")[0..-2]
               commonpath=[]
               downtime=Time.now
-              @downpaths.each do |path|
+              downpathmatch=nil
+              (@downpaths+@newdownpaths).each do |path|
                 downpath=path[:path].split("/")
                 argpath.each_with_index { |p,i| commonpath << p if argpath[i]==downpath[i] }
                 downtime=path[:downtime]
-                break if commonpath.size > 3\
+                if commonpath.size > 3
+                  downpathmatch=path
+                  break
+                end
               end # @downpaths.each
 
               # If we found a known down path that matches the current arg path
               if commonpath.size > 3
 
                 # Remove the known down path from the database
-                @dbServer.delete_downpaths([path])
-                @downpaths.delete(path)
+                @dbServer.delete_downpaths([downpathmatch])
+                @downpaths.delete(downpathmatch)
+                @newdownpaths.delete(downpathmatch)
+
+                # Send a kill signal to process associated with the known down path from the database
+                # The kill may not work immediately, but hopefully it will remain pending and will be 
+                # processed once the filesystem comes back to life
+                system("ssh #{downpathmatch[:host]} kill -9 #{downpathmatch[:pid]} 2>&1 > /dev/null")               
 
                 # Add the common portion of the paths to the database
                 newdownpath={:path=>commonpath.join("/"), :downtime=>downtime, :host=>@workflowIOHost, :pid=>@workflowIOPID }
@@ -153,7 +164,7 @@ module WorkflowMgr
               # Restart the workflowIO server
               workflowIO_init
 
-              raise "*** ERROR! *** WorkflowIO server process is unresponsive and is probably wedged."
+              raise WorkflowIOHang, "*** ERROR! *** WorkflowIO server process is unresponsive and is probably wedged."
 
             end  # begin
 
