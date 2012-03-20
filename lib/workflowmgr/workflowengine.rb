@@ -129,7 +129,7 @@ module WorkflowMgr
         batchsystem=ProxyBatchSystem.new(batchSystem)
 
         if @config.BatchQueueServer
-          @bqServer=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowbqserver")
+          @bqServer,@bqHost,@bqPID=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowbqserver")
           @bqServer.setup(batchsystem)
         else
           @bqServer=batchsystem

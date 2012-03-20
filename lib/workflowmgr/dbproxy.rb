@@ -84,7 +84,7 @@ module WorkflowMgr
           Signal.trap("INT",nil)
 
           # Launch server process
-          @dbServer=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowdbserver")
+          @dbServer,@dbHost,@dbPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowdbserver")
           @dbServer.setup(database)
 
           # Restore default SIGINT handler

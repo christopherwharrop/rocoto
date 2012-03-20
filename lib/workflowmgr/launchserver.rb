@@ -7,6 +7,7 @@ module WorkflowMgr
 
   require 'drb'
   require 'system_timer'
+  require 'socket'
 
   ##########################################
   #
@@ -57,7 +58,7 @@ module WorkflowMgr
       end
 
       # Connect to the server process and return the object being served
-      return DRbObject.new(nil,uri)
+      return [ DRbObject.new(nil,uri), Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3], server_pid ]
 
     end
 
