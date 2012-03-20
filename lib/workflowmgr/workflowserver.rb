@@ -65,7 +65,9 @@ module WorkflowMgr
     #
     ##########################################
     def stop!
+
       DRb.stop_service
+
     end
 
 
@@ -97,7 +99,7 @@ module WorkflowMgr
           return @server.send(name,*args,&block)
         end
       rescue Timeout::Error
-        raise "ERROR: #{@server.class} server is unresponsive"
+        raise Timeout::Error,"ERROR: #{@server.class} server is unresponsive"
       end
 
     end
