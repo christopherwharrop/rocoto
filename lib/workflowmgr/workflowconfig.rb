@@ -20,7 +20,6 @@ module WorkflowMgr
                     :WorkflowDocType => "XML",
                     :DatabaseServer => true,
                     :BatchQueueServer => true,
-                    :LogServer => true,
                     :WorkflowIOServer => true,
                     :MaxUnknowns => 3
                    }
