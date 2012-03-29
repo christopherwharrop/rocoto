@@ -6,7 +6,7 @@
 module WorkflowMgr
 
   require 'drb'
-  require 'system_timer'
+  require 'SystemTimer/system_timer'
   require 'socket'
 
   ##########################################

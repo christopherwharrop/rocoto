@@ -9,12 +9,9 @@ end
 
 # Add include paths for WFM and libxml-ruby libraries
 $:.unshift("#{__WFMDIR__}/lib")
-$:.unshift("#{__WFMDIR__}/libxml-ruby/lib")
-$:.unshift("#{__WFMDIR__}/libxml-ruby/ext/libxml")
-$:.unshift("#{__WFMDIR__}/sqlite3-ruby/lib")
-$:.unshift("#{__WFMDIR__}/sqlite3-ruby/ext")
-$:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/lib")
-$:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/ext/system_timer")
+$:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
+$:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
+$:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'

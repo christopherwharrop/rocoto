@@ -20,7 +20,7 @@ module WorkflowMgr
   ##########################################
   class WorkflowSQLite3DB
 
-    require 'sqlite3'
+    require "sqlite3"
     require "socket"
     require "system_timer"
 

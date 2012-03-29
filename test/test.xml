@@ -4,70 +4,50 @@
  <!ENTITY CYCLE_TIME "@Y@m@d@H">
 ]>
 
-<workflow realtime="f" scheduler="sge" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="10">
+<workflow realtime="f" scheduler="sge" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
 
-  <log verbosity="10">/home/harrop/workflowmgr_dev/test/<cyclestr offset="2:00:00">test_@Y@m@d@H@M.log</cyclestr></log>
+  <log verbosity="0">/home/harrop/workflowmgr_dev/test/<cyclestr offset="2:00:00">test_@Y@m@d@H@M.log</cyclestr></log>
 
   <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
 
-  <task name="test1" maxtries="3">
+  <metatask>
 
-    <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_%X @^p</cyclestr></command>
+    <var id="x">1 2 3 4 5 6 7 8 9 10</var>
 
-    <account>jetmgmt</account>
+    <task name="test#x#" maxtries="3" cycledefs="group1">
 
-    <queue>nserial</queue>
+      <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_@X @p</cyclestr></command>
 
-    <cores>1</cores>
+      <account>jetmgmt</account>
 
-    <envar>
-      <name><cyclestr>test1_@H</cyclestr></name>
-      <value><cyclestr offset="1:00">hello world! &CYCLE_TIME;</cyclestr>This is some text<cyclestr offset="30:00">This is a 2nd cyclestr</cyclestr></value>
-    </envar>
-    <envar>
-      <name><cyclestr>test2_@H</cyclestr></name>
-      <value><cyclestr offset="1:00:00">goodbye cruel world! %X</cyclestr></value>
-    </envar>
-    <envar>
-      <name>name1</name><value>value1</value>
-    </envar>
+      <queue>nserial</queue>
 
-    <dependency>
-      <or>
-        <and>
-          <datadep age="2:00">/lfs1/jetmgmt/harrop/workflowmgr_dev/test/test.dat1</datadep>
-          <datadep age="2:00">/lfs1/jetmgmt/harrop/workflowmgr_dev/test/test.dat2</datadep>
-        </and>
-<!--
-        <and>
-          <timedep>20111031120001</timedep>
-          <timedep>20111031120003</timedep>
-        </and>
--->
-      </or>
-    </dependency>
+      <cores>1</cores>
 
-  </task>
+      <walltime>00:00:10</walltime>
 
+      <join>/home/harrop/test/log/test_#x#.join</join>
 
-  <task name="test2">
+      <memory>512M</memory>
 
-    <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_%X @^p</cyclestr></command>
+      <jobname>test#x#</jobname>
 
-    <account>jetmgmt</account>
+      <native>-cwd</native>
 
-    <queue>nserial</queue>
+      <envar>
+        <name>START_TIME</name><value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
 
-    <cores>1</cores>
+      <dependency>
+        <some threshold="0.5">
+          <datadep>/lfs1/jetmgmt/harrop/test/test1.dat</datadep>
+          <datadep>/lfs1/jetmgmt/harrop/test/test2.dat</datadep>
+          <datadep>/lfs1/jetmgmt/harrop/test/test3.dat</datadep>
+        </some>
+      </dependency>
 
-    <envar><name><cyclestr>test1_@H</cyclestr></name><value><cyclestr>hello world! &CYCLE_TIME;</cyclestr></value></envar>
-    <envar><name><cyclestr>test2_@H</cyclestr></name><value><cyclestr offset="1:00:00">goodbye cruel world! %X</cyclestr></value></envar>
+    </task>
 
-    <dependency>
-      <taskdep task="test1"></taskdep>
-    </dependency>
-
-  </task>
-
+  </metatask>
 
 </workflow>

@@ -7,58 +7,95 @@
 RUBY=/whome/harrop/opt/ruby-1.8.7-p352/bin/ruby
 #RUBY=ruby
 
+# Package versions
+LIBXML_VERSION="2.0.9"
+SYSTEMTIMER_VERSION="1.2.3"
+SQLITE3_VERSION="autoconf-3070701"
+SQLITE3_RUBY_VERSION="1.3.1"
+
 # Set location of WFM
 WFM_DIR=`pwd`
+
+# Set location where tarfiles for packages are kept
+TAR_DIR=${WFM_DIR}/tarfiles
+
+# Set location where packages are built
+BUILD_DIR=${WFM_DIR}/build
+
+# Set the location where libraries are installed
+LIB_DIR=${WFM_DIR}/lib
+
+# Create the build directory
+mkdir -p ${BUILD_DIR}
 
 # Install libxml-ruby
 echo "==========================================="
 echo "= INSTALLING libxml-ruby                  ="
 echo "==========================================="
-cd ${WFM_DIR}
-tar -xzvf libxml-ruby-2.0.9.tar.gz
-cd ${WFM_DIR}/libxml-ruby/ext/libxml
+cd ${BUILD_DIR}
+tar -xzvf ${TAR_DIR}/libxml-ruby-${LIBXML_VERSION}.tar.gz
+cd libxml-ruby-${LIBXML_VERSION}/ext/libxml
 ${RUBY} extconf.rb
 make clean
 make
+rm -rf ${LIB_DIR}/libxml-ruby
+mkdir ${LIB_DIR}/libxml-ruby
+cp -r ${BUILD_DIR}/libxml-ruby-${LIBXML_VERSION}/lib/* ${LIB_DIR}/libxml-ruby
+cp libxml_ruby.so ${LIB_DIR}/libxml-ruby
 
 # Install SystemTimer
 echo "==========================================="
 echo "= INSTALLING SystemTimer                  ="
 echo "==========================================="
-cd ${WFM_DIR}
-tar -xzvf SystemTimer-1.2.3.tar.gz
-ln -fs SystemTimer-1.2.3 SystemTimer
-cd ${WFM_DIR}/SystemTimer/ext/system_timer
+cd ${BUILD_DIR}
+tar -xzvf ${TAR_DIR}/SystemTimer-${SYSTEMTIMER_VERSION}.tar.gz
+cd SystemTimer-${SYSTEMTIMER_VERSION}/ext/system_timer
 ${RUBY} extconf.rb
 make clean
 make
+rm -rf ${LIB_DIR}/SystemTimer
+mkdir ${LIB_DIR}/SystemTimer
+cp -r ${BUILD_DIR}/SystemTimer-${SYSTEMTIMER_VERSION}/lib/* ${LIB_DIR}/SystemTimer
+cp system_timer_native.so ${LIB_DIR}/SystemTimer
 
 # Install sqlite3
 echo "==========================================="
 echo "= INSTALLING sqlite3                      ="
 echo "==========================================="
-cd ${WFM_DIR}
-tar -xzvf sqlite-autoconf-3070701.tar.gz
-ln -fs sqlite-autoconf-3070701 sqlite3
-cd ${WFM_DIR}/sqlite3
+cd ${BUILD_DIR}
+tar -xzvf ${TAR_DIR}/sqlite-${SQLITE3_VERSION}.tar.gz
+cd sqlite-${SQLITE3_VERSION}
 export CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA"
-./configure --prefix=`pwd`
+./configure --prefix=${LIB_DIR}/sqlite3
 make clean
 make
 make install
 unset CFLAGS
 
+#cd ${WFM_DIR}/lib
+#ln -fs sqlite-autoconf-3070701 sqlite3
+#cd ${WFM_DIR}/sqlite3
+#export CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA"
+#./configure --prefix=`pwd`
+#make clean
+#make
+#make install
+#unset CFLAGS
+
 # Install sqlite3-ruby
 echo "==========================================="
 echo "= INSTALLING sqlite3-ruby                 ="
 echo "==========================================="
-cd ${WFM_DIR}
-tar -xzvf sqlite3-ruby-1.3.1.tar.gz
-ln -fs sqlite3-ruby-1.3.1 sqlite3-ruby
-cd ${WFM_DIR}/sqlite3-ruby/ext/sqlite3
-export LD_RUN_PATH=${WFM_DIR}/sqlite3/lib
-${RUBY} extconf.rb -- --with-sqlite3-dir=${WFM_DIR}/sqlite3
+cd ${BUILD_DIR}
+tar -xzvf ${TAR_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}.tar.gz
+cd sqlite3-ruby-${SQLITE3_RUBY_VERSION}/ext/sqlite3
+export LD_RUN_PATH=${LIB_DIR}/sqlite3/lib
+${RUBY} extconf.rb -- --with-sqlite3-dir=${LIB_DIR}/sqlite3
 make clean
 make
+rm -rf ${LIB_DIR}/sqlite3-ruby
+mkdir ${LIB_DIR}/sqlite3-ruby
+cp -r ${BUILD_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}/lib/* ${LIB_DIR}/sqlite3-ruby
+cp sqlite3_native.so ${LIB_DIR}/sqlite3-ruby/sqlite3
 unset LDFLAGS
 

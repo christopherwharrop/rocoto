@@ -12,7 +12,7 @@ module WorkflowMgr
   ##########################################
   class WorkflowXMLDoc
 
-    require 'libxml'
+    require 'libxml-ruby/libxml'
     require 'workflowmgr/utilities'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/workflowlog'
