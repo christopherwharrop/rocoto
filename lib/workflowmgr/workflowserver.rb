@@ -28,7 +28,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/workflowio'
-    require 'workflowmgr/proxybatchsystem'
+    require 'workflowmgr/bqsproxy'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/dependency'

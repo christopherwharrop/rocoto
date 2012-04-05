@@ -23,7 +23,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowioproxy'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/dependency'
-    require 'workflowmgr/proxybatchsystem'
+    require 'workflowmgr/bqsproxy'
 
     ##########################################
     #
@@ -115,41 +115,6 @@ module WorkflowMgr
 
   private
 
-
-    ##########################################
-    #
-    # setup_bq_server
-    #
-    ##########################################
-    def setup_bq_server(batchSystem)
-
-      begin
-
-        # Set up an object to serve requests for batch queue system services
-        batchsystem=ProxyBatchSystem.new(batchSystem)
-
-        if @config.BatchQueueServer
-          @bqServer,@bqHost,@bqPID=WorkflowMgr.launchServer("#{@wfmdir}/sbin/workflowbqserver")
-          @bqServer.setup(batchsystem)
-        else
-          @bqServer=batchsystem
-        end
-
-      rescue
-
-        # Print out the exception message
-        puts $!
-
-        # Try to stop the batch queue server if something went wrong
-        if @config.BatchQueueServer
-          @bqServer.stop! unless @bqServer.nil?
-        end
-
-      end    
-
-    end
-
-
     ##########################################
     #
     # build_workflow
@@ -176,7 +141,7 @@ module WorkflowMgr
       @taskthrottle=workflowdoc.taskthrottle || 9999999
 
       # Get the scheduler
-      setup_bq_server(workflowdoc.scheduler)
+      @bqServer=BQSProxy.new(workflowdoc.scheduler,@options.database,@config)
 
       # Get the log parameters
       @logServer=workflowdoc.log

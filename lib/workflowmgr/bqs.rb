@@ -7,10 +7,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class ProxyBatchSystem
+  # Class BQS
   #
   ##########################################
-  class ProxyBatchSystem
+  class BQS
 
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/task'
@@ -20,10 +20,13 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(batchSystem)
+    def initialize(batchSystem,dbfile)
 
-      # Set the batch system being proxied
+      # Set the batch system
       @batchsystem=batchSystem
+
+      # Set the path to the database
+      @dbfile=dbfile
 
       # Initialize hashes used to keep track of multithreaded job submission
 
