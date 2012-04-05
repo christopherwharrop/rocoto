@@ -45,9 +45,9 @@ module WorkflowMgr
               @workflowIOServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
-            puts "*** ERROR! *** WorkflowIO server process died."
+            puts "*** WARNING! *** Could not shut down WorkflowIO server process because it is not running."
           rescue Timeout::Error
-            puts "*** ERROR! *** WorkflowIO server process is unresponsive and is probably wedged."
+            puts "*** ERROR! *** Could not shut down WorkflowIO server process because it is unresponsive and is probably wedged."
           end
         end
       end

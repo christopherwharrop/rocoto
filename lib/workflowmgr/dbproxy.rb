@@ -30,8 +30,23 @@ module WorkflowMgr
       # Initialize the database
       initdb
 
+      # Define the stop! method to increase performance by avoiding calls to method_missing
+      (class << self; self; end).instance_eval do
+        define_method :stop! do |*args|
+          begin
+            SystemTimer.timeout(30) do
+              @dbServer.send(:stop!,*args)
+            end
+          rescue DRb::DRbConnError
+            puts "*** WARNING! *** Can't shut down WorkflowDB server process because it is not running."
+          rescue Timeout::Error
+            puts "*** ERROR! ***  Can't shut down WorkflowDB server process because it is unresponsive and is probably wedged."
+          end
+        end
+      end
+
       # Define methods
-      (WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").instance_methods-Object.instance_methods+[:stop!]).each do |m|
+      (WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").instance_methods-Object.instance_methods).each do |m|
         (class << self; self; end).instance_eval do
           define_method m do |*args|
             retries=0
