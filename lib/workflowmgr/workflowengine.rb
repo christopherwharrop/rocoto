@@ -692,7 +692,7 @@ module WorkflowMgr
       expired_cycles.each do |cycle|          
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle[:cycle]].nil?
-          unless @active_jobs[taskname][cycle[:cycle]][:state] == "SUCCEEDED" || @active_jobs[taskname][cycle[:cycle]][:state] == "FAILED"
+          unless @active_jobs[taskname][cycle[:cycle]][:state] == "SUCCEEDED" || @active_jobs[taskname][cycle[:cycle]][:state] == "FAILED" || @active_jobs[taskname][cycle[:cycle]][:state] == "DEAD"
             @logServer.log(cycle[:cycle],"Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} because this cycle has expired!")
             @bqServer.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])
           end
