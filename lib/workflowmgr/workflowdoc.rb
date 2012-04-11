@@ -303,7 +303,7 @@ module WorkflowMgr
  
        strarray=element.collect do |e|
          if e.node_type==LibXML::XML::Node::TEXT_NODE
-           CycleString.new(e.content.strip,0)
+           e.content.strip
          else
            offset_sec=WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
            case e.name
