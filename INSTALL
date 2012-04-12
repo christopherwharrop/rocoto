@@ -65,22 +65,12 @@ echo "==========================================="
 cd ${BUILD_DIR}
 tar -xzvf ${TAR_DIR}/sqlite-${SQLITE3_VERSION}.tar.gz
 cd sqlite-${SQLITE3_VERSION}
-export CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA"
+export CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_THREADSAFE=1"
 ./configure --prefix=${LIB_DIR}/sqlite3
 make clean
 make
 make install
 unset CFLAGS
-
-#cd ${WFM_DIR}/lib
-#ln -fs sqlite-autoconf-3070701 sqlite3
-#cd ${WFM_DIR}/sqlite3
-#export CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA"
-#./configure --prefix=`pwd`
-#make clean
-#make
-#make install
-#unset CFLAGS
 
 # Install sqlite3-ruby
 echo "==========================================="
