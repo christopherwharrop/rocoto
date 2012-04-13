@@ -46,7 +46,7 @@ module WorkflowMgr
         end
       end
 
-      # Define methods
+      # Define methods to increase performance by avoiding calls to method_missing
       (WorkflowMgr::const_get("BQS").instance_methods-Object.instance_methods+[:__drburi]).each do |m|
         (class << self; self; end).instance_eval do
           define_method m do |*args|
@@ -58,17 +58,14 @@ module WorkflowMgr
             rescue DRb::DRbConnError
               if retries < 1
                 retries+=1
-                puts "*** WARNING! *** WorkflowBQS server process died.  Attempting to restart and try again.\n" + 
-                     "*** WARNING! *** Some jobs may have been submitted which are not trackable."
+                puts "*** WARNING! *** WorkflowBQS server process died.  Attempting to restart and try again."
                 initbqs
                 retry
               else
-                raise "*** ERROR! *** WorkflowBQS server process died.  #{retries} attempts to restart the server have failed, giving up.\n" +
-                      "*** ERROR! *** Some jobs may have been submitted which are not trackable."
+                raise "*** ERROR! *** WorkflowBQS server process died.  #{retries} attempts to restart the server have failed, giving up."
               end
             rescue Timeout::Error
-              raise "*** ERROR! *** WorkflowBQS server process is unresponsive and is probably wedged.\n" +
-                    "*** ERROR! *** Some jobs may have been submitted which are not trackable."
+              raise "*** ERROR! *** WorkflowBQS server process is unresponsive and is probably wedged."
             end
 
           end
@@ -93,7 +90,7 @@ module WorkflowMgr
       begin
 
 	# Initialize the 
-        bqs=BQS.new(@batchSystem,@dbFile)
+        bqs=BQS.new(@batchSystem,@dbFile,@config)
 
 	if @config.BatchQueueServer
 

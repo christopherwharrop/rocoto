@@ -12,6 +12,8 @@ module WorkflowMgr
   ##########################################
   class BQS
 
+    require 'thread'
+    require 'workflowmgr/workflowdb'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/task'
   
@@ -20,13 +22,14 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(batchSystem,dbfile)
+    def initialize(batchSystem,dbFile,config)
 
       # Set the batch system
       @batchsystem=batchSystem
 
-      # Set the path to the database
-      @dbfile=dbfile
+      # Open the database 
+      @database=WorkflowMgr::const_get("Workflow#{config.DatabaseType}DB").new(dbFile)
+      @database.dbopen
 
       # Initialize hashes used to keep track of multithreaded job submission
 
@@ -38,6 +41,9 @@ module WorkflowMgr
 
       # Initialize hash to keep track of which submit outputs we've retrieved
       @harvested=Hash.new
+
+      # Initialize a mutex for synchronizing threaded access to the database
+      @mutex=Mutex.new
 
     end
 
@@ -58,6 +64,18 @@ module WorkflowMgr
       @threads[task.attributes[:name]][cycle]=Thread.new {
         @status[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?
         @status[task.attributes[:name]][cycle]=@batchsystem.submit(task)
+        jobid=@status[task.attributes[:name]][cycle].first
+
+        # If the job submission succeeded, write the jobid in the database         
+        unless jobid.nil?
+          @mutex.synchronize do
+            @database.update_jobids([{:jobid=>jobid, :taskname=>task.attributes[:name], :cycle=>cycle}])
+          end
+
+          # Mark this status as harvested
+          @harvested[task.attributes[:name]][cycle]=true
+
+        end
       }
 
     end

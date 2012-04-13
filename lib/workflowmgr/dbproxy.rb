@@ -50,6 +50,7 @@ module WorkflowMgr
         (class << self; self; end).instance_eval do
           define_method m do |*args|
             retries=0
+            busy_retries=0
             begin
               SystemTimer.timeout(60) do
                 @dbServer.send(m,*args)
@@ -63,6 +64,14 @@ module WorkflowMgr
               else
                 raise "*** ERROR! *** WorkflowDB server process died.  #{retries} attempts to restart the server have failed, giving up."
               end
+            rescue WorkflowMgr::WorkflowDBLockedException
+              if busy_retries < 60
+                busy_retries+=1
+                sleep(rand)
+                retry
+              else
+                raise "*** ERROR! *** WorkflowDB is locked.  #{busy_retries} attempts to access the database have failed, giving up.\n#{$!}"
+              end            
             rescue Timeout::Error
               raise "*** ERROR! *** WorkflowDB server process is unresponsive and is probably wedged."
             end
@@ -92,7 +101,6 @@ module WorkflowMgr
 
 	# Initialize the database but do not open it (call dbopen to open it)
 	database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@dbFile)
-
 	if @config.DatabaseServer
 
           # Ignore SIGINT while launching server process

@@ -93,6 +93,15 @@ module WorkflowMgr
 
       ensure
 
+        # Shut down the batch queue server if it is no longer needed
+        unless @bqServer.nil? || !@config.BatchQueueServer
+          unless @bqServer.running?
+            uri=@bqServer.__drburi
+            @bqServer.stop!
+            @dbServer.delete_bqservers([uri])
+          end
+        end
+
         # Make sure we release the workflow lock in the database and shutdown the dbserver
         unless @dbServer.nil?
           @dbServer.unlock_workflow if @locked
@@ -102,11 +111,6 @@ module WorkflowMgr
         # Make sure to shut down the workflow file stat server
         unless @workflowIOServer.nil?
           @workflowIOServer.stop! if @config.WorkflowIOServer
-        end
-
-        # Shut down the batch queue server if it is no longer needed
-        unless @bqServer.nil?
-          @bqServer.stop! if @config.BatchQueueServer && !@bqServer.running?
         end
 
       end
@@ -142,6 +146,9 @@ module WorkflowMgr
 
       # Get the scheduler
       @bqServer=BQSProxy.new(workflowdoc.scheduler,@options.database,@config)
+      
+      # Add this scheduler to the bqserver database if needed
+      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer
 
       # Get the log parameters
       @logServer=workflowdoc.log
@@ -347,8 +354,15 @@ module WorkflowMgr
     ##########################################
     def harvest_pending_jobids
 
-      # Initialize hash of bqserver processes that are holding pending job ids
+      # Initialize hash of old bqserver processes from the database and establish connections to them
       bqservers={}
+      @dbServer.get_bqservers.each do |uri|
+
+        # We are only interested in old bqserver processes
+        next if uri==@bqServer.__drburi
+
+        bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+      end
 
       begin
 
@@ -380,10 +394,16 @@ module WorkflowMgr
 
                 # If the job submission failed, log the output of the job submission command, and print it to stdout as well
                 if jobid.nil?
-                  # Delete the job from the database since it failed to submit.  It will be retried next time around.
+
+                  # Delete the job from the database since it failed to submit.  It will be retried immediately.
                   @dbServer.delete_jobs([@active_jobs[taskname][cycle]])
+
+                  # Remove the job from the active_jobs list since it failed to submit and is not active.
+                  @active_jobs[taskname].delete(cycle)
+
                   puts output
                   @logServer.log(cycle,"Submission status of previously pending #{taskname} is failure!  #{output}")
+
                   next
 
                 # If the job succeeded, record the jobid and log it
@@ -406,7 +426,12 @@ module WorkflowMgr
       ensure
 
         # Make sure we always terminate all workflowbqservers that we no longer need
-        bqservers.values.each { |bqserver| bqserver.stop! unless bqserver.running? }
+        bqservers.each do |uri,bqserver|
+          unless bqserver.running? 
+            bqserver.stop!
+            @dbServer.delete_bqservers([uri])
+          end
+        end
 
       end  # begin
 
@@ -433,7 +458,6 @@ module WorkflowMgr
         @active_core_count=0
 
         # Loop over all active jobs and retrieve and update their current status
-#        @active_jobs.keys.each do |taskname|
         @tasks.each do |task|
           taskname=task.attributes[:name]
           next if @active_jobs[taskname].nil?       
@@ -521,9 +545,6 @@ module WorkflowMgr
           end # @active_jobs[taskname].keys.each
         end # @active_jobs.keys.each
      
-      ensure
-
-
       end
 
     end
@@ -608,15 +629,15 @@ module WorkflowMgr
             @logServer.log(cycle[:cycle],"This cycle is complete: Failed") 
           end
 
+          # Update the done cycle in the database 
+          @dbServer.update_cycles([cycle])
+
         # Otherwise add the cycle to a new list of active cycles
         else
           active_cycles << cycle
         end
 
       end  # active_cycles.each
-
-      # Update the done cycles in the database 
-      @dbServer.update_cycles(done_cycles)
 
       # Update the active cycle list
       @active_cycles=active_cycles
@@ -662,11 +683,12 @@ module WorkflowMgr
             @bqServer.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])
           end
         end
-        @logServer.log(cycle[:cycle],"This cycle has expired!")
-      end
 
-      # Update the expired cycles in the database 
-      @dbServer.update_cycles(expired_cycles) unless expired_cycles.empty?
+        @logServer.log(cycle[:cycle],"This cycle has expired!")
+        
+        # Update the expired cycles in the database
+        @dbServer.update_cycles([cycle]) 
+      end
 
       # Update the active cycle list
       @active_cycles=active_cycles
@@ -744,9 +766,6 @@ module WorkflowMgr
             end
           end
 
-          # Submit the task
-          @bqServer.submit(task.localize(cycle),cycle)
-
           # Increment counters
           @active_core_count += task.attributes[:cores]
           @active_task_count += 1
@@ -765,7 +784,14 @@ module WorkflowMgr
           # Append the new job to the list of new jobs that were submitted
           newjobs << newjob
 
+          # Add the new job to the database
+          @dbServer.add_jobs([newjob])
+
+          # Submit the task
+          @bqServer.submit(task.localize(cycle),cycle)
+
         end
+
       end        
 
       # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
@@ -779,17 +805,18 @@ module WorkflowMgr
           @logServer.log(job[:cycle],"Submitted #{job[:taskname]}.  Submission status is pending at #{job[:jobid]}")
         else
           if jobid.nil?
+            # Delete the job from the database since it failed to submit.  It will be retried next time around.
+            @dbServer.delete_jobs([job])
             puts output
             @logServer.log(job[:cycle],"Submission of #{job[:taskname]} failed!  #{output}")
           else
             job[:jobid]=jobid
             @logServer.log(job[:cycle],"Submitted #{job[:taskname]}, jobid=#{job[:jobid]}")
+            # Update the jobid for the job in the database
+            @dbServer.update_jobs([job])
           end
         end
       end
-
-      # Add the new jobs to the database
-      @dbServer.add_jobs(newjobs)
 
     end
 
