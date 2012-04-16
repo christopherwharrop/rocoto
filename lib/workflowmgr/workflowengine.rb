@@ -358,10 +358,22 @@ module WorkflowMgr
       bqservers={}
       @dbServer.get_bqservers.each do |uri|
 
-        # We are only interested in old bqserver processes
-        next if uri==@bqServer.__drburi
+        begin
 
-        bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+          # We are only interested in old bqserver processes
+          next if uri==@bqServer.__drburi
+
+          bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+
+        # The bqserver has died!
+        rescue DRb::DRbConnError
+          # Remove the bqserver uri from the database
+          @dbServer.delete_bqservers([uri])
+
+          # Remove the bqserver uri from the bqservers list if needed
+          bqservers.delete(uri) if bqservers.has_key?(uri)
+        end
+
       end
 
       begin
@@ -379,14 +391,32 @@ module WorkflowMgr
               # Get the URI of the workflowbqserver that submitted the job
               uri=@active_jobs[taskname][cycle][:jobid]
 
-              # Make a connection to the workflowbqserver at uri
-              bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+              begin
 
-              # Query the workflowbqserver for the status of the job submission 
-              jobid,output=bqservers[uri].get_submit_status(taskname,cycle)
+                # Query the workflowbqserver for the status of the job submission 
+                jobid,output=bqservers[uri].get_submit_status(taskname,cycle) if bqservers.has_key?(uri)
+
+              # Catch exceptions for bqservers that have died unexpectedly
+              rescue DRb::DRbConnError
+                # Remove the bqserver uri from the database
+                @dbServer.delete_bqservers([uri])
+
+                # Remove the bqserver uri from the bqservers list if needed
+                bqservers.delete(uri) if bqservers.has_key?(uri)
+
+              end
+
+              # If the bqserver died, warn user, resubmit job
+              if !bqservers.has_key?(uri)
+
+                # Log the fact that the submission status could not be retrieved
+                puts "Submission status of #{taskname} could not be retrieved because the server process at #{uri} died"
+                puts "Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted"
+                @logServer.log(cycle,"Submission status of #{taskname} could not be retrieved because the server process at #{uri} died")
+                @logServer.log(cycle,"Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted")
 
               # If there is no output from the submission, it means the submission is still pending
-              if output.nil?
+              elsif output.nil?
                 @logServer.log(cycle,"Submission status of #{taskname} is still pending at #{uri}.  The batch system server may be down, unresponsive, or under heavy load.")
 
               # Otherwise, the submission either succeeded or failed.
@@ -427,10 +457,18 @@ module WorkflowMgr
 
         # Make sure we always terminate all workflowbqservers that we no longer need
         bqservers.each do |uri,bqserver|
-          unless bqserver.running? 
-            bqserver.stop!
+
+          begin
+            unless bqserver.running? 
+              bqserver.stop!
+              @dbServer.delete_bqservers([uri])
+            end
+          # Catch exceptions for bqservers that have died unexpectedly
+          rescue DRb::DRbConnError
+            puts "WARNING: BQS Server process at #{uri} died unexpectedly.  Submission status of some jobs may have been lost"
             @dbServer.delete_bqservers([uri])
           end
+
         end
 
       end  # begin
