@@ -204,8 +204,7 @@ module WorkflowMgr
     def submit(task)
 
       # Initialize the submit command
-#      cmd="#{@sge_bin}/qsub"
-      cmd="/usr/local/esrl/bin/qsub"
+      cmd="qsub"
 
       # Add SGE batch system options translated from the generic options specification
       task.attributes.each do |option,value|
