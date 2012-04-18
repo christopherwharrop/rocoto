@@ -67,7 +67,7 @@ module WorkflowMgr
             rescue WorkflowMgr::WorkflowDBLockedException
               if busy_retries < 60
                 busy_retries+=1
-                sleep(rand*busy_retries)
+                sleep(rand*(2**(busy_retries/5)))
                 retry
               else
                 raise "*** ERROR! *** WorkflowDB is locked.  #{busy_retries} attempts to access the database have failed, giving up.\n#{$!}"
