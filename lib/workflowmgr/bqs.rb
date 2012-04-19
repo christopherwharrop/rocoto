@@ -67,15 +67,15 @@ module WorkflowMgr
         jobid=@status[task.attributes[:name]][cycle].first
 
         # If the job submission succeeded, write the jobid in the database         
-        unless jobid.nil?
-          @mutex.synchronize do
-            @database.update_jobids([{:jobid=>jobid, :taskname=>task.attributes[:name], :cycle=>cycle}])
-          end
-
-          # Mark this status as harvested
-          @harvested[task.attributes[:name]][cycle]=true
-
-        end
+#        unless jobid.nil?
+#          @mutex.synchronize do
+#            @database.update_jobids([{:jobid=>jobid, :taskname=>task.attributes[:name], :cycle=>cycle}])
+#          end
+#
+#          # Mark this status as harvested
+#          @harvested[task.attributes[:name]][cycle]=true
+#
+#        end
       }
 
     end
