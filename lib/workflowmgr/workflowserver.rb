@@ -95,7 +95,7 @@ module WorkflowMgr
 
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
       begin
-        SystemTimer.timeout(10) do
+        SystemTimer.timeout(60) do
           return @server.send(name,*args,&block)
         end
       rescue Timeout::Error

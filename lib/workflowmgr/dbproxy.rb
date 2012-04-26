@@ -34,7 +34,7 @@ module WorkflowMgr
       (class << self; self; end).instance_eval do
         define_method :stop! do |*args|
           begin
-            SystemTimer.timeout(30) do
+            SystemTimer.timeout(60) do
               @dbServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
@@ -65,9 +65,9 @@ module WorkflowMgr
                 raise "*** ERROR! *** WorkflowDB server process died.  #{retries} attempts to restart the server have failed, giving up."
               end
             rescue WorkflowMgr::WorkflowDBLockedException
-              if busy_retries < 60
+              if busy_retries < 20
                 busy_retries+=1
-                sleep(rand*(2**(busy_retries/5)))
+                sleep(rand*(2**(busy_retries/10)))
                 retry
               else
                 raise "*** ERROR! *** WorkflowDB is locked.  #{busy_retries} attempts to access the database have failed, giving up.\n#{$!}"
