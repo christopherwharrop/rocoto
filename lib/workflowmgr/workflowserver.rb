@@ -30,6 +30,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowio'
     require 'workflowmgr/bqsproxy'
     require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/dependency'
 

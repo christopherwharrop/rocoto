@@ -27,6 +27,7 @@
           <value>lsf</value>
           <value>ll</value>
           <value>moab</value>
+          <value>moabtorque</value>
           <value>pbs</value>
         </choice>
       </attribute>
