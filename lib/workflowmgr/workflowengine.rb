@@ -532,7 +532,12 @@ module WorkflowMgr
             @active_jobs[taskname][cycle][:native_state]=status[:native_state]            
             if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
               @active_jobs[taskname][cycle][:exit_status]=status[:exit_status]
-              runmsg=", ran for #{status[:end_time] - status[:start_time]} seconds, exit status=#{status[:exit_status]}"
+              if status[:start_time]==Time.at(0).getgm
+                duration=0
+              else
+                duration=status[:end_time] - status[:start_time]
+              end
+              runmsg=", ran for #{duration} seconds, exit status=#{status[:exit_status]}"
             else
               runmsg=""
             end

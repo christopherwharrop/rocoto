@@ -1,323 +1,280 @@
-unless defined? $__moabtorquebatchsystem__
-
-##########################################
+###########################################
 #
-# Class MoabTorqueBatchSystem
+# Module WorkflowMgr
 #
 ##########################################
-class MoabTorqueBatchSystem
+module WorkflowMgr
 
-  require 'etc'
-  require 'command.rb'
-  require 'exceptions.rb'
-  require 'parsedate'
-  require 'libxml.rb'
-
-  @@qstat_refresh_rate=30
-  @@max_history=3600*1
-
-  #####################################################
+  ##########################################
   #
-  # initialize
+  # Class MOABTORQUEBatchSystem
   #
-  #####################################################
-  def initialize(moab_root=nil,torque_root=nil,qstat_refresh_rate=@@qstat_refresh_rate)
+  ##########################################
+  class MOABTORQUEBatchSystem
 
-    begin
+    require 'etc'
+    require 'parsedate'
+    require 'libxml'
 
-      # Set the path to the Moab commands
-      if moab_root.nil?
-        if ENV['MOAB_ROOT'].nil?
-          @moab_root="/opt/moab/default/bin"
-        else
-          @moab_root=ENV['MOAB_ROOT']
-        end
-      else
-        @moab_root=moab_root
-      end
-      ENV['MOAB_ROOT']=@moab_root
+    #####################################################
+    #
+    # initialize
+    #
+    #####################################################
+    def initialize(moab_root=nil,torque_root=nil)
 
-      # Set the path to the Torque commands
-      if torque_root.nil?
-        if ENV['TORQUE_ROOT'].nil?
-          @torque_root="/opt/torque/default/bin"
-        else
-          @torque_root=ENV['TORQUE_ROOT']
-        end
-      else
-        @torque_root=torque_root
-      end
-      ENV['TORQUE_ROOT']=@torque_root
+      # Initialize an empty hash for job queue records
+      @jobqueue={}
 
-      # Initialize hashes to store qstat output and exit records
-      @qstat=Hash.new
-      @exit_records=Hash.new
+      # Initialize an empty hash for job accounting records
+      @jobacct={}
 
-      # Set the qstat refresh rate and availability flag
-      @qstat_refresh_rate=qstat_refresh_rate
-      @qstat_available=true
+      # Currently there is no way to specify the amount of time to 
+      # look back at finished jobs.  MOAB showq will always return 
+      # all the records it finds the first time.  So, set this to 
+      # a big value to make sure showq doesn't get run twice.
+      @hrsback=120
 
-    rescue
-      raise "MoabTorqueBatchSystem object could not be initialized\n\n#{$!}"
     end
-    
-  end
 
 
-  #####################################################
-  #
-  # refresh_qstat
-  #
-  #####################################################
-  def refresh_qstat
+    #####################################################
+    #
+    # status
+    #
+    #####################################################
+    def status(jobid)
 
-    begin
+      # Populate the jobs status table if it is empty
+      refresh_jobqueue if @jobqueue.empty?
 
-      # Clear the previous qstat data
-      @qstat.clear
+      # Return the jobqueue record if there is one
+      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
-      # Reset qstat availability flag
-      @qstat_available=true
+      # If we didn't find the job in the jobqueue, look for it in the accounting records
+
+      # Populate the job accounting log table if it is empty
+      refresh_jobacct if @jobacct.empty?
+
+      # Return the jobacct record if there is one
+      return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+      # If we still didn't find the job, look 72 hours back if we haven't already
+      if @hrsback < 72
+	refresh_jobacct(72)
+	return @jobacct[jobid] if @jobacct.has_key?(jobid)
+      end
+
+      # We didn't find the job, so return an uknown status record
+      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+
+    end
+
+
+    #####################################################
+    #
+    # submit
+    #
+    #####################################################
+    def submit(task)
+
+      # Initialize the submit command
+      cmd="qsub"
+
+      # Add SGE batch system options translated from the generic options specification
+      task.attributes.each do |option,value|
+        case option
+          when :account
+            cmd += " -A #{value}"
+          when :queue            
+            cmd += " -q #{value}"
+          when :cores
+            cmd += " -l procs=#{value}"
+          when :walltime
+            cmd += " -l walltime=#{value}"
+          when :memory
+            cmd += " -l mem=#{value}"
+          when :stdout
+            cmd += " -o #{value}"
+          when :stderr
+            cmd += " -e #{value}"
+          when :join
+            cmd += " -j oe -o #{value}"           
+          when :jobname
+            cmd += " -N #{value}"
+          when :native
+	    cmd += " #{value}"
+        end
+      end
+
+      # Add environment vars
+      unless task.envars.empty?
+        vars = "" 
+        task.envars.each { |name,env|
+          if vars.empty?
+            vars += " -v #{name}"
+          else
+            vars += ",#{name}"
+          end
+          vars += "=\"#{env}\"" unless env.nil?
+        }
+        cmd += "#{vars}"
+      end
+
+      # Add the command arguments
+      cmdargs=task.attributes[:command].split[1..-1].join(" ")
+      unless cmdargs.empty?
+        cmd += " -F \"#{cmdargs}\""
+      end
+
+      # Add the command to submit
+      cmd += " #{task.attributes[:command].split.first}"
+
+      # Run the submit command
+      output=`#{cmd} 2>&1`.chomp
+
+      # Parse the output of the submit command
+      if output=~/^(\d+)(\.\w+)*$/
+        return $1,output
+      else
+ 	return nil,output
+      end
+
+    end
+
+
+    #####################################################
+    #
+    # delete
+    #
+    #####################################################
+    def delete(jobid)
+
+      qdel=`qdel #{jobid}`      
+
+    end
+
+
+private
+
+    #####################################################
+    #
+    # refresh_jobqueue
+    #
+    #####################################################
+    def refresh_jobqueue
 
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
 
-      # run bjobs to obtain the current status of queued jobs
-      output=Command.run("#{@moab_root}/showq --noblock --xml -u #{username} 2>&1")
-      if output[1] != 0
-        raise output[0]
-      else
-        @qstat_update_time=Time.now
-        recordxmldoc=LibXML::XML::Parser.string(output[0]).parse
-        recordxml=recordxmldoc.root
-        recordxml.find('//job').each { |job|
-          @qstat[job.attributes['JobID']]=job.attributes['State']                 
-        }        
-      end
+      # Run qstat to obtain the current status of queued jobs
+      queued_jobs=`showq --noblock --xml -u #{username} 2>&1`
+#      queued_jobs=`showq --noblock --xml 2>&1`
 
-    rescue 
-      @qstat_available=false
-      puts $!
-      return
+      # Parse the XML output of showq, building job status records for each job
+      queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
+      queued_jobs=queued_jobs_doc.root
+
+      # For each job, find the various attributes and create a job record
+      queued_jobs.find('//job').each { |job|
+
+	# Initialize an empty job record
+	record={}
+
+	# Look at all the attributes for this job and build the record
+	job.attributes.each { |jobstat| 
+          case jobstat.name
+            when /JobID/
+              record[:jobid]=jobstat.value
+            when /State/
+              case jobstat.value
+                when /^Idle$/,/^.*Hold$/
+    	          record[:state]="QUEUED"
+                when /^Running$/
+    	          record[:state]="RUNNING"
+                else
+    	          record[:state]="UNKNOWN"
+              end
+	      record[:native_state]=jobstat.value
+	    when /JobName/
+	      record[:jobname]=jobstat.value
+	    when /User/
+	      record[:user]=jobstat.value
+	    when /ReqProcs/
+	      record[:cores]=jobstat.value.to_i
+	    when /Class/
+	      record[:queue]=jobstat.value
+	    when /SubmissionTime/
+	      record[:submit_time]=Time.at(jobstat.value.to_i).getgm
+	    when /StartTime/
+              record[:start_time]=Time.at(jobstat.value.to_i).getgm
+	    when /StartPriority/
+	      record[:priority]=jobstat.value.to_i            
+	    else
+              record[jobstat.name]=jobstat.value
+          end  # case jobstat
+	}  # job.children
+
+	# Put the job record in the jobqueue
+	@jobqueue[record[:jobid]]=record
+
+      }  #  queued_jobs.find
+
     end
 
-  end
 
-
-  #####################################################
-  #
-  # refresh_exit_record
-  #
-  #####################################################
-  def refresh_exit_record(max_history=@@max_history)
-
-    begin
-
-      # Clear the previous exit_record data
-      @exit_records.clear
+    #####################################################
+    #
+    # refresh_jobacct
+    #
+    #####################################################
+    def refresh_jobacct(hrsback=1)
 
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
+
+      # Initialize an empty hash of job records
+      @jobacct={}
 
       # run showq to obtain the current status of queued jobs
-      output=Command.run("#{@moab_root}/showq --noblock -c --xml -u #{username} 2>&1")
-      if output[1] != 0
-        raise output[0]
-      else
-        recordxmldoc=LibXML::XML::Parser.string(output[0]).parse
-        recordxml=recordxmldoc.root
-        recordxml.find('//job').each { |job|
-          fields=Hash.new
-          if job.attributes['CompletionCode']=="CNCLD"
-	    fields['exit_status']=255
-	  else
-            fields['exit_status']=job.attributes['CompletionCode'].to_i
-          end
-          fields['submit_time']=Time.at(job.attributes['SubmissionTime'].to_i)
-          fields['start_time']=Time.at(job.attributes['StartTime'].to_i)
-          fields['end_time']=Time.at(job.attributes['CompletionTime'].to_i)
-          @exit_records[job.attributes['JobID']]=fields
-        }
-      end
+      completed_jobs=`showq --noblock -c --xml -u #{username} 2>&1`
 
-    rescue
-      puts $!
-      return
-    end   
+      # Parse the XML output of showq, building job status records for each job
+      recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
+      recordxml=recordxmldoc.root
 
-  end
+      # For each job, find the various attributes and create a job record
+      recordxml.find('//job').each { |job|
+        record={}
+        record[:jobid]=job.attributes['JobID']
+        record[:native_state]=job.attributes['State']
+        record[:jobname]=job.attributes['JobName']
+        record[:user]=job.attributes['User']
+        record[:cores]=job.attributes['ReqProcs'].to_i
+        record[:queue]=job.attributes['Class']
+        record[:submit_time]=Time.at(job.attributes['SubmissionTime'].to_i).getgm
+        record[:start_time]=Time.at(job.attributes['StartTime'].to_i).getgm
+        record[:end_time]=Time.at(job.attributes['CompletionTime'].to_i).getgm
+        record[:priority]=job.attributes['StartPriority'].to_i
+        if job.attributes['State']=~/^Removed/ || job.attributes['CompletionCode']=~/^CNCLD/
+          record[:exit_status]=255
+	else
+          record[:exit_status]=job.attributes['CompletionCode'].to_i
+        end
+        if record[:exit_status]==0
+          record[:state]="SUCCEEDED"
+        else
+          record[:state]="FAILED"
+        end
 
+        # Add the record if it hasn't already been added
+        @jobacct[record[:jobid]]=record unless @jobacct.has_key?(record[:jobid])
 
-  #####################################################
-  #
-  # get_job_state
-  #
-  #####################################################
-  def get_job_state(jid)
-
-    # Refresh qstat table if we need to
-    if @qstat_update_time.nil?
-      self.refresh_qstat
-    else
-      self.refresh_qstat if (Time.now - @qstat_update_time) > @qstat_refresh_rate
-    end
-
-    # Check qstat table for job state
-    if @qstat.has_key?(jid)
-      state=@qstat[jid]
-    else
-      if @qstat_available
-        state="done"
-      else
-        state="unknown"
-      end
-    end
-      
-    return state
-
-  end
-
-
-  #####################################################
-  #
-  # get_job_exit_record
-  #
-  #####################################################
-  def get_job_exit_record(jid,max_age=86400)
-
-    # If the exit record is not in the table, refresh the table
-    unless @exit_records.has_key?(jid)
-
-      # Refresh with default history length
-      self.refresh_exit_record
-
-      # If the exit record is still not in the table, refresh the table with max_age history length
-      unless @exit_records.has_key?(jid)
-
-        # Wait a second in case LSF server is slow in writing the record to the accounting file
-        sleep 1
-
-        # Refresh with max_age history length
-        self.refresh_exit_record(max_age)
-
-        # If the exit record is STILL not in the table, assume it will never be found and give up
-        return nil unless @exit_records.has_key?(jid)
-
-      end
-
-    end
-
-    return @exit_records[jid]
-
-  end
-
-
-  #####################################################
-  #
-  # get_job_exit_status
-  #
-  #####################################################
-  def get_job_exit_status(jid,max_age=86400)
-
-    record=get_job_exit_record(jid,max_age)
-    if record.nil?
-      puts "\nExit status for job #{jid} could not be found\n"
-      return nil
-    else
-      return record['exit_status']
-    end
-
-  
-  end
-
-
-  #####################################################
-  #
-  # submit
-  #
-  #####################################################
-  def submit(script,attributes)
-
-    begin
-
-      # Build the submit command
-      cmd="msub"
-      attributes.each { |attr,value|
-        cmd=cmd+" #{attr} #{value}"
       }
-      cmd=cmd+" #{script}"
-
-      # Issue the submit command
-      output=Command.run("#{@moab_root}/#{cmd} 2>&1")
-      if output[1] != 0
-        raise "#{output[0]}"
-      end
-
-      # Check for success
-      if (output[0]=~/(\w+\.\d+)/)
-        return $1
-      else
-        raise "#{output[0]}"
-      end
-
-    rescue
-      raise $!
+    
     end
 
   end
-
-  #####################################################
-  #
-  # qdel
-  #
-  #####################################################
-  def qdel(jid)
-
-    begin
-
-      # Run mjobctl to delete the job
-      output=Command.run("#{@moab_root}/mjobctl -c #{jid}")
-      if output[1] != 0
-        raise output[0]
-      end
-      return 0
-
-    rescue
-      puts "ERROR: mjobctl -c #{jid} failed"
-      puts $!
-      return 1
-    end
-
-  end
-
-
-  #####################################################
-  #
-  # qstat
-  #
-  #####################################################
-  def qstat
-
-    begin
-
-      # Run bjobs to get job status info
-      output=Command.run(". #{@moabtorque_env}/profile.moabtorque; bjobs")
-      if output[1] != 0
-        raise output[0]
-      end
-      return output[0]
-
-    rescue
-      puts "ERROR: bjobs failed"
-      puts $!
-      return nil
-    end
-
-  end
-
 
 end
 
-$__moabtorquebatchsystem__ == __FILE__
-
-end
