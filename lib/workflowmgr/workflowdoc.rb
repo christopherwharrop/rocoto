@@ -19,6 +19,7 @@ module WorkflowMgr
     require 'workflowmgr/cycledef'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
+    require 'workflowmgr/lsfbatchsystem'    
     require 'workflowmgr/task'
 
 

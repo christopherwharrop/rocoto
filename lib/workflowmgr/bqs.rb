@@ -16,6 +16,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
+    require 'workflowmgr/lsfbatchsystem'
     require 'workflowmgr/task'
   
     ##########################################
@@ -99,7 +100,7 @@ module WorkflowMgr
       # Otherwise, get the jobid and output and return it
       else
         status=@status[taskid][cycle]
- 
+
         # Mark this status as harvested
         @harvested[taskid][cycle]=true
 
@@ -123,7 +124,7 @@ module WorkflowMgr
           return true if @threads[taskid][cycle].alive?
         end
       end
-      
+
       # Check to see if all statuses have been harvested
       @harvested.keys.each do |taskid|
         @harvested[taskid].keys.each do |cycle|
