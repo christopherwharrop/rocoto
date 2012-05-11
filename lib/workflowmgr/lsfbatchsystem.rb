@@ -32,8 +32,8 @@ module WorkflowMgr
       # Initialize an empty hash for job accounting records
       @jobacct={}
 
-      # Initialize the hrs back contained in the jobacct hash
-      @hrsback=0
+      # Initialize the number of accounting files examined to produce the jobacct hash
+      @nacctfiles=1
 
     end
 
@@ -59,9 +59,9 @@ module WorkflowMgr
       # Return the jobacct record if there is one
       return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
-      # If we still didn't find the job, look 72 hours back if we haven't already
-      if @hrsback < 72
-	refresh_jobacct(72)
+      # If we still didn't find the job, look at all accounting files if we haven't already
+      if @nacctfiles != 0
+	refresh_jobacct(0)
 	return @jobacct[jobid] if @jobacct.has_key?(jobid)
       end
 
@@ -76,8 +76,6 @@ module WorkflowMgr
     #
     #####################################################
     def submit(task)
-
-puts "lsfbatchsystem: submit"
 
       # Initialize the submit command
       cmd="bsub"
@@ -125,8 +123,9 @@ puts "lsfbatchsystem: submit"
       cmd += " #{task.attributes[:command]}"
 
       # Run the submit command
+
       output=`#{cmd} 2>&1`.chomp
-puts "LSFBatchSystem: output=#{output}"
+
       # Parse the output of the submit command
       if output=~/Job <(\d+)> is submitted to queue/
         return $1,output
@@ -161,323 +160,146 @@ private
       queued_jobs=`bjobs -w`
 
       # Parse the output of bjobs, building job status records for each job
-      queued_jobs.each { |s|
-        jobdata=s.strip.split(/\s+/)
-        next unless jobdata[0]=~/^\d+$/
-        next unless jobdata[1]=~/^#{username}$/
-        @qstat[jobdata[0].to_i]=jobdata[2]
+      queued_jobs.split(/\n/).each { |s|
+
+        # Skip the header line
+	next if s=~/^JOBID/
+
+        # Split the fields of the bjobs output
+        jobattributes=s.strip.split(/\s+/)
+
+        # Build a job record from the attributes
+	if jobattributes.size == 1
+          # This is a continuation of the exec host line, which we don't need
+          next
+        else
+        
+          # Initialize an empty job record 
+          record={} 
+
+          # Record the fields
+          record[:jobid]=jobattributes[0]
+          record[:user]=jobattributes[1]
+          record[:native_state]=jobattributes[2]
+          case jobattributes[2]
+            when /^PEND$/
+              record[:state]="QUEUED"
+            when /^RUN$/
+              record[:state]="RUNNING"
+            else
+              record[:state]="UNKNOWN"   
+          end          
+          record[:queue]=jobattributes[3]
+          record[:jobname]=jobattributes[6]
+          record[:cores]=nil
+          submit_time=ParseDate.parsedate(jobattributes[-3..-1].join(" "),true)
+          if submit_time[0].nil?
+            now=Time.now
+            submit_time[0]=now.year
+            if Time.local(*submit_time) > now
+              submit_time[0]=now.year-1
+            end
+          end
+          record[:submit_time]=Time.local(*submit_time).getgm
+          record[:start_time]=nil
+          record[:priority]=nil
+
+          # Put the job record in the jobqueue
+	  @jobqueue[record[:jobid]]=record
+
+        end
+
       }
 
-#      if output[1] != 0
-#        raise output[0]
-#      else
-#        @qstat_update_time=Time.now
-#        output[0].each { |s|
-#          jobdata=s.strip.split(/\s+/)
-#          next unless jobdata[0]=~/^\d+$/
-#          next unless jobdata[1]=~/^#{username}$/
-#          @qstat[jobdata[0].to_i]=jobdata[2]
-#        }        
-#      end
-
     end
 
 
     #####################################################
     #
-    # refresh_exit_record
+    # refresh_jobacct
     #
     #####################################################
-    def refresh_exit_record(max_history=@@max_history)
+    def refresh_jobacct(nacctfiles=1)
 
-      begin
+      # Get the username of this process
+      username=Etc.getpwuid(Process.uid).name
 
-        # Clear the previous exit_record data
-        @exit_records.clear
+      # Initialize an empty hash of job records
+      @jobacct={}
 
-        # Calculate the minimum end time we should look at
-        min_end_time=Time.now-max_history
+      # Run bhist to obtain the current status of queued jobs
+      output=`bhist -n #{nacctfiles} -l -d -w 2>&1`
 
-        # LSF on Bluefire seems to have ~6 logfiles per 24 hours.
-        # 3 files for max_history (1hr) should be more than enough.
-        # If not parse 10 log files.
-        if max_history == @@max_history
-         n_logfiles = 3
-        else
-         n_logfiles = 10
-        end
+      # Build job records from output of bhist
+      output.split(/^-{10,}\n$/).each { |s|
 
-        # run bhist to obtain the current status of queued jobs
-        output=Command.run(". #{@lsf_env}/profile.lsf; bhist -n #{n_logfiles} -l -d -w -C #{min_end_time.strftime("%Y/%m/%d/%H:%M")}, 2>&1")
+        record={}
 
-        if output[1] != 0
-          raise output[0]
-        else
-          @qstat_update_time=Time.now
-          jid=nil
-          record=""
-          output[0].each { |s|
-            if s=~/^Job <(\d+)>/
-              @exit_records[jid]=record unless jid.nil?
-              jid=$1.to_i
-              record="#{s}\n"
+        # Try to format the record such that it is easier to parse
+        recordstring=s.strip
+        recordstring.gsub!(/\n\s{3,}/,'')
+        recordstring.split(/\n+/).each { |event|
+          case event.strip
+            when /^Job <(\d+)>, Job Name <(\w+)>, User <(\w+)>,/
+              record[:jobid]=$1
+              record[:jobname]=$2
+              record[:user]=$3
+              record[:native_state]="DONE"
+            when /(\w+ \w+ \d+ \d+:\d+:\d+): Submitted from host <\w+>, to Queue <(\w+)>,/
+              timestamp=ParseDate.parsedate($1,true)
+              if timestamp[0].nil?
+                now=Time.now
+                timestamp[0]=now.year
+                if Time.local(*timestamp) > now
+                  timestamp[0]=now.year-1
+                end
+              end
+              record[:submit_time]=Time.local(*timestamp).getgm
+              record[:queue]=$2        
+            when /(\w+ \w+ \d+ \d+:\d+:\d+): Dispatched to /
+              timestamp=ParseDate.parsedate($1,true)
+              if timestamp[0].nil?
+                now=Time.now
+                timestamp[0]=now.year
+                if Time.local(*timestamp) > now
+                  timestamp[0]=now.year-1
+                end
+              end
+              record[:start_time]=Time.local(*timestamp).getgm
+            when /(\w+ \w+ \d+ \d+:\d+:\d+): Done successfully. /
+              timestamp=ParseDate.parsedate($1,true)
+              if timestamp[0].nil?
+                now=Time.now
+                timestamp[0]=now.year
+                if Time.local(*timestamp) > now
+                  timestamp[0]=now.year-1
+                end
+              end
+              record[:end_time]=Time.local(*timestamp).getgm
+              record[:exit_status]=0             
+              record[:state]="SUCCEEDED"
+            when /(\w+ \w+ \d+ \d+:\d+:\d+): Exited with exit code (\d+)/
+              timestamp=ParseDate.parsedate($1,true)
+              if timestamp[0].nil?
+                now=Time.now
+                timestamp[0]=now.year
+                if Time.local(*timestamp) > now
+                  timestamp[0]=now.year-1
+                end
+              end
+              record[:end_time]=Time.local(*timestamp).getgm
+              record[:exit_status]=$2.to_i             
+              record[:state]="FAILED"
             else
-              record=record+"#{s}\n" unless jid.nil?
-            end
-          }        
-          @exit_records[jid]=record unless jid.nil?
-        end
-
-      rescue
-        puts $!
-        return
-      end   
-
-    end
-
-
-    #####################################################
-    #
-    # get_job_state
-    #
-    #####################################################
-    def get_job_state(jid)
-
-      # Refresh qstat table if we need to
-      self.refresh_qstat if (Time.now - @qstat_update_time) > @qstat_refresh_rate
-
-      # Check qstat table for job state
-      if @qstat.has_key?(jid)
-        state=@qstat[jid]
-      else
-        if @qstat_available
-          state="done"
-        else
-          state="unknown"
-        end
-      end
-      
-      return state
-
-    end
-
-
-    #####################################################
-    #
-    # get_job_exit_record
-    #
-    #####################################################
-    def get_job_exit_record(jid,max_age=86400)
-
-      require 'parsedate'
-
-      # If the exit record is not in the table, refresh the table
-      unless @exit_records.has_key?(jid)
-
-        # Refresh with default history length
-        self.refresh_exit_record
-
-        # If the exit record is still not in the table, refresh the table with max_age history length
-        unless @exit_records.has_key?(jid)
-
-          # Wait a second in case LSF server is slow in writing the record to the accounting file
-          sleep 1
-
-          # Refresh with max_age history length
-          self.refresh_exit_record(max_age)
-
-          # If the exit record is STILL not in the table, assume it will never be found and give up
-          return nil unless @exit_records.has_key?(jid)
-
-        end
-
-      end
-
-      # Get the raw exit record string for jid
-      recordstring=@exit_records[jid]
-
-      # Try to format the record such that it is easier to parse
-      recordstring.gsub!(/\n\s{3,}/,'')
-      recordstring.gsub!(/, Command <.*>/,'')
-
-      # Build the exit record
-      exit_record=Hash.new
-      now=Time.now
-
-      # Initialize the exit status to 137 (assume it was killed if we can't determine the exit status)
-      exit_record['exit_status']=137
-
-      # Parse the jid
-      exit_record['jid']=recordstring.match(/Job <(\d+)>/)[1].to_i
-
-      # Parse the execution host
-      match=@exit_records[jid].match(/^.*: Dispatched to (\d+ Hosts\/Processors ){0,1}(<.+>)+/)
-      unless match.nil?
-        exit_record['exec_host']=match.captures[1].gsub(/<|>/,"").gsub(/\d+\*/,"").split(/\s+/)
-      end
-
-      # Parse the submit time
-      match=@exit_records[jid].match(/(.*): Submitted from host/)
-      unless match.nil?
-        temptime=ParseDate.parsedate(match.captures.first,true)
-        if temptime[0].nil?
-          temptime[0]=now.year
-          if Time.local(*temptime) > now 
-            temptime[0]=now.year-1
-          end
-        end
-        exit_record['submit_time']=Time.local(*temptime)
-      end
-
-      # Parse the start time
-      match=@exit_records[jid].match(/^(.*): Running with execution home/)
-      unless match.nil?
-        temptime=ParseDate.parsedate(match.captures.first,true)
-        if temptime[0].nil?
-          temptime[0]=now.year
-          if Time.local(*temptime) > now 
-            temptime[0]=now.year-1
-          end
-        end
-        exit_record['start_time']=Time.local(*temptime)
-      end
-
-      # Parse the end time if the job succeeded
-      match=@exit_records[jid].match(/^(.*): Done successfully/)
-      unless match.nil?
-        temptime=ParseDate.parsedate(match.captures.first,true)
-        if temptime[0].nil?
-          temptime[0]=now.year
-          if Time.local(*temptime) > now 
-            temptime[0]=now.year-1
-          end
-        end
-        exit_record['end_time']=Time.local(*temptime)
-        exit_record['exit_status']=0
-      end
-
-      # Parse the end time if the job failed
-      match=@exit_records[jid].match(/^(.*): Exited with exit code (\d+)/)
-      unless match.nil?
-        temptime=ParseDate.parsedate(match.captures.first,true)
-        if temptime[0].nil?
-          temptime[0]=now.year
-          if Time.local(*temptime) > now 
-            temptime[0]=now.year-1
-          end
-        end
-        exit_record['end_time']=Time.local(*temptime)
-        exit_record['exit_status']=match.captures[1].to_i
-      end
-
-      return exit_record
-  
-    end
-
-
-    #####################################################
-    #
-    # get_job_exit_status
-    #
-    #####################################################
-    def get_job_exit_status(jid,max_age=86400)
-
-      record=get_job_exit_record(jid,max_age)
-      if record.nil?
-        puts "\nExit status for job #{jid} could not be found\n"
-        return nil
-      else
-        return record['exit_status']
-      end
-
-    end
-
-
-    #####################################################
-    #
-    # submit
-    #
-    #####################################################
-    def submit(script,attributes)
-
-      begin
-
-        # Build the submit command
-        cmd="bsub"
-        attributes.each { |attr,value|
-          cmd=cmd+" #{attr} #{value}"
-  	  # Create the path for the log file
-	  if (attr == "-o" or attr == "-e") then
-	    FileUtils.mkdir_p(File.dirname(value))
           end
         }
-        cmd=cmd+" #{script}"
 
-        # Issue the submit command
-        output=Command.run(". #{@lsf_env}/profile.lsf; #{cmd} 2>&1")
-        if output[1] != 0
-          raise "#{output[0]}"
-        end
+        @jobacct[record[:jobid]]=record unless @jobacct.has_key?(record[:jobid])
 
-        # Check for success
-        if (output[0]=~/Job <(\d+)> is submitted to queue/)
-          return $1.to_i
-        else
-          raise "#{output[0]}"
-        end
+      }        
 
-      rescue
-        raise $!
-      end
-
-    end
-
-    #####################################################
-    #
-    # qdel
-    #
-    #####################################################
-    def qdel(jid)
-  
-      begin
-
-        # Run bkill to delete the job
-        output=Command.run(". #{@lsf_env}/profile.lsf; bkill #{jid}")
-        if output[1] != 0
-          raise output[0]
-        end
-        return 0
-
-      rescue
-        puts "ERROR: bkill #{jid} failed"
-        puts $!
-        return 1
-      end
-
-    end
-
-
-    #####################################################
-    #
-    # qstat
-    #
-    #####################################################
-    def qstat
-
-      begin
-
-        # Run bjobs to get job status info
-        output=Command.run(". #{@lsf_env}/profile.lsf; bjobs")
-        if output[1] != 0
-          raise output[0]
-        end
-        return output[0]
-
-      rescue
-        puts "ERROR: bjobs failed"
-        puts $!
-        return nil
-      end
+      # Update the number of accounting files examined to produce the jobacct hash
+      @nacctfiles=nacctfiles
 
     end
 
