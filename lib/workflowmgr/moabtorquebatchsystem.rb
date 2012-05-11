@@ -81,7 +81,7 @@ module WorkflowMgr
       # Initialize the submit command
       cmd="qsub"
 
-      # Add SGE batch system options translated from the generic options specification
+      # Add Torque batch system options translated from the generic options specification
       task.attributes.each do |option,value|
         case option
           when :account
