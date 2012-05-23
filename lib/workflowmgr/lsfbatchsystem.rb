@@ -27,7 +27,7 @@ module WorkflowMgr
 
 
       # Initialize an empty hash for job queue records
-      @jobqueue={}
+      @jobqueue=nil
 
       # Initialize an empty hash for job accounting records
       @jobacct={}
@@ -46,7 +46,7 @@ module WorkflowMgr
     def status(jobid)
 
       # Populate the jobs status table if it is empty
-      refresh_jobqueue if @jobqueue.empty?
+      refresh_jobqueue if @jobqueue.nil?
 
       # Return the jobqueue record if there is one
       return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
@@ -60,8 +60,8 @@ module WorkflowMgr
       return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
       # If we still didn't find the job, look at all accounting files if we haven't already
-      if @nacctfiles != 0
-	refresh_jobacct(0)
+      if @nacctfiles != 25
+	refresh_jobacct(25)
 	return @jobacct[jobid] if @jobacct.has_key?(jobid)
       end
 
@@ -156,8 +156,11 @@ private
     #####################################################
     def refresh_jobqueue
 
+      # Initialize an empty hash for job queue records
+      @jobqueue={}
+
       # run bjobs to obtain the current status of queued jobs
-      queued_jobs=`bjobs -w`
+      queued_jobs=`bjobs -w 2>&1`
 
       # Parse the output of bjobs, building job status records for each job
       queued_jobs.split(/\n/).each { |s|
