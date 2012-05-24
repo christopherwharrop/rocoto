@@ -48,7 +48,7 @@ module WorkflowMgr
 	# Either it died before it could write the URI file, or the file disappeared
         # Attempt to kill the server process in case it is running
         Process.kill(:TERM,server_pid)
-        raise "Could not find address of server in #{uri_file}"
+        raise "Could not find URI of server in #{uri_file}"
 
       ensure
 

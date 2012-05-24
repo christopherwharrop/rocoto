@@ -110,13 +110,13 @@ module WorkflowMgr
 
       rescue
 
-        # Print out the exception message
-	puts $!
-
         # Try to stop the bqserver if something went wrong
 	if @config.BatchQueueServer
           @bqServer.stop! unless @bqServer.nil?
         end
+
+        # Raise fatal exception
+        raise "Could not launch batch queue server process\n#{$!}"
 
       end
 

@@ -209,13 +209,13 @@ module WorkflowMgr
 
       rescue
 
-        # Print out the exception message
-        puts $!
-
         # Try to stop the log server if something went wrong
         if @config.WorkflowIOServer
           @workflowIOServer.stop! unless @workflowIOServer.nil?
         end
+
+        # Raise fatal exception
+        raise "Could not launch IO server process\n#{$!}"
 
       end
 

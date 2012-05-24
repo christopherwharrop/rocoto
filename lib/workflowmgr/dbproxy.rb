@@ -80,8 +80,6 @@ module WorkflowMgr
         end
       end
 
-
-
     end
 
   private
@@ -119,13 +117,13 @@ module WorkflowMgr
 
       rescue
 
-        # Print out the exception message
-	puts $!
-
         # Try to stop the dbserver if something went wrong
 	if @config.DatabaseServer
           @dbServer.stop! unless @dbServer.nil?
         end
+
+        # Raise fatal exception
+	raise "Could not launch database server process\n#{$!}"
 
       end
 

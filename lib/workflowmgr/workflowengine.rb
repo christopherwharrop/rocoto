@@ -32,20 +32,27 @@ module WorkflowMgr
     ##########################################
     def initialize(args)
 
-      # Get command line options
-      @options=WorkflowOption.new(args)
+      begin
 
-      # Get configuration file options
-      @config=WorkflowYAMLConfig.new
+        # Get command line options
+        @options=WorkflowOption.new(args)
 
-      # Get the base directory of the WFM installation
-      @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
+        # Get configuration file options
+        @config=WorkflowYAMLConfig.new
 
-      # Set up an object to serve the workflow database (but do not open the database)
-      @dbServer=DBProxy.new(@options.database,@config)
+        # Get the base directory of the WFM installation
+        @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
-      # Initialize the workflow lock
-      @locked=false
+        # Set up an object to serve the workflow database (but do not open the database)
+        @dbServer=DBProxy.new(@options.database,@config)
+
+        # Initialize the workflow lock
+        @locked=false
+
+      rescue
+        puts $!
+        Process.exit(1)
+      end
 
     end  # initialize
 
@@ -64,7 +71,7 @@ module WorkflowMgr
 
         # Acquire a lock on the workflow in the database
         @locked=@dbServer.lock_workflow
-        Process.exit unless @locked
+        Process.exit(0) unless @locked
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)        
@@ -91,6 +98,10 @@ module WorkflowMgr
         # Submit new tasks where possible
         submit_new_jobs
 
+      rescue
+        puts $!
+        Process.exit(1)
+        
       ensure
 
         # Shut down the batch queue server if it is no longer needed
