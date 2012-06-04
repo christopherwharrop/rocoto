@@ -30,7 +30,7 @@ module WorkflowMgr
 
       @database=nil
       @workflowdoc=nil
-      @cycles=[]
+      @cycles=''
       @tasks=[]
       parse(args)
 
@@ -64,19 +64,10 @@ module WorkflowMgr
         #      C   C,C,C  C:C  :C   C:
         #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C
 
-        cyclelist = []
-        opts.on("-c","--cycles '1,2,3'",Array,"List of cycles") do |clist|
-          @cycles=cyclelist
-          clist.each do |c|
-            parsed_date = ParseDate.parsedate(c)
-            tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
-#                          parsed_date[4]).strftime("%a %b %d %H:%M:%S %z %Y")
-                          parsed_date[4])
-            cyclelist << tm
-          end
-          @cycles=cyclelist
+        opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' ",String,"List of cycles") do |clist|
+          @cycles=clist
         end
-     
+
         # Tasks of interest
         opts.on("-t","--tasks 'a,b,c'",Array,"List of tasks") do |tasklist|
           @tasks=tasklist

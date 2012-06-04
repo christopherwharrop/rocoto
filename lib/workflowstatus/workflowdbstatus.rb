@@ -7,10 +7,60 @@ module WorkflowMgr
 
   ##########################################
   #
+  # Class TaskTables
+  #
+  ##########################################
+  class TaskTables
+
+    attr_reader :tasktables
+
+    def initialize
+      @tasktables = []
+    end
+
+    def << (tasktable)
+      @tasktables << tasktable
+    end
+
+    # sort TaskTable objects in place by task name
+    def sort!
+      @tasktables.sort!
+    end
+
+    # print with tasknames sorted 
+    #    if no taskname argument list, print out all tasks
+    #    if specified taskname does not exist, print nothing
+    def print(tasknames_arglist, cycles_arglist_string)
+      sort!
+      ## print header line
+      puts "    TASKNAME      CYCLE    STATUS      DEPENDENCY"
+      ## print out info, if task matches input_taskname
+      if tasknames_arglist.empty? then
+        @tasktables.each do |tasktable|
+          tasktable.print(cycles_arglist_string)
+        end
+      else
+        tasknames_arglist.sort.each do |it|
+          @tasktables.each do |tasktable|
+            if it == tasktable.taskname then
+              tasktable.print(cycles_arglist_string)
+            end
+          end
+        end
+      end
+    end  # def print
+
+  end  # TaskTables
+
+
+  ##########################################
+  #
   # Class TaskTable
   #
   ##########################################
   class TaskTable
+
+    include Enumerable
 
     attr_reader :taskname
 
@@ -23,20 +73,42 @@ module WorkflowMgr
       @cyclelist << cycle
     end
 
+    # sort by taskname
+    def <=>(other)
+      @taskname <=> other.taskname
+    end
+
     # sort Cycle objects in place by time
     def sort!
       @cyclelist.sort!
     end
 
-    def print(cycles)
+    # print with cycles sorted by time
+    #    if no cycle argument list, print out latest cycle activated
+    def print(cycles_arglist_string)
+      sort!
       ## print out info, if cycle matches input_cycles
+      cycles_arglist = []
+      cycles_arglist_string.split(',').each do |cyclestr|
+        parsed_date = ParseDate.parsedate(cyclestr.strip)
+        tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
+                      parsed_date[4])
+        cycles_arglist << tm
+      end
+      if cycles_arglist.empty? then
+        cycles = [] << @cyclelist.last               ## match last cycle activated
+      else
+        cycles = cycles_arglist.sort
+      end
       cycles.each do |ic|
-        puts "checking #{ic}..."
+        puts "checking #{ic}...   Taskname:  #{@taskname}"
         index = nil
         @cyclelist.each_with_index do |sc,i|
           index = i if ic == sc.time
         end
-        unless (index.nil?) then
+        if (index.nil?) then
+          puts "  TASKNAME:  #{@taskname} #{Cycle.new(ic,"PENDING")}"
+        else
           puts "  TASKNAME:  #{@taskname}  #{@cyclelist[index]}"
         end
       end        
@@ -167,7 +239,7 @@ module WorkflowMgr
         cycle_keys = all_tasks[keys.first][task_keys.first].keys
         print "    Cycle Keys:  ", cycle_keys.inspect, "\n\n"
 
-        tasktables = []
+        tasktables = TaskTables.new
         all_tasks.each do |taskname, task_value|     ### for each task, the task value is the cycle
           puts "TASK NAME:   #{taskname}"
 
@@ -176,19 +248,13 @@ module WorkflowMgr
 ##
           tasktable = TaskTable.new(taskname)
           task_value.each do |cycle_key, cycle_value| 
-#            puts "   CYCLE:   #{cycle_key}   STATE:  : #{cycle_value[:state]}" 
             tasktable.add_cycle(Cycle.new(cycle_key,cycle_value[:state]))
           end
-          tasktable.sort!
           tasktables << tasktable
         end
 
-        tasktables.each do |tasktable|
-          tasktable.print(@options.cycles)
-          # tasktable.print(@options.tasks,@options.cycles)
-        end
+        tasktables.print(@options.tasks,@options.cycles)
           
-
 
 
         # open workflow document and get list of tasks from XML file
