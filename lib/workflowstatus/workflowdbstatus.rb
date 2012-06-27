@@ -31,9 +31,16 @@ module WorkflowMgr
     #    if no taskname argument list, print out all tasks
     #    if specified taskname does not exist, print nothing
     def print(tasknames_arglist, cycles_arglist_string)
+
       sort!
+
       ## print header line
-      puts "    TASKNAME      CYCLE    STATUS      DEPENDENCY"
+      header_format = "%18s %22s %10s %16s %12s %6s\n"
+      header_string = "TASK".center(18),"CYCLE".center(18),"JOBID".center(10), 
+                      "STATE".center(16),"EXIT STATUS".center(12),"TRIES".center(6)
+      header = header_format % header_string
+      puts header
+
       ## print out info, if task matches input_taskname
       if tasknames_arglist.empty? then
         @tasktables.each do |tasktable|
@@ -86,32 +93,73 @@ module WorkflowMgr
     # print with cycles sorted by time
     #    if no cycle argument list, print out latest cycle activated
     def print(cycles_arglist_string)
+
       sort!
-      ## print out info, if cycle matches input_cycles
-      cycles_arglist = []
-      cycles_arglist_string.split(',').each do |cyclestr|
-        parsed_date = ParseDate.parsedate(cyclestr.strip)
-        tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
-                      parsed_date[4])
-        cycles_arglist << tm
-      end
-      if cycles_arglist.empty? then
-        cycles = [] << @cyclelist.last               ## match last cycle activated
-      else
-        cycles = cycles_arglist.sort
-      end
-      cycles.each do |ic|
-        puts "checking #{ic}...   Taskname:  #{@taskname}"
-        index = nil
+
+      # range of cycles
+      if cycles_arglist_string.include?(':') then
+        index = cycles_arglist_string.index(':')
+        if index == 0 then                                        ## :c2
+          first = '190001010000'
+          last  = cycles_arglist_string[index.next..cycles_arglist_string.length-1]
+        elsif index == cycles_arglist_string.length-1 then        ## c1:
+          first = cycles_arglist_string[0..index-1]
+          last =  '999912311259'
+        else                                                      ## c1:c2
+          first = cycles_arglist_string[0..index-1]
+          last  = cycles_arglist_string[index.next..cycles_arglist_string.length-1]
+        end
+
+        # convert to array of Time objects
+        cycles_range = []
+        crange = [first, last]
+        crange.each do |cyclestr|
+          parsed_date = ParseDate.parsedate(cyclestr.strip)
+          tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
+                        parsed_date[4])
+          cycles_range << tm
+        end
+
+        # print out info for specified cycles if first <= cycle <= last 
         @cyclelist.each_with_index do |sc,i|
-          index = i if ic == sc.time
+          index= nil
+          index = i if sc.time.between?(cycles_range[0],cycles_range[1])
+          if (!index.nil?) then
+            puts "  #{@taskname.ljust(18)} #{@cyclelist[index]}"
+          end
         end
-        if (index.nil?) then
-          puts "  TASKNAME:  #{@taskname} #{Cycle.new(ic,"PENDING")}"
+
+      # list of cycles or last cycle, if none specified
+      else
+        cycles_arglist = []
+        cycles_arglist_string.split(',').each do |cyclestr|
+          parsed_date = ParseDate.parsedate(cyclestr.strip)
+          tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
+                        parsed_date[4])
+          cycles_arglist << tm
+        end
+
+        # -c option not specified
+        if cycles_arglist.empty? then
+          cycles = [] << @cyclelist.last               ## match last cycle activated
         else
-          puts "  TASKNAME:  #{@taskname}  #{@cyclelist[index]}"
+          cycles = cycles_arglist.sort
         end
-      end        
+  
+        # print out info for specified cycles if cycle matches input_cycle
+        cycles.each do |ic|
+#DEBUG        puts "checking #{ic}...   Taskname:  #{@taskname}"
+          index = nil
+          @cyclelist.each_with_index do |sc,i|
+            index = i if ic == sc.time
+          end
+          if (index.nil?) then
+            puts "  #{@taskname.ljust(18)} #{Cycle.new(ic,"-","PENDING","-","-")}"
+          else
+            puts "  #{@taskname.ljust(18)} #{@cyclelist[index]}"
+          end
+        end        
+      end
     end
 
   end  # TaskTable
@@ -126,11 +174,14 @@ module WorkflowMgr
 
     include Enumerable
 
-    attr_reader :time, :state
+    attr_reader :time, :state, :jobid, :exit_status, :tries
 
-    def initialize(time,state)
+    def initialize(time,jobid,state,exit_status,tries)
       @time = time
+      @jobid = jobid
       @state = state
+      @exit_status = exit_status
+      @tries = tries
     end
 
     # sort by time
@@ -139,7 +190,8 @@ module WorkflowMgr
     end
 
     def to_s
-      "   CYCLE:  #{@time}   STATE:  #{@state}"
+      sprintf("%18s %10s %16s %9s %8s", "#{@time.strftime("%b %d %Y %H:%M").center(18)}", "#{@jobid.to_s[0,10]}", "#{@state.rjust(16)}", 
+              "#{@exit_status.to_s[0,5]}", "#{@tries.to_s[0,6]}")
     end
 
   end  # Cycle
@@ -213,12 +265,12 @@ module WorkflowMgr
         array_cycles = @dbServer.get_cycles
         print "Length of array is:  ", array_cycles.length, "\n"
         print "Keys:  ", array_cycles[0].keys.inspect, "\n\n"
-#        array_cycles.each do |cycle| 
-#          puts "CYCLE   #{cycle[:cycle]}"
+        array_cycles.each do |cycle| 
+          puts "CYCLE   #{cycle[:cycle]}"
 #          puts "   Activated:  #{cycle[:activated]}"
 #          puts "   Expired:    #{cycle[:expired]}"
 #          puts "   Done:       #{cycle[:done]}"
-#        end
+        end
 
         # get all jobs  (hash of hash of hashes)
 ##          ["ungrib_NAM", "post_nmm_000", "post_nmm_003", "post_nmm_006", "post_nmm_009", 
@@ -241,14 +293,15 @@ module WorkflowMgr
 
         tasktables = TaskTables.new
         all_tasks.each do |taskname, task_value|     ### for each task, the task value is the cycle
-          puts "TASK NAME:   #{taskname}"
+#          puts "TASK NAME:   #{taskname}"
 
 ##
 ##        [:cycle, :state, :taskname, :tries, :exit_status, :nunknowns, :cores, :jobid]
 ##
           tasktable = TaskTable.new(taskname)
           task_value.each do |cycle_key, cycle_value| 
-            tasktable.add_cycle(Cycle.new(cycle_key,cycle_value[:state]))
+            tasktable.add_cycle(Cycle.new(cycle_key,cycle_value[:jobid],cycle_value[:state],
+                                cycle_value[:exit_status],cycle_value[:tries]))
           end
           tasktables << tasktable
         end
@@ -278,34 +331,34 @@ module WorkflowMgr
         puts "************"
         
         ### attributes
-        tasks.each do |task|
-          puts "++++++++++++"
-          puts "Attributes:  #{task.attributes.keys.inspect}"
-          task.attributes.each do |attr_key, attr_val|
-            if attr_val.class == CompoundTimeString then 
-              puts "  #{attr_key}   #{attr_val.to_s(Time.now)}"
-            else
-              puts "  #{attr_key}   #{attr_val}"
-            end
-          end
-        puts "************"
-        end
+#        tasks.each do |task|
+#          puts "++++++++++++"
+#          puts "Attributes:  #{task.attributes.keys.inspect}"
+#          task.attributes.each do |attr_key, attr_val|
+#            if attr_val.class == CompoundTimeString then 
+#              puts "  #{attr_key}   #{attr_val.to_s(Time.now)}"
+#            else
+#              puts "  #{attr_key}   #{attr_val}"
+#            end
+#          end
+#        puts "************"
+#        end
         
         ### dependencies
-        tasks.each do |task|
-          puts "++++++++++++"
-          puts "Dependency:  #{task.dependency.inspect}"
-          puts task.dependency.class
-          puts "************"
-        end
+#        tasks.each do |task|
+#          puts "++++++++++++"
+#          puts "Dependency:  #{task.dependency.inspect}"
+#          puts task.dependency.class
+#          puts "************"
+#        end
 
         ### environment variables
-        tasks.each do |task|
-          puts "++++++++++++"
-          puts "Dependency:  #{task.envars.inspect}"
-          puts task.envars.class
-          puts "************"
-        end
+#        tasks.each do |task|
+#          puts "++++++++++++"
+#          puts "Dependency:  #{task.envars.inspect}"
+#          puts task.envars.class
+#          puts "************"
+#        end
 
       ensure
 
