@@ -10,7 +10,7 @@ module WorkflowMgr
   # Class WorkflowStatusOpt
   #
   ##########################################
-  ### to call:  ./workflowstatusopt.rb -x junk -c "c1, c2, c3" -d dbfile -t "tk1, tk2, tk3"
+  ### to call:  ./workflowstatusopt.rb -x xmlfile -d dbfile [-c "c1, c2, c3"] [-t "tk1, tk2, tk3"] [-s]
   ###
 
   class WorkflowStatusOpt
@@ -19,7 +19,7 @@ module WorkflowMgr
     require 'pp'                      
     require 'parsedate'
     
-    attr_reader :database, :workflowdoc, :cycles, :tasks
+    attr_reader :database, :workflowdoc, :cycles, :tasks, :summary, :taskfirst
 
     ##########################################  
     #
@@ -32,6 +32,8 @@ module WorkflowMgr
       @workflowdoc=nil
       @cycles=''
       @tasks=[]
+      @summary='false'
+      @taskfirst='false'
       parse(args)
 
     end  # initialize
@@ -48,7 +50,7 @@ module WorkflowMgr
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  workflowstatus -d database_file -w workflow_document [-c cycle_list] [-t task_list]"
+        opts.banner = "Usage:  workflowstatus -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s]"
 
         # Specify the database file
         opts.on("-d","--database file",String,"Path to database store file") do |db|
@@ -73,6 +75,16 @@ module WorkflowMgr
           @tasks=tasklist
         end
      
+        # cycle summary
+        opts.on("-s","--summary","Cycle Summary") do 
+          @summary=true
+        end
+
+        # display by task 
+        opts.on("-T","--by_task","Display by Task") do 
+          @taskfirst=true
+        end
+
         # Help
         opts.on("-h","--help","Show this message") do
           puts opts
