@@ -30,27 +30,33 @@ module WorkflowMgr
     # print with tasknames sorted 
     #    if no taskname argument list, print out all tasks
     #    if specified taskname does not exist, print nothing
-    def print(tasknames_arglist, cycles_arglist_string)
+    def print(tasknames_arglist, cycles_arglist_string, taskfirst)
 
       sort!
 
       ## print header line
-      header_format = "%18s %22s %10s %16s %12s %6s\n"
-      header_string = "TASK".center(18),"CYCLE".center(18),"JOBID".center(10), 
-                      "STATE".center(16),"EXIT STATUS".center(12),"TRIES".center(6)
+      if taskfirst == true then
+        header_format = "%18s %22s %10s %16s %12s %6s\n"
+        header_string = "TASK".center(18),"CYCLE".center(18),"JOBID".center(10), 
+                        "STATE".center(16),"EXIT STATUS".center(12),"TRIES".center(6)
+      else
+        header_format = "%22s %18s %10s %16s %12s %6s\n"
+        header_string = "CYCLE".center(18),"TASK".center(18),"JOBID".center(10), 
+                        "STATE".center(16),"EXIT STATUS".center(12),"TRIES".center(6)
+      end
       header = header_format % header_string
       puts header
 
       ## print out info, if task matches input_taskname
       if tasknames_arglist.empty? then
         @tasktables.each do |tasktable|
-          tasktable.print(cycles_arglist_string)
+          tasktable.print(cycles_arglist_string,taskfirst)
         end
       else
         tasknames_arglist.sort.each do |it|
           @tasktables.each do |tasktable|
             if it == tasktable.taskname then
-              tasktable.print(cycles_arglist_string)
+              tasktable.print(cycles_arglist_string,taskfirst)
             end
           end
         end
@@ -92,7 +98,7 @@ module WorkflowMgr
 
     # print with cycles sorted by time
     #    if no cycle argument list, print out latest cycle activated
-    def print(cycles_arglist_string)
+    def print(cycles_arglist_string, taskfirst)
 
       sort!
 
@@ -154,10 +160,27 @@ module WorkflowMgr
             index = i if ic == sc.time
           end
           if (index.nil?) then
-            puts "  #{@taskname.ljust(18)} #{Cycle.new(ic,"-","PENDING","-","-")}"
+            if taskfirst == true then
+              cycle_string = sprintf("%18s %18s", "  #{@taskname.ljust(18)}", "#{ic.strftime("%b %d %Y %H:%M").center(18)}")
+            else
+              cycle_string = sprintf("%18s %18s","  #{ic.strftime("%b %d %Y %H:%M").center(18)}", "#{@taskname.ljust(18)}")
+            end
+            info_string  =  sprintf("%11s %16s %9s %8s", "-","-","-","-")
           else
-            puts "  #{@taskname.ljust(18)} #{@cyclelist[index]}"
+            if taskfirst == true then
+              cycle_string = sprintf("%18s %18s", "  #{@taskname.ljust(18)}", 
+                                     "#{@cyclelist[index].time.strftime("%b %d %Y %H:%M").center(18)}")
+            else
+              cycle_string = sprintf("%18s %18s", 
+                                     "  #{@cyclelist[index].time.strftime("%b %d %Y %H:%M").center(18)}", 
+                                     "#{@taskname.ljust(18)}")
+            end
+            info_string  =  sprintf("%11s %16s %9s %8s", "#{@cyclelist[index].jobid.to_s[0,10]}", 
+                                    "#{@cyclelist[index].state.rjust(16)}", 
+                                    "#{@cyclelist[index].exit_status.to_s[0,5]}", "#{@cyclelist[index].tries.to_s[0,6]}")
           end
+	  output_string = cycle_string + info_string
+          puts output_string
         end        
       end
     end
@@ -228,6 +251,7 @@ module WorkflowMgr
       @options=WorkflowStatusOpt.new(args)
 
       puts @options.cycles.inspect
+      puts @options.summary.inspect
 
       # Get configuration file options
       @config=WorkflowYAMLConfig.new
@@ -256,124 +280,188 @@ module WorkflowMgr
         # Open/Create the database
         @dbServer.dbopen
 
-        # Get all cycles  (array of hashes)
+        # open workflow document 
+        workflowdoc = WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer)
+
+        # Get all cycles from database (array of hashes)
         #     [:cycle, :activated, :expired, :done]
-        puts "========================="
-        puts "         CYCLES          "
-        puts "========================="
-
         array_cycles = @dbServer.get_cycles
-        print "Length of array is:  ", array_cycles.length, "\n"
-        print "Keys:  ", array_cycles[0].keys.inspect, "\n\n"
-        array_cycles.each do |cycle| 
-          puts "CYCLE   #{cycle[:cycle]}"
-#          puts "   Activated:  #{cycle[:activated]}"
-#          puts "   Expired:    #{cycle[:expired]}"
-#          puts "   Done:       #{cycle[:done]}"
+        db_cycle_times = []                                     # array of database cycle times
+        array_cycles.each do |cycle|
+          db_cycle_times << cycle[:cycle]
         end
+        puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        puts "DB CYCLES:  #{db_cycle_times.length}"
+        puts db_cycle_times.inspect
 
-        # get all jobs  (hash of hash of hashes)
-##          ["ungrib_NAM", "post_nmm_000", "post_nmm_003", "post_nmm_006", "post_nmm_009", 
-##           "real_nmm", "metgrid_nmm", "post_nmm_021", "post_nmm024", "post_nmm_027", 
-##           "wrf_nmm", "post_nmm_042", "post_nmm_045", "post_nmm_048", "post_nmm_012", 
-##           "post_nmm_015", "post_nmm_018", "post_nmm_030", "post_nmm_033", "post_nmm_036", 
-##           "post_nmm_039"]
-        puts "========================="
-        puts "          JOBS          "
-        puts "========================="
+        ### ======================
+        ###     CYCLE SUMMARY          
+        ### ======================
+        if @options.summary == true then
+  
+          # print header
+          printf "%13s %10s %26s %24s %24s\n","CYCLE".center(12),"STATE".center(8),"ACTIVATED".center(24),
+                 "DEACTIVATED".center(24),"DONE".center(24)
 
-        all_tasks = @dbServer.get_jobs
-        keys = all_tasks.keys
-        print "Length of hash is:  ", all_tasks.length, "\n\n"
-        print "Job Keys:  ", keys.inspect, "\n\n"
-        task_keys = all_tasks[keys.first].keys
-#        puts "  Task Keys are the cycle dates; Task Values are a hash"
-        cycle_keys = all_tasks[keys.first][task_keys.first].keys
-        print "    Cycle Keys:  ", cycle_keys.inspect, "\n\n"
-
-        tasktables = TaskTables.new
-        all_tasks.each do |taskname, task_value|     ### for each task, the task value is the cycle
-#          puts "TASK NAME:   #{taskname}"
-
-##
-##        [:cycle, :state, :taskname, :tries, :exit_status, :nunknowns, :cores, :jobid]
-##
-          tasktable = TaskTable.new(taskname)
-          task_value.each do |cycle_key, cycle_value| 
-            tasktable.add_cycle(Cycle.new(cycle_key,cycle_value[:jobid],cycle_value[:state],
-                                cycle_value[:exit_status],cycle_value[:tries]))
+          # print cycle date/times
+          array_cycles.each do |cycle| 
+            printf "%12s %10s %24s %24s %24s\n","#{cycle[:cycle].strftime("%Y%m%d%H%M")}", " state ", 
+                                                "#{cycle[:activated].strftime("%b %d %Y %H:%M:%S")}",
+                                                "#{cycle[:expired].strftime("%b %d %Y %H:%M:%S")}",
+                                                "#{cycle[:done].strftime("%b %d %Y %H:%M:%S")}"
           end
-          tasktables << tasktable
-        end
 
-        tasktables.print(@options.tasks,@options.cycles)
+        else
+  
+          # get all jobs from database (hash of hash of hashes:  [Task][Cycle][Cycle_hash])
+  ##          ["ungrib_NAM", "post_nmm_000", "post_nmm_003", "post_nmm_006", "post_nmm_009", 
+  ##           "real_nmm", "metgrid_nmm", "post_nmm_021", "post_nmm024", "post_nmm_027", 
+  ##           "wrf_nmm", "post_nmm_042", "post_nmm_045", "post_nmm_048", "post_nmm_012", 
+  ##           "post_nmm_015", "post_nmm_018", "post_nmm_030", "post_nmm_033", "post_nmm_036", 
+  ##           "post_nmm_039"]
+          puts "========================="
+          puts "          JOBS          "
+          puts "========================="
+  
+          all_tasks = @dbServer.get_jobs
+          tasknames = all_tasks.keys
+          print "Length of hash is:  ", all_tasks.length, "\n\n"
+          print "Job Keys:  ", tasknames.inspect, "\n\n"
+          task_db_cycle_times = all_tasks[tasknames.first].keys       ### Task Keys are the cycle dates; Task Values are a hash"
+                                                                   ###    assumed all tasks had the same number of cycles
+                                                                   ###    not true!!  
+                                                                   ###    .first takes the first taskname in hash, which 
+                                                                   ###      seems to vary from run to run
+          print tasknames.first
+          print "    Task Keys (#{task_db_cycle_times.length}):  ", task_db_cycle_times.inspect, "\n\n"
+          cycle_keys = all_tasks[tasknames.first][task_db_cycle_times.first].keys        ### uses .first since same number of keys
+                                                                                    ###   for every cycle/task pair
+          print "    Cycle Keys:  ", cycle_keys.inspect, "\n\n"
+  
+          puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          puts "DB CYCLES:  #{db_cycle_times.length}"
+          db_cycle_times.each do |db_time|
+            puts db_time.inspect
+          end
+
+          # get list of cycles from XML file
+          puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          puts "XML CYCLES"
+          cycledefs = workflowdoc.cycledefs
+          xml_cycle_times = []
+          reftime=cycledefs.collect { |cdef| cdef.next(Time.gm(1900,1,1,0,0)) }.compact.min
+          while true do
+            break if reftime.nil?
+            puts reftime.inspect
+            xml_cycle_times << reftime
+            reftime=cycledefs.collect { |cdef| cdef.next(reftime+60) }.compact.min
+          end
+
+          # find cycle times in XML file that aren't in database
+          xml_only_times = (xml_cycle_times - db_cycle_times)
+          xml_only_times.sort!
+          puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          puts "NUM_DB_CYCLES:  #{db_cycle_times.length}"
+          puts "DB_CYCLES:  #{db_cycle_times.inspect}"
+          puts "NUM_XML_CYCLES:  #{xml_cycle_times.length}"
+          puts "XML_CYCLES:  #{xml_cycle_times.inspect}"
+          puts "NUM_XMLONLY_CYCLES:  #{xml_only_times.length}"
+          puts "XMLONLY_CYCLES:  #{xml_only_times.inspect}"
+
+          # gather in tasktable
+          #   [:cycle, :state, :taskname, :tries, :exit_status, :nunknowns, :cores, :jobid]
+          tasktables = TaskTables.new
+
+          # add cycles from database
+#DEBUG          puts "TASK NAME:   #{taskname}"
+          all_tasks.each do |taskname, task_value|     ### for each task, the value is the cycle hash for that cycle date
+  
+            tasktable = TaskTable.new(taskname)
+            task_value.each do |cycle_key, cycle_value| 
+              tasktable.add_cycle(Cycle.new(cycle_key,cycle_value[:jobid],cycle_value[:state],
+                                  cycle_value[:exit_status],cycle_value[:tries]))
+            end
+            tasktables << tasktable
+          end
+
+          # add cycles that exist only in XML file to tasktables
+          xml_only_times.each do |cycle_time|
+            tasktable = TaskTable.new('-')
+            tasktable.add_cycle(Cycle.new(cycle_time,'-', '-', '-', '-'))
+            tasktables << tasktable
+          end
+
+
+          # print tasktable
+          tasktables.print(@options.tasks,@options.cycles,@options.taskfirst)
+            
+  
+          # open workflow document and get list of tasks from XML file
+          #    tasks is an array of Task objects
+          #       attributes is a hash
+          #           keys:  account, command, maxtries, name, jobname, cores, queue, native, 
+          #                  cycledefs, walltime, join, memory
+          #       dependency is an Dependency object
+          #       envars is 
+          #
+  
+          puts "========================="
+          puts "=========TASKS=========="
+          puts "========================="
+  
+          tasks = workflowdoc.tasks
+
+          # 
+          puts tasks.class
+          puts tasks.length
+          puts tasks[0].class
+          puts "************"
           
-
-
-        # open workflow document and get list of tasks from XML file
-        #    tasks is an array of Task objects
-        #       attributes is a hash
-        #           keys:  account, command, maxtries, name, jobname, cores, queue, native, 
-        #                  cycledefs, walltime, join, memory
-        #       dependency is an Dependency object
-        #       envars is 
-        #
-
-        puts "========================="
-        puts "=========TASKS=========="
-        puts "========================="
-
-        tasks = WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer).tasks
-
-        puts tasks.class
-        puts tasks.length
-        puts tasks[0].class
-        puts "************"
-        
-        ### attributes
-#        tasks.each do |task|
-#          puts "++++++++++++"
-#          puts "Attributes:  #{task.attributes.keys.inspect}"
-#          task.attributes.each do |attr_key, attr_val|
-#            if attr_val.class == CompoundTimeString then 
-#              puts "  #{attr_key}   #{attr_val.to_s(Time.now)}"
-#            else
-#              puts "  #{attr_key}   #{attr_val}"
-#            end
-#          end
-#        puts "************"
-#        end
-        
-        ### dependencies
-#        tasks.each do |task|
-#          puts "++++++++++++"
-#          puts "Dependency:  #{task.dependency.inspect}"
-#          puts task.dependency.class
-#          puts "************"
-#        end
-
-        ### environment variables
-#        tasks.each do |task|
-#          puts "++++++++++++"
-#          puts "Dependency:  #{task.envars.inspect}"
-#          puts task.envars.class
-#          puts "************"
-#        end
-
-      ensure
-
-        # Make sure we release the workflow lock in the database and shutdown the dbserver
-        unless @dbServer.nil?
-          @dbServer.unlock_workflow if @locked
-          @dbServer.stop! if @config.DatabaseServer
+          ### attributes
+  #        tasks.each do |task|
+  #          puts "++++++++++++"
+  #          puts "Attributes:  #{task.attributes.keys.inspect}"
+  #          task.attributes.each do |attr_key, attr_val|
+  #            if attr_val.class == CompoundTimeString then 
+  #              puts "  #{attr_key}   #{attr_val.to_s(Time.now)}"
+  #            else
+  #              puts "  #{attr_key}   #{attr_val}"
+  #            end
+  #          end
+  #        puts "************"
+  #        end
+          
+          ### dependencies
+  #        tasks.each do |task|
+  #          puts "++++++++++++"
+  #          puts "Dependency:  #{task.dependency.inspect}"
+  #          puts task.dependency.class
+  #          puts "************"
+  #        end
+  
+          ### environment variables
+  #        tasks.each do |task|
+  #          puts "++++++++++++"
+  #          puts "Dependency:  #{task.envars.inspect}"
+  #          puts task.envars.class
+  #          puts "************"
+  #        end
         end
-
-        # Make sure to shut down the workflow file stat server
-        unless @workflowIOServer.nil?
-          @workflowIOServer.stop! if @config.WorkflowIOServer
-        end
-
-      end
+  
+        ensure
+  
+          # Make sure we release the workflow lock in the database and shutdown the dbserver
+          unless @dbServer.nil?
+            @dbServer.unlock_workflow if @locked
+            @dbServer.stop! if @config.DatabaseServer
+          end
+  
+          # Make sure to shut down the workflow file stat server
+          unless @workflowIOServer.nil?
+            @workflowIOServer.stop! if @config.WorkflowIOServer
+          end
+  
+        end  # ensure
     end  # run
 
   end  # Class WorkflowDbStatus
