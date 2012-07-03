@@ -31,6 +31,7 @@ module WorkflowMgr
     require "sqlite3"
     require "socket"
     require "system_timer"
+    require "workflowmgr/cycle"
 
     ##########################################
     #
@@ -267,10 +268,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_cycles
+    # get_cycle
     #
     ##########################################
-    def get_cycles(reftime=Time.gm(1900,1,1,0,0))
+    def get_cycle(reftime=Time.gm(1900,1,1,0,0))
 
       begin
 
@@ -283,12 +284,49 @@ module WorkflowMgr
         database.transaction do |db|
 
           # Retrieve all cycles from the cycle table
-          dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle >= #{reftime.getgm.to_i};")
+          dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle == #{reftime.getgm.to_i};")
 
         end  # database transaction
           
         # Return an array of cycles
-        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm} }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm}) }
+
+        return dbcycles
+
+      rescue SQLite3::BusyException => e
+        raise WorkflowMgr::WorkflowDBLockedException,"Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
+      end  # begin
+
+    end
+
+    ##########################################
+    #
+    # get_cycles
+    #
+    ##########################################
+    def get_cycles(reftime={ :start=>Time.gm(1900,1,1,0,0), :end=>Time.gm(9999,12,31,23,59) } )
+
+      begin
+
+        dbcycles=[]
+
+        # Get a handle to the database
+        database = SQLite3::Database.new(@database_file)
+
+        # Get the starting and ending cycle times
+        startcycle=reftime[:start].nil? ? startcycle=Time.gm(1900,1,1,0,0) : reftime[:start].getgm
+        endcycle=reftime[:end].nil? ? endcycle=Time.gm(9999,12,31,23,59) : reftime[:end].getgm+1 
+
+        # Start a transaction so that the database will be locked
+        database.transaction do |db|
+
+          # Retrieve all cycles from the cycle table
+          dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle >= #{startcycle.getgm.to_i} and cycle <= #{endcycle.getgm.to_i};")
+
+        end  # database transaction
+          
+        # Return an array of cycles
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm }) }
 
         return dbcycles
 
@@ -325,7 +363,7 @@ module WorkflowMgr
         end  # database transaction
           
         # Return the last cycle
-        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm} }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm }) }
 
         return dbcycles.first
 
@@ -340,7 +378,7 @@ module WorkflowMgr
     # get_active_cycles
     #
     ##########################################
-    def get_active_cycles(cycle_lifespan=nil)
+    def get_active_cycles
 
       begin
 
@@ -358,7 +396,7 @@ module WorkflowMgr
         end  # database transaction
           
         # Return the array of cycle specs
-        dbcycles.collect! { |cycle| {:cycle=>Time.at(cycle[0]).getgm, :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm} }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm}) }
 
         return dbcycles
 
@@ -385,7 +423,7 @@ module WorkflowMgr
 
           # Update each cycle in the database
           cycles.each { |newcycle|
-            db.execute("UPDATE cycles SET activated=#{newcycle[:activated].to_i},expired=#{newcycle[:expired].to_i},done=#{newcycle[:done].to_i} WHERE cycle=#{newcycle[:cycle].to_i};")
+            db.execute("UPDATE cycles SET activated=#{newcycle.activated.to_i},expired=#{newcycle.expired.to_i},done=#{newcycle.done.to_i} WHERE cycle=#{newcycle.cycle.to_i};")
           }
 
         end  # database transaction
@@ -414,7 +452,7 @@ module WorkflowMgr
 
           # Add each cycle to the database
           cycles.each { |newcycle|
-            db.execute("INSERT INTO cycles VALUES (NULL,#{newcycle.to_i},#{Time.now.to_i},0,0);")
+            db.execute("INSERT INTO cycles VALUES (NULL,#{newcycle.cycle.to_i},#{newcycle.activated.to_i},#{newcycle.expired.to_i},#{newcycle.done.to_i});")
           }
 
         end  # database transaction

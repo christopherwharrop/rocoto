@@ -87,6 +87,7 @@ module WorkflowMgr
         get_active_jobs
 
         # Update the status of all active jobs
+
         update_active_jobs
 
         # Deactivate completed cycles
@@ -184,7 +185,7 @@ module WorkflowMgr
     def get_active_cycles
 
       # Get active cycles from the database
-      @active_cycles=@dbServer.get_active_cycles(@cyclelifespan)
+      @active_cycles=@dbServer.get_active_cycles
 
       # Activate new cycles
       if @realtime
@@ -192,6 +193,7 @@ module WorkflowMgr
       else
         newcycles=get_new_retro_cycles
       end
+      newcycles.collect! { |cycle| Cycle.new(cycle, { :activated=>Time.now.getgm }) }
 
       # Add new cycles to active cycle list and database
       unless newcycles.empty?
@@ -200,7 +202,7 @@ module WorkflowMgr
         @dbServer.add_cycles(newcycles)
 
         # Add the new cycles to the list of active cycles
-        @active_cycles += newcycles.collect { |cycle| {:cycle=>cycle, :activated=>Time.now.getgm} }
+        @active_cycles += newcycles
 
       end
 
@@ -222,10 +224,10 @@ module WorkflowMgr
       new_cycle=@cycledefs.collect { |c| c.previous(now) }.max
 
       # Get the latest cycle from the database or initialize it to a very long time ago
-      latest_cycle=@dbServer.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
+      latest_cycle=@dbServer.get_last_cycle || Cycle.new(Time.gm(1900,1,1,0,0,0))
 
       # Return the new cycle if it hasn't already been activated
-      if new_cycle > latest_cycle[:cycle]
+      if new_cycle > latest_cycle.cycle
         return [new_cycle]
       else
         return []
@@ -264,10 +266,10 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset=@dbServer.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
+      cycleset=@dbServer.get_cycles( { :start=>@cycledefs.collect { |cycledef| cycledef.position }.compact.min } )
 
       # Sort the cycleset
-      cycleset.sort { |a,b| a[:cycle] <=> b[:cycle] }
+      cycleset.sort!
 
       # Find N new cycles to be added
       newcycles=[]
@@ -285,7 +287,7 @@ module WorkflowMgr
           # Iterate through cycles until we find a cycle that has not ever been activated
           # or we have tried all the cycles represented by the cycledef
           while !next_cycle.nil? do
-            match=cycleset.find { |c| c[:cycle]==next_cycle }
+            match=cycleset.find { |c| c.cycle==next_cycle }
             break if match.nil?
             next_cycle=cycledef.next(next_cycle + 60)
           end
@@ -312,7 +314,7 @@ module WorkflowMgr
           newcycles << newcycle
 
           # Add the new cycle to the cycleset so that we don't try to add it again
-          cycleset << { :cycle=>newcycle }
+          cycleset << Cycle.new(newcycle)
 
         end  # if cyclepool.empty?
 
@@ -340,13 +342,13 @@ module WorkflowMgr
       @active_cycles.each do |active_cycle|
 
         # Add each active cycle to the active job cycles
-        job_cycles << active_cycle[:cycle]
+        job_cycles << active_cycle.cycle
 
         # Add cycles for each known cycle offset in task dependencies
         # but only for cycles that have not just expired
-        if Time.now - active_cycle[:activated] < @cyclelifespan
+        if Time.now - active_cycle.activated < @cyclelifespan
           @taskdep_cycle_offsets.each do |cycle_offset|
-            job_cycles << active_cycle[:cycle] + cycle_offset
+            job_cycles << active_cycle.cycle + cycle_offset
           end
         end
 
@@ -638,7 +640,7 @@ module WorkflowMgr
               end
 
               # Reject this task if the cycle is not a member of the tasks cycle list
-              next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle[:cycle]) }
+              next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle.cycle) }
 
             end  # unless
 
@@ -646,19 +648,19 @@ module WorkflowMgr
             throw :not_done if @active_jobs[task.attributes[:name]].nil?
 
             # The cycle is not done if this task has not been submitted yet for this cycle
-            throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]].nil?
+            throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
 
             # The cycle is not done if the job for this task and cycle is not in the done state
-            throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:state] != "SUCCEEDED"
+            throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle][:state] != "SUCCEEDED"
 
 # For now, only tag cycles as done if they are done successfully, meaning that all tasks are complete and have exit status = 0.
 # If we mark cycles as done when they have tasks that exceeded retries, then increasing retries won't cause them to rerun again
 #
 #            # The cycle is not done if the job for this task and cycle is done, but has crashed and has not yet exceeded the retry count
-#            if @active_jobs[task.attributes[:name]][cycle[:cycle]][:tries] >= task.attributes[:maxtries]
+#            if @active_jobs[task.attributes[:name]][cycle.cycle][:tries] >= task.attributes[:maxtries]
 #              cycle_success=false
 #            else
-#              throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:exit_status] != 0 
+#              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle][:exit_status] != 0 
 #            end
 
           end  # tasks.each
@@ -670,17 +672,17 @@ module WorkflowMgr
         # If the cycle is done, record the time and update active cycle list
         if cycle_done
         
-          # Set the expiration time
-          cycle[:done]=Time.now.getgm
+          # Mark the cycle as done
+          cycle.done!
 
           # Add to list of done cycles
           done_cycles << cycle
 
           # Log the done status of this cycle
           if cycle_success
-            @logServer.log(cycle[:cycle],"This cycle is complete: Success") 
+            @logServer.log(cycle.cycle,"This cycle is complete: Success") 
           else
-            @logServer.log(cycle[:cycle],"This cycle is complete: Failed") 
+            @logServer.log(cycle.cycle,"This cycle is complete: Failed") 
           end
 
           # Update the done cycle in the database 
@@ -713,10 +715,10 @@ module WorkflowMgr
       @active_cycles.each do |cycle|
 
         # If the cycle has expired, mark it, and delete jobs if necessary
-        if Time.now.getgm - cycle[:activated].getgm > @cyclelifespan
+        if Time.now.getgm - cycle.activated.getgm > @cyclelifespan
 
           # Set the expiration time
-          cycle[:expired]=Time.now.getgm
+          cycle.expire!
 
           # Add to list of expired cycles
           expired_cycles << cycle
@@ -731,14 +733,14 @@ module WorkflowMgr
       # Delete any jobs for the expired cycles
       expired_cycles.each do |cycle|          
         @active_jobs.keys.each do |taskname|
-          next if @active_jobs[taskname][cycle[:cycle]].nil?
-          unless @active_jobs[taskname][cycle[:cycle]][:state] == "SUCCEEDED" || @active_jobs[taskname][cycle[:cycle]][:state] == "FAILED" || @active_jobs[taskname][cycle[:cycle]][:state] == "DEAD"
-            @logServer.log(cycle[:cycle],"Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} because this cycle has expired!")
-            @bqServer.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])
+          next if @active_jobs[taskname][cycle.cycle].nil?
+          unless @active_jobs[taskname][cycle.cycle][:state] == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle][:state] == "FAILED" || @active_jobs[taskname][cycle.cycle][:state] == "DEAD"
+            @logServer.log(cycle.cycle,"Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle][:jobid]} because this cycle has expired!")
+            @bqServer.delete(@active_jobs[taskname][cycle.cycle][:jobid])
           end
         end
 
-        @logServer.log(cycle[:cycle],"This cycle has expired!")
+        @logServer.log(cycle.cycle,"This cycle has expired!")
         
         # Update the expired cycles in the database
         @dbServer.update_cycles([cycle]) 
@@ -764,7 +766,7 @@ module WorkflowMgr
       taskcycledefs={}
 
       # Loop over active cycles and tasks, looking for eligible tasks to submit
-      @active_cycles.collect { |c| c[:cycle] }.sort.each do |cycle|
+      @active_cycles.collect { |c| c.cycle }.sort.each do |cycle|
         @tasks.each do |task|
 
           # Mqke sure the task is eligible for submission
