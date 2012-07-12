@@ -93,7 +93,7 @@ module WorkflowMgr
           when :walltime
             cmd += " -l walltime=#{value}"
           when :memory
-            cmd += " -l mem=#{value}"
+            cmd += " -l vmem=#{value}"
           when :stdout
             cmd += " -o #{value}"
           when :stderr
