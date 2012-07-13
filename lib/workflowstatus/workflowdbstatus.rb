@@ -12,7 +12,7 @@ module WorkflowMgr
   ##############################################
   class Cycle
 
-    # sets activated time based on state
+    # sets activated time based on state  [mon dd, YYYY HH:MM:SS]
     def activated_time_string(fmt="%b %d %Y %H:%M:%S")
 
       case @state
@@ -175,16 +175,20 @@ module WorkflowMgr
 
       Job.sort_order([:taskname,:time]) if taskfirst == true
       sort!
+      
+      # date format (YYYYMMDDHHMM)
+      #  date_format = "%b %d %Y %H:%M"        #mon dd, YYYY HH:MM
+      date_format = "%Y%m%d%H%M"             
 
-      ## print header line
+      # print header line
       if taskfirst == true then
-        header_format = "%18s %22s %10s %16s %12s %6s\n"
-        header_string = "TASK".center(18),"CYCLE".center(18),"JOBID".center(10), 
-                        "STATE".center(16),"EXIT STATUS".center(12),"TRIES".center(6)
+        header_format = "%11s %20s %14s %16s %16s %6s\n"
+        header_string = "TASK".rjust(11),"CYCLE".rjust(20),"JOBID".rjust(14), 
+                        "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6)
       else
-        header_format = "%22s %23s %10s %16s %12s %6s\n"
-        header_string = "CYCLE".center(18),"TASK".center(23),"JOBID".center(10), 
-                        "STATE".center(16),"EXIT STATUS".center(12),"TRIES".center(6)
+        header_format = "%11s %20s %11s %16s %16s %6s\n"
+        header_string = "CYCLE".rjust(11),"TASK".rjust(11),"JOBID".rjust(18), 
+                        "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6)
       end
       header = header_format % header_string
       puts header
@@ -207,6 +211,9 @@ module WorkflowMgr
     # print cycles for each taskname
     #    if no cycle argument list, print out latest cycle activated
     def print_cycles(cycles_arglist_string,taskfirst,jobtables)
+ 
+      # date format (YYYYMMDDHHMM)
+      date_format = "%Y%m%d%H%M"             
 
       # ===============================================
       # range of cycles
@@ -241,15 +248,15 @@ module WorkflowMgr
           index = i if jt.time.between?(cycles_range[0],cycles_range[1])
           if (!index.nil?) then
             if taskfirst == true then
-              cycle_string = sprintf("%18s %18s", "  #{jt.taskname.ljust(18)}", 
-                                     "#{jt.time.strftime("%b %d %Y %H:%M").center(18)}")
+              cycle_string = sprintf("%18s %14s", "  #{jt.taskname.ljust(14)}", 
+                                     "#{jt.time.strftime(date_format).center(18)}")
             else
-              cycle_string = sprintf("%23s %18s","  #{jt.time.strftime("%b %d %Y %H:%M").ljust(23)}", 
-                                     "#{jt.taskname.ljust(18)}")
+              cycle_string = sprintf("%14s %5s %18s","  #{jt.time.strftime(date_format).ljust(14)}", 
+                                     "", "#{jt.taskname.ljust(18)}")
             end
-            info_string  =  sprintf("%11s %16s %9s %8s", "#{jt.jobid.to_s[0,10]}", 
+            info_string  =  sprintf("%11s %16s %9s %10s", "#{jt.jobid.to_s[0,10]}", 
                                    "#{jt.state.rjust(16)}", "#{jt.exit_status.to_s[0,5]}", 
-                                   "#{jt.tries.to_s[0,6]}")
+                                   "#{jt.tries.to_s[0,10]}")
             puts cycle_string + info_string
           end
 
@@ -285,15 +292,15 @@ module WorkflowMgr
           index = i if cycles.include?(jt.time) 
           if (!index.nil?) then
             if taskfirst == true then
-              cycle_string = sprintf("%18s %18s", "  #{jobtables[index].taskname.ljust(18)}", 
-                                     "#{jobtables[index].time.strftime("%b %d %Y %H:%M").center(18)}")
+              cycle_string = sprintf("%18s %14s", "  #{jobtables[index].taskname.ljust(18)}", 
+                                     "#{jobtables[index].time.strftime(date_format).center(14)}")
             else
-              cycle_string = sprintf("%23s %18s", "  #{jobtables[index].time.strftime("%b %d %Y %H:%M").center(23)}", 
-                                     "#{jobtables[index].taskname.ljust(18)}")
+              cycle_string = sprintf("%14s %5s %18s","  #{jt.time.strftime(date_format).ljust(14)}", 
+                                     "", "#{jt.taskname.ljust(18)}")
             end
-            info_string  =  sprintf("%11s %16s %9s %8s", "#{jobtables[index].jobid.to_s[0,10]}", 
-                                    "#{jobtables[index].state.rjust(16)}", 
-                                    "#{jobtables[index].exit_status.to_s[0,5]}", "#{jobtables[index].tries.to_s[0,6]}")
+            info_string  =  sprintf("%12s %16s %9s %10s", "#{jt.jobid.to_s[0,12]}", 
+                                   "#{jt.state.rjust(16)}", "#{jt.exit_status.to_s[0,5]}", 
+                                   "#{jt.tries.to_s[0,10]}")
             output_string = cycle_string + info_string
             puts output_string
           end
@@ -308,11 +315,11 @@ module WorkflowMgr
           common =  [input_cycle] & table_times
           if (common.empty?) then 
             if taskfirst == true then
-              cycle_string = sprintf("%18s %23s", "-".center(18), "#{input_cycle.strftime("%b %d %Y %H:%M").center(23)}")
+              cycle_string = sprintf("%18s %2s %14s", "-".center(18), "", "#{input_cycle.strftime(date_format).center(14)}")
             else
-              cycle_string = sprintf("%23s %20s %2s","#{input_cycle.strftime("%b %d %Y %H:%M").center(23)}", "-".center(20), "")
+              cycle_string = sprintf("%16s %2s %18s","#{input_cycle.strftime(date_format).center(16)}", "", "-".center(20))
             end
-            info_string  =  sprintf("%6s %12s %14s %9s", "-","-".rjust(14),"-","-")
+            info_string  =  sprintf("%9s %15s %14s %9s", "-","-","-","-")
             output_string = cycle_string + info_string
             puts output_string
           end
