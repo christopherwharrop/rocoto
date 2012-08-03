@@ -485,13 +485,13 @@ module WorkflowMgr
           if cycles.nil?
 
             # Retrieve all jobs from the job table
-            dbjobs=db.execute("SELECT jobid,taskname,cycle,cores,state,exit_status,tries,nunknowns FROM jobs;")
+            dbjobs=db.execute("SELECT jobid,taskname,cycle,cores,state,native_state,exit_status,tries,nunknowns FROM jobs;")
 
           else
 
             # Retrieve all jobs from the job table that match the cycles provided
             cycles.each do |cycle|
-              dbjobs+=db.execute("SELECT jobid,taskname,cycle,cores,state,exit_status,tries,nunknowns FROM jobs WHERE cycle = #{cycle.to_i};")
+              dbjobs+=db.execute("SELECT jobid,taskname,cycle,cores,state,native_state,exit_status,tries,nunknowns FROM jobs WHERE cycle = #{cycle.to_i};")
             end
 
           end        
@@ -504,9 +504,10 @@ module WorkflowMgr
           jobcycle=Time.at(job[2]).getgm
           jobcores=job[3].to_i
           jobstate=job[4]
-          jobstatus=job[5].to_i
-          jobtries=job[6].to_i
-          jobnunknowns=job[7].to_i
+          jobnativestate=job[5]
+          jobstatus=job[6].to_i
+          jobtries=job[7].to_i
+          jobnunknowns=job[8].to_i
           jobs[jobtask]={} if jobs[jobtask].nil?
           jobs[jobtask][jobcycle]={} if jobs[jobtask][jobcycle].nil?
           jobs[jobtask][jobcycle][:jobid]=jobid
@@ -514,6 +515,7 @@ module WorkflowMgr
           jobs[jobtask][jobcycle][:cycle]=jobcycle
           jobs[jobtask][jobcycle][:cores]=jobcores
           jobs[jobtask][jobcycle][:state]=jobstate
+          jobs[jobtask][jobcycle][:native_state]=jobnativestate
           jobs[jobtask][jobcycle][:exit_status]=jobstatus
           jobs[jobtask][jobcycle][:tries]=jobtries
           jobs[jobtask][jobcycle][:nunknowns]=jobnunknowns
@@ -546,7 +548,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskname]}',#{job[:cycle].to_i},#{job[:cores]},'#{job[:state]}',#{job[:exit_status]},#{job[:tries]},#{job[:nunknowns]});")
+            db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskname]}',#{job[:cycle].to_i},#{job[:cores]},'#{job[:state]}','#{job[:native_state]}',#{job[:exit_status]},#{job[:tries]},#{job[:nunknowns]});")
           end
 
         end  # database transaction
@@ -575,7 +577,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]},nunknowns=#{job[:nunknowns]} WHERE cycle=#{job[:cycle].to_i} AND taskname='#{job[:taskname]}';")
+            db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',native_state='#{job[:native_state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]},nunknowns=#{job[:nunknowns]} WHERE cycle=#{job[:cycle].to_i} AND taskname='#{job[:taskname]}';")
           end
 
         end  # database transaction
@@ -914,8 +916,8 @@ module WorkflowMgr
      end
 
      # Create the jobs table
-      unless tables.member?("jobs")
-        db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER);")
+     unless tables.member?("jobs")
+       db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], native_state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER);")
      end
 
      # Create the bqservers table
