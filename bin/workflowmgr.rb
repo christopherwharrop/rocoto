@@ -16,7 +16,7 @@ $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
 
-WorkflowMgr::VERSION="0.0.1"
+WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
 
 # Create workflow engine and run it
 workflowengine=WorkflowMgr::WorkflowEngine.new(ARGV)
