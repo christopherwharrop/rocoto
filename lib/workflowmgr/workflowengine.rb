@@ -87,7 +87,6 @@ module WorkflowMgr
         get_active_jobs
 
         # Update the status of all active jobs
-
         update_active_jobs
 
         # Deactivate completed cycles
@@ -845,6 +844,7 @@ module WorkflowMgr
 
           # Submit the task
           @bqServer.submit(task.localize(cycle),cycle)
+          @logServer.log(cycle,"Submitting #{task.attributes[:name]}")
 
         end
 
@@ -858,7 +858,7 @@ module WorkflowMgr
         uri=job[:jobid]
         jobid,output=@bqServer.get_submit_status(job[:taskname],job[:cycle])
         if output.nil?
-          @logServer.log(job[:cycle],"Submitted #{job[:taskname]}.  Submission status is pending at #{job[:jobid]}")
+          @logServer.log(job[:cycle],"Submission status of #{job[:taskname]} is pending at #{job[:jobid]}")
         else
           if jobid.nil?
             # Delete the job from the database since it failed to submit.  It will be retried next time around.
@@ -867,7 +867,7 @@ module WorkflowMgr
             @logServer.log(job[:cycle],"Submission of #{job[:taskname]} failed!  #{output}")
           else
             job[:jobid]=jobid
-            @logServer.log(job[:cycle],"Submitted #{job[:taskname]}, jobid=#{job[:jobid]}")
+            @logServer.log(job[:cycle],"Submission of #{job[:taskname]} succeeded, jobid=#{job[:jobid]}")
             # Update the jobid for the job in the database
             @dbServer.update_jobs([job])
           end
