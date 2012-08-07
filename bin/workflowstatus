@@ -1,24 +1,14 @@
-#!/usr/bin/ruby
+#!/bin/sh
 
-# Get the base directory of the WFM installation
-if File.symlink?(__FILE__)
-  __WFMDIR__=File.dirname(File.dirname(File.expand_path(File.readlink(__FILE__),File.dirname(__FILE__))))
-else
-  __WFMDIR__=File.dirname(File.expand_path(File.dirname(__FILE__)))
-end
+# Source /etc/profile to set up environment for batch system access
+# We can't do '#!/bin/sh -l' or '#!/bin/sh --login' because those options are not portable
+# There does not appear to be a portable way to run a shell as a login shell
+. /etc/profile
 
-# Add include paths for WFM and libxml-ruby libraries
-$:.unshift("#{__WFMDIR__}/lib")
-$:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
-$:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
-$:.unshift("#{__WFMDIR__}/lib/SystemTimer")
+# Get the directory where the WFM is installed
+wfmdir=`dirname $0`
 
-# Load workflow status library
-require 'workflowstatus/workflowdbstatus'
+# Run the WFM status program
+${wfmdir}/workflowstatus.rb $*
 
-WorkflowMgr::VERSION="0.0.1"
-
-# Create workflow status and run it
-workflowdbstatus=WorkflowMgr::WorkflowDbStatus.new(ARGV)
-workflowdbstatus.run
-
+exit $?
