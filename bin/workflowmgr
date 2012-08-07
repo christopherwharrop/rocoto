@@ -9,6 +9,6 @@
 wfmdir=`dirname $0`
 
 # Run the WFM
-${wfmdir}/workflowmgr.rb $*
+${wfmdir}/../sbin/workflowmgr.rb $*
 
 exit $?
