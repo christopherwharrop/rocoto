@@ -8,7 +8,7 @@
 # Get the directory where the WFM is installed
 wfmdir=`dirname $0`
 
-# Run the WFM status program
-${wfmdir}/workflowstatus.rb $*
+# Run the WFM boot program
+${wfmdir}/workflowboot.rb $*
 
 exit $?
