@@ -134,6 +134,45 @@ module WorkflowMgr
 
     end  # done!
 
+
+    ##########################################
+    #
+    # activated_time_string
+    #
+    # sets activated time based on state  [mon dd, YYYY HH:MM:SS]
+    #
+    ##########################################
+    def activated_time_string(fmt="%b %d %Y %H:%M:%S")
+
+      case @state
+        when :inactive
+          activated="-"
+        when :active, :done, :expired
+          activated=@activated.strftime(fmt)
+      end
+      activated
+    end
+
+    ##########################################
+    #
+    # deactivated_time_string
+    #
+    # sets deactivated time based on state
+    #
+    ##########################################
+    def deactivated_time_string(fmt="%b %d %Y %H:%M:%S")
+
+      case @state
+        when :inactive, :active
+          deactivated="-"
+        when :done
+          deactivated=@done.strftime(fmt)
+        when :expired
+          deactivated=@expired.strftime(fmt)
+      end
+      deactivated
+    end
+
   end  # Class Cycle
 
 end  # Module WorkflowMgr

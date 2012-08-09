@@ -5,379 +5,6 @@
 ##########################################
 module WFMStat
 
-  ##############################################
-  #
-  # Class Cycle  -  reopen class to add methods
-  #
-  ##############################################
-  class Cycle
-
-    # sets activated time based on state  [mon dd, YYYY HH:MM:SS]
-    def activated_time_string(fmt="%b %d %Y %H:%M:%S")
-
-      case @state
-        when :inactive
-          activated="-"
-        when :active
-          activated=@activated.strftime(fmt)
-        when :done 
-          activated=@activated.strftime(fmt)
-        when :expired
-          activated=@activated.strftime(fmt)
-      end
-      activated
-    end
-
-    # sets deactivated time based on state
-    def deactivated_time_string(fmt="%b %d %Y %H:%M:%S")
-
-      case @state
-        when :inactive
-          deactivated="-"
-        when :active
-          deactivated="-"
-        when :done 
-          deactivated=@done.strftime(fmt)
-        when :expired
-          deactivated=@expired.strftime(fmt)
-      end
-      deactivated
-    end
-  end
-
-  ##########################################
-  #
-  # Class SummaryTable
-  #
-  ##########################################
-  class SummaryTable
-
-    def initialize(array_cycles)
-      @summary_table = array_cycles
-    end
-
-    def print(cycles_arglist_string)
-
-      # print header
-      printf "%13s %10s %26s %24s\n","CYCLE".center(12),"STATE".center(8),"ACTIVATED".center(24),
-             "DEACTIVATED".center(24)
-
-      # ===============================================
-      # if no cycles specified, print all cycles
-      # ===============================================
-      if cycles_arglist_string.empty? then
-
-        # print cycle date/times
-        @summary_table.each do |cycle| 
-          printf "%12s %10s %24s %24s\n","#{cycle.cycle.strftime("%Y%m%d%H%M")}", 
-                                         "#{cycle.state}",
-                                         "#{cycle.activated_time_string}",
-                                         "#{cycle.deactivated_time_string}"
-        end
-
-      else
-
-        # ===============================================
-        # range of cycles
-        # ===============================================
-        if cycles_arglist_string.include?(':') then
-          index = cycles_arglist_string.index(':')
-          if index == 0 then                                        ## :c2
-            first = '190001010000'
-            last  = cycles_arglist_string[index.next..cycles_arglist_string.length-1]
-          elsif index == cycles_arglist_string.length-1 then        ## c1:
-            first = cycles_arglist_string[0..index-1]
-            last =  '999912311259'
-          else                                                      ## c1:c2
-            first = cycles_arglist_string[0..index-1]
-            last  = cycles_arglist_string[index.next..cycles_arglist_string.length-1]
-          end
-  
-          # convert to array of Time objects
-          cycles_range = []
-          crange = [first, last]
-          crange.each do |cyclestr|
-            parsed_date = ParseDate.parsedate(cyclestr.strip)
-            tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
-                          parsed_date[4])
-            cycles_range << tm
-          end
-  
-          # print out info for specified cycles if first <= cycle <= last 
-          @summary_table.each_with_index do |cycle,i|
-            index= nil
-            index = i if cycle.cycle.between?(cycles_range[0],cycles_range[1])
-            if (!index.nil?) then
-              printf "%12s %10s %24s %24s\n","#{cycle.cycle.strftime("%Y%m%d%H%M")}", 
-                                             "#{cycle.state}",
-                                             "#{cycle.activated_time_string}",
-                                             "#{cycle.deactivated_time_string}"
-            end  # if not nil
-          end  # @summary_table do
-
-        # ===============================================
-        # list of cycles
-        # ===============================================
-        else
-          cycles_arglist = []
-          cycles_arglist_string.split(',').each do |cyclestr|
-            parsed_date = ParseDate.parsedate(cyclestr.strip)
-            tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3],
-                          parsed_date[4])
-            cycles_arglist << tm
-          end
-          cycles = cycles_arglist.sort
-  
-          # print out info for specified cycles if cycle matches input_cycle
-          @summary_table.each_with_index do |cycle,i|
-            index= nil
-            index = i if cycles.include?(cycle.cycle)
-            if (!index.nil?) then
-              printf "%12s %10s %24s %24s\n","#{cycle.cycle.strftime("%Y%m%d%H%M")}", 
-                                             "#{cycle.state}",
-                                             "#{cycle.activated_time_string}",
-                                             "#{cycle.deactivated_time_string}"
-            end  # if not nil
-          end  # @summary_table do 
-
-        end  # if range or list
-      end  # cycle_summary
-    end
-
-  end  # SummaryTable
-
-  ##########################################
-  #
-  # Class JobTables
-  #
-  ##########################################
-  class JobTables
-
-    attr_reader :jobtables
-
-    def initialize
-      @jobtables = []
-    end
-
-    def << (jobtable)
-      @jobtables << jobtable
-    end
-
-    # sort Job objects in place by task name
-    def sort!
-      @jobtables.sort!
-    end
-
-    # print table with tasknames sorted 
-    #    if no taskname argument list, print out all tasks
-    #    if specified taskname does not exist, print nothing
-    def print(tasknames_arglist, cycles_arglist_string, taskfirst)
-
-      Job.sort_order([:taskname,:time]) if taskfirst == true
-      sort!
-      
-      # date format (YYYYMMDDHHMM)
-      #  date_format = "%b %d %Y %H:%M"        #mon dd, YYYY HH:MM
-      date_format = "%Y%m%d%H%M"             
-
-      # print header line
-      if taskfirst == true then
-        header_format = "%11s %20s %14s %16s %16s %6s\n"
-        header_string = "TASK".rjust(11),"CYCLE".rjust(20),"JOBID".rjust(14), 
-                        "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6)
-      else
-        header_format = "%11s %20s %11s %16s %16s %6s\n"
-        header_string = "CYCLE".rjust(11),"TASK".rjust(11),"JOBID".rjust(18), 
-                        "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6)
-      end
-      header = header_format % header_string
-      puts header
-
-      ## print out info, if task matches input_taskname
-      if tasknames_arglist.empty? then
-        print_cycles(cycles_arglist_string,taskfirst,@jobtables)
-      else
-        newjobtables = []
-        tasknames_arglist.sort.each do |input_taskname|
-          @jobtables.each_with_index do |jobtable,i|
-            newjobtables << @jobtables[i] if input_taskname == jobtable.taskname 
-          end
-        end  # tasknames_arglist do
-        newjobtables.sort!
-        print_cycles(cycles_arglist_string,taskfirst,newjobtables)
-      end  # if
-    end  # def print
-
-    # print cycles for each taskname
-    #    if no cycle argument list, print out latest cycle activated
-    def print_cycles(cycles_arglist_string,taskfirst,jobtables)
- 
-      # date format (YYYYMMDDHHMM)
-      date_format = "%Y%m%d%H%M"             
-
-      # ===============================================
-      # range of cycles
-      # ===============================================
-      if cycles_arglist_string.include?(':') then
-        index = cycles_arglist_string.index(':')
-        if index == 0 then                                        ## :c2
-          first = '190001010000'
-          last  = cycles_arglist_string[index.next..cycles_arglist_string.length-1]
-        elsif index == cycles_arglist_string.length-1 then        ## c1:
-          first = cycles_arglist_string[0..index-1]
-          last =  '999912311259'
-        else                                                      ## c1:c2
-          first = cycles_arglist_string[0..index-1]
-          last  = cycles_arglist_string[index.next..cycles_arglist_string.length-1]
-        end
-
-        # convert to array of Time objects
-        cycles_range = []
-        crange = [first, last]
-        crange.each do |cyclestr|
-          parsed_date = ParseDate.parsedate(cyclestr.strip)
-          tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
-                        parsed_date[4])
-          cycles_range << tm
-        end
-
-        # print out info for specified cycles if first <= cycle <= last 
-        jobtables.each_with_index do |jt,i|
-##DEBUG          puts jt.time, jt.taskname
-          index= nil
-          index = i if jt.time.between?(cycles_range[0],cycles_range[1])
-          if (!index.nil?) then
-            if taskfirst == true then
-              cycle_string = sprintf("%18s %14s", "  #{jt.taskname.ljust(14)}", 
-                                     "#{jt.time.strftime(date_format).center(18)}")
-            else
-              cycle_string = sprintf("%14s %5s %18s","  #{jt.time.strftime(date_format).ljust(14)}", 
-                                     "", "#{jt.taskname.ljust(18)}")
-            end
-            info_string  =  sprintf("%11s %16s %9s %10s", "#{jt.jobid.to_s[0,10]}", 
-                                   "#{jt.state.rjust(16)}", "#{jt.exit_status.to_s[0,5]}", 
-                                   "#{jt.tries.to_s[0,10]}")
-            puts cycle_string + info_string
-          end
-
-        end  # jobtables do
-      # ===============================================
-      # list of cycles or last cycle, if none specified
-      # ===============================================
-      else
-        cycles_arglist = []
-        cycles_arglist_string.split(',').each do |cyclestr|
-          parsed_date = ParseDate.parsedate(cyclestr.strip)
-          tm = Time.utc(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], 
-                        parsed_date[4])
-          cycles_arglist << tm
-        end
-
-        # -c option not specified
-        if cycles_arglist.empty? then
-          times = []
-          jobtables.each do |jt|
-            times << jt.time
-          end
-          times.uniq!
-          cycles = [] << times.last               ## match last cycle activated
-        else
-          cycles = cycles_arglist.sort
-        end
-
-        # print out info for specified cycles if cycle matches input_cycle
-        jobtables.each_with_index do |jt,i|
-##DEBUG          puts jt.time, jt.taskname
-          index= nil
-          index = i if cycles.include?(jt.time) 
-          if (!index.nil?) then
-            if taskfirst == true then
-              cycle_string = sprintf("%18s %14s", "  #{jobtables[index].taskname.ljust(18)}", 
-                                     "#{jobtables[index].time.strftime(date_format).center(14)}")
-            else
-              cycle_string = sprintf("%14s %5s %18s","  #{jt.time.strftime(date_format).ljust(14)}", 
-                                     "", "#{jt.taskname.ljust(18)}")
-            end
-            info_string  =  sprintf("%12s %16s %9s %10s", "#{jt.jobid.to_s[0,12]}", 
-                                   "#{jt.state.rjust(16)}", "#{jt.exit_status.to_s[0,5]}", 
-                                   "#{jt.tries.to_s[0,10]}")
-            output_string = cycle_string + info_string
-            puts output_string
-          end
-        end  # jobtables do
-
-        cycles.each do |input_cycle|
-          ## check for user specified cycles that do not exist in database or XML file
-          table_times = []
-          jobtables.each_with_index do |jt,i|
-            table_times << jt.time
-          end
-          common =  [input_cycle] & table_times
-          if (common.empty?) then 
-            if taskfirst == true then
-              cycle_string = sprintf("%18s %2s %14s", "-".center(18), "", "#{input_cycle.strftime(date_format).center(14)}")
-            else
-              cycle_string = sprintf("%16s %2s %18s","#{input_cycle.strftime(date_format).center(16)}", "", "-".center(20))
-            end
-            info_string  =  sprintf("%9s %15s %14s %9s", "-","-","-","-")
-            output_string = cycle_string + info_string
-            puts output_string
-          end
-        end  # cycles do
-
-      end  # if-else
-
-    end  # def print_cycles
-
-  end  # JobTables
-
-
-  ##########################################
-  #
-  # Class Job
-  #
-  ##########################################
-  class Job
-
-    include Enumerable
-
-    @@sort_order = [:time, :taskname]
-
-    # pass in an Array of Symbols
-    def self.sort_order(neworder)
-      @@sort_order = neworder
-    end
-
-    attr_reader :taskname, :time, :state, :jobid, :exit_status, :tries
-
-    def initialize(taskname,time,jobid,state,exit_status,tries)
-      @taskname = taskname   # String
-      @time = time
-      @jobid = jobid
-      @state = state
-      @exit_status = exit_status
-      @tries = tries
-    end
-
-    # sort by @@sort_order
-    def <=>(other)
-      # generalize later
-      if (@@sort_order.first == :taskname) then
-        ret = @taskname <=> other.taskname
-        if (@taskname == other.taskname) then
-          ret = @time <=> other.time
-        end
-      else
-        ret = @time <=> other.time
-        if (@time == other.time) then
-          ret = @taskname <=> other.taskname
-        end
-      end
-      ret
-    end
-
-  end  # Job
-
   ##########################################
   #
   # Class StatusEngine
@@ -393,6 +20,9 @@ module WFMStat
     require "workflowmgr/cycle"
     require 'workflowmgr/dependency'
     require 'wfmstat/statusoption'
+    require 'wfmstat/summarytable'
+    require 'wfmstat/jobtables'
+    require 'wfmstat/job'
 
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/launchserver'
@@ -413,16 +43,16 @@ module WFMStat
 ##DEBUG      puts @options.summary.inspect
 
       # Get configuration file options
-      @config=WorkflowYAMLConfig.new
+      @config=WorkflowMgr::WorkflowYAMLConfig.new
 
       # Get the base directory of the WFM installation
       @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
       # Set up an object to serve the workflow database (but do not open the database)
-      @dbServer=DBProxy.new(@options.database,@config)
+      @dbServer=WorkflowMgr::DBProxy.new(@options.database,@config)
 
       # Set up an object to serve file stat info
-      @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)        
+      @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config)        
 
     end  # initialize
 
@@ -440,7 +70,7 @@ module WFMStat
         @dbServer.dbopen
 
         # open workflow document 
-        workflowdoc = WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer)
+        workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer)
 
         # Get all cycles from database (array of hashes)
         #     [:cycle, :activated, :expired, :done]
