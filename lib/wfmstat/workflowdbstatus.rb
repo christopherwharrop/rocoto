@@ -1,9 +1,9 @@
 ##########################################
 #
-# Module WorkflowMgr
+# Module WFMStat
 #
 ##########################################
-module WorkflowMgr
+module WFMStat
 
   ##############################################
   #
@@ -392,7 +392,7 @@ module WorkflowMgr
     require 'workflowmgr/cycledef'
     require "workflowmgr/cycle"
     require 'workflowmgr/dependency'
-    require 'workflowstatus/workflowstatusopt'
+    require 'wfmstat/workflowstatusopt'
 
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/launchserver'
@@ -407,7 +407,7 @@ module WorkflowMgr
     def initialize(args)
 
       # Get command line options
-      @options=WorkflowStatusOpt.new(args)
+      @options=WFMStatOption.new(args)
 
 ##DEBUG      puts @options.cycles.inspect
 ##DEBUG      puts @options.summary.inspect

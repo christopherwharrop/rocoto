@@ -14,11 +14,11 @@ $:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
 $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 
 # Load workflow status library
-require 'workflowstatus/workflowdbstatus'
+require 'wfmstat/workflowdbstatus'
 
-WorkflowMgr::VERSION="0.0.1"
+WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
 
 # Create workflow status and run it
-workflowdbstatus=WorkflowMgr::WorkflowDbStatus.new(ARGV)
+workflowdbstatus=WFMStat::WorkflowDbStatus.new(ARGV)
 workflowdbstatus.run
 

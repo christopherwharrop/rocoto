@@ -1,19 +1,19 @@
 ##########################################
 #
-# Module WorkflowMgr
+# Module WFMStat
 #
 ##########################################
-module WorkflowMgr
+module WFMStat
 
   ##########################################  
   #
-  # Class WorkflowStatusOpt
+  # Class WFMStatOption
   #
   ##########################################
   ### to call:  ./workflowstatusopt.rb -x xmlfile -d dbfile [-c "c1, c2, c3"] [-t "tk1, tk2, tk3"] [-s]
   ###
 
-  class WorkflowStatusOpt
+  class WFMStatOption
 
     require 'optparse'
     require 'pp'                      
@@ -50,10 +50,10 @@ module WorkflowMgr
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  workflowstatus -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s]"
+        opts.banner = "Usage:  wfmstat -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s]"
 
         # Specify the database file
-        opts.on("-d","--database file",String,"Path to database store file") do |db|
+        opts.on("-d","--database file",String,"Path to workflow database file") do |db|
           @database=db
         end
      
@@ -65,7 +65,6 @@ module WorkflowMgr
         # Cycles of interest
         #      C   C,C,C  C:C  :C   C:
         #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C
-
         opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' ",String,"List of cycles") do |clist|
           @cycles=clist
         end
@@ -88,6 +87,12 @@ module WorkflowMgr
         # Help
         opts.on("-h","--help","Show this message") do
           puts opts
+          exit
+        end
+
+        # Handle option for version
+        opts.on("--version","Show Workflow Manager version") do
+          puts "Workflow Manager Version #{WorkflowMgr::VERSION}"
           exit
         end
 
@@ -114,6 +119,6 @@ module WorkflowMgr
      
     end  # parse
 
-  end  # Class WorkflowStatusOpt
+  end  # Class WFMStatOption
 
-end  # Module WorkflowMgr
+end  # Module WFMStat
