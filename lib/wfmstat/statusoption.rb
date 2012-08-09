@@ -7,13 +7,12 @@ module WFMStat
 
   ##########################################  
   #
-  # Class WFMStatOption
+  # Class StatusOption
+  # 
+  # To call:  ./workflowstatusopt.rb -x xmlfile -d dbfile [-c "c1, c2, c3"] [-t "tk1, tk2, tk3"] [-s]
   #
   ##########################################
-  ### to call:  ./workflowstatusopt.rb -x xmlfile -d dbfile [-c "c1, c2, c3"] [-t "tk1, tk2, tk3"] [-s]
-  ###
-
-  class WFMStatOption
+  class StatusOption
 
     require 'optparse'
     require 'pp'                      
@@ -119,6 +118,6 @@ module WFMStat
      
     end  # parse
 
-  end  # Class WFMStatOption
+  end  # Class StatusOption
 
 end  # Module WFMStat

@@ -380,10 +380,10 @@ module WFMStat
 
   ##########################################
   #
-  # Class WorkflowDbStatus
+  # Class StatusEngine
   #
   ##########################################
-  class WorkflowDbStatus
+  class StatusEngine
 
 
     require 'drb'
@@ -392,7 +392,7 @@ module WFMStat
     require 'workflowmgr/cycledef'
     require "workflowmgr/cycle"
     require 'workflowmgr/dependency'
-    require 'wfmstat/workflowstatusopt'
+    require 'wfmstat/statusoption'
 
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/launchserver'
@@ -407,7 +407,7 @@ module WFMStat
     def initialize(args)
 
       # Get command line options
-      @options=WFMStatOption.new(args)
+      @options=StatusOption.new(args)
 
 ##DEBUG      puts @options.cycles.inspect
 ##DEBUG      puts @options.summary.inspect
@@ -609,6 +609,6 @@ module WFMStat
         end  # ensure
     end  # run
 
-  end  # Class WorkflowDbStatus
+  end  # Class StatusEngine
 
 end  # Module WorkflowMgr
