@@ -32,6 +32,8 @@ module WorkflowMgr
     require "socket"
     require "system_timer"
     require "workflowmgr/cycle"
+    require "workflowmgr/job"
+    require "workflowmgr/joblist"
 
     ##########################################
     #
@@ -499,26 +501,20 @@ module WorkflowMgr
         end  # database transaction
 
         dbjobs.each do |job|
-          jobid=job[0]
-          jobtask=job[1]
-          jobcycle=Time.at(job[2]).getgm
-          jobcores=job[3].to_i
-          jobstate=job[4]
-          jobnativestate=job[5]
-          jobstatus=job[6].to_i
-          jobtries=job[7].to_i
-          jobnunknowns=job[8].to_i
-          jobs[jobtask]={} if jobs[jobtask].nil?
-          jobs[jobtask][jobcycle]={} if jobs[jobtask][jobcycle].nil?
-          jobs[jobtask][jobcycle][:jobid]=jobid
-          jobs[jobtask][jobcycle][:taskname]=jobtask
-          jobs[jobtask][jobcycle][:cycle]=jobcycle
-          jobs[jobtask][jobcycle][:cores]=jobcores
-          jobs[jobtask][jobcycle][:state]=jobstate
-          jobs[jobtask][jobcycle][:native_state]=jobnativestate
-          jobs[jobtask][jobcycle][:exit_status]=jobstatus
-          jobs[jobtask][jobcycle][:tries]=jobtries
-          jobs[jobtask][jobcycle][:nunknowns]=jobnunknowns
+          task=job[1]
+          cycle=Time.at(job[2]).getgm
+          jobs[task]={} if jobs[task].nil?
+          jobs[task][cycle] = Job.new(job[0],                   # jobid
+                                      task,                     # taskname
+                                      cycle,                    # cycle
+                                      job[3].to_i,              # cores
+                                      job[4],                   # state
+                                      job[5],                   # native state
+                                      job[6].to_i,              # exit_status
+                                      job[7].to_i,              # tries
+                                      job[8].to_i               # nunknowns
+                                     )
+
         end
 
         # Return jobs hash
@@ -548,7 +544,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("INSERT INTO jobs VALUES (NULL,'#{job[:jobid]}','#{job[:taskname]}',#{job[:cycle].to_i},#{job[:cores]},'#{job[:state]}','#{job[:native_state]}',#{job[:exit_status]},#{job[:tries]},#{job[:nunknowns]});")
+            db.execute("INSERT INTO jobs VALUES (NULL,'#{job.id}','#{job.task}',#{job.cycle.to_i},#{job.cores},'#{job.state}','#{job.native_state}',#{job.exit_status},#{job.tries},#{job.nunknowns});")
           end
 
         end  # database transaction
@@ -577,7 +573,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("UPDATE jobs SET jobid='#{job[:jobid]}',state='#{job[:state]}',native_state='#{job[:native_state]}',exit_status=#{job[:exit_status]},tries=#{job[:tries]},nunknowns=#{job[:nunknowns]} WHERE cycle=#{job[:cycle].to_i} AND taskname='#{job[:taskname]}';")
+            db.execute("UPDATE jobs SET jobid='#{job.id}',state='#{job.state}',native_state='#{job.native_state}',exit_status=#{job.exit_status},tries=#{job.tries},nunknowns=#{job.nunknowns} WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
           end
 
         end  # database transaction
@@ -605,7 +601,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("UPDATE jobs SET jobid='#{job[:jobid]}' WHERE cycle=#{job[:cycle].to_i} AND taskname='#{job[:taskname]}';")
+            db.execute("UPDATE jobs SET jobid='#{job.jobid}' WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
           end
 
         end  # database transaction
@@ -634,7 +630,7 @@ module WorkflowMgr
 
           # Delete each job from the database
           jobs.each do |job|
-            db.execute("DELETE FROM jobs WHERE cycle=#{job[:cycle].to_i} AND taskname='#{job[:taskname]}';")
+            db.execute("DELETE FROM jobs WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
           end
 
         end  # database transaction

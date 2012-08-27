@@ -208,9 +208,9 @@ module WorkflowMgr
     ##########################################
     def tasks
 
-      tasks=[]
+      tasks={}
       tasknodes=@workflowdoc.find('/workflow/task')
-      tasknodes.each do |tasknode|
+      tasknodes.each_with_index do |tasknode,seq|
 
         taskattrs={}
         taskenvars={}
@@ -250,7 +250,8 @@ module WorkflowMgr
           end
         end
 
-        tasks << Task.new(taskattrs,taskenvars,taskdep)
+        task = Task.new(seq,taskattrs,taskenvars,taskdep)
+        tasks[task.attributes[:name]]=task
 
       end
 

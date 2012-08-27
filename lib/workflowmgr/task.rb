@@ -12,15 +12,16 @@ module WorkflowMgr
   ##########################################
   class Task
 
-    attr_reader :attributes,:envars,:dependency
+    attr_reader :seq,:attributes,:envars,:dependency
 
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(attributes,envars,dependency)
+    def initialize(seq,attributes,envars,dependency)
 
+      @seq=seq
       @attributes=attributes
       @envars=envars
       @dependency=dependency
@@ -63,7 +64,7 @@ module WorkflowMgr
         envars[key]=val
       end
 
-      return Task.new(attributes,envars,@dependency)
+      return Task.new(@seq,attributes,envars,@dependency)
 
     end
 

@@ -29,10 +29,10 @@ module WFMStat
 
       @database=nil
       @workflowdoc=nil
-      @cycles=''
-      @tasks=[]
-      @summary='false'
-      @taskfirst='false'
+      @cycles=nil
+      @tasks=nil
+      @summary=false
+      @taskfirst=false
       parse(args)
 
     end  # initialize
@@ -65,7 +65,19 @@ module WFMStat
         #      C   C,C,C  C:C  :C   C:
         #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C
         opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' ",String,"List of cycles") do |clist|
-          @cycles=clist
+          case clist
+            when /^\d{12}(,\d{12})*$/
+              @cycles=clist.split(",").collect { |c| Time.gm(c[0..3],c[4..5],c[6..7],c[8..9],c[10..11]) }
+            when /^(\d{12}):(\d{12})$/
+              @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm($2[0..3],$2[4..5],$2[6..7],$2[8..9],$2[10..11]))
+            when /^:(\d{12})$/
+              @cycles=(Time.gm(1900,1,1,0,0)..Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11]))
+            when /^(\d{12}):$/
+              @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm(9999,12,31,23,59))
+            else
+              puts opts
+              Process.exit
+          end
         end
 
         # Tasks of interest

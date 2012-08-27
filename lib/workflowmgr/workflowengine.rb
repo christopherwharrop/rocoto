@@ -356,6 +356,9 @@ module WorkflowMgr
       # Get all jobs whose cycle is in the job_cycle list
       @active_jobs=@dbServer.get_jobs(job_cycles)
 
+      # Sort the active jobs by cycle and task sequence
+#      @active_jobs=@active_jobs.sort_by { |job| [job.cycle, @tasks[job.task].seq] }
+
     end
 
 
@@ -391,79 +394,80 @@ module WorkflowMgr
       begin
 
         # Loop over active jobs looking for ones with pending submissions
-        @active_jobs.keys.each do |taskname|
-          @active_jobs[taskname].keys.each do |cycle|
+        @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].seq] }.each do |job|
 
-            # Skip jobs that are not in the submiting state
-            next unless @active_jobs[taskname][cycle][:state]=="SUBMITTING"
+          # Skip jobs that don't have pending job ids
+          next unless job.pending_submit?
 
-            # If the jobid is a DRb URI, retrieve the job submission status from the workflowbqserver process that submitted it
-            if @active_jobs[taskname][cycle][:jobid]=~/^druby:/
+          # Get the URI of the workflowbqserver that submitted the job
+          uri=job.id
 
-              # Get the URI of the workflowbqserver that submitted the job
-              uri=@active_jobs[taskname][cycle][:jobid]
+          begin
 
-              begin
+            # Query the workflowbqserver for the status of the job submission 
+            jobid,output=bqservers[uri].get_submit_status(job.task,job.cycle) if bqservers.has_key?(uri)
 
-                # Query the workflowbqserver for the status of the job submission 
-                jobid,output=bqservers[uri].get_submit_status(taskname,cycle) if bqservers.has_key?(uri)
+          # Catch exceptions for bqservers that have died unexpectedly
+          rescue DRb::DRbConnError
 
-              # Catch exceptions for bqservers that have died unexpectedly
-              rescue DRb::DRbConnError
-                # Remove the bqserver uri from the database
-                @dbServer.delete_bqservers([uri])
+            # Remove the bqserver uri from the database
+            @dbServer.delete_bqservers([uri])
 
-                # Remove the bqserver uri from the bqservers list if needed
-                bqservers.delete(uri) if bqservers.has_key?(uri)
+            # Remove the bqserver uri from the bqservers list if needed
+            bqservers.delete(uri) if bqservers.has_key?(uri)
 
-              end
+          end
 
-              # If the bqserver died, warn user, resubmit job
-              if !bqservers.has_key?(uri)
+          # If the bqserver died, warn user, resubmit job
+          if !bqservers.has_key?(uri)
 
-                # Log the fact that the submission status could not be retrieved
-                puts "Submission status of #{taskname} could not be retrieved because the server process at #{uri} died"
-                puts "Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted"
-                @logServer.log(cycle,"Submission status of #{taskname} could not be retrieved because the server process at #{uri} died")
-                @logServer.log(cycle,"Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted")
+            # Log the fact that the submission status could not be retrieved
+            puts "Submission status of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} could not be retrieved because the server process at #{uri} died"
+            puts "Submission of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} probably, but not necessarily, failed.  It will be resubmitted"
+            @logServer.log(job.cycle,"Submission status of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} could not be retrieved because the server process at #{uri} died")
+            @logServer.log(job.cycle,"Submission of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} probably, but not necessarily, failed.  It will be resubmitted")
 
-              # If there is no output from the submission, it means the submission is still pending
-              elsif output.nil?
-                @logServer.log(cycle,"Submission status of #{taskname} is still pending at #{uri}.  The batch system server may be down, unresponsive, or under heavy load.")
+            # Delete the job from the database since it failed to submit.  It will be retried immediately.
+            @dbServer.delete_jobs([job])
 
-              # Otherwise, the submission either succeeded or failed.
-              else
+            # Remove the job from the active_jobs list since it failed to submit and is not active.
+            @active_jobs.delete(job)
 
-                # If the job submission failed, log the output of the job submission command, and print it to stdout as well
-                if jobid.nil?
+            next
 
-                  # Delete the job from the database since it failed to submit.  It will be retried immediately.
-                  @dbServer.delete_jobs([@active_jobs[taskname][cycle]])
+          # If there is no output from the submission, it means the submission is still pending
+          elsif output.nil?
+            @logServer.log(job.cycle,"Submission status of #{job.task} is still pending at #{uri}.  The batch system server may be down, unresponsive, or under heavy load.")
 
-                  # Remove the job from the active_jobs list since it failed to submit and is not active.
-                  @active_jobs[taskname].delete(cycle)
+          # Otherwise, the submission either succeeded or failed.
+          else
 
-                  puts output
-                  @logServer.log(cycle,"Submission status of previously pending #{taskname} is failure!  #{output}")
+            # If the job submission failed, log the output of the job submission command, and print it to stdout as well
+            if jobid.nil?
 
-                  next
+              # Delete the job from the database since it failed to submit.  It will be retried immediately.
+              @dbServer.delete_jobs([job])
 
-                # If the job succeeded, record the jobid and log it
-                else
-                  @active_jobs[taskname][cycle][:jobid]=jobid
-                  @logServer.log(cycle,"Submission status of previously pending #{taskname} is success, jobid=#{jobid}")
-                end
+              # Remove the job from the active_jobs list since it failed to submit and is not active.
+              @active_jobs.delete(job)
 
-              end  # if output.nil?
+              puts output
+              @logServer.log(job.cycle,"Submission status of previously pending #{job.task} is failure!  #{output}")
 
-              # Update the job in the database
-              @dbServer.update_jobs([@active_jobs[taskname][cycle]])
+              next
 
-            end  # if jobid matches /^druby:/
+            # If the job succeeded, record the jobid and log it
+            else
+              job.id=jobid
+              @logServer.log(job.cycle,"Submission status of previously pending #{job.task} is success, jobid=#{jobid}")
+            end
 
-          end  # each active_job cycle
+          end  # if output.nil?
 
-        end  # each active_job task
+          # Update the job in the database
+          @dbServer.update_jobs([job])
+
+        end # each job
 
       ensure
 
@@ -508,97 +512,93 @@ module WorkflowMgr
         @active_core_count=0
 
         # Loop over all active jobs and retrieve and update their current status
-        @tasks.each do |task|
-          taskname=task.attributes[:name]
-          next if @active_jobs[taskname].nil?       
-          @active_jobs[taskname].keys.each do |cycle|
+        @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].seq] }.each do |job|
 
-            # No need to query or update the status of jobs that we already know are done successfully or that remain failed
-            # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
-            next if @active_jobs[taskname][cycle][:state]=="SUCCEEDED" || @active_jobs[taskname][cycle][:state]=="FAILED"
+          # No need to query or update the status of jobs that we already know are done successfully or that remain failed
+          # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
+          next if job.state=="SUCCEEDED" || job.state=="FAILED"
 
-            # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts
-            if @active_jobs[taskname][cycle][:state]=="DEAD"
-              if @active_jobs[taskname][cycle][:tries] < task.attributes[:maxtries]
+          # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts
+          if job.state=="DEAD"
+            if job.tries < @tasks[job.task].attributes[:maxtries]
 
-                # Reset the state to FAILED so a resubmission can occur
-                @active_jobs[taskname][cycle][:state]="FAILED"
+              # Reset the state to FAILED so a resubmission can occur
+              job.state="FAILED"
 
-                # Update the state of the job in the database
-                @dbServer.update_jobs([@active_jobs[taskname][cycle]])                
+              # Update the state of the job in the database
+              @dbServer.update_jobs([job])                
 
-                # Log the fact that this job was resurrected
-                @logServer.log(cycle,"Task #{taskname} has been resurrected.  #{task.attributes[:maxtries] - @active_jobs[taskname][cycle][:tries]} more tries will be allowed")
-              end
+              # Log the fact that this job was resurrected
+              @logServer.log(job.cycle,"Task #{job.task} has been resurrected.  #{@tasks[job.task].attributes[:maxtries] - job.tries} more tries will be allowed")
+            end
  
-              # No need for more updates to this job
-              next
+            # No need for more updates to this job
+            next
 
-            end
+          end
 
-            # Get the status of the job from the batch system
-            status=@bqServer.status(@active_jobs[taskname][cycle][:jobid])
+          # Get the status of the job from the batch system
+          status=@bqServer.status(job.id)
 
-            # Update the state of the job with its current state
-            @active_jobs[taskname][cycle][:state]=status[:state]
-            @active_jobs[taskname][cycle][:native_state]=status[:native_state]            
-            if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
-              @active_jobs[taskname][cycle][:exit_status]=status[:exit_status]
-              if status[:start_time]==Time.at(0).getgm
-                duration=0
-              else
-                duration=status[:end_time] - status[:start_time]
-              end
-              runmsg=", ran for #{duration} seconds, exit status=#{status[:exit_status]}"
+          # Update the state of the job with its current state
+          job.state=status[:state]
+          job.native_state=status[:native_state]            
+          if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
+            job.exit_status=status[:exit_status]
+            if status[:start_time]==Time.at(0).getgm
+              duration=0
             else
-              runmsg=""
+              duration=status[:end_time] - status[:start_time]
+            end
+            runmsg=", ran for #{duration} seconds, exit status=#{status[:exit_status]}"
+          else
+            runmsg=""
+          end
+
+          # Check for recurring state of UNKNOWN
+          if job.state=="UNKNOWN"
+
+            # Increment unknown counter
+            job.nunknowns+=1
+
+            # Assume the job failed if too many consecutive UNKNOWNS
+            unknownmsg=""
+            if job.nunknowns >= @config.MaxUnknowns
+              job.state="FAILED"
+              unknownmsg+=", giving up because job state could not be determined #{job.nunknowns} consecutive times"
             end
 
-            # Check for recurring state of UNKNOWN
-            if @active_jobs[taskname][cycle][:state]=="UNKNOWN"
+          else
+            # Reset unknown counter to zero if not in UNKNOWN state
+            job.nunknowns=0
+            unknownmsg=""
+          end
 
-              # Increment unknown counter
-              @active_jobs[taskname][cycle][:nunknowns]+=1
-
-              # Assume the job failed if too many consecutive UNKNOWNS
-              unknownmsg=""
-              if @active_jobs[taskname][cycle][:nunknowns] >= @config.MaxUnknowns
-                @active_jobs[taskname][cycle][:state]="FAILED"
-                unknownmsg+=", giving up because job state could not be determined #{@active_jobs[taskname][cycle][:nunknowns]} consecutive times"
+          # Check for maxtries violation and update counters
+          if job.state=="SUCCEEDED" || job.state=="FAILED"
+            job.tries+=1
+            if job.state=="FAILED"
+              if job.tries >= @tasks[job.task].attributes[:maxtries]
+                job.state="DEAD"
               end
-
-            else
-              # Reset unknown counter to zero if not in UNKNOWN state
-              @active_jobs[taskname][cycle][:nunknowns]=0
-              unknownmsg=""
             end
+            triesmsg=", try=#{job.tries} (of #{@tasks[job.task].attributes[:maxtries]})"
+          else
+            # Update counters for jobs that are still QUEUED, RUNNING, or UNKNOWN
+            @active_task_count+=1
+            @active_core_count+=job.cores
+            triesmsg=""
+          end
 
-            # Check for maxtries violation and update counters
-            if @active_jobs[taskname][cycle][:state]=="SUCCEEDED" || @active_jobs[taskname][cycle][:state]=="FAILED"
-              @active_jobs[taskname][cycle][:tries]+=1
-              if @active_jobs[taskname][cycle][:state]=="FAILED"
-                if @active_jobs[taskname][cycle][:tries] >= task.attributes[:maxtries]
-                  @active_jobs[taskname][cycle][:state]="DEAD"
-                end
-              end
-              triesmsg=", try=#{@active_jobs[taskname][cycle][:tries]} (of #{task.attributes[:maxtries]})"
-            else
-              # Update counters for jobs that are still QUEUED, RUNNING, or UNKNOWN
-              @active_task_count+=1
-              @active_core_count+=@active_jobs[taskname][cycle][:cores]
-              triesmsg=""
-            end
+          statemsg="Task #{job.task}, jobid=#{job.id}, in state #{job.state} (#{job.native_state})"
 
-            statemsg="Task #{taskname}, jobid=#{@active_jobs[taskname][cycle][:jobid]}, in state #{@active_jobs[taskname][cycle][:state]} (#{@active_jobs[taskname][cycle][:native_state]})"
+          # Update the job state in the database
+          @dbServer.update_jobs([job])
 
-            # Update the job state in the database
-            @dbServer.update_jobs([@active_jobs[taskname][cycle]])
+          # Log the state of the job
+          @logServer.log(job.cycle,statemsg+runmsg+unknownmsg+triesmsg)
 
-            # Log the state of the job
-            @logServer.log(cycle,statemsg+runmsg+unknownmsg+triesmsg)
-
-          end # @active_jobs[taskname].keys.each
-        end # @active_jobs.keys.each
+        end # @active_jobs.each
      
       end
 
@@ -628,7 +628,7 @@ module WorkflowMgr
         catch (:not_done) do
 
           # Loop over all tasks
-          @tasks.each do |task|
+          @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 
             # Validate that this cycle is a member of at least one of the cycledefs specified for this task
             unless task.attributes[:cycledefs].nil?
@@ -650,16 +650,16 @@ module WorkflowMgr
             throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
 
             # The cycle is not done if the job for this task and cycle is not in the done state
-            throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle][:state] != "SUCCEEDED"
+            throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].state != "SUCCEEDED"
 
 # For now, only tag cycles as done if they are done successfully, meaning that all tasks are complete and have exit status = 0.
 # If we mark cycles as done when they have tasks that exceeded retries, then increasing retries won't cause them to rerun again
 #
 #            # The cycle is not done if the job for this task and cycle is done, but has crashed and has not yet exceeded the retry count
-#            if @active_jobs[task.attributes[:name]][cycle.cycle][:tries] >= task.attributes[:maxtries]
+#            if @active_jobs[task.attributes[:name]][cycle.cycle].tries >= task.attributes[:maxtries]
 #              cycle_success=false
 #            else
-#              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle][:exit_status] != 0 
+#              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].exit_status != 0 
 #            end
 
           end  # tasks.each
@@ -733,9 +733,9 @@ module WorkflowMgr
       expired_cycles.each do |cycle|          
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle.cycle].nil?
-          unless @active_jobs[taskname][cycle.cycle][:state] == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle][:state] == "FAILED" || @active_jobs[taskname][cycle.cycle][:state] == "DEAD"
-            @logServer.log(cycle.cycle,"Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle][:jobid]} because this cycle has expired!")
-            @bqServer.delete(@active_jobs[taskname][cycle.cycle][:jobid])
+          unless @active_jobs[taskname][cycle.cycle].state == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle].state == "FAILED" || @active_jobs[taskname][cycle.cycle].state == "DEAD"
+            @logServer.log(cycle.cycle,"Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle].id} because this cycle has expired!")
+            @bqServer.delete(@active_jobs[taskname][cycle.cycle].id)
           end
         end
 
@@ -766,7 +766,7 @@ module WorkflowMgr
 
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.collect { |c| c.cycle }.sort.each do |cycle|
-        @tasks.each do |task|
+        @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 
           # Mqke sure the task is eligible for submission
           resubmit=false
@@ -774,7 +774,7 @@ module WorkflowMgr
             unless @active_jobs[task.attributes[:name]][cycle].nil?
 
               # Since this task has already been submitted at least once, reject it unless the job for it has failed
-              next unless @active_jobs[task.attributes[:name]][cycle][:state] == "FAILED"
+              next unless @active_jobs[task.attributes[:name]][cycle].state == "FAILED"
 
               # This task is a resubmission
               resubmit=true
@@ -815,7 +815,7 @@ module WorkflowMgr
           # Reject this task if retries has been exceeded
           # This code block should never execute since state should be DEAD if retries is exceeded and we should never get here for a DEAD job
           if resubmit
-            if @active_jobs[task.attributes[:name]][cycle][:tries] >= task.attributes[:maxtries]
+            if @active_jobs[task.attributes[:name]][cycle].tries >= task.attributes[:maxtries]
               @logServer.log(cycle,"Cannot resubmit #{task.attributes[:name]}, maximum retry count of #{task.attributes[:maxtries]} has been reached")
               next
             end
@@ -826,15 +826,36 @@ module WorkflowMgr
           @active_task_count += 1
 
           # If we are resubmitting the job, initialize the new job to the old job
-          if resubmit
-            newjob=@active_jobs[task.attributes[:name]][cycle]
+          if @config.BatchQueueServer
+            newjobid=@bqServer.__drburi 
           else
-            newjob={:taskname=>task.attributes[:name], :cycle=>cycle, :tries=>0, :nunknowns=>0}
+            newjobid=0
           end
-          newjob[:state]="SUBMITTING"
-          newjob[:exit_status]=0
-          newjob[:cores]=task.attributes[:cores]
-          newjob[:jobid]=@bqServer.__drburi if @config.BatchQueueServer
+          if resubmit
+            newjob = Job.new(newjobid,                    # jobid
+                             task.attributes[:name],   # taskname
+                             cycle,                    # cycle
+                             task.attributes[:cores],  # cores
+                             "SUBMITTING",             # state
+                             "SUBMITTING",             # native state
+                             0,                        # exit_status
+                             @active_jobs[task.attributes[:name]][cycle].tries,    # tries
+                             0                         # nunknowns
+                            )
+
+          else
+            newjob = Job.new(newjobid,                    # jobid
+                             task.attributes[:name],   # taskname
+                             cycle,                    # cycle
+                             task.attributes[:cores],  # cores
+                             "SUBMITTING",             # state
+                             "SUBMITTING",             # native state
+                             0,                        # exit_status
+                             0,                        # tries
+                             0                         # nunknowns
+                            )          
+          end
+ 
 
           # Append the new job to the list of new jobs that were submitted
           newjobs << newjob
@@ -855,19 +876,19 @@ module WorkflowMgr
 
       # Harvest job ids for submitted tasks
       newjobs.each do |job|
-        uri=job[:jobid]
-        jobid,output=@bqServer.get_submit_status(job[:taskname],job[:cycle])
+        uri=job.id
+        jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
         if output.nil?
-          @logServer.log(job[:cycle],"Submission status of #{job[:taskname]} is pending at #{job[:jobid]}")
+          @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
         else
           if jobid.nil?
             # Delete the job from the database since it failed to submit.  It will be retried next time around.
             @dbServer.delete_jobs([job])
             puts output
-            @logServer.log(job[:cycle],"Submission of #{job[:taskname]} failed!  #{output}")
+            @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
           else
-            job[:jobid]=jobid
-            @logServer.log(job[:cycle],"Submission of #{job[:taskname]} succeeded, jobid=#{job[:jobid]}")
+            job.id=jobid
+            @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
             # Update the jobid for the job in the database
             @dbServer.update_jobs([job])
           end
@@ -876,47 +897,6 @@ module WorkflowMgr
 
     end
 
-
-    ##########################################
-    #
-    # localize_task
-    #
-    ##########################################
-    def localize_task(t,cycle)
-
-      # Walk the task and evaluate all CompoundTimeStrings using the input cycle time
-      if t.is_a?(Hash)
-        lt={}
-        t.each do |key,value|
-          if key.is_a?(CompoundTimeString)
-            lkey=key.to_s(cycle)
-          else
-            lkey=key
-          end
-          if value.is_a?(CompoundTimeString)
-            lvalue=value.to_s(cycle)
-          elsif value.is_a?(Hash) || value.is_a?(Array)
-            lvalue=localize_task(value,cycle)
-          else
-            lvalue=value
-          end
-          lt[lkey]=lvalue        
-        end
-      elsif t.is_a?(Array)
-        lt=t.collect do |value|
-          if value.is_a?(CompoundTimeString)
-            value.to_s(cycle)
-          elsif value.is_a?(Hash) || value.is_a?(Array)
-            localize_task(value,cycle)
-          else
-            value
-          end
-        end
-      end 
-
-      return lt
-
-    end
 
   end  # Class WorkflowEngine
 
