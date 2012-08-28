@@ -192,7 +192,7 @@ module WFMStat
       jobs=@dbServer.get_jobs(dbcycles.collect {|c| c.cycle})
 
       # Get the list of tasks from the workflow definition
-      definedTasks=@workflowdoc.tasks.values.collect { |t| t.attributes[:name] }
+      definedTasks=@workflowdoc.tasks
 
       # Print the job status info
       if @options.taskfirst
@@ -202,12 +202,13 @@ module WFMStat
                  "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6)
         puts format % header
 
-        # Sort the task list in natural order (as opposed to alphanumeric order)
-        tasklist=jobs.keys | definedTasks
+        # Sort the task list in sequence order
+        tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
         unless @options.tasks.nil?
           tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
         end
-        tasklist=tasklist.sort_by { |task| task.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i } }
+        tasklist=tasklist.sort { |t1,t2| definedTasks[t1].seq <=> definedTasks[t2].seq }
+
         tasklist.each do |task|
 
           printf "========================================================================================================\n"
@@ -239,12 +240,12 @@ module WFMStat
 
           printf "========================================================================================================\n"
 
-          # Sort the task list in natural order (as opposed to alphanumeric order)
-          tasklist=jobs.keys | definedTasks
+          # Sort the task list in sequence order 
+          tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
           unless @options.tasks.nil?
             tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
           end
-          tasklist=tasklist.sort_by { |task| task.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i } }
+          tasklist=tasklist.sort { |t1,t2| definedTasks[t1].seq <=> definedTasks[t2].seq }
           tasklist.each do |task|
             if jobs[task].nil?
               jobdata=["-","-","-","-"]
