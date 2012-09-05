@@ -171,7 +171,7 @@ module WFMStat
       # Print the cycle date/times
       (dbcycles+xmlcycles).sort.each do |cycle|
         printf "%12s    %8s    %20s    %20s\n","#{cycle.cycle.strftime("%Y%m%d%H%M")}",
-                                               "#{cycle.state}",
+                                               "#{cycle.state.to_s.capitalize}",
                                                "#{cycle.activated_time_string.center(20)}",
                                                "#{cycle.deactivated_time_string.center(20)}"
       end
