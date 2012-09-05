@@ -2,11 +2,16 @@
 <!DOCTYPE workflow
 [
  <!ENTITY CYCLE_TIME "@Y@m@d@H">
+ <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/workflowmgr_dev/test">
+ <!ENTITY DATA_HOME "/scratch1/portfolios/BMC/nesccmgmt/Christopher.W.Harrop/test">
+ <!ENTITY PROJECT "nesccmgmt">
+ <!ENTITY QUEUE "batch">
+ <!ENTITY SCHED "moabtorque">
 ]>
 
-<workflow realtime="f" scheduler="sge" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
+<workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
 
-  <log verbosity="0">/home/harrop/workflowmgr_dev/test/<cyclestr offset="2:00:00">test_@Y@m@d@H@M.log</cyclestr></log>
+  <log verbosity="10">&TEST_HOME;/log/<cyclestr offset="2:00:00">test_@Y@m@d@H@M.log</cyclestr></log>
 
   <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
 
@@ -16,33 +21,34 @@
 
     <task name="test#x#" maxtries="3" cycledefs="group1">
 
-      <command><cyclestr offset="-1:00:00">/home/harrop/test/bin/test_a.ksh -d @Y-@m-@d_@X @p</cyclestr></command>
+      <command><cyclestr offset="-1:00:00">&TEST_HOME;/bin/test.ksh -d @Y-@m-@d_@X @p</cyclestr></command>
 
-      <account>jetmgmt</account>
+      <account>&PROJECT;</account>
 
-      <queue>nserial</queue>
+      <queue>&QUEUE;</queue>
 
       <cores>1</cores>
 
       <walltime>00:00:10</walltime>
 
-      <join>/home/harrop/test/log/test_#x#.join</join>
+      <join>&TEST_HOME;/log/test_#x#.join</join>
 
       <memory>512M</memory>
 
       <jobname>test#x#</jobname>
 
-      <native>-cwd</native>
-
       <envar>
         <name>START_TIME</name><value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>FORMAT</name><value><cyclestr>%Y%m%d%H</cyclestr></value>
       </envar>
 
       <dependency>
         <some threshold="0.5">
-          <datadep>/lfs1/jetmgmt/harrop/test/test1.dat</datadep>
-          <datadep>/lfs1/jetmgmt/harrop/test/test2.dat</datadep>
-          <datadep>/lfs1/jetmgmt/harrop/test/test3.dat</datadep>
+          <datadep>&DATA_HOME;/test1.dat</datadep>
+          <datadep>&DATA_HOME;/test2.dat</datadep>
+          <datadep>&DATA_HOME;/test3.dat</datadep>
         </some>
       </dependency>
 
