@@ -192,7 +192,6 @@ module WorkflowMgr
       else
         newcycles=get_new_retro_cycles
       end
-      newcycles.collect! { |cycle| Cycle.new(cycle, { :activated=>Time.now.getgm }) }
 
       # Add new cycles to active cycle list and database
       unless newcycles.empty?
@@ -218,16 +217,17 @@ module WorkflowMgr
       # For realtime workflows, find the most recent cycle less than or equal to 
       # the current time and activate it if it has not already been activated
 
-      # Get the most recent cycle <= now from cycle specs
+      # Get the most recent cycle time <= now from cycle specs
       now=Time.now.getgm
-      new_cycle=@cycledefs.collect { |c| c.previous(now) }.max
+      latest_cycle_time=@cycledefs.collect { |c| c.previous(now) }.max
+      latest_cycle=Cycle.new(latest_cycle_time, { :activated=>latest_cycle_time.getgm } )
 
       # Get the latest cycle from the database or initialize it to a very long time ago
-      latest_cycle=@dbServer.get_last_cycle || Cycle.new(Time.gm(1900,1,1,0,0,0))
+      latest_db_cycle=@dbServer.get_last_cycle || Cycle.new(Time.gm(1900,1,1,0,0,0))
 
       # Return the new cycle if it hasn't already been activated
-      if new_cycle > latest_cycle.cycle
-        return [new_cycle]
+      if latest_cycle > latest_db_cycle
+        return [latest_cycle]
       else
         return []
       end
@@ -306,14 +306,14 @@ module WorkflowMgr
 
         else
 
-          # The new cycle is the earlies cycle in the cycle pool
-          newcycle=cyclepool.min
+          # The new cycle is the earliest cycle in the cycle pool
+          newcycle=Cycle.new(cyclepool.min, { :activated=>Time.now.getgm } )
 
           # Add the earliest cycle in the cycle pool to the list of cycles to activate
           newcycles << newcycle
 
           # Add the new cycle to the cycleset so that we don't try to add it again
-          cycleset << Cycle.new(newcycle)
+          cycleset << newcycle
 
         end  # if cyclepool.empty?
 

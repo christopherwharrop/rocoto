@@ -12,6 +12,8 @@ module WorkflowMgr
   ##########################################
   class Cycle
 
+    include Comparable
+
     attr_reader :cycle
     attr_reader :activated
     attr_reader :expired
@@ -26,9 +28,9 @@ module WorkflowMgr
     def initialize(cycle,params={ :activated=>Time.at(0), :expired=>Time.at(0), :done=>Time.at(0) })
 
       @cycle=cycle
-      @activated=params[:activated]
-      @expired=params[:expired]
-      @done=params[:done]
+      @activated=params[:activated] || Time.at(0)
+      @expired=params[:expired] || Time.at(0)
+      @done=params[:done] || Time.at(0)
 
       if @done != Time.at(0)
         @state=:done
