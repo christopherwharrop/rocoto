@@ -33,7 +33,6 @@ module WorkflowMgr
     require "system_timer"
     require "workflowmgr/cycle"
     require "workflowmgr/job"
-    require "workflowmgr/joblist"
 
     ##########################################
     #
