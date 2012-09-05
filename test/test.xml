@@ -2,11 +2,18 @@
 <!DOCTYPE workflow
 [
  <!ENTITY CYCLE_TIME "@Y@m@d@H">
+<!--
  <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/workflowmgr_dev/test">
  <!ENTITY DATA_HOME "/scratch1/portfolios/BMC/nesccmgmt/Christopher.W.Harrop/test">
  <!ENTITY PROJECT "nesccmgmt">
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "moabtorque">
+-->
+ <!ENTITY TEST_HOME "/home/harrop/workflowmgr_dev/test">
+ <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
+ <!ENTITY PROJECT "jetmgmt">
+ <!ENTITY QUEUE "ncomp">
+ <!ENTITY SCHED "sge">
 ]>
 
 <workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
@@ -55,5 +62,6 @@
     </task>
 
   </metatask>
+
 
 </workflow>
