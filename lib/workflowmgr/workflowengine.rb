@@ -888,6 +888,8 @@ module WorkflowMgr
             @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
           else
             job.id=jobid
+            job.state="QUEUED"
+            job.native_state="queued"
             @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
             # Update the jobid for the job in the database
             @dbServer.update_jobs([job])
