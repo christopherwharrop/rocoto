@@ -46,6 +46,18 @@ module WorkflowMgr
 
     end
 
+
+    #####################################################
+    #
+    # done?
+    #
+    #####################################################
+    def done?
+
+      @state == "SUCCEEDED" || @state == "FAILED" || @state == "DEAD"
+
+    end
+
   end
 
 end
