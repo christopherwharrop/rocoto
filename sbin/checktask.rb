@@ -15,12 +15,12 @@ $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 
 # Load workflow status library
 require 'wfmstat/statusengine'
-require 'wfmstat/wfmstatoption'
+require 'wfmstat/checktaskoption'
 
 WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
 
 # Create workflow status and run it
-wfmStatOptions=WFMStat::WFMStatOption.new(ARGV)
-statusEngine=WFMStat::StatusEngine.new(wfmStatOptions)
-statusEngine.wfmstat
+checkTaskOptions=WFMStat::CheckTaskOption.new(ARGV)
+statusEngine=WFMStat::StatusEngine.new(checkTaskOptions)
+statusEngine.checkTask
 

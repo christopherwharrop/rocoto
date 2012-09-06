@@ -7,12 +7,10 @@ module WFMStat
 
   ##########################################  
   #
-  # Class StatusOption
+  # Class CheckTaskOption
   # 
-  # To call:  ./workflowstatusopt.rb -x xmlfile -d dbfile [-c "c1, c2, c3"] [-t "tk1, tk2, tk3"] [-s]
-  #
   ##########################################
-  class StatusOption
+  class CheckTaskOption
 
     require 'optparse'
     require 'pp'                      
@@ -49,10 +47,10 @@ module WFMStat
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  wfmstat -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s]"
+        opts.banner = "Usage:  checktask -d database_file -w workflow_document -c cycle -t task"
 
         # Specify the database file
-        opts.on("-d","--database file",String,"Path to workflow database file") do |db|
+        opts.on("-d","--database FILE",String,"Path to workflow database file") do |db|
           @database=db
         end
      
@@ -61,19 +59,11 @@ module WFMStat
           @workflowdoc=workflowdoc
         end
 
-        # Cycles of interest
-        #      C   C,C,C  C:C  :C   C:
-        #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C
-        opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' ",String,"List of cycles") do |clist|
-          case clist
-            when /^\d{12}(,\d{12})*$/
-              @cycles=clist.split(",").collect { |c| Time.gm(c[0..3],c[4..5],c[6..7],c[8..9],c[10..11]) }
-            when /^(\d{12}):(\d{12})$/
-              @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm($2[0..3],$2[4..5],$2[6..7],$2[8..9],$2[10..11]))
-            when /^:(\d{12})$/
-              @cycles=(Time.gm(1900,1,1,0,0)..Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11]))
-            when /^(\d{12}):$/
-              @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm(9999,12,31,23,59))
+        # Specify the cycle
+        opts.on("-c","--cycle CYCLE",String,"Cycle") do |c|
+          case c
+            when /^\d{12}$/
+              @cycles = [Time.gm(c[0..3],c[4..5],c[6..7],c[8..9],c[10..11])]
             else
               puts opts
               Process.exit
@@ -81,30 +71,20 @@ module WFMStat
         end
 
         # Tasks of interest
-        opts.on("-t","--tasks 'a,b,c'",Array,"List of tasks") do |tasklist|
-          @tasks=tasklist
+        opts.on("-t","--task TASK",Array,"Task") do |task|
+          @tasks=task
         end
      
-        # cycle summary
-        opts.on("-s","--summary","Cycle Summary") do 
-          @summary=true
-        end
-
-        # display by task 
-        opts.on("-T","--by_task","Display by Task") do 
-          @taskfirst=true
-        end
-
         # Help
         opts.on("-h","--help","Show this message") do
           puts opts
-          exit
+          Process.exit
         end
 
         # Handle option for version
         opts.on("--version","Show Workflow Manager version") do
           puts "Workflow Manager Version #{WorkflowMgr::VERSION}"
-          exit
+          Process.exit
         end
 
         begin
@@ -115,13 +95,15 @@ module WFMStat
           # Parse the options
           opts.parse!(args)
 
-          # The -d and -w options are mandatory
+          # The -d, -w, -c, and -t options are all mandatory
           raise OptionParser::ParseError,"A database file must be specified" if @database.nil?
           raise OptionParser::ParseError,"A workflow definition file must be specified" if @workflowdoc.nil?
+          raise OptionParser::ParseError,"A cycle must be specified" if @cycles.nil?
+          raise OptionParser::ParseError,"A task name must be specified" if @tasks.nil?
   
         rescue OptionParser::ParseError => e
           STDERR.puts e.message, "\n",opts
-          exit(-1)
+          Process.exit(-1)
         end
         
       end
