@@ -417,9 +417,11 @@ module WFMStat
       ncores=0
       ntasks=0
       active_jobs.keys.each do |jobtask|
-        ntasks += 1
         active_jobs[jobtask].keys.each do |jobcycle|
-          ncores += active_jobs[jobtask][jobcycle].cores
+           if !active_jobs[jobtask][jobcycle].done?
+            ntasks += 1
+            ncores += active_jobs[jobtask][jobcycle].cores
+          end
         end
       end
       if ntasks + 1 > @workflowdoc.taskthrottle
