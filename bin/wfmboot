@@ -9,6 +9,6 @@
 wfmdir=`dirname $0`
 
 # Run the WFM boot program
-${wfmdir}/workflowboot.rb $*
+${wfmdir}/../sbin/wfmboot.rb $*
 
 exit $?

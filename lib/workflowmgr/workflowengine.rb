@@ -30,12 +30,12 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(args)
+    def initialize(options)
 
       begin
 
         # Get command line options
-        @options=WorkflowOption.new(args)
+        @options=options
 
         # Get configuration file options
         @config=WorkflowYAMLConfig.new
@@ -79,8 +79,11 @@ module WorkflowMgr
         # Build the workflow objects from the contents of the workflow document
         build_workflow
 
-        # Get the active cycles, including any new ones that need to be activated now
+        # Get the active cycles
         get_active_cycles
+
+        # Get new cycles that need to be activated now
+        get_new_cycles
 
         # Get the active jobs, which may include jobs from cycles that have just expired
         # as well as jobs needed for evaluating inter cycle dependencies
@@ -127,6 +130,144 @@ module WorkflowMgr
       end
  
     end  # run
+
+    ##########################################
+    #
+    # boot
+    #
+    ##########################################
+    def boot
+
+      begin
+
+        # Open/Create the database
+        @dbServer.dbopen
+
+        # Acquire a lock on the workflow in the database
+        @locked=@dbServer.lock_workflow
+        Process.exit(0) unless @locked
+
+        # Get task name and cycle time
+        boot_task_name=@options.tasks.first
+        boot_cycle_time=@options.cycles.first
+
+        # Set up an object to serve file stat info
+        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)        
+
+        # Build the workflow objects from the contents of the workflow document
+        build_workflow
+
+        # Get the task from the workflow definition
+        task=@tasks[boot_task_name]
+
+        # Look for the cycle in the database to see if it has ever been activated
+	boot_cycle=@dbServer.get_cycle(boot_cycle_time).first
+
+        # Activate a new cycle if necessary and add it to the database
+        if boot_cycle.nil?
+          boot_cycle=Cycle.new(boot_cycle_time)
+          boot_cycle.activate!
+          @dbServer.add_cycles([boot_cycle])
+          boot_job=nil
+        else
+          if boot_cycle.active?
+            jobhash=@dbServer.get_jobs([boot_cycle_time])
+            if jobhash[boot_task_name].nil?
+              boot_job=nil
+            else
+              boot_job=jobhash[boot_task_name][boot_cycle_time]
+            end
+          else
+            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is #{boot_cycle.state}"
+          end
+        end
+
+        # Check for existing jobs that are not done
+        unless boot_job.nil?
+          if !boot_job.done?
+            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because there is already a job for it in state #{boot_job.state}"
+          end
+        end
+
+        # Initialize jobid of the new job
+        if @config.BatchQueueServer
+          newjobid=@bqServer.__drburi
+        else
+          newjobid=0
+        end
+
+        # Create the job
+        job = Job.new(newjobid,                            # jobid
+                      boot_task_name,                      # taskname
+                      boot_cycle_time,                     # cycle
+                      task.attributes[:cores],             # cores
+                      "SUBMITTING",                        # state
+                      "SUBMITTING",                        # native state
+                      0,                                   # exit_status
+                      boot_job.nil? ? 0 : boot_job.tries+1,  # tries
+                      0                                    # nunknowns
+                     )
+
+        # Add the new job to the database
+	@dbServer.add_jobs([job])
+
+        # Submit the task
+	@bqServer.submit(task.localize(boot_cycle_time),boot_cycle_time)
+        @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
+
+        # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
+        Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+
+        # Harvest job ids for submitted tasks
+        uri=job.id
+        jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
+        if output.nil?
+          @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+        else
+          if jobid.nil?
+            # Delete the job from the database since it failed to submit.  It will be retried next time around.
+            @dbServer.delete_jobs([job])
+            puts output
+            @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
+          else
+            job.id=jobid
+            job.state="QUEUED"
+            job.native_state="queued"
+            @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
+            # Update the jobid for the job in the database
+            @dbServer.update_jobs([job])
+          end
+        end
+
+      rescue
+        puts $!
+        Process.exit(1)
+        
+      ensure
+
+        # Shut down the batch queue server if it is no longer needed
+        unless @bqServer.nil? || !@config.BatchQueueServer
+          unless @bqServer.running?
+            uri=@bqServer.__drburi
+            @bqServer.stop!
+            @dbServer.delete_bqservers([uri])
+          end
+        end
+
+        # Make sure we release the workflow lock in the database and shutdown the dbserver
+        unless @dbServer.nil?
+          @dbServer.unlock_workflow if @locked
+          @dbServer.stop! if @config.DatabaseServer
+        end
+
+        # Make sure to shut down the workflow file stat server
+        unless @workflowIOServer.nil?
+          @workflowIOServer.stop! if @config.WorkflowIOServer
+        end
+
+      end
+
+    end
 
   private
 
@@ -185,6 +326,16 @@ module WorkflowMgr
 
       # Get active cycles from the database
       @active_cycles=@dbServer.get_active_cycles
+
+    end
+
+
+    ##########################################
+    #
+    # get_new_cycles
+    #
+    ##########################################
+    def get_new_cycles
 
       # Activate new cycles
       if @realtime
@@ -355,9 +506,6 @@ module WorkflowMgr
 
       # Get all jobs whose cycle is in the job_cycle list
       @active_jobs=@dbServer.get_jobs(job_cycles)
-
-      # Sort the active jobs by cycle and task sequence
-#      @active_jobs=@active_jobs.sort_by { |job| [job.cycle, @tasks[job.task].seq] }
 
     end
 

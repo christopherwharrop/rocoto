@@ -13,11 +13,14 @@ $:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
 $:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
 $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 
-# Load workflow engine library
+# Load workflow status library
 require 'workflowmgr/workflowengine'
+require 'wfmstat/checktaskoption'
 
-WorkflowMgr::VERSION="1.0.b0"
+WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
 
-# Create workflow engine and run it
-workflowengine=WorkflowMgr::WorkflowEngine.new(ARGV)
-workflowengine.run
+# Create workflow status and run it
+wfmBootOptions=WFMStat::CheckTaskOption.new(ARGV)
+workflowEngine=WorkflowMgr::WorkflowEngine.new(wfmBootOptions)
+workflowEngine.boot
+
