@@ -4,11 +4,11 @@
 
 # Set location of ruby to use
 #RUBY=/whome/harrop/opt/ruby/bin/ruby
-#RUBY=/whome/harrop/opt/ruby-1.8.7-p352/bin/ruby
-RUBY=ruby
+RUBY=/whome/harrop/opt/ruby-1.8.7-p352/bin/ruby
+#RUBY=ruby
 
 # Package versions
-LIBXML_VERSION="2.0.9"
+LIBXML_VERSION="2.3.3"
 SYSTEMTIMER_VERSION="1.2.3"
 SQLITE3_VERSION="autoconf-3070701"
 SQLITE3_RUBY_VERSION="1.3.1"
@@ -69,6 +69,7 @@ export CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_THREADSAFE=1"
 ./configure --prefix=${LIB_DIR}/sqlite3
 make clean
 make
+rm -rf ${LIB_DIR}/sqlite3
 make install
 unset CFLAGS
 
