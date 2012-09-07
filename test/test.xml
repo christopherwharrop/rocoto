@@ -1,0 +1,67 @@
+<?xml version="1.0"?> 
+<!DOCTYPE workflow
+[
+ <!ENTITY CYCLE_TIME "@Y@m@d@H">
+<!--
+ <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/workflowmgr_dev/test">
+ <!ENTITY DATA_HOME "/scratch1/portfolios/BMC/nesccmgmt/Christopher.W.Harrop/test">
+ <!ENTITY PROJECT "nesccmgmt">
+ <!ENTITY QUEUE "batch">
+ <!ENTITY SCHED "moabtorque">
+-->
+ <!ENTITY TEST_HOME "/home/harrop/workflowmgr_dev/test">
+ <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
+ <!ENTITY PROJECT "jetmgmt">
+ <!ENTITY QUEUE "ncomp">
+ <!ENTITY SCHED "sge">
+]>
+
+<workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
+
+  <log verbosity="10">&TEST_HOME;/log/<cyclestr offset="2:00:00">test_@Y@m@d@H@M.log</cyclestr></log>
+
+  <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
+
+  <metatask>
+
+    <var id="x">1 2 3 4 5 6 7 8 9 10</var>
+
+    <task name="test#x#" maxtries="3" cycledefs="group1">
+
+      <command><cyclestr offset="-1:00:00">&TEST_HOME;/bin/test.ksh -d @Y-@m-@d_@X @p</cyclestr></command>
+
+      <account>&PROJECT;</account>
+
+      <queue>&QUEUE;</queue>
+
+      <cores>1</cores>
+
+      <walltime>00:00:10</walltime>
+
+      <join>&TEST_HOME;/log/test_#x#.join</join>
+
+      <memory>512M</memory>
+
+      <jobname>test#x#</jobname>
+
+      <envar>
+        <name>START_TIME</name><value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>FORMAT</name><value><cyclestr>%Y%m%d%H</cyclestr></value>
+      </envar>
+
+      <dependency>
+        <some threshold="0.5">
+          <datadep>&DATA_HOME;/test1.dat</datadep>
+          <datadep>&DATA_HOME;/test2.dat</datadep>
+          <datadep>&DATA_HOME;/test3.dat</datadep>
+        </some>
+      </dependency>
+
+    </task>
+
+  </metatask>
+
+
+</workflow>

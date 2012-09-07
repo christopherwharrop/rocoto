@@ -1,0 +1,402 @@
+<grammar xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+                                                                      
+  <start>
+
+    <element name="workflow">
+
+      <!-- Realtime workflow attribute is required-->
+      <attribute name="realtime">
+        <choice>
+          <value>f</value>
+          <value>F</value>
+          <value>false</value>
+          <value>False</value>
+          <value>FALSE</value>
+          <value>t</value>
+          <value>T</value>
+          <value>true</value>
+          <value>True</value>
+          <value>TRUE</value>
+        </choice>
+      </attribute>
+
+      <!-- scheduler workflow attribute is required and must be one of the values listed -->
+      <attribute name="scheduler">
+        <choice>
+          <value>sge</value>
+          <value>lsf</value>
+          <value>ll</value>
+          <value>moab</value>
+          <value>moabtorque</value>
+          <value>pbs</value>
+        </choice>
+      </attribute>
+
+      <!-- cyclethrottle workflow attribute is optional and must be a non negative integer -->
+      <optional>
+        <attribute name="cyclethrottle">
+          <data type="nonNegativeInteger"/>
+        </attribute>
+      </optional>
+
+      <!-- taskthrottle workflow attribute is optional and must be a non negative integer -->
+      <optional>
+        <attribute name="taskthrottle">
+          <data type="nonNegativeInteger"/>
+        </attribute>
+      </optional>
+
+      <!-- corethrottle workflow attribute is optional and must be a non negative integer -->
+      <optional>
+        <attribute name="corethrottle">
+          <data type="nonNegativeInteger"/>
+        </attribute>
+      </optional>
+
+      <!-- duthrottle workflow attribute is optional and must be a non negative integer -->
+      <optional>
+        <attribute name="duthrottle">
+          <data type="nonNegativeInteger"/>
+        </attribute>
+      </optional>
+
+      <!-- cyclelifespan workflow attribute is optional and must be a nonNegativeTime defined below-->
+      <optional>
+        <attribute name="cyclelifespan">
+          <ref name="nonNegativeTime"/>
+        </attribute>
+      </optional>
+
+      <!-- Order of log, cycle, task, and metatask tags does not matter -->
+      <interleave>
+
+        <!-- Must have exactly one log tag -->
+        <element name="log">
+          <optional>
+            <attribute name="verbosity">
+              <data type="nonNegativeInteger"/>
+            </attribute>
+          </optional>
+          <ref name="compoundTimeString"/>
+        </element>
+
+        <!-- Must have at least one cycledef tag -->
+        <oneOrMore>
+          <element name="cycledef">
+            <!-- group attribute is optional and must be a string -->
+            <optional>
+              <attribute name="group">
+                <data type="string"/>
+              </attribute>
+            </optional>
+            <choice>
+              <list>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+                <ref name="cronField"/>
+              </list>
+              <list>
+                <ref name="YYYYMMDDHHMM"/>
+                <ref name="YYYYMMDDHHMM"/>
+                <ref name="nonNegativeTime"/>
+              </list>
+            </choice>
+          </element>
+        </oneOrMore>
+
+        <!-- Must have at least one task or metatask tag.  Task tags must follow log and cycle tags -->
+        <oneOrMore>
+          <choice>
+            <ref name="task"/>
+            <ref name="metatask"/>
+          </choice>
+        </oneOrMore>
+
+      </interleave>
+
+    </element>  
+
+  </start>
+
+  <!-- Type definitions -->
+
+  <define name="nonNegativeTime">
+    <choice>
+      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+    </choice>
+  </define>
+
+  <define name="time">
+    <choice>
+      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+    </choice>
+  </define>
+
+
+  <define name="YYYYMMDDHHMM">
+    <data type="string"><param name="pattern">\d\d\d\d\d\d\d\d\d\d\d\d</param></data>
+  </define>
+
+  <define name="cronField">
+    <choice>
+      <data type="string"><param name="pattern">\*</param></data>
+      <data type="string"><param name="pattern">\*/\d+</param></data>
+      <data type="string"><param name="pattern">(\d+|\d+-\d+|\d+-\d+/\d+)(,\d+|,\d+-\d+|,\d+-\d+/\d+)*</param></data>
+    </choice>
+  </define>
+
+  <define name="compoundTimeString">
+    <oneOrMore>
+      <choice>
+        <text/>
+        <element name="cyclestr"><optional><attribute name="offset"><ref name="time"/></attribute></optional><text/></element>
+      </choice>
+    </oneOrMore>
+  </define>
+
+  <define name="nameValuePair">
+    <interleave>
+      <element name="name">
+        <ref name="compoundTimeString"/>
+      </element>
+      <optional>
+        <element name="value">
+          <ref name="compoundTimeString"/>
+        </element>                    
+      </optional>
+    </interleave>
+  </define>
+
+  <define name="dependency_tree">
+    <choice>
+      <element name="taskdep">
+        <attribute name="task">
+          <data type="string"/>          
+        </attribute>
+        <optional>
+          <attribute name="cycle_offset">
+            <ref name="time"/>
+          </attribute>
+        </optional>
+        <optional>
+          <attribute name="state">
+            <choice>
+	      <value>SUCCEEDED</value>
+              <value>DEAD</value>
+	      <value>Succeeded</value>
+              <value>Dead</value>
+	      <value>succeeded</value>
+              <value>dead</value>
+            </choice>
+          </attribute>
+        </optional>
+        <empty/>
+      </element>
+      <element name="datadep">
+        <optional>
+          <attribute name="age">
+            <ref name="nonNegativeTime"/>
+          </attribute>
+        </optional>
+        <ref name="compoundTimeString"/>
+      </element>
+      <element name="timedep">
+        <ref name="compoundTimeString"/>
+      </element>
+      <element name="not">
+        <ref name="dependency_tree"/>
+      </element>
+      <element name="and">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="or">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="nor">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="xor">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="nand">
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+      <element name="some">
+        <attribute name="threshold">
+            <data type="float"><param name="minInclusive">0.0</param><param name="maxInclusive">1.0</param></data>
+        </attribute>
+        <oneOrMore>
+          <ref name="dependency_tree"/>
+        </oneOrMore>
+      </element>
+    </choice>
+  </define>
+
+  <define name="task">
+    <element name="task">
+
+      <!-- Exactly one task name attribute -->
+      <attribute name="name">
+        <data type="string"/>          
+      </attribute>
+
+      <!-- Optional task maxtries attribute -->
+      <optional>
+        <attribute name="maxtries">
+          <data type="positiveInteger"/>          
+        </attribute>
+      </optional>
+
+      <!-- Optional task cycledefs attribute -->
+      <optional>
+        <attribute name="cycledefs">
+          <data type="string"/>          
+        </attribute>
+      </optional>
+
+      <!-- Order of task property tags does not matter -->
+      <interleave>
+
+        <!-- Exactly one command tag -->
+        <element name="command">
+          <ref name="compoundTimeString"/>
+        </element>
+
+        <!-- Zero or one account tag -->
+        <optional>
+          <element name="account">
+            <data type="string"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one queue tag -->
+        <optional>
+          <element name="queue">
+            <data type="string"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one cores tag -->
+        <optional>
+          <element name="cores">
+            <data type="positiveInteger"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one walltime tag -->
+        <optional>
+          <element name="walltime">
+            <ref name="nonNegativeTime"/>
+          </element>
+        </optional>
+
+        <!-- Zero or one memory tag -->
+        <optional>
+          <element name="memory">
+            <data type="string"/>          
+          </element>
+        </optional>
+
+        <!-- Zero or one join, stdout, stderr tags -->
+        <!-- NOTE: join tag cannot be combined with either stdout or stderr tags -->
+        <optional>
+          <choice>
+            <optional>
+              <interleave>
+                <optional>
+                  <element name="stdout">
+                    <ref name="compoundTimeString"/>
+                  </element>
+                </optional>
+                <optional>
+                  <element name="stderr">
+                    <ref name="compoundTimeString"/>
+                  </element>
+                </optional>
+              </interleave>
+            </optional>
+            <element name="join">
+              <ref name="compoundTimeString"/>
+            </element>
+          </choice>
+        </optional>
+
+        <!-- Zero or one jobname tag -->
+        <optional>
+          <element name="jobname">
+            <ref name="compoundTimeString"/>
+          </element>
+        </optional>
+
+        <!-- Zero or one native tag -->
+        <optional>
+          <element name="native">
+            <ref name="compoundTimeString"/>
+          </element>
+        </optional>
+
+        <!-- Zero or more envar tags -->
+        <optional>
+          <oneOrMore>
+            <element name="envar">
+              <ref name="nameValuePair"/>
+            </element>
+          </oneOrMore>
+        </optional>
+
+        <!-- Zero or one dependency tag -->
+        <optional>
+          <element name="dependency">
+            <ref name="dependency_tree"/>   
+          </element>
+        </optional>
+
+      </interleave>
+
+    </element>
+  </define>
+
+
+  <define name="metatask">
+    <element name="metatask">
+      <!-- Metatasks must have at least one var tag -->
+      <oneOrMore>
+        <element name="var">
+          <!-- Each var tag must have the id attribute set -->
+          <attribute name="id">
+            <data type="string"/>
+          </attribute>
+          <text/>
+        </element>
+      </oneOrMore>
+      <!-- Each metatask must contain at least one metatask or task -->
+      <oneOrMore>
+        <choice>
+          <ref name="metatask"/>
+          <ref name="task"/>
+        </choice>
+      </oneOrMore>
+    </element>
+  </define>
+
+</grammar>
+

@@ -1,0 +1,48 @@
+1) Cycles are activated correctly
+   a)  Cycle throttle is not violated
+   b)  The cycle throttle is accurate
+   c)  Cycles are activated in chronological order
+   d)  If cycledefs change, a) and b) still hold
+   e)  c) is true even when cycledefs add new cycles earlier than those already activated
+   f)  Ensure that default value of cyclethrottle works properly
+
+2) Cycles are expiring properly
+   a) Expiration log messages are written exactly once
+   b) Expiration only happens when the cyclelifespan is exceeded for a cycle (Time.now - cycle.activated > cyclelifespan) 
+   c) Status of jobs for cycles that have just expired is updated
+   d) Jobs for expired cycles that are still running are killed
+   e) Log messages for d) are written exactly once
+   f) Ensure that default cyclelifespan works properly
+
+3) Test Workflow servers
+   a) Ensure that switches in .wfmrc correctly switch use of various servers on/off
+   b) Ensure that WFM operates correctly with servers off
+   c) Ensure that WFM operates correctly with servers on
+   d) Test robustness of workflow servers
+
+4) Task retry is properly enforced
+   a) The maxtries for a task is not violated
+   b) The retry count for tasks is accurate
+   c) A log message for maxtries threshold being reached is written exactly once
+   d) Increasing maxtries in XML on the fly allows tasks to run again
+   e) Ensure that default maxtries works properly
+
+5) Workflow core throttle is properly enforced
+   a) The corethrottle is not violated	
+   b) The corethrottle is accurate
+   c) A log message for corethrottle violation is accurate
+   d) A log message for corethrottle violation is written each time a task is denied submission due to corethrottle violation
+   e) Ensure that default corethrottle works properly
+
+6) Workflow task throttle is properly enforced
+   a) The taskthrottle is not violated	
+   b) The taskthrottle is accurate
+   c) A log message for taskthrottle violation is accurate
+   d) A log message for taskthrottle violation is written each time a task is denied submission due to taskthrottle violation
+   e) Ensure that default taskthrottle works properly
+
+7) Workflow dependencies are properly enforced
+   a) Check time dependencies, should only be resolved when Now is >= the time specified 
+   b) Check data dependencies, verify age works properly
+   c) Check task dependencies, verify state and cycle offset attributes work
+   d) Verify that all operators, (not,and,or,nand,nor,xor,some) all work properly
