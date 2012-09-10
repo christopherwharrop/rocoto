@@ -16,6 +16,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
+    require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'
     require 'workflowmgr/task'
   

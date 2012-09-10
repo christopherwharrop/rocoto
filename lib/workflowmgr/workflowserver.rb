@@ -31,6 +31,7 @@ module WorkflowMgr
     require 'workflowmgr/bqsproxy'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
+    require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/dependency'

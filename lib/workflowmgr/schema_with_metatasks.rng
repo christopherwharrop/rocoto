@@ -28,6 +28,7 @@
           <value>ll</value>
           <value>moab</value>
           <value>moabtorque</value>
+          <value>torque</value>
           <value>pbs</value>
         </choice>
       </attribute>
