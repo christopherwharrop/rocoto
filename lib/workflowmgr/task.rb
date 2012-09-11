@@ -68,7 +68,18 @@ module WorkflowMgr
 
     end
 
+    #####################################################
+    #
+    # cap_walltime
+    #
+    #####################################################
+    def cap_walltime(maxtime)
 
+      if WorkflowMgr.ddhhmmss_to_seconds(@attributes[:walltime]) + Time.now.getgm.to_i > maxtime.getgm.to_i
+        @attributes[:walltime]=WorkflowMgr.seconds_to_hhmmss(maxtime.getgm.to_i - Time.now.to_i)
+      end
+
+    end
 
   end
 

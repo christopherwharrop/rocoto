@@ -913,16 +913,17 @@ module WorkflowMgr
       taskcycledefs={}
 
       # Loop over active cycles and tasks, looking for eligible tasks to submit
-      @active_cycles.collect { |c| c.cycle }.sort.each do |cycle|
+      @active_cycles.sort { |c1,c2| c1.cycle <=> c2.cycle }.each do |cycle|
+        cycletime=cycle.cycle
         @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 
           # Mqke sure the task is eligible for submission
           resubmit=false
           unless @active_jobs[task.attributes[:name]].nil?
-            unless @active_jobs[task.attributes[:name]][cycle].nil?
+            unless @active_jobs[task.attributes[:name]][cycletime].nil?
 
               # Since this task has already been submitted at least once, reject it unless the job for it has failed
-              next unless @active_jobs[task.attributes[:name]][cycle].state == "FAILED"
+              next unless @active_jobs[task.attributes[:name]][cycletime].state == "FAILED"
 
               # This task is a resubmission
               resubmit=true
@@ -939,32 +940,32 @@ module WorkflowMgr
             end
 
             # Reject this task if the cycle is not a member of the tasks cycle list
-            next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
+            next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycletime) }
 
           end
           
           # Reject this task if core throttle will be exceeded
           if @active_core_count + task.attributes[:cores] > @corethrottle
-            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum core throttle of #{@corethrottle} will be violated.",2)
+            @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum core throttle of #{@corethrottle} will be violated.",2)
             next
           end
 
           # Reject this task if task throttle will be exceeded
           if @active_task_count + 1 > @taskthrottle
-            @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum task throttle of #{@taskthrottle} will be violated.",2)
+            @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum task throttle of #{@taskthrottle} will be violated.",2)
             next
           end
 
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
-            next unless task.dependency.resolved?(cycle,@active_jobs,@workflowIOServer)
+            next unless task.dependency.resolved?(cycletime,@active_jobs,@workflowIOServer)
           end
 
           # Reject this task if retries has been exceeded
           # This code block should never execute since state should be DEAD if retries is exceeded and we should never get here for a DEAD job
           if resubmit
-            if @active_jobs[task.attributes[:name]][cycle].tries >= task.attributes[:maxtries]
-              @logServer.log(cycle,"Cannot resubmit #{task.attributes[:name]}, maximum retry count of #{task.attributes[:maxtries]} has been reached")
+            if @active_jobs[task.attributes[:name]][cycletime].tries >= task.attributes[:maxtries]
+              @logServer.log(cycletime,"Cannot resubmit #{task.attributes[:name]}, maximum retry count of #{task.attributes[:maxtries]} has been reached")
               next
             end
           end
@@ -982,19 +983,19 @@ module WorkflowMgr
           if resubmit
             newjob = Job.new(newjobid,                    # jobid
                              task.attributes[:name],   # taskname
-                             cycle,                    # cycle
+                             cycletime,                    # cycle
                              task.attributes[:cores],  # cores
                              "SUBMITTING",             # state
                              "SUBMITTING",             # native state
                              0,                        # exit_status
-                             @active_jobs[task.attributes[:name]][cycle].tries,    # tries
+                             @active_jobs[task.attributes[:name]][cycletime].tries,    # tries
                              0                         # nunknowns
                             )
 
           else
             newjob = Job.new(newjobid,                    # jobid
                              task.attributes[:name],   # taskname
-                             cycle,                    # cycle
+                             cycletime,                    # cycle
                              task.attributes[:cores],  # cores
                              "SUBMITTING",             # state
                              "SUBMITTING",             # native state
@@ -1012,8 +1013,10 @@ module WorkflowMgr
           @dbServer.add_jobs([newjob])
 
           # Submit the task
-          @bqServer.submit(task.localize(cycle),cycle)
-          @logServer.log(cycle,"Submitting #{task.attributes[:name]}")
+          localtask=task.localize(cycletime)
+          localtask.cap_walltime(cycle.activated.getgm + @cyclelifespan)
+          @bqServer.submit(localtask,cycletime)
+          @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
 
         end
 

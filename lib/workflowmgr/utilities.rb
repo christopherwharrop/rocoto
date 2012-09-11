@@ -39,4 +39,24 @@ module WorkflowMgr
 
   end
 
+
+  ##########################################  
+  #
+  # WorkflowMgr.seconds_to_hhmmss
+  #
+  ##########################################
+  def WorkflowMgr.seconds_to_hhmmss(seconds)
+
+    s=seconds
+    hours=(s / 3600).floor
+    s -= hours * 3600
+    minutes=(s/60).floor
+    s -= minutes * 60
+    seconds=s
+
+    hhmmss=sprintf("%0d:%02d:%02d",hours,minutes,seconds)
+    return hhmmss
+
+  end
+
 end  # module workflowmgr
