@@ -216,6 +216,7 @@ module WorkflowMgr
         taskattrs={}
         taskenvars={}
         taskdep=nil
+        taskhangdep=nil
 
         # Get task attributes insde the <task> tag
         tasknode.attributes.each do |attr|
@@ -239,6 +240,11 @@ module WorkflowMgr
                 raise "ERROR: <dependency> tag contains too many elements" unless taskdep.nil?
                 taskdep=Dependency.new(get_dependency_node(element))
               end
+            when /^hangdependency$/
+              e.each_element do |element| 
+                raise "ERROR: <hangdependency> tag contains too many elements" unless taskhangdep.nil?
+                taskhangdep=Dependency.new(get_dependency_node(element))
+              end
             else
               attrkey=e.name.to_sym
               case attrkey
@@ -251,7 +257,7 @@ module WorkflowMgr
           end
         end
 
-        task = Task.new(seq,taskattrs,taskenvars,taskdep)
+        task = Task.new(seq,taskattrs,taskenvars,taskdep,taskhangdep)
         tasks[task.attributes[:name]]=task
 
       end

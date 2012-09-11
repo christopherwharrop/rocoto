@@ -12,19 +12,20 @@ module WorkflowMgr
   ##########################################
   class Task
 
-    attr_reader :seq,:attributes,:envars,:dependency
+    attr_reader :seq,:attributes,:envars,:dependency,:hangdependency
 
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(seq,attributes,envars,dependency)
+    def initialize(seq,attributes,envars,dependency,hangdependency)
 
       @seq=seq
       @attributes=attributes
       @envars=envars
       @dependency=dependency
+      @hangdependency=hangdependency
 
       # Set a default value for maxtries
       @attributes[:maxtries]=9999999 if @attributes[:maxtries].nil?
@@ -64,7 +65,7 @@ module WorkflowMgr
         envars[key]=val
       end
 
-      return Task.new(@seq,attributes,envars,@dependency)
+      return Task.new(@seq,attributes,envars,@dependency,@hangdependency)
 
     end
 

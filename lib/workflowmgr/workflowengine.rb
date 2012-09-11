@@ -722,6 +722,17 @@ module WorkflowMgr
             unknownmsg=""
           end
 
+          # Check for job hang
+          unless @tasks[job.task].hangdependency.nil?
+            if job.state=="RUNNING"
+              if @tasks[job.task].hangdependency.resolved?(job.cycle,@active_jobs,@workflowIOServer)
+                job.state="FAILED"
+                runmsg=".  A job hang has been detected.  The job will be killed and resubmitted"
+                @bqServer.delete(job.id)
+              end
+            end
+          end
+
           # Check for maxtries violation and update counters
           if job.state=="SUCCEEDED" || job.state=="FAILED"
             job.tries+=1

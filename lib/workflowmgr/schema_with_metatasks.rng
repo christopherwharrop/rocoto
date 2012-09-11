@@ -369,6 +369,13 @@
           </element>
         </optional>
 
+        <!-- Zero or one hangdependency tag -->
+        <optional>
+          <element name="hangdependency">
+            <ref name="dependency_tree"/>   
+          </element>
+        </optional>
+
       </interleave>
 
     </element>

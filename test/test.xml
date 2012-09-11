@@ -70,6 +70,10 @@
         </some>
       </dependency>
 
+      <hangdependency>
+        <datadep age="30">&DATA_HOME;/test4.dat</datadep>
+      </hangdependency>
+
     </task>
 
   </metatask>
