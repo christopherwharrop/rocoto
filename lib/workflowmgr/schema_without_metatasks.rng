@@ -299,12 +299,10 @@
           </element>
         </optional>
 
-        <!-- Zero or one walltime tag -->
-        <optional>
-          <element name="walltime">
-            <ref name="nonNegativeTime"/>
-          </element>
-        </optional>
+        <!-- One walltime tag -->
+        <element name="walltime">
+          <ref name="nonNegativeTime"/>
+        </element>
 
         <!-- Zero or one memory tag -->
         <optional>
