@@ -23,6 +23,13 @@
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "torque">
 -->
+<!--
+ <!ENTITY TEST_HOME "/glade/home/harrop/workflowmgr/test">
+ <!ENTITY DATA_HOME "/ptmp/harrop/test">
+ <!ENTITY PROJECT "48500053">
+ <!ENTITY QUEUE "debug">
+ <!ENTITY SCHED "lsf">
+-->
 ]>
 
 <workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
