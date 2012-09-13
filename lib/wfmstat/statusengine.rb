@@ -361,7 +361,7 @@ module WFMStat
       puts
       puts "Cycle: #{cycle.cycle.strftime("%Y%m%d%H")}"
       puts "  State: #{cycle.state}"
-      puts "  Activated: #{cycle.active? ? cycle.activated : "-"}"
+      puts "  Activated: #{cycle.activated != Time.at(0) ? cycle.activated : "-"}"
       puts "  Completed: #{cycle.done? ? cycle.done : "-"}"
       puts "  Expired: #{cycle.expired? ? cycle.expired : "-"}"
       
