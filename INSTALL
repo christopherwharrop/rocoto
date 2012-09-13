@@ -1,12 +1,23 @@
 #!/bin/sh
 
-# Abort if any command returns an error
-set -e
-
 # Script to install required external packages
 
-# Set location of ruby to use
-RUBY=`which ruby`
+# Get the OS
+OS=`uname -s`
+
+# Set location of WFM
+WFM_DIR=`pwd`
+
+# Set location where tarfiles for packages are kept
+TAR_DIR=${WFM_DIR}/tarfiles
+
+# Set location where packages are built
+BUILD_DIR=${WFM_DIR}/build
+
+# Set the location where libraries are installed
+LIB_DIR=${WFM_DIR}/lib
+
+# Process arguments
 for arg in $@; do
   case $arg in
     --with-ruby=*) RUBY=`echo $arg | cut -f 2 -d "="`/bin/ruby;;
@@ -20,13 +31,25 @@ for arg in $@; do
   esac 
 done
 
+# Make sure a ruby is specified
+if [ -z "$RUBY" ]; then
+  RUBY=`which ruby 2>/dev/null`
+  if [ $? -ne 0 ]; then
+    echo "Can not find ruby.  Use --with-ruby to specify path where ruby is installed."
+    exit 1
+  fi
+fi
+
 # Make sure ruby exists
 if [ -x $RUBY ]; then
   echo "Installing using $RUBY"
 else
-  echo "Installation failed.  $RUBY does not exist"
+  echo "Installation failed.  $RUBY does not exist.  Use --with-ruby to specify path where ruby is installed."
   exit 1
 fi
+
+# Abort if any command returns an error
+set -e
 
 # Make sure ruby is at least 1.8.7 or higher
 good_ruby=`$RUBY -e "puts RUBY_VERSION >= '1.8.7'"`
@@ -44,8 +67,14 @@ for file in `ls sbin`; do
   fi
 
   # Replace first line with correct shebang
-  sed "1c\#!${RUBY}" sbin/$file > sbin/$file.new
+  sed "1s:.*:#!${RUBY}:" sbin/$file > sbin/$file.new
   mv sbin/$file.new sbin/$file
+
+  # Add path to libxml2 for AIX
+  if [ "$OS" == "AIX" ]; then
+    sed "2s%.*%ENV['LIBPATH']=\"${LIB_DIR}/libxml2/lib:#{ENV['LIBPATH']}\"%" sbin/$file > sbin/$file.new
+    mv sbin/$file.new sbin/$file
+  fi
 
   # Make sure the new file is executable
   chmod ugo+x sbin/$file
@@ -53,39 +82,59 @@ for file in `ls sbin`; do
 done
 
 # Package versions
-LIBXML_VERSION="2.3.3"
+LIBXML2_VERSION="2.7.3"
+LIBXML_RUBY_VERSION="2.3.3"
 SYSTEMTIMER_VERSION="1.2.3"
 SQLITE3_VERSION="autoconf-3070701"
 SQLITE3_RUBY_VERSION="1.3.1"
 
-# Set location of WFM
-WFM_DIR=`pwd`
-
-# Set location where tarfiles for packages are kept
-TAR_DIR=${WFM_DIR}/tarfiles
-
-# Set location where packages are built
-BUILD_DIR=${WFM_DIR}/build
-
-# Set the location where libraries are installed
-LIB_DIR=${WFM_DIR}/lib
+# Set AIX_CFLAGS and AIX_LDFLAGS
+if [ "$OS" == "AIX" ]; then
+  AIX_CFLAGS="-maix64 -g0"
+  AIX_LDFLAGS="-maix64 -g0"
+else
+  AIX_CFLAGS=""
+  AIX_LDFLAGS=""
+fi
 
 # Create the build directory
 mkdir -p ${BUILD_DIR}
+
+# Install libxml2 if needed
+if [ "$OS" == "AIX" ]; then
+  echo "==========================================="
+  echo "= INSTALLING libxml2                      ="
+  echo "==========================================="
+  cd ${BUILD_DIR}
+  gunzip -c ${TAR_DIR}/libxml2-${LIBXML2_VERSION}.tar.gz | tar -xvf -
+  cd libxml2-${LIBXML2_VERSION}
+  export OBJECT_MODE=64
+  ./configure --prefix=${LIB_DIR}/libxml2 CFLAGS="$AIX_CFLAGS" LDFLAGS="$AIX_LDFLAGS"
+  make clean
+  make
+  rm -rf ${LIB_DIR}/libxml2
+  make install
+fi
 
 # Install libxml-ruby
 echo "==========================================="
 echo "= INSTALLING libxml-ruby                  ="
 echo "==========================================="
+if [ "$OS" == "AIX" ]; then
+  libxml2_opts="--with-xml2-lib=${LIB_DIR}/libxml2/lib --with-xml2-include=${LIB_DIR}/libxml2/include/libxml2"
+else
+  libxml2_opts=""
+fi
 cd ${BUILD_DIR}
-tar -xzvf ${TAR_DIR}/libxml-ruby-${LIBXML_VERSION}.tar.gz
-cd libxml-ruby-${LIBXML_VERSION}/ext/libxml
-${RUBY} extconf.rb
+gunzip -c ${TAR_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}.tar.gz | tar -xvf -
+cd libxml-ruby-${LIBXML_RUBY_VERSION}/ext/libxml
+echo ${RUBY} extconf.rb $libxml2_opts
+${RUBY} extconf.rb $libxml2_opts
 make clean
 make
 rm -rf ${LIB_DIR}/libxml-ruby
 mkdir ${LIB_DIR}/libxml-ruby
-cp -r ${BUILD_DIR}/libxml-ruby-${LIBXML_VERSION}/lib/* ${LIB_DIR}/libxml-ruby
+cp -r ${BUILD_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}/lib/* ${LIB_DIR}/libxml-ruby
 cp libxml_ruby.so ${LIB_DIR}/libxml-ruby
 
 # Install SystemTimer
@@ -93,7 +142,7 @@ echo "==========================================="
 echo "= INSTALLING SystemTimer                  ="
 echo "==========================================="
 cd ${BUILD_DIR}
-tar -xzvf ${TAR_DIR}/SystemTimer-${SYSTEMTIMER_VERSION}.tar.gz
+gunzip -c ${TAR_DIR}/SystemTimer-${SYSTEMTIMER_VERSION}.tar.gz | tar -xvf -
 cd SystemTimer-${SYSTEMTIMER_VERSION}/ext/system_timer
 ${RUBY} extconf.rb
 make clean
@@ -108,22 +157,20 @@ echo "==========================================="
 echo "= INSTALLING sqlite3                      ="
 echo "==========================================="
 cd ${BUILD_DIR}
-tar -xzvf ${TAR_DIR}/sqlite-${SQLITE3_VERSION}.tar.gz
+gunzip -c ${TAR_DIR}/sqlite-${SQLITE3_VERSION}.tar.gz | tar -xvf -
 cd sqlite-${SQLITE3_VERSION}
-export CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_THREADSAFE=1"
-./configure --prefix=${LIB_DIR}/sqlite3
+./configure --prefix=${LIB_DIR}/sqlite3 CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_THREADSAFE=1 $AIX_CFLAGS $AIX_CFLAGS" LD_FLAGS="$AIX_LDFLAGS"
 make clean
 make
 rm -rf ${LIB_DIR}/sqlite3
 make install
-unset CFLAGS
 
 # Install sqlite3-ruby
 echo "==========================================="
 echo "= INSTALLING sqlite3-ruby                 ="
 echo "==========================================="
 cd ${BUILD_DIR}
-tar -xzvf ${TAR_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}.tar.gz
+gunzip -c ${TAR_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}.tar.gz | tar -xvf -
 cd sqlite3-ruby-${SQLITE3_RUBY_VERSION}/ext/sqlite3
 export LD_RUN_PATH=${LIB_DIR}/sqlite3/lib
 ${RUBY} extconf.rb -- --with-sqlite3-dir=${LIB_DIR}/sqlite3
