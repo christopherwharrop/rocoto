@@ -82,6 +82,7 @@ module WorkflowMgr
 
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
+
         case option
           when :account
             cmd += " -P #{value}"
@@ -90,9 +91,24 @@ module WorkflowMgr
           when :cores
             cmd += " -n #{value}"
           when :walltime
-            cmd += " -W #{value}"
+            hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
+            cmd += " -W #{hhmm}"
           when :memory
-            cmd += " -M #{value}"
+            units=value[-1,1]
+            amount=value[0..-2].to_i
+            case units
+              when /B|b/
+                amount=(amount / 1024.0).ceil
+              when /K|k/
+                amount=amount.ceil
+              when /M|m/
+                amount=(amount * 1024.0).ceil
+              when /G|g/
+                amount=(amount * 1024.0 * 1024.0).ceil
+              when /[0-9]/
+                amount=(value.to_i / 1024.0).ceil
+            end          
+            cmd += " -M #{amount}"
           when :stdout
 	    FileUtils.mkdir_p(File.dirname(value))
             cmd += " -o #{value}"
