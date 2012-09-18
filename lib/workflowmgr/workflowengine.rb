@@ -579,7 +579,8 @@ module WorkflowMgr
             @dbServer.delete_jobs([job])
 
             # Remove the job from the active_jobs list since it failed to submit and is not active.
-            @active_jobs.delete(job)
+            @active_jobs[job.task].delete(job.cycle)
+            @active_jobs.delete(job.task) if @active_jobs[job.task].empty?           
 
             next
 
@@ -597,7 +598,8 @@ module WorkflowMgr
               @dbServer.delete_jobs([job])
 
               # Remove the job from the active_jobs list since it failed to submit and is not active.
-              @active_jobs.delete(job)
+              @active_jobs[job.task].delete(job.cycle)
+              @active_jobs.delete(job.task) if @active_jobs[job.task].empty?           
 
               puts output
               @logServer.log(job.cycle,"Submission status of previously pending #{job.task} is failure!  #{output}")
