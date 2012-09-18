@@ -118,7 +118,7 @@ module WorkflowMgr
       output=`#{cmd} 2>&1`.chomp
 
       # Parse the output of the submit command
-      if output=~/^(\d+)(\.[^.]+)*$/
+      if output=~/^(\d+)(\.[a-zA-Z0-9-]+)*$/
         return $1,output
       else
  	return nil,output
