@@ -154,6 +154,9 @@ private
       # Run qstat to obtain the current status of queued jobs
       queued_jobs=`qstat -x 2>&1`
 
+      # Return if there is no qstat output
+      return if queued_jobs.empty?
+
       # Parse the XML output of showq, building job status records for each job
       queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
       queued_jobs=queued_jobs_doc.root

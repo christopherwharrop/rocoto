@@ -9,20 +9,20 @@
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "moabtorque">
 -->
-
+<!--
  <!ENTITY TEST_HOME "/home/harrop/workflowmgr/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
  <!ENTITY QUEUE "ncomp">
  <!ENTITY SCHED "sge">
+-->
 
-<!--
  <!ENTITY TEST_HOME "/home/harrop/workflowmgr/test">
  <!ENTITY DATA_HOME "/home/harrop/test">
  <!ENTITY PROJECT "test">
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "torque">
--->
+
 <!--
  <!ENTITY TEST_HOME "/glade/home/harrop/workflowmgr/test">
  <!ENTITY DATA_HOME "/ptmp/harrop/test">
