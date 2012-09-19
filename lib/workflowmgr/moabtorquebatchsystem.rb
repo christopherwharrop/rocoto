@@ -233,11 +233,14 @@ private
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
 
+      # Run showq to obtain the current status of queued jobs
+      completed_jobs=`showq --noblock -c --xml -u #{username} 2>&1`
+
+      # Return if the showq output is empty
+      return if completed_jobs.empty?
+
       # Initialize an empty hash of job records
       @jobacct={}
-
-      # run showq to obtain the current status of queued jobs
-      completed_jobs=`showq --noblock -c --xml -u #{username} 2>&1`
 
       # Parse the XML output of showq, building job status records for each job
       recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse

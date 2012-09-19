@@ -290,6 +290,9 @@ module WorkflowMgr
       # Run qstat to obtain the current status of queued jobs
       queued_jobs=`#{@sge_bin}/qstat -xml -u \\*`
 
+      # Return if the output of qstat is empty
+      return if queued_jobs.empty?
+
       # Parse the XML output of the qstat, building job status records for each job
       queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
       queued_jobs=queued_jobs_doc.root
