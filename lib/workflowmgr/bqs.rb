@@ -31,8 +31,8 @@ module WorkflowMgr
       @batchsystem=batchSystem
 
       # Open the database 
-      @database=WorkflowMgr::const_get("Workflow#{config.DatabaseType}DB").new(dbFile)
-      @database.dbopen
+#      @database=WorkflowMgr::const_get("Workflow#{config.DatabaseType}DB").new(dbFile)
+#      @database.dbopen
 
       # Initialize hashes used to keep track of multithreaded job submission
 
@@ -46,7 +46,7 @@ module WorkflowMgr
       @harvested=Hash.new
 
       # Initialize a mutex for synchronizing threaded access to the database
-      @mutex=Mutex.new
+#      @mutex=Mutex.new
 
     end
 
@@ -60,14 +60,14 @@ module WorkflowMgr
 
       # Initialize submission status to NOT harvested
       @harvested[task.attributes[:name]]=Hash.new if @harvested[task.attributes[:name]].nil?
-      @harvested[task.attributes[:name]][cycle]=false
+      @harvested[task.attributes[:name]][cycle.to_i]=false
 
       # Create a thread to submit the task
       @threads[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?      
-      @threads[task.attributes[:name]][cycle]=Thread.new {
+      @threads[task.attributes[:name]][cycle.to_i]=Thread.new {
         @status[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?
-        @status[task.attributes[:name]][cycle]=@batchsystem.submit(task)
-        jobid=@status[task.attributes[:name]][cycle].first
+        @status[task.attributes[:name]][cycle.to_i]=@batchsystem.submit(task)
+        jobid=@status[task.attributes[:name]][cycle.to_i].first
 
         # If the job submission succeeded, write the jobid in the database         
 #        unless jobid.nil?
@@ -76,7 +76,7 @@ module WorkflowMgr
 #          end
 #
 #          # Mark this status as harvested
-#          @harvested[task.attributes[:name]][cycle]=true
+#          @harvested[task.attributes[:name]][cycle.to_i]=true
 #
 #        end
       }
@@ -93,17 +93,17 @@ module WorkflowMgr
 
       # Return nil for jobid and output if the submit thread doesn't exist
       return nil,nil if @threads[taskid].nil?
-      return nil,nil if @threads[taskid][cycle].nil?
+      return nil,nil if @threads[taskid][cycle.to_i].nil?
 
       # Return nil for jobid and output	if the submit thread is still running
-      if @threads[taskid][cycle].alive?
+      if @threads[taskid][cycle.to_i].alive?
         return nil,nil 
       # Otherwise, get the jobid and output and return it
       else
-        status=@status[taskid][cycle]
+        status=@status[taskid][cycle.to_i]
 
         # Mark this status as harvested
-        @harvested[taskid][cycle]=true
+        @harvested[taskid][cycle.to_i]=true
 
         # Return the output of the job submission
         return status
@@ -122,14 +122,14 @@ module WorkflowMgr
       # Check to see if any threads are still running
       @threads.keys.each do |taskid|
         @threads[taskid].keys.each do |cycle|
-          return true if @threads[taskid][cycle].alive?
+          return true if @threads[taskid][cycle.to_i].alive?
         end
       end
 
       # Check to see if all statuses have been harvested
       @harvested.keys.each do |taskid|
         @harvested[taskid].keys.each do |cycle|
-          return true if !@harvested[taskid][cycle]
+          return true if !@harvested[taskid][cycle.to_i]
         end
       end
 

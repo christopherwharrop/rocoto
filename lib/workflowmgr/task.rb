@@ -12,7 +12,9 @@ module WorkflowMgr
   ##########################################
   class Task
 
-    attr_reader :seq,:attributes,:envars,:dependency,:hangdependency
+    require 'parsedate'
+
+    attr_reader :seq,:attributes,:envars,:dependency,:deadline,:hangdependency
 
     #####################################################
     #
@@ -76,8 +78,31 @@ module WorkflowMgr
     #####################################################
     def cap_walltime(maxtime)
 
+      # Make sure maxtime is not greater than the deadline
+      unless @attributes[:deadline].nil?
+        deadline=Time.gm(*ParseDate::parsedate(@attributes[:deadline]))
+        maxtime=deadline if deadline.to_i < maxtime.getgm.to_i
+      end
+
+      # Cap the walltime request to the expiration time of the cycle, or the task deadline, whichever is sooner
       if WorkflowMgr.ddhhmmss_to_seconds(@attributes[:walltime]) + Time.now.getgm.to_i > maxtime.getgm.to_i
         @attributes[:walltime]=WorkflowMgr.seconds_to_hhmmss(maxtime.getgm.to_i - Time.now.to_i)
+      end
+
+    end
+
+
+    #####################################################
+    #
+    # expired?
+    #
+    #####################################################
+    def expired?(cycle)
+
+      if @attributes[:deadline].nil?
+        return false
+      else
+        return Time.gm(*ParseDate::parsedate(@attributes[:deadline].to_s(cycle.getgm))) <= Time.now.getgm
       end
 
     end

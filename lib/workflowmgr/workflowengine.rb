@@ -182,10 +182,13 @@ module WorkflowMgr
           end
         end
 
-        # Check for existing jobs that are not done
+        # Check for existing jobs that are not done or expired
         unless boot_job.nil?
-          if !boot_job.done?
-            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because there is already a job for it in state #{boot_job.state}"
+          if !boot_job.done? && !boot_job.expired?
+            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because a job for it already exists in state #{boot_job.state}"
+          end
+          if boot_job.expired?
+            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task has expired"
           end
         end
 
@@ -371,7 +374,7 @@ module WorkflowMgr
       # Get the most recent cycle time <= now from cycle specs
       now=Time.now.getgm
       latest_cycle_time=@cycledefs.collect { |c| c.previous(now) }.max
-      latest_cycle=Cycle.new(latest_cycle_time, { :activated=>latest_cycle_time.getgm } )
+      latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated=>latest_cycle_time.getgm } )
 
       # Get the latest cycle from the database or initialize it to a very long time ago
       latest_db_cycle=@dbServer.get_last_cycle || Cycle.new(Time.gm(1900,1,1,0,0,0))
@@ -666,11 +669,11 @@ module WorkflowMgr
 
           # No need to query or update the status of jobs that we already know are done successfully or that remain failed
           # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
-          next if job.state=="SUCCEEDED" || job.state=="FAILED"
+          next if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED"
 
-          # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts
+          # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts, but only if the task has not expired
           if job.state=="DEAD"
-            if job.tries < @tasks[job.task].attributes[:maxtries]
+            if job.tries < @tasks[job.task].attributes[:maxtries] && !@tasks[job.task].expired?(job.cycle)
 
               # Reset the state to FAILED so a resubmission can occur
               job.state="FAILED"
@@ -735,8 +738,17 @@ module WorkflowMgr
             end
           end
 
+          # Check for job expiration
+          unless job.state=="SUCCEEDED"
+            if @tasks[job.task].expired?(job.cycle)
+              job.state="EXPIRED"
+              runmsg="#{runmsg}.  This task has expired.  It will be killed and will not be retried"
+              @bqServer.delete(job.id)
+            end
+          end
+
           # Check for maxtries violation and update counters
-          if job.state=="SUCCEEDED" || job.state=="FAILED"
+          if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED"
             job.tries+=1
             if job.state=="FAILED"
               if job.tries >= @tasks[job.task].attributes[:maxtries]
@@ -894,7 +906,7 @@ module WorkflowMgr
       expired_cycles.each do |cycle|          
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle.cycle].nil?
-          unless @active_jobs[taskname][cycle.cycle].state == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle].state == "FAILED" || @active_jobs[taskname][cycle.cycle].state == "DEAD"
+          unless @active_jobs[taskname][cycle.cycle].state == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle].state == "FAILED" || @active_jobs[taskname][cycle.cycle].state == "DEAD" || @active_jobs[taskname][cycle.cycle].state == "EXPIRED"
             @logServer.log(cycle.cycle,"Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle].id} because this cycle has expired!")
             @bqServer.delete(@active_jobs[taskname][cycle.cycle].id)
           end
@@ -942,6 +954,23 @@ module WorkflowMgr
               resubmit=true
 
             end
+          end
+
+          # Make sure the task hasn't expired.  If it has, add a fake EXPIRED job to the DB so that we won't try this again.
+          if task.expired?(cycletime)
+            @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because it has expired")
+            fakejob = Job.new(0,                        # jobid
+                              task.attributes[:name],   # taskname
+                              cycletime,                # cycle
+                              task.attributes[:cores],  # cores
+                              "EXPIRED",                # state
+                              "SUBMITTING",             # native state
+                              0,                        # exit_status
+                              0,                        # tries
+                              0                         # nunknowns
+                             )
+            @dbServer.add_jobs([fakejob])
+            next
           end
 
           # Validate that this cycle is a member of at least one of the cycledefs specified for this task
@@ -994,9 +1023,9 @@ module WorkflowMgr
             newjobid=0
           end
           if resubmit
-            newjob = Job.new(newjobid,                    # jobid
+            newjob = Job.new(newjobid,                 # jobid
                              task.attributes[:name],   # taskname
-                             cycletime,                    # cycle
+                             cycletime,                # cycle
                              task.attributes[:cores],  # cores
                              "SUBMITTING",             # state
                              "SUBMITTING",             # native state
@@ -1006,9 +1035,9 @@ module WorkflowMgr
                             )
 
           else
-            newjob = Job.new(newjobid,                    # jobid
+            newjob = Job.new(newjobid,                 # jobid
                              task.attributes[:name],   # taskname
-                             cycletime,                    # cycle
+                             cycletime,                # cycle
                              task.attributes[:cores],  # cores
                              "SUBMITTING",             # state
                              "SUBMITTING",             # native state

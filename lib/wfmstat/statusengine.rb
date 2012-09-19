@@ -321,7 +321,12 @@ module WFMStat
             elsif jobs[task][cycle].nil?
               jobdata=["-","-","-","-"]
             else
-              jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries]
+              case jobs[task][cycle].state
+                when "SUCCEEDED","DEAD","FAILED"
+                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries]
+                else
+                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries]                 
+              end
             end
             puts format % ([cycle.strftime("%Y%m%d%H%M"),task] + jobdata)
           end

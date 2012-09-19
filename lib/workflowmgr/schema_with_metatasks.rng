@@ -369,6 +369,13 @@
           </element>
         </optional>
 
+        <!-- Zero or one deadline tag -->
+        <optional>
+          <element name="deadline">
+            <ref name="compoundTimeString"/>
+          </element>
+        </optional>
+
         <!-- Zero or one hangdependency tag -->
         <optional>
           <element name="hangdependency">

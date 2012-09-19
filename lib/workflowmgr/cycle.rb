@@ -51,7 +51,7 @@ module WorkflowMgr
     #
     ##########################################
     def <=>(other)
-      @cycle <=> other.cycle
+      @cycle.getgm.to_i <=> other.cycle.getgm.to_i
     end
 
 
