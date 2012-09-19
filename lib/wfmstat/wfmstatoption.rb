@@ -47,7 +47,7 @@ module WFMStat
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  wfmstat -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s]"
+        opts.banner = "Usage:  rocotostat -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s]"
 
         # Specify the database file
         opts.on("-d","--database file",String,"Path to workflow database file") do |db|
@@ -100,8 +100,8 @@ module WFMStat
         end
 
         # Handle option for version
-        opts.on("--version","Show Workflow Manager version") do
-          puts "Workflow Manager Version #{WorkflowMgr::VERSION}"
+        opts.on("--version","Show Rocoto version") do
+          puts "Rocoto Version #{WorkflowMgr::VERSION}"
           exit
         end
 

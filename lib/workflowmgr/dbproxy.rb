@@ -105,7 +105,7 @@ module WorkflowMgr
           Signal.trap("INT",nil)
 
           # Launch server process
-          @dbServer,@dbHost,@dbPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowdbserver")
+          @dbServer,@dbHost,@dbPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotodbserver")
           @dbServer.setup(database)
 
           # Restore default SIGINT handler

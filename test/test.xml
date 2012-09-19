@@ -63,9 +63,9 @@
       <memory>512M</memory>
 
       <jobname>test#x#</jobname>
-
+<!--
       <deadline><cyclestr offset="00:30:00">@Y@m@d@H@M@S</cyclestr></deadline>
-
+-->
       <envar>
         <name>START_TIME</name><value><cyclestr>@Y@m@d@H</cyclestr></value>
       </envar>

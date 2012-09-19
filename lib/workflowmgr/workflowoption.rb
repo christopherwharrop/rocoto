@@ -44,7 +44,7 @@ module WorkflowMgr
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  workflowmgr -d database_file -w workflow_document [options]"
+        opts.banner = "Usage:  rocotorun -d database_file -w workflow_document [options]"
 
         # Handle option for specifying the database file
         opts.on("-d","--database PATH",String,"Path to database store file") do |db|
@@ -58,7 +58,7 @@ module WorkflowMgr
         end
 
         # Handle option for verbose
-        opts.on("-v","--verbose [LEVEL]",/^[0-9]+$/,"Run Workflow Manager in verbose mode") do |verbose|
+        opts.on("-v","--verbose [LEVEL]",/^[0-9]+$/,"Run Rocoto in verbose mode") do |verbose|
           if verbose.nil?
             @verbose=1
           else
@@ -67,8 +67,8 @@ module WorkflowMgr
         end
 
         # Handle option for version
-        opts.on("--version","Show Workflow Manager version") do
-          puts "Workflow Manager Version #{WorkflowMgr::VERSION}"
+        opts.on("--version","Show Rocoto version") do
+          puts "Rocoto Version #{WorkflowMgr::VERSION}"
           exit
         end
 

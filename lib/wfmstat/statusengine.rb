@@ -42,12 +42,6 @@ module WFMStat
       # Set up an object to serve the workflow database (but do not open the database)
       @dbServer=WorkflowMgr::DBProxy.new(@options.database,@config)
 
-      # Set up an object to serve file stat info
-      @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config)        
-
-      # Open the workflow document
-      @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
-
     end  # initialize
 
 
@@ -62,6 +56,12 @@ module WFMStat
 
         # Open/Create the database
         @dbServer.dbopen
+
+        # Set up an object to serve file stat info
+        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config)        
+
+        # Open the workflow document
+        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
 
         # Print a cycle summary report if requested
         if @options.summary
@@ -99,6 +99,12 @@ module WFMStat
 
         # Open/Create the database
         @dbServer.dbopen
+
+        # Set up an object to serve file stat info
+        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config)        
+
+        # Open the workflow document
+        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
 
         # Get cycle time and task name options
         cycletime=@options.cycles.first

@@ -82,8 +82,8 @@ module WFMStat
         end
 
         # Handle option for version
-        opts.on("--version","Show Workflow Manager version") do
-          puts "Workflow Manager Version #{WorkflowMgr::VERSION}"
+        opts.on("--version","Show Rocoto version") do
+          puts "Rocoto Version #{WorkflowMgr::VERSION}"
           Process.exit
         end
 

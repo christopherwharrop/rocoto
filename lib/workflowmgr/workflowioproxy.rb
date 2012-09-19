@@ -197,7 +197,7 @@ module WorkflowMgr
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)
 
-          @workflowIOServer,@workflowIOHost,@workflowIOPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/workflowioserver")
+          @workflowIOServer,@workflowIOHost,@workflowIOPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotoioserver")
           @workflowIOServer.setup(workflowIO)
 
           # Restore default SIGINT handler
