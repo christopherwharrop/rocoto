@@ -54,7 +54,7 @@ module WorkflowMgr
         # Handle option for help
         opts.on("-h","--help","Show this message") do
           puts opts
-          exit
+          Process.exit(0)
         end
 
         # Handle option for verbose
@@ -69,7 +69,7 @@ module WorkflowMgr
         # Handle option for version
         opts.on("--version","Show Rocoto version") do
           puts "Rocoto Version #{WorkflowMgr::VERSION}"
-          exit
+          Process.exit(0)
         end
 
         # Handle option for specifying the workflow document
@@ -91,7 +91,7 @@ module WorkflowMgr
   
         rescue OptionParser::ParseError => e
           STDERR.puts e.message, "\n",opts
-          exit(-1)
+          Process.exit(-1)
         end
         
       end

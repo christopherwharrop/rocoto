@@ -96,13 +96,13 @@ module WFMStat
         # Help
         opts.on("-h","--help","Show this message") do
           puts opts
-          exit
+          Process.exit
         end
 
         # Handle option for version
         opts.on("--version","Show Rocoto version") do
           puts "Rocoto Version #{WorkflowMgr::VERSION}"
-          exit
+          Process.exit
         end
 
         begin
@@ -119,7 +119,7 @@ module WFMStat
   
         rescue OptionParser::ParseError => e
           STDERR.puts e.message, "\n",opts
-          exit(-1)
+          Process.exit(-1)
         end
         
       end

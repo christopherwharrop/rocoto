@@ -177,7 +177,8 @@ module WFMStat
       # Get the cycles of interest that are in the database
       if @options.cycles.nil?
         # Get the latest cycle
-        dbcycles << @dbServer.get_last_cycle
+        last_cycle=@dbServer.get_last_cycle
+        dbcycles << last_cycle unless last_cycle.nil?
       elsif @options.cycles.is_a?(Range)
         # Get all cycles within the range
         dbcycles += @dbServer.get_cycles( {:start=>@options.cycles.first, :end=>@options.cycles.last } )
