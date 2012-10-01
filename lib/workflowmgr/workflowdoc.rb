@@ -165,10 +165,13 @@ module WorkflowMgr
     ##########################################
     def log
  
-      lognode=@workflowdoc.find('/workflow/log').first
-      path=get_compound_time_string(lognode)
-      verbosity=lognode.attributes['verbosity']
+      lognode=@workflowdoc.find('/workflow/log')
+      path=get_compound_time_string(lognode[0])
+      verbosity=lognode[0].attributes['verbosity']
       verbosity=verbosity.to_i unless verbosity.nil?
+
+      lognode=nil
+      GC.start
 
       return WorkflowLog.new(path,verbosity,@workflowIOServer)
 
@@ -196,6 +199,9 @@ module WorkflowMgr
 	  raise "ERROR: Unsupported <cycle> type!"
         end
       }
+
+      cyclenodes=nil
+      GC.start
 
       return cycles
 
@@ -262,6 +268,9 @@ module WorkflowMgr
 
       end
 
+      tasknodes=nil
+      GC.start
+
       return tasks
 
     end
@@ -279,6 +288,10 @@ module WorkflowMgr
       taskdepnodes.each do |taskdepnode|
         offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode["cycle_offset"]) unless taskdepnode["cycle_offset"].nil?
       end
+
+      taskdepnodes=nil
+      GC.start
+
       return offsets.uniq  
 
     end
@@ -310,22 +323,29 @@ module WorkflowMgr
      # 
      ##########################################
      def get_compound_time_string(element)
- 
-       strarray=element.collect do |e|
+
+       if element.nil?
+         return nil
+       end
+
+       strarray=[] 
+       element.each do |e|
          if e.node_type==LibXML::XML::Node::TEXT_NODE
-           e.content.strip
+           strarray << e.content.clone.strip
          else
            offset_sec=WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
            case e.name
              when "cyclestr"
-               formatstr=e.content.strip.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@')
-               CycleString.new(formatstr,offset_sec)
+               formatstr=e.content.clone.strip
+               formatstr.gsub!(/@(\^?[^@\s])/,'%\1')
+               formatstr.gsub!(/@@/,'@')
+               strarray << CycleString.new(formatstr,offset_sec)
              else
                raise "Invalid tag <#{e.name}> inside #{element}: #{e.node_type_name}"
            end
          end
        end
- 
+
        return CompoundTimeString.new(strarray)
  
      end
