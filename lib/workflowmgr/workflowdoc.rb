@@ -789,7 +789,7 @@ module WorkflowMgr
 	var_values = e.content.split
         var_length = var_values.length if var_length == -1
         raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
-        id_table[e["id"]] = var_values
+        id_table[e["name"]] = var_values
       end
     }
     raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1

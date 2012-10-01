@@ -395,7 +395,7 @@
       <oneOrMore>
         <element name="var">
           <!-- Each var tag must have the id attribute set -->
-          <attribute name="id">
+          <attribute name="name">
             <data type="string"/>
           </attribute>
           <text/>
