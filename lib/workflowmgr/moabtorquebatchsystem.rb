@@ -169,14 +169,13 @@ private
 
       # Run qstat to obtain the current status of queued jobs
       queued_jobs=`showq --noblock --xml -u #{username} 2>&1`
-#      queued_jobs=`showq --noblock --xml 2>&1`
 
       # Parse the XML output of showq, building job status records for each job
       queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
-      queued_jobs=queued_jobs_doc.root
 
       # For each job, find the various attributes and create a job record
-      queued_jobs.find('//job').each { |job|
+      queued_jobs=queued_jobs_doc.root.find('//job')
+      queued_jobs.each { |job|
 
 	# Initialize an empty job record
 	record={}
@@ -219,6 +218,8 @@ private
 	@jobqueue[record[:jobid]]=record
 
       }  #  queued_jobs.find
+      queued_jobs=nil
+      GC.start
 
     end
 
@@ -244,10 +245,10 @@ private
 
       # Parse the XML output of showq, building job status records for each job
       recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
-      recordxml=recordxmldoc.root
 
       # For each job, find the various attributes and create a job record
-      recordxml.find('//job').each { |job|
+      recordxml=recordxmldoc.root.find('//job')
+      recordxml.each { |job|
         record={}
         record[:jobid]=job.attributes['JobID']
         record[:native_state]=job.attributes['State']
@@ -274,6 +275,8 @@ private
         @jobacct[record[:jobid]]=record unless @jobacct.has_key?(record[:jobid])
 
       }
+      recordxml=nil
+      GC.start
     
     end
 

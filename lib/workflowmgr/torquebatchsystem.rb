@@ -159,10 +159,10 @@ private
 
       # Parse the XML output of showq, building job status records for each job
       queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
-      queued_jobs=queued_jobs_doc.root
 
       # For each job, find the various attributes and create a job record
-      queued_jobs.find('//Job').each { |job|
+      queued_jobs=queued_jobs_doc.root.find('//Job')
+      queued_jobs.each { |job|
 
 	# Initialize an empty job record
 	record={}
@@ -215,6 +215,9 @@ private
 	@jobqueue[record[:jobid]]=record
 
       }  #  queued_jobs.find
+
+      queued_jobs=nil
+      GC.start
 
     end
 
