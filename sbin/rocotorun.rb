@@ -21,6 +21,9 @@ WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
 
 # Create workflow engine and run it
 workflowmgrOptions=WorkflowMgr::WorkflowOption.new(ARGV)
+if workflowmgrOptions.verbose > 999
+  set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
+end
 workflowengine=WorkflowMgr::WorkflowEngine.new(workflowmgrOptions)
 workflowengine.run
 
