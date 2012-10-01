@@ -114,7 +114,7 @@ module WFMStat
         cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
 
         # Get the task
-        task=@workflowdoc.tasks[taskname]
+        task=@workflowdoc.tasks[taskname]    
         task=task.localize(cycletime) unless task.nil?
 
         # Get the job (if there is one)
@@ -130,7 +130,7 @@ module WFMStat
         end
 
         # Query task dependencies
-        dependencies=task.dependency.query(cycle,jobs,@workflowIOServer) unless task.nil?
+        dependencies=task.nil? ? nil : task.dependency.query(cycle,jobs,@workflowIOServer)
 
         # Print the task information
         print_taskinfo(task)
@@ -415,6 +415,13 @@ module WFMStat
 
       puts
 
+      # Check for non-existent task
+      puts "Task can not be submitted because:"
+      if task.nil?
+        puts "  The task is not defined"
+        return
+      end
+
       # Check for inactive cycle
       puts "Task can not be submitted because:"
       unless cycle.active?
@@ -423,9 +430,11 @@ module WFMStat
       end
 
       # Check for unsatisfied dependencies
-      unless dependencies.first[:resolved]
-        puts "  Dependencies are not satisfied"
-        return
+      unless dependencies.nil?
+        unless dependencies.first[:resolved]
+          puts "  Dependencies are not satisfied"
+          return
+        end
       end
 
       # Check for throttle violations
