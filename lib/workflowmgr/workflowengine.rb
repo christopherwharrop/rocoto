@@ -160,11 +160,6 @@ module WorkflowMgr
         # Get the task from the workflow definition
         task=@tasks[boot_task_name]
 
-        # Reject this request if the task is not defined 
-        if task.nil?
-          raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task is not defined in the workflow definition"
-        end
-
         # Look for the cycle in the database to see if it has ever been activated
 	boot_cycle=@dbServer.get_cycle(boot_cycle_time).first
 
