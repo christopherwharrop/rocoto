@@ -3,28 +3,28 @@
 [
  <!ENTITY CYCLE_TIME "@Y@m@d@H">
 <!--
- <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/workflowmgr/test">
+ <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/rocoto/test">
  <!ENTITY DATA_HOME "/scratch1/portfolios/BMC/nesccmgmt/Christopher.W.Harrop/test">
  <!ENTITY PROJECT "nesccmgmt">
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "moabtorque">
 -->
 
- <!ENTITY TEST_HOME "/home/harrop/workflowmgr/test">
+ <!ENTITY TEST_HOME "/home/harrop/rocoto/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
  <!ENTITY QUEUE "ncomp">
  <!ENTITY SCHED "sge">
 
 <!--
- <!ENTITY TEST_HOME "/home/harrop/workflowmgr/test">
+ <!ENTITY TEST_HOME "/home/harrop/rocoto/test">
  <!ENTITY DATA_HOME "/home/harrop/test">
  <!ENTITY PROJECT "test">
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "torque">
 -->
 <!--
- <!ENTITY TEST_HOME "/glade/home/harrop/workflowmgr/test">
+ <!ENTITY TEST_HOME "/glade/home/harrop/opt/rocoto-trunk/test">
  <!ENTITY DATA_HOME "/ptmp/harrop/test">
  <!ENTITY PROJECT "48500053">
  <!ENTITY QUEUE "debug">
@@ -42,7 +42,7 @@
 
   <metatask>
 
-    <var id="x">1 2 3 4 5 6 7 8 9 10</var>
+    <var name="x">1 2 3 4 5 6 7 8 9 10</var>
 
     <task name="test#x#" maxtries="3" cycledefs="group1">
 <!--
