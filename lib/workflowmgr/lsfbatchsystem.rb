@@ -129,9 +129,9 @@ module WorkflowMgr
       # Instead, the vars must be set in the environment before submission
       task.envars.each { |name,env|
         if env.nil?
-          ENV['#{name}']=""
+          ENV[name]=""
         else
-          ENV['#{name}']="#{env}"
+          ENV[name]=env
         end
       }
 
@@ -139,7 +139,6 @@ module WorkflowMgr
       cmd += " #{task.attributes[:command]}"
 
       # Run the submit command
-
       output=`#{cmd} 2>&1`.chomp
 
       # Parse the output of the submit command
@@ -264,7 +263,7 @@ private
               record[:jobname]=$2
               record[:user]=$3
               record[:native_state]="DONE"
-            when /(\w+ \w+ \d+ \d+:\d+:\d+): Submitted from host <\w+>, to Queue <(\w+)>,/
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+): Submitted from host <\w+>, to Queue <(\w+)>,/
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
@@ -275,7 +274,7 @@ private
               end
               record[:submit_time]=Time.local(*timestamp).getgm
               record[:queue]=$2        
-            when /(\w+ \w+ \d+ \d+:\d+:\d+): Dispatched to /
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+): Dispatched to /
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
@@ -285,7 +284,7 @@ private
                 end
               end
               record[:start_time]=Time.local(*timestamp).getgm
-            when /(\w+ \w+ \d+ \d+:\d+:\d+): Done successfully. /
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+): Done successfully. /
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
@@ -297,7 +296,7 @@ private
               record[:end_time]=Time.local(*timestamp).getgm
               record[:exit_status]=0             
               record[:state]="SUCCEEDED"
-            when /(\w+ \w+ \d+ \d+:\d+:\d+): Exited with exit code (\d+)/
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+): Exited with exit code (\d+)/
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
