@@ -331,12 +331,12 @@ module WorkflowMgr
        strarray=[] 
        element.each do |e|
          if e.node_type==LibXML::XML::Node::TEXT_NODE
-           strarray << e.content.clone.strip
+           strarray << e.content.clone
          else
            offset_sec=WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
            case e.name
              when "cyclestr"
-               formatstr=e.content.clone.strip
+               formatstr=e.content.clone
                formatstr.gsub!(/@(\^?[^@\s])/,'%\1')
                formatstr.gsub!(/@@/,'@')
                strarray << CycleString.new(formatstr,offset_sec)
