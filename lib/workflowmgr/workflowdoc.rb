@@ -337,6 +337,7 @@ module WorkflowMgr
            case e.name
              when "cyclestr"
                formatstr=e.content.clone
+               formatstr.gsub!(/%/,'%%')
                formatstr.gsub!(/@(\^?[^@\s])/,'%\1')
                formatstr.gsub!(/@@/,'@')
                strarray << CycleString.new(formatstr,offset_sec)
