@@ -110,13 +110,10 @@ module WorkflowMgr
             end          
             cmd += " -M #{amount}"
           when :stdout
-	    FileUtils.mkdir_p(File.dirname(value))
             cmd += " -o #{value}"
           when :stderr
-	    FileUtils.mkdir_p(File.dirname(value))
             cmd += " -e #{value}"
           when :join
-	    FileUtils.mkdir_p(File.dirname(value))
             cmd += " -o #{value}"           
           when :jobname
             cmd += " -J #{value}"

@@ -1059,9 +1059,33 @@ module WorkflowMgr
           # Add the new job to the database
           @dbServer.add_jobs([newjob])
 
-          # Submit the task
+          # Localize all <cyclestr> to current cycle
           localtask=task.localize(cycletime)
+
+          # Cap walltime requests such that the runtime of the task won't exceed expiration deadlines
           localtask.cap_walltime(cycle.activated.getgm + @cyclelifespan)
+
+          # Create output directories for <stdout>,<stderr>,<join> paths
+          begin
+
+            localtask.attributes.each do |option,value|
+              case option
+                when :stdout,:stderr,:join
+                  if value[-1,1]=="/"
+                    outdir=value
+                  else
+                    outdir=value.split("/")[0..-2].join("/")
+                  end
+                  @workflowIOServer.mkdir_p(outdir)
+              end
+            end
+
+          rescue WorkflowIOHang
+            @logServer.log(cycletime,"Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!")
+            puts "!!! WARNING !!! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"
+          end
+
+          # Submit the task
           @bqServer.submit(localtask,cycletime)
           @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
 
