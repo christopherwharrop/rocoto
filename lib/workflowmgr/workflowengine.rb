@@ -776,6 +776,12 @@ module WorkflowMgr
           # Log the state of the job
           @logServer.log(job.cycle,statemsg+runmsg+unknownmsg+triesmsg)
 
+          if job.failed? || job.expired?
+            if @options.verbose > 0
+              puts "Cycle #{job.cycle.strftime("%Y%m%d%H%M")}, #{statemsg+runmsg+unknownmsg+triesmsg}"
+            end
+          end
+
         end # @active_jobs.each
      
       end

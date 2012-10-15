@@ -60,7 +60,7 @@ module WorkflowMgr
         # Handle option for verbose
         opts.on("-v","--verbose [LEVEL]",/^[0-9]+$/,"Run Rocoto in verbose mode") do |verbose|
           if verbose.nil?
-            @verbose=1
+            @verbose=0
           else
             @verbose=verbose.to_i
           end
