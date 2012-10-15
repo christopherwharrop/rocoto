@@ -233,6 +233,12 @@ joins.each {|n| n.remove! }
 end
 
 
+# Check for command line arguments
+if ARGV.size != 1
+  puts "USAGE:  translate workflow.xml"
+  Process.exit(1)
+end
+
 # Parse the workflow xml string, set option to replace entities
 xmlstring=IO.readlines(ARGV[0],nil)[0]
 xmlstring=simple_substitutions(xmlstring)
