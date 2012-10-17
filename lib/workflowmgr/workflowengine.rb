@@ -550,7 +550,7 @@ module WorkflowMgr
       begin
 
         # Loop over active jobs looking for ones with pending submissions
-        @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].seq] }.each do |job|
+        @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].nil? ? 999999999 : @tasks[job.task].seq] }.each do |job|
 
           # Skip jobs that don't have pending job ids
           next unless job.pending_submit?
@@ -670,7 +670,7 @@ module WorkflowMgr
         @active_core_count=0
 
         # Loop over all active jobs and retrieve and update their current status
-        @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].seq] }.each do |job|
+        @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].nil? ? 999999999 : @tasks[job.task].seq] }.each do |job|
 
           # No need to query or update the status of jobs that we already know are done successfully or that remain failed
           # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
