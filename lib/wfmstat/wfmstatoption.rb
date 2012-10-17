@@ -113,6 +113,9 @@ module WFMStat
           # Parse the options
           opts.parse!(args)
 
+          # Print usage information if unknown options were passed
+          raise OptionParser::ParseError,"Unrecognized options" unless args.empty?
+
           # The -d and -w options are mandatory
           raise OptionParser::ParseError,"A database file must be specified" if @database.nil?
           raise OptionParser::ParseError,"A workflow definition file must be specified" if @workflowdoc.nil?
