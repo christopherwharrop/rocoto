@@ -41,7 +41,7 @@ module WorkflowMgr
         else 
           obj.to_s(time.gmtime)
         end
-      }.join
+      }.join.strip
 
     end
 
