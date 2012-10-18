@@ -376,7 +376,7 @@ module WFMStat
     def print_cycleinfo(cycle)
 
       puts
-      puts "Cycle: #{cycle.cycle.strftime("%Y%m%d%H")}"
+      puts "Cycle: #{cycle.cycle.strftime("%Y%m%d%H%M")}"
       puts "  State: #{cycle.state}"
       puts "  Activated: #{cycle.activated != Time.at(0) ? cycle.activated : "-"}"
       puts "  Completed: #{cycle.done? ? cycle.done : "-"}"

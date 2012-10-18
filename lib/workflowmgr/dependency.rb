@@ -479,13 +479,13 @@ module WorkflowMgr
     #####################################################
     def query(cycle,jobList,workflowIOServer)
 
-      return [{:dep=>"#{@task} of cycle #{cycle.getgm+@cycle_offset}", :msg=>"is not #{@state}", :resolved=>false }] if jobList.nil?
-      return [{:dep=>"#{@task} of cycle #{cycle.getgm+@cycle_offset}", :msg=>"is not #{@state}", :resolved=>false }] if jobList[@task].nil?
-      return [{:dep=>"#{@task} of cycle #{cycle.getgm+@cycle_offset}", :msg=>"is not #{@state}", :resolved=>false }] if jobList[@task][cycle.getgm+@cycle_offset].nil?
+      return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if jobList.nil?
+      return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if jobList[@task].nil?
+      return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if jobList[@task][cycle.getgm+@cycle_offset].nil?
       if jobList[@task][cycle.getgm+@cycle_offset].state==@state
-        return [{:dep=>"#{@task} of cycle #{cycle.getgm+@cycle_offset}", :msg=>"is #{@state}", :resolved=>true }]
+        return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is #{@state}", :resolved=>true }]
       else
-        return [{:dep=>"#{@task} of cycle #{cycle.getgm+@cycle_offset}", :msg=>"is not #{@state}", :resolved=>false }]
+        return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }]
       end
     end
 
