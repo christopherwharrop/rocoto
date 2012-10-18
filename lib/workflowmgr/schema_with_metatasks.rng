@@ -208,6 +208,11 @@
             <ref name="nonNegativeTime"/>
           </attribute>
         </optional>
+        <optional>
+          <attribute name="minsize">
+            <data type="string"/>
+          </attribute>
+        </optional>
         <ref name="compoundTimeString"/>
       </element>
       <element name="timedep">

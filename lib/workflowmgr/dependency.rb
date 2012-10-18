@@ -567,10 +567,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(datapath,age)
+    def initialize(datapath,age,minsize)
 
       @datapath=datapath
       @age=age
+      @minsize=minsize
     
     end
 
@@ -583,7 +584,11 @@ module WorkflowMgr
 
       filename=@datapath.to_s(cycle)
       if workflowIOServer.exists?(filename)
-        return Time.now > (workflowIOServer.mtime(filename) + @age)
+        if workflowIOServer.size(filename) >= @minsize
+          return Time.now > (workflowIOServer.mtime(filename) + @age)
+        else
+          return false
+        end
       else
         return false
       end
@@ -600,7 +605,11 @@ module WorkflowMgr
       filename=@datapath.to_s(cycle)
       if workflowIOServer.exists?(filename)
         if Time.now > (workflowIOServer.mtime(filename) + @age)
-          return [{:dep=>filename, :msg=>"is available", :resolved=>true }]
+          if workflowIOServer.size(filename) >= @minsize
+            return [{:dep=>filename, :msg=>"is available", :resolved=>true }]
+          else
+            return [{:dep=>filename, :msg=>"is not large enough", :resolved=>false }]
+          end
         else
           return [{:dep=>filename, :msg=>"is not old enough", :resolved=>false }]
         end

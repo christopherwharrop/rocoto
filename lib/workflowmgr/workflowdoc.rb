@@ -419,7 +419,22 @@ module WorkflowMgr
        # Get the age attribute
        age_sec=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["age"]) || 0
 
-       return DataDependency.new(get_compound_time_string(element),age_sec)
+       # Get the minsize attribute
+       minsize=element.attributes["minsize"] || 0
+       case minsize
+         when /^(\d+)$/
+           minsize=$1.to_i
+         when /^(\d+)[B|b]$/
+           minsize=$1.to_i
+         when /^(\d+)[K|k]$/
+           minsize=$1.to_i * 1024
+         when /^(\d+)[M|m]$/
+           minsize=$1.to_i * 1024 * 1024
+         when /^(\d+)[G|g]$/
+           minsize=$1.to_i * 1024 * 1024 * 1024
+       end
+
+       return DataDependency.new(get_compound_time_string(element),age_sec,minsize)
  
      end
 
