@@ -130,7 +130,7 @@ module WFMStat
         end
 
         # Query task dependencies
-        dependencies=task.nil? ? nil : task.dependency.query(cycle,jobs,@workflowIOServer)
+        dependencies=task.nil? ? nil : task.dependency.query(cycle.cycle,jobs,@workflowIOServer)
 
         # Print the task information
         print_taskinfo(task)
@@ -414,16 +414,15 @@ module WFMStat
     def print_violations(task,cycle,dependencies)
 
       puts
+      puts "Task can not be submitted because:"
 
       # Check for non-existent task
-      puts "Task can not be submitted because:"
       if task.nil?
         puts "  The task is not defined"
         return
       end
 
       # Check for inactive cycle
-      puts "Task can not be submitted because:"
       unless cycle.active?
         puts "  The cycle is not active"
         return
