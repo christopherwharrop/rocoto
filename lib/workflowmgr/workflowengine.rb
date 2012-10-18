@@ -676,8 +676,8 @@ module WorkflowMgr
           # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
           next if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED"
 
-          # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts, but only if the task has not expired
-          if job.state=="DEAD"
+          # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts, but only if the task is still defined and has not expired
+          if job.state=="DEAD" && !@tasks[job.task].nil?
             if job.tries < @tasks[job.task].attributes[:maxtries] && !@tasks[job.task].expired?(job.cycle)
 
               # Reset the state to FAILED so a resubmission can occur
@@ -732,35 +732,41 @@ module WorkflowMgr
             unknownmsg=""
           end
 
-          # Check for job hang
-          unless @tasks[job.task].hangdependency.nil?
-            if job.state=="RUNNING"
-              if @tasks[job.task].hangdependency.resolved?(job.cycle,@active_jobs,@workflowIOServer)
-                job.state="FAILED"
-                runmsg=".  A job hang has been detected.  The job will be killed and resubmitted"
+          # Can't check for hangs/expiration for jobs whose task is no longer defined
+          unless @tasks[job.task].nil?
+
+            # Check for job hang
+            unless @tasks[job.task].hangdependency.nil?
+              if job.state=="RUNNING"
+                if @tasks[job.task].hangdependency.resolved?(job.cycle,@active_jobs,@workflowIOServer)
+                  job.state="FAILED"
+                  runmsg=".  A job hang has been detected.  The job will be killed and resubmitted"
+                  @bqServer.delete(job.id)
+                end
+              end
+            end
+
+            # Check for job expiration
+            unless job.state=="SUCCEEDED"
+              if @tasks[job.task].expired?(job.cycle)
+                job.state="EXPIRED"
+                runmsg="#{runmsg}.  This task has expired.  It will be killed and will not be retried"
                 @bqServer.delete(job.id)
               end
             end
-          end
 
-          # Check for job expiration
-          unless job.state=="SUCCEEDED"
-            if @tasks[job.task].expired?(job.cycle)
-              job.state="EXPIRED"
-              runmsg="#{runmsg}.  This task has expired.  It will be killed and will not be retried"
-              @bqServer.delete(job.id)
-            end
           end
-
+           
           # Check for maxtries violation and update counters
           if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED"
             job.tries+=1
+            maxtries=@tasks[job.task].nil? ? job.tries : @tasks[job.task].attributes[:maxtries]
             if job.state=="FAILED"
-              if job.tries >= @tasks[job.task].attributes[:maxtries]
+              if job.tries >= maxtries
                 job.state="DEAD"
               end
             end
-            triesmsg=", try=#{job.tries} (of #{@tasks[job.task].attributes[:maxtries]})"
+            triesmsg=", try=#{job.tries} (of #{maxtries})"
           else
             # Update counters for jobs that are still QUEUED, RUNNING, or UNKNOWN
             @active_task_count+=1
