@@ -10,7 +10,7 @@
  <!ENTITY SCHED "moabtorque">
 -->
 
- <!ENTITY TEST_HOME "/home/harrop/rocoto/test">
+ <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
  <!ENTITY QUEUE "ncomp">
@@ -34,7 +34,7 @@
 
 <workflow realtime="t" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
 
-  <log verbosity="10">&TEST_HOME;/log/<cyclestr>test_@Y@m@d@H@M.log</cyclestr></log>
+  <log verbosity="10">&TEST_HOME;/log/workflow/<cyclestr>workflow_@Y@m@d@H@M.log</cyclestr></log>
 <!--
   <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
 -->
@@ -58,7 +58,7 @@
 
       <walltime>08:01:10</walltime>
 
-      <join>&TEST_HOME;/log/test_#x#.join</join>
+      <join>&TEST_HOME;/log/test/test_#x#.join</join>
 
       <memory>512M</memory>
 
@@ -75,8 +75,8 @@
 
       <dependency>
         <some threshold="0.5">
-          <datadep>&DATA_HOME;/test1.dat</datadep>
-          <datadep>&DATA_HOME;/test2.dat</datadep>
+          <datadep minsize="1B">&DATA_HOME;/test1.dat</datadep>
+          <datadep minsize="1b">&DATA_HOME;/test2.dat</datadep>
           <datadep>&DATA_HOME;/test3.dat</datadep>
         </some>
       </dependency>
