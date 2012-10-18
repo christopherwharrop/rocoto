@@ -100,8 +100,24 @@ module WorkflowMgr
 
       return if @state==:active
       raise "Expired cycle cannot be activated!" if @state==:expired
-      raise "Done cycle cannot be activated!" if @state==:done
+      raise "Done cycle cannot be activated!  Use reactivate!" if @state==:done
       @activated=Time.now.getgm
+      @state=:active
+
+    end  # activate!
+
+
+    ##########################################
+    #
+    # reactivate!
+    #
+    ##########################################
+    def reactivate!
+
+      return if @state==:active
+      raise "Expired cycle cannot be activated!" if @state==:expired
+
+      @done=Time.at(0)
       @state=:active
 
     end  # activate!

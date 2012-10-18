@@ -157,7 +157,23 @@ module WorkflowMgr
         # Build the workflow objects from the contents of the workflow document
         build_workflow
 
-        # Get the task from the workflow definition
+        # Get the active cycles
+        get_active_cycles
+
+        # Get the active jobs, which may include jobs from cycles that have just expired
+        # as well as jobs needed for evaluating inter cycle dependencies
+        get_active_jobs
+
+        # Update the status of all active jobs
+        update_active_jobs
+
+        # Deactivate completed cycles
+        deactivate_done_cycles
+
+        # Expire active cycles that have exceeded the cycle life span
+        expire_cycles
+
+        # Get the boot task from the workflow definition
         task=@tasks[boot_task_name]
 
         # Reject this request if the task is not defined 
@@ -165,26 +181,49 @@ module WorkflowMgr
           raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task is not defined in the workflow definition"
         end
 
-        # Look for the cycle in the database to see if it has ever been activated
-	boot_cycle=@dbServer.get_cycle(boot_cycle_time).first
+        # Look for the boot cycle in the active cycles
+      	boot_cycle=@active_cycles.find { |c| boot_cycle_time==c.cycle }
+
+        # If it wasn't in the active cycle list, look for it in the database and add the jobs for that cycle to the active job list as well
+        if boot_cycle.nil?
+          boot_cycle=@dbServer.get_cycle(boot_cycle_time).first
+          @active_jobs.merge!(@dbServer.get_jobs([boot_cycle_time]))
+        end
 
         # Activate a new cycle if necessary and add it to the database
         if boot_cycle.nil?
-          boot_cycle=Cycle.new(boot_cycle_time)
-          boot_cycle.activate!
-          @dbServer.add_cycles([boot_cycle])
-          boot_job=nil
+          printf "Booting task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
+          printf "This may trigger submission of other tasks for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{boot_task_name}'\n"
+          printf "Are you sure you want to boot '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
+          reply=STDIN.gets
+          if reply=~/^[Yy]/
+            boot_cycle=Cycle.new(boot_cycle_time)
+            boot_cycle.activate!
+            @dbServer.add_cycles([boot_cycle])
+            boot_job=nil
+          else
+            puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted"
+            Process.exit(0)
+          end
         else
+
+          # Reactivate the cycle if it is done (but not expired)
+          if boot_cycle.done?
+            boot_cycle.reactivate!
+            @dbServer.update_cycles([boot_cycle])
+          end
+
+          # Retrieve the boot job from the database
           if boot_cycle.active?
-            jobhash=@dbServer.get_jobs([boot_cycle_time])
-            if jobhash[boot_task_name].nil?
+            if @active_jobs[boot_task_name].nil?
               boot_job=nil
             else
-              boot_job=jobhash[boot_task_name][boot_cycle_time]
+              boot_job=@active_jobs[boot_task_name][boot_cycle_time]
             end
           else
             raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is #{boot_cycle.state}"
           end
+
         end
 
         # Check for existing jobs that are not done or expired
@@ -246,6 +285,8 @@ module WorkflowMgr
             @dbServer.update_jobs([job])
           end
         end
+
+        puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
 
       rescue
         puts $!
