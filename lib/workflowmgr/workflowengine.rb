@@ -420,7 +420,13 @@ module WorkflowMgr
       # Get the most recent cycle time <= now from cycle specs
       now=Time.now.getgm
       latest_cycle_time=@cycledefs.collect { |c| c.previous(now) }.max
-      latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated=>latest_cycle_time.getgm } )
+
+      # Create a new cycle if a cycle <= now is defined in cycle specs
+      if latest_cycle_time.nil?
+        return []
+      else
+        latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated=>latest_cycle_time.getgm } )
+      end
 
       # Get the latest cycle from the database or initialize it to a very long time ago
       latest_db_cycle=@dbServer.get_last_cycle || Cycle.new(Time.gm(1900,1,1,0,0,0))
