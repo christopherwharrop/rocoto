@@ -129,19 +129,20 @@ module WFMStat
           job=jobs[taskname][cycletime]
         end
 
-        # Query task dependencies
-        if task.nil?        
-          dependencies=nil
-          hangdependencies=nil
-        else
-          dependencies=task.dependency.nil? ? nil : task.dependency.query(cycle.cycle,jobs,@workflowIOServer)
-          hangdependencies=task.hangdependency.nil? ? nil : task.hangdependency.query(cycle.cycle,jobs,@workflowIOServer)
-        end
-
         # Print the task information
         print_taskinfo(task)
-        print_deps(dependencies,0)
-        print_hangdeps(hangdependencies,0)
+
+        # Query and print task dependency info
+        unless task.nil?
+          unless task.dependency.nil?
+            printf "%2s%s\n", "","dependencies"
+            print_deps(task.dependency.query(cycle.cycle,jobs,@workflowIOServer),0)
+          end
+          unless task.hangdependency.nil?
+            printf "%2s%s\n", "","hang dependencies"
+            print_deps(task.hangdependency.query(cycle.cycle,jobs,@workflowIOServer),0)
+          end
+        end
 
         # Print the cycle information
         print_cycleinfo(cycle)
@@ -474,7 +475,6 @@ module WFMStat
     def print_deps(deps,n)
 
       return if deps.nil?
-      printf "%2s%s\n", "","dependencies" if n==0
       deps.each do |d|
         if d.is_a?(Array)
           print_deps(d,n+1) if d.is_a?(Array)
@@ -485,25 +485,6 @@ module WFMStat
  
     end
 
-
-    ##########################################
-    #
-    # print_hangdeps
-    #
-    ##########################################
-    def print_hangdeps(deps,n)
-
-      return if deps.nil?
-      printf "%2s%s\n", "","hang dependencies" if n==0
-      deps.each do |d|
-        if d.is_a?(Array)
-          print_deps(d,n+1) if d.is_a?(Array)
-        else
-          printf "%#{2*n+4}s%s %s\n","",d[:dep],d[:msg] 
-        end
-      end
- 
-    end
 
   end  # Class StatusEngine
 
