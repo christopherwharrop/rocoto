@@ -29,7 +29,7 @@ module WorkflowMgr
 
       # This is the parent process, so retrieve the URI of the forked server
       uri=""
-      uri_file="/tmp/workflowmgr_#{server_pid}_uri"
+      uri_file="#{ENV['HOME']}/.rocoto/tmp/workflowmgr_#{server_pid}_uri"
 
       # Read URI of server from a file in /tmp
       begin

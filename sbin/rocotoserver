@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/home/harrop/opt/ruby-1.8.7-p352/bin/ruby
 
 # Get the base directory of the WFM installation
 if File.symlink?(__FILE__)
@@ -27,7 +27,7 @@ Signal.trap("INT",nil)
 DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 
 # Write the URI to /tmp so the client can connect
-uri_file="/tmp/workflowmgr_#{$$}_uri"
+uri_file="#{ENV['HOME']}/.rocoto/tmp/workflowmgr_#{$$}_uri"
 File.open(uri_file,"w") { |file| file.puts "#{DRb.uri}" }
 
 # Wait forever for the server to quit
