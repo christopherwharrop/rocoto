@@ -220,7 +220,8 @@ module WorkflowMgr
               cmd += " -pe #{task.attributes[:queue]} #{value}"
             end           
           when :walltime
-            cmd += " -l h_rt=#{value}"
+            hhmmss=WorkflowMgr.seconds_to_hhmmss(WorkflowMgr.ddhhmmss_to_seconds(value))
+            cmd += " -l h_rt=#{hhmmss}"
           when :memory
             cmd += " -l h_vmem=#{value}"
           when :stdout
