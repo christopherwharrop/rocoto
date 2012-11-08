@@ -2,8 +2,14 @@
 <!DOCTYPE workflow
 [
  <!ENTITY CYCLE_TIME "@Y@m@d@H">
+ <!ENTITY SJET "-l partition=sjet">
+ <!ENTITY HJET "-l partition=hjet">
+ <!ENTITY RESERVATION_ID "fimens">
+ <!ENTITY RESERVATION "<cyclestr>-l flags=ADVRES:&RESERVATION_ID;-@Hz</cyclestr>">
+ <!ENTITY CUSTOM "<native></native>">
+
 <!--
- <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/rocoto/test">
+ <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/rocoto-devel/test">
  <!ENTITY DATA_HOME "/scratch1/portfolios/BMC/nesccmgmt/Christopher.W.Harrop/test">
  <!ENTITY PROJECT "nesccmgmt">
  <!ENTITY QUEUE "batch">
@@ -13,18 +19,25 @@
  <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
- <!ENTITY QUEUE "ncomp">
+ <!ENTITY QUEUE "thfip">
  <!ENTITY SCHED "sge">
 
 <!--
- <!ENTITY TEST_HOME "/home/harrop/rocoto/test">
+ <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
+ <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
+ <!ENTITY PROJECT "jetmgmt">
+ <!ENTITY QUEUE "batch">
+ <!ENTITY SCHED "moabtorque">
+-->
+<!--
+ <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
  <!ENTITY DATA_HOME "/home/harrop/test">
  <!ENTITY PROJECT "test">
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "torque">
 -->
 <!--
- <!ENTITY TEST_HOME "/glade/home/harrop/opt/rocoto-trunk/test">
+ <!ENTITY TEST_HOME "/glade/home/harrop/opt/rocoto-devel/test">
  <!ENTITY DATA_HOME "/ptmp/harrop/test">
  <!ENTITY PROJECT "48500053">
  <!ENTITY QUEUE "debug">
@@ -37,18 +50,20 @@
   <log verbosity="10">&TEST_HOME;/log/workflow/<cyclestr>workflow_@Y@m@d@H@M.log</cyclestr></log>
 <!--
   <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
--->
   <cycledef group="group1">201201010000 201301010000 01:00:00</cycledef>
+-->
+  <cycledef group="group1">201210190900 201301010000 01:00:00</cycledef>
 
   <metatask>
 
     <var name="x">1 2 3 4 5 6 7 8 9 10</var>
 
     <task name="test#x#" maxtries="3" cycledefs="group1">
-<!--
+
+
+      &CUSTOM;
+
       <command><cyclestr offset="-1:00:00">&TEST_HOME;/bin/test.ksh -d @Y-@m-@d_@X @p</cyclestr></command>
--->
-      <command><cyclestr offset="-1:00:00">&TEST_HOME;/bin/test.ksh</cyclestr></command>
 
       <account>&PROJECT;</account>
 
@@ -56,7 +71,7 @@
 
       <cores>1</cores>
 
-      <walltime>08:01:10</walltime>
+      <walltime>01:10</walltime>
 
       <join>&TEST_HOME;/log/test/test_#x#.join</join>
 
