@@ -555,6 +555,8 @@ module WorkflowMgr
 
       @interval=WorkflowMgr.ddhhmmss_to_seconds(fields[2])
 
+      raise "Invalid <cycledef>  Interval must be a positive unit of time" if @interval==0
+
       @position=position || first
 
     end  # initialize
