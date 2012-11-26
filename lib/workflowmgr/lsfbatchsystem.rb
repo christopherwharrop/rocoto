@@ -293,7 +293,7 @@ private
               record[:end_time]=Time.local(*timestamp).getgm
               record[:exit_status]=0             
               record[:state]="SUCCEEDED"
-            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited with exit code (\d+)/
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited with exit code (\d+)/,/(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by signal (\d+)/
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
