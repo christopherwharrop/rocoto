@@ -59,6 +59,25 @@ module WorkflowMgr
       @server=serveobj
       @setup=true
 
+      # Set up a safety thread to shutdown orphaned/abandoned server processes
+      Thread.new do
+
+        # Shutdown the ioserver and dbserver processes as soon as they are orphaned (that should never happen unless rocotorun/rocotoboot dies uncleanly)
+        unless serveobj.is_a?(WorkflowMgr::BQS)
+          while true do
+            if Process.ppid==1
+              File.open("#{ENV['HOME']}/.rocoto/log","a") { |f|
+                f.puts "#{Time.now.strftime("%x %X %Z")} :: Shutting down #{@server.class} server process #{Process.pid} because it has been orphaned by an ungraceful shutdown."
+              }
+              self.stop!
+            else
+              Thread.pass
+            end
+          end  # while true
+        end  # if serverobj.is_a?
+
+      end  # Thread.new
+
     end
 
 
