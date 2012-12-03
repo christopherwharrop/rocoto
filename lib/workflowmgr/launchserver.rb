@@ -8,6 +8,7 @@ module WorkflowMgr
   require 'drb'
   require 'SystemTimer/system_timer'
   require 'socket'
+  require 'tmpdir'
 
   ##########################################
   #
@@ -29,7 +30,7 @@ module WorkflowMgr
 
       # This is the parent process, so retrieve the URI of the forked server
       uri=""
-      uri_file="#{ENV['HOME']}/.rocoto/tmp/workflowmgr_#{server_pid}_uri"
+      uri_file="#{Dir.tmpdir}/rocoto_uri_#{server_pid}"
 
       # Read URI of server from a file in /tmp
       begin

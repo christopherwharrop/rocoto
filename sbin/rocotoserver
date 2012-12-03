@@ -14,7 +14,7 @@ $:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
 $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 
 # Load workflow engine library
-
+require 'tmpdir'
 require 'drb'
 require 'workflowmgr/workflowserver'
 
@@ -26,8 +26,8 @@ Signal.trap("INT",nil)
 # Start a Drb Server that will serve the workflow log object
 DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 
-# Write the URI to /tmp so the client can connect
-uri_file="#{ENV['HOME']}/.rocoto/tmp/workflowmgr_#{$$}_uri"
+# Write the URI to a temp dir so the client can connect
+uri_file="#{Dir.tmpdir}/rocoto_uri_#{$$}"
 File.open(uri_file,"w") { |file| file.puts "#{DRb.uri}" }
 
 # Wait forever for the server to quit
