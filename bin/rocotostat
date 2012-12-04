@@ -9,6 +9,6 @@
 wfmdir=`dirname $0`
 
 # Run the WFM status program
-${wfmdir}/../sbin/rocotostat.rb $*
+exec ${wfmdir}/../sbin/rocotostat.rb $*
 
 exit $?

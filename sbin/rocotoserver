@@ -17,6 +17,7 @@ $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 require 'tmpdir'
 require 'drb'
 require 'workflowmgr/workflowserver'
+require 'socket'
 
 # Turn off SIGINT here because we do not want pending signals from the
 # parent to shutdown the server.  The parent will catch the signal and
@@ -29,6 +30,26 @@ DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 # Write the URI to a temp dir so the client can connect
 uri_file="#{Dir.tmpdir}/rocoto_uri_#{$$}"
 File.open(uri_file,"w") { |file| file.puts "#{DRb.uri}" }
+
+# Set up a safety thread to shutdown orphaned/abandoned server processes
+Thread.new do
+
+  # Shutdown the ioserver and dbserver processes as soon as they are orphaned (that should never happen unless rocotorun/rocotoboot dies uncleanly)   
+  unless $0=~/bqserver$/
+    while true do
+      if Process.ppid==1
+        hostinfo=Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0]
+        File.open("#{ENV['HOME']}/.rocoto/log","a") { |f|
+          f.puts "#{Time.now.strftime("%x %X %Z")} :: Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown."
+        }
+        DRb.stop_service
+      else
+        Thread.pass
+      end
+    end  # while true
+  end  # unless $0
+
+end  # Thread.new
 
 # Wait forever for the server to quit
 DRb.thread.join

@@ -9,6 +9,6 @@
 wfmdir=`dirname $0`
 
 # Run the WFM
-${wfmdir}/../sbin/rocotorun.rb $*
+exec ${wfmdir}/../sbin/rocotorun.rb $*
 
 exit $?

@@ -28,6 +28,9 @@ module WorkflowMgr
 
     else
 
+      # Detatch from the child to prevent zombies from accumulating
+      Process.detach(server_pid)
+
       # This is the parent process, so retrieve the URI of the forked server
       uri=""
       uri_file="#{Dir.tmpdir}/rocoto_uri_#{server_pid}"

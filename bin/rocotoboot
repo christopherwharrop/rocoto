@@ -9,6 +9,6 @@
 wfmdir=`dirname $0`
 
 # Run the WFM boot program
-${wfmdir}/../sbin/rocotoboot.rb $*
+exec ${wfmdir}/../sbin/rocotoboot.rb $*
 
 exit $?
