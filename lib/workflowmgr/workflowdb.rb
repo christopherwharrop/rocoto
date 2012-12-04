@@ -127,12 +127,14 @@ module WorkflowMgr
             end
 
             # If the lock is stale, steal the lock
+            localhostinfo=Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0]
+            lockhostinfo=Socket::getaddrinfo(lock[0][1],nil)[0]
             if stale
               db.execute("DELETE FROM lock;")
-              db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]}',#{Time.now.to_i});")
-              STDERR.puts "WARNING: Workflowmgr pid #{Process.ppid} on host #{Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]} stole stale lock from Workflowmgr pid #{lock[0][0]} on host #{lock[0][1]}"
+              db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{localhostinfo[3]}',#{Time.now.to_i});")
+              STDERR.puts "WARNING: Workflowmgr pid #{Process.ppid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) stole stale lock from Workflowmgr pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]})."
             else
-              raise WorkflowMgr::WorkflowLockedException, "ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}"
+              raise WorkflowMgr::WorkflowLockedException, "ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]}) since #{Time.at(lock[0][2])}"
             end
           end
 
