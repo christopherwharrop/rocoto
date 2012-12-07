@@ -187,12 +187,10 @@ private
               record[:jobid]=jobstat.value
             when /State/
               case jobstat.value
-                when /^Idle$/,/^.*Hold$/
+                when /^Idle$/,/^.*Hold$/,/^Deferred$/
     	          record[:state]="QUEUED"
                 when /^Running$/
     	          record[:state]="RUNNING"
-                when /^Deferred$/
-    	          record[:state]="QUEUED"
                 else
     	          record[:state]="UNKNOWN"
               end
