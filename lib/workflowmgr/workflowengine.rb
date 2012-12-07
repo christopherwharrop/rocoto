@@ -723,6 +723,9 @@ module WorkflowMgr
           # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
           next if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED"
 
+          # No point in trying to update the status of jobs with pending submission status
+          next if job.pending_submit?
+
           # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts, but only if the task is still defined and has not expired
           if job.state=="DEAD" && !@tasks[job.task].nil?
             if job.tries < @tasks[job.task].attributes[:maxtries] && !@tasks[job.task].expired?(job.cycle)

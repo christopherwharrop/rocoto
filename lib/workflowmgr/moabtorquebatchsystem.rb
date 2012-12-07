@@ -191,6 +191,8 @@ private
     	          record[:state]="QUEUED"
                 when /^Running$/
     	          record[:state]="RUNNING"
+                when /^Deferred$/
+    	          record[:state]="QUEUED"
                 else
     	          record[:state]="UNKNOWN"
               end
