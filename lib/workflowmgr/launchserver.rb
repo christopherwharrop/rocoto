@@ -9,6 +9,7 @@ module WorkflowMgr
   require 'SystemTimer/system_timer'
   require 'socket'
   require 'tmpdir'
+  require 'workflowmgr/utilities'
 
   ##########################################
   #
@@ -18,18 +19,21 @@ module WorkflowMgr
   def WorkflowMgr.launchServer(server)
 
 
-    # Fork a child process
+    # Fork a child process that will start the server process
     server_pid = fork
 
     if server_pid.nil?
 
       # This is the child process, so exec the server command
-      exec(server)        
+      # Tell the server the pid of the process that is launching it
+      exec("#{server} #{Process.ppid}")
 
-    else
+    else     
 
-      # Detatch from the child to prevent zombies from accumulating
-      Process.detach(server_pid)
+      # The server process will daemonize itself.  That will cause the
+      # child process we just forked to exit.  We  must harvest the status
+      # of the child we just forked to avoid accumulcation of zombie processes.
+      Process.waitpid(server_pid)
 
       # This is the parent process, so retrieve the URI of the forked server
       uri=""
@@ -48,11 +52,12 @@ module WorkflowMgr
 
       rescue Timeout::Error
       
-        # The uri file could not be found, so we cannot contact the server
+        # The uri file could not be found, so we cannot contact the server.
 	# Either it died before it could write the URI file, or the file disappeared
-        # Attempt to kill the server process in case it is running
-        Process.kill(:TERM,server_pid)
-        raise "Could not find URI of server in #{uri_file}"
+        # The server process will shut itself down once it detects that this process
+        # has terminated.
+        WorkflowMgr.log("Could not find URI of #{File.basename(server)} in #{uri_file}")
+        raise "Could not find URI of #{File.basename(server)} in #{uri_file}"
 
       ensure
 

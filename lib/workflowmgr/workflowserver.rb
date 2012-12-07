@@ -35,6 +35,7 @@ module WorkflowMgr
     require 'workflowmgr/lsfbatchsystem'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/dependency'
+    require 'workflowmgr/utilities'
 
     #####################################################
     #
@@ -102,7 +103,8 @@ module WorkflowMgr
           return @server.send(name,*args,&block)
         end
       rescue Timeout::Error
-        raise Timeout::Error,"ERROR: #{@server.class} server is unresponsive"
+        WorkflowMgr.log("#{@server.class} server is unresponsive")        
+        raise Timeout::Error,"#{@server.class} server is unresponsive"
       end
 
     end

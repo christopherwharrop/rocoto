@@ -16,19 +16,32 @@ $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 # Load workflow engine library
 require 'tmpdir'
 require 'drb'
-require 'workflowmgr/workflowserver'
 require 'socket'
+require 'workflowmgr/workflowserver'
+require 'workflowmgr/utilities'
 
-# Turn off SIGINT here because we do not want pending signals from the
-# parent to shutdown the server.  The parent will catch the signal and
-# shutdown the servers correctly.
-Signal.trap("INT",nil)
+# Set the name of the URI file based on the pid of this process
+# This must happen before the server process is daemonized.
+# Otherwise, the main thread has no way to know what pid to use.
+uri_file="#{Dir.tmpdir}/rocoto_uri_#{$$}"
+
+# Daemonize this process so that there aren't problems caused
+# by failure to reap exit statuses and propagation of zombies
+if RUBY_VERSION < "1.9"
+  exit if fork
+  Process.setsid
+  exit if fork
+  STDIN.reopen "/dev/null"
+  STDOUT.reopen "/dev/null", "a" 
+  STDERR.reopen "/dev/null", "a" 
+else
+  Process.daemon
+end
 
 # Start a Drb Server that will serve the workflow log object
 DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 
 # Write the URI to a temp dir so the client can connect
-uri_file="#{Dir.tmpdir}/rocoto_uri_#{$$}"
 File.open(uri_file,"w") { |file| file.puts "#{DRb.uri}" }
 
 # Set up a safety thread to shutdown orphaned/abandoned server processes
@@ -37,14 +50,15 @@ Thread.new do
   # Shutdown the ioserver and dbserver processes as soon as they are orphaned (that should never happen unless rocotorun/rocotoboot dies uncleanly)   
   unless $0=~/bqserver$/
     while true do
-      if Process.ppid==1
+      begin
+        # Test if the rocoto process that launched this server process is still alive
+        Process.getpgid(ARGV[0].to_i)
+        sleep 1
+      rescue Errno::ESRCH
+        # If the process that launched this server is dead, shutdown this process
         hostinfo=Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0]
-        File.open("#{ENV['HOME']}/.rocoto/log","a") { |f|
-          f.puts "#{Time.now.strftime("%x %X %Z")} :: Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown."
-        }
-        DRb.stop_service
-      else
-        Thread.pass
+        WorkflowMgr.log("Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown.")
+        DRb.stop_service        
       end
     end  # while true
   end  # unless $0

@@ -42,7 +42,7 @@ module WorkflowMgr
     def initialize(database_file)
 
       @database_file=database_file
-
+      
     end
 
 
@@ -97,7 +97,7 @@ module WorkflowMgr
 
           # If no lock is present, we have acquired the lock.  Write the WFM's pid and host into the lock table
           if lock.empty?
-            db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]}',#{Time.now.to_i});") 
+            db.execute("INSERT INTO lock VALUES (#{Process.pid},'#{Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]}',#{Time.now.to_i});") 
  
           # Otherwise, we didn't get the lock, but we need to check to make sure the lock is not stale
           else
@@ -131,10 +131,14 @@ module WorkflowMgr
             lockhostinfo=Socket::getaddrinfo(lock[0][1],nil)[0]
             if stale
               db.execute("DELETE FROM lock;")
-              db.execute("INSERT INTO lock VALUES (#{Process.ppid},'#{localhostinfo[3]}',#{Time.now.to_i});")
-              STDERR.puts "WARNING: Workflowmgr pid #{Process.ppid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) stole stale lock from Workflowmgr pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]})."
+              db.execute("INSERT INTO lock VALUES (#{Process.pid},'#{localhostinfo[3]}',#{Time.now.to_i});")
+              message="Rocoto pid #{Process.pid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) stole stale lock from Rocoto pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]})."
+              STDERR.puts "WARNING: #{message}"
+              WorkflowMgr.log(message)
             else
-              raise WorkflowMgr::WorkflowLockedException, "ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]}) since #{Time.at(lock[0][2])}"
+              message="Workflow is locked by pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]}) since #{Time.at(lock[0][2])}."
+              WorkflowMgr.log(message)
+              raise WorkflowMgr::WorkflowLockedException, "ERROR: #{message}"
             end
           end
 
@@ -174,10 +178,10 @@ module WorkflowMgr
 
           lock=db.execute("SELECT * FROM lock;")      
 
-          if Process.ppid==lock[0][0] && Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]==lock[0][1]
+          if Process.pid==lock[0][0] && Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3]==lock[0][1]
             db.execute("DELETE FROM lock;")      
           else
-            raise WorkflowMgr::WorkflowLockedException, "ERROR: Process #{Process.ppid} cannot unlock the workflow because it does not own the lock." +
+            raise WorkflowMgr::WorkflowLockedException, "ERROR: Process #{Process.pid} cannot unlock the workflow because it does not own the lock." +
                                                           "       The workflow is already locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}."
           end
 

@@ -80,4 +80,18 @@ module WorkflowMgr
 
   end
 
+
+  ##########################################  
+  #
+  # WorkflowMgr.log
+  #
+  ##########################################
+  def WorkflowMgr.log(message)
+
+    File.open("#{ENV['HOME']}/.rocoto/log","a") { |f|
+      f.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
+    }
+
+  end
+
 end  # module workflowmgr
