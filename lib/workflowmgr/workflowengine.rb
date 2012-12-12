@@ -173,6 +173,9 @@ module WorkflowMgr
         # Expire active cycles that have exceeded the cycle life span
         expire_cycles
 
+        # Submit new tasks where possible
+        submit_new_jobs
+
         # Get the boot task from the workflow definition
         task=@tasks[boot_task_name]
 

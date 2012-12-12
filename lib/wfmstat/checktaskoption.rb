@@ -16,7 +16,7 @@ module WFMStat
     require 'pp'                      
     require 'parsedate'
     
-    attr_reader :database, :workflowdoc, :cycles, :tasks, :summary, :taskfirst
+    attr_reader :database, :workflowdoc, :cycles, :tasks, :summary, :taskfirst, :verbose
 
     ##########################################  
     #
@@ -31,6 +31,7 @@ module WFMStat
       @tasks=nil
       @summary=false
       @taskfirst=false
+      @verbose=0
       parse(args)
 
     end  # initialize
@@ -79,6 +80,15 @@ module WFMStat
         opts.on("-h","--help","Show this message") do
           puts opts
           Process.exit
+        end
+
+        # Handle option for verbose
+        opts.on("-v","--verbose [LEVEL]",/^[0-9]+$/,"Run Rocoto in verbose mode") do |verbose|
+          if verbose.nil?
+            @verbose=0
+          else
+            @verbose=verbose.to_i
+          end
         end
 
         # Handle option for version

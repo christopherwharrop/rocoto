@@ -54,6 +54,7 @@ module WorkflowMgr
             sleep 0.25
             uri=file.gets
           end
+          file.close
           
         end
 
