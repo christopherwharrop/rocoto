@@ -47,7 +47,14 @@ module WorkflowMgr
           while !File.exists?(uri_file) do
             sleep 0.25 
           end
-          uri=IO.readlines(uri_file).join
+          file=File.new(uri_file)
+          uri=file.gets
+          while uri.nil? do
+            WorkflowMgr.log("Delay in finding URI of #{File.basename(server)} in #{uri_file}.  The #{Dir.tmpdir} filesystem may be exhibiting incoherency issues.")
+            sleep 0.25
+            uri=file.gets
+          end
+          
         end
 
       rescue Timeout::Error
@@ -56,7 +63,7 @@ module WorkflowMgr
 	# Either it died before it could write the URI file, or the file disappeared
         # The server process will shut itself down once it detects that this process
         # has terminated.
-        WorkflowMgr.log("Could not find URI of #{File.basename(server)} in #{uri_file}")
+        WorkflowMgr.log("Could not find URI of #{File.basename(server)} in #{uri_file}.  Either the server crashed at startup, or the #{Dir.tmpdir} filesystem is misbehaving.")
         raise "Could not find URI of #{File.basename(server)} in #{uri_file}"
 
       ensure
