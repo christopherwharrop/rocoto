@@ -162,7 +162,9 @@ private
 
       # For each job, find the various attributes and create a job record
       queued_jobs=queued_jobs_doc.root.find('//Job')
-      queued_jobs.each { |job|
+      queued_jobs.each { |jobsearch|
+
+        job=jobsearch.copy("deep")
 
 	# Initialize an empty job record
 	record={}
@@ -187,8 +189,13 @@ private
 	      record[:jobname]=jobstat.content
 	    when /Job_Owner/
 	      record[:user]=jobstat.content
-            when /Resource_List/             
-	      record[:cores]=jobstat.find('procs').first.content.to_i
+            when /Resource_List/       
+              jobstat.each_element { |e|
+                if e.name=='procs'
+                  record[:cores]=e.content.to_i
+                  break
+                end
+            }
 	    when /queue/
 	      record[:queue]=jobstat.content
 	    when /qtime/

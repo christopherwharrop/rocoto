@@ -299,7 +299,9 @@ module WorkflowMgr
 
       # For each job, find the various attributes and create a job record
       queued_jobs=queued_jobs_doc.root.find('//job_list')
-      queued_jobs.each { |job|
+      queued_jobs.each { |jobsearch|
+
+        job=jobsearch.copy("deep")
 
 	# Initialize an empty job record
 	record={}

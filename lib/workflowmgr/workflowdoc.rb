@@ -165,12 +165,13 @@ module WorkflowMgr
     ##########################################
     def log
  
-      lognode=@workflowdoc.find('/workflow/log')
-      path=get_compound_time_string(lognode[0])
-      verbosity=lognode[0].attributes['verbosity']
+      logsearch=@workflowdoc.find('/workflow/log')
+      lognode=logsearch[0].copy("deep")
+      path=get_compound_time_string(lognode)
+      verbosity=lognode.attributes['verbosity']
       verbosity=verbosity.to_i unless verbosity.nil?
 
-      lognode=nil
+      logsearch=nil
       GC.start
 
       return WorkflowLog.new(path,verbosity,@workflowIOServer)
@@ -187,7 +188,8 @@ module WorkflowMgr
  
       cycles=[]
       cyclenodes=@workflowdoc.find('/workflow/cycledef')
-      cyclenodes.each { |cyclenode|
+      cyclenodes.each { |cyclenodesearch|
+        cyclenode=cyclenodesearch.copy("deep")
         cyclefields=cyclenode.content.strip
         nfields=cyclefields.split.size
         group=cyclenode.attributes['group']
@@ -217,7 +219,9 @@ module WorkflowMgr
 
       tasks={}
       tasknodes=@workflowdoc.find('/workflow/task')
-      tasknodes.each_with_index do |tasknode,seq|
+      tasknodes.each_with_index do |tasknodesearch,seq|
+
+        tasknode=tasknodesearch.copy("deep")
 
         taskattrs={}
         taskenvars={}
@@ -240,7 +244,17 @@ module WorkflowMgr
         tasknode.each_element do |e|          
           case e.name
             when /^envar$/
-              taskenvars[get_compound_time_string(e.find('name').first)] = get_compound_time_string(e.find('value').first)
+              envar_name=nil
+              envar_value=nil
+              e.each_element do |element|
+                case element.name
+                  when /^name$/
+                    envar_name=element
+                  when /^value$/
+                    envar_value=element
+                end
+              end
+              taskenvars[get_compound_time_string(envar_name)] = get_compound_time_string(envar_value)
             when /^dependency$/
               e.each_element do |element| 
                 raise "ERROR: <dependency> tag contains too many elements" unless taskdep.nil?
@@ -285,7 +299,8 @@ module WorkflowMgr
 
       offsets=[]
       taskdepnodes=@workflowdoc.find('//taskdep')
-      taskdepnodes.each do |taskdepnode|
+      taskdepnodes.each do |taskdepnodesearch|
+        taskdepnode=taskdepnodesearch.copy("deep")
         offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode["cycle_offset"]) unless taskdepnode["cycle_offset"].nil?
       end
 
@@ -322,7 +337,9 @@ module WorkflowMgr
      # get_compound_time_string
      # 
      ##########################################
-     def get_compound_time_string(element)
+     def get_compound_time_string(node)
+
+       element=node.copy("deep")
 
        if element.nil?
          return nil

@@ -45,6 +45,14 @@ module WorkflowMgr
     #####################################################
     def status(jobid)
 
+#      begin
+#        SystemTimer.timeout(60) do
+#
+#        end
+#      rescue Timeout::Error
+#
+#      end
+
       # Populate the jobs status table if it is empty
       refresh_jobqueue if @jobqueue.empty?
 
@@ -175,7 +183,9 @@ private
 
       # For each job, find the various attributes and create a job record
       queued_jobs=queued_jobs_doc.root.find('//job')
-      queued_jobs.each { |job|
+      queued_jobs.each { |jobsearch|
+
+        job=jobsearch.copy("deep")
 
 	# Initialize an empty job record
 	record={}
@@ -218,6 +228,7 @@ private
 	@jobqueue[record[:jobid]]=record
 
       }  #  queued_jobs.find
+
       queued_jobs=nil
       GC.start
 
@@ -247,8 +258,11 @@ private
       recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
 
       # For each job, find the various attributes and create a job record
-      recordxml=recordxmldoc.root.find('//job')
-      recordxml.each { |job|
+      recordxml=recordxmldoc.root.find('//job')       
+      recordxml.each { |jobsearch|
+
+        job=jobsearch.copy("deep")
+
         record={}
         record[:jobid]=job.attributes['JobID']
         record[:native_state]=job.attributes['State']
@@ -275,6 +289,7 @@ private
         @jobacct[record[:jobid]]=record unless @jobacct.has_key?(record[:jobid])
 
       }
+
       recordxml=nil
       GC.start
     
