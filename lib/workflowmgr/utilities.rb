@@ -5,6 +5,8 @@
 ##########################################
 module WorkflowMgr
 
+  require 'system_timer'
+
   ##########################################
   #
   # Class WorkflowIOHang
@@ -13,6 +15,13 @@ module WorkflowMgr
   class WorkflowIOHang < RuntimeError
   end
 
+  ##########################################
+  #
+  # Class SchedulerDown
+  #
+  ##########################################
+  class SchedulerDown < RuntimeError
+  end
 
   ##########################################  
   #
@@ -80,6 +89,18 @@ module WorkflowMgr
 
   end
 
+  ##########################################  
+  #
+  # WorkflowMgr.notify
+  #
+  ##########################################
+  def WorkflowMgr.notify(message,level=0)
+
+    if OPTIONS.verbose >= level
+     STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
+    end
+
+  end
 
   ##########################################  
   #
@@ -91,6 +112,42 @@ module WorkflowMgr
     File.open("#{ENV['HOME']}/.rocoto/log","a") { |f|
       f.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
     }
+
+  end
+
+
+  ##########################################  
+  #
+  # WorkflowMgr.run
+  #
+  ##########################################
+  def WorkflowMgr.run(command,timeout=30)
+
+    begin
+      pipe = IO.popen(command)
+    rescue Exception
+      WorkflowMgr.log("WARNING! Could not run'#{command}': #{$!}")
+      raise "Execution of command #{command} unsuccessful"
+    end
+
+    output = ""
+    exit_status=0
+    begin
+      SystemTimer.timeout(timeout) do
+        while (!pipe.eof?)  do
+          output += pipe.gets(nil)
+        end
+        status=Process.waitpid2(pipe.pid)
+        exit_status=status[1].exitstatus
+      end
+    rescue Timeout::Error
+      Process.kill('KILL', pipe.pid)
+      pipe.close
+      WorkflowMgr.log("WARNING! The command '#{command}' timed out after #{timeout} seconds.")
+      raise Timeout::Error
+    end
+    pipe.close
+    [output,exit_status]
 
   end
 

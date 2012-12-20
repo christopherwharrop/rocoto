@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'etc'
     require 'parsedate'
     require 'libxml'
+    require 'workflowmgr/utilities'
 
     #####################################################
     #
@@ -35,6 +36,9 @@ module WorkflowMgr
       # a big value to make sure showq doesn't get run twice.
       @hrsback=120
 
+      # Assume the scheduler is up
+      @schedup=true
+
     end
 
 
@@ -45,36 +49,37 @@ module WorkflowMgr
     #####################################################
     def status(jobid)
 
-#      begin
-#        SystemTimer.timeout(60) do
-#
-#        end
-#      rescue Timeout::Error
-#
-#      end
+      begin
 
-      # Populate the jobs status table if it is empty
-      refresh_jobqueue if @jobqueue.empty?
+        raise WorkflowMgr::SchedulerDown unless @schedup         
 
-      # Return the jobqueue record if there is one
-      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+        # Populate the jobs status table if it is empty
+        refresh_jobqueue if @jobqueue.empty?
 
-      # If we didn't find the job in the jobqueue, look for it in the accounting records
+        # Return the jobqueue record if there is one
+        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
-      # Populate the job accounting log table if it is empty
-      refresh_jobacct if @jobacct.empty?
+        # If we didn't find the job in the jobqueue, look for it in the accounting records
+ 
+        # Populate the job accounting log table if it is empty
+        refresh_jobacct if @jobacct.empty?
 
-      # Return the jobacct record if there is one
-      return @jobacct[jobid] if @jobacct.has_key?(jobid)
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
-      # If we still didn't find the job, look 72 hours back if we haven't already
-      if @hrsback < 72
-	refresh_jobacct(72)
-	return @jobacct[jobid] if @jobacct.has_key?(jobid)
+        # If we still didn't find the job, look 72 hours back if we haven't already
+        if @hrsback < 72
+          refresh_jobacct(72)
+  	  return @jobacct[jobid] if @jobacct.has_key?(jobid)
+        end
+
+        # We didn't find the job, so return an uknown status record
+        return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+        return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
       end
-
-      # We didn't find the job, so return an uknown status record
-      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
 
     end
 
@@ -175,17 +180,30 @@ private
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
 
-      # Run qstat to obtain the current status of queued jobs
-      queued_jobs=`showq --noblock --xml -u #{username} 2>&1`
+      begin
 
-      # Parse the XML output of showq, building job status records for each job
-      queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
+        # Run qstat to obtain the current status of queued jobs
+        queued_jobs=""
+        exit_status=0
+        queued_jobs,exit_status=WorkflowMgr.run("showq --noblock --xml -u #{username} 2>&1",30)
+                
+        # Raise SchedulerDown if the showq failed
+        raise WorkflowMgr::SchedulerDown unless exit_status==0
+
+        # Return if the showq output is empty
+        return if queued_jobs.empty?
+
+        # Parse the XML output of showq, building job status records for each job
+        queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
+
+      rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{queued_jobs}") unless queued_jobs.empty?
+        raise WorkflowMgr::SchedulerDown
+      end
 
       # For each job, find the various attributes and create a job record
-      queued_jobs=queued_jobs_doc.root.find('//job')
-      queued_jobs.each { |jobsearch|
-
-        job=jobsearch.copy("deep")
+      queued_jobs=queued_jobs_doc.find('//job')
+      queued_jobs.each { |job|
 
 	# Initialize an empty job record
 	record={}
@@ -245,23 +263,33 @@ private
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
 
-      # Run showq to obtain the current status of queued jobs
-      completed_jobs=`showq --noblock -c --xml -u #{username} 2>&1`
-
-      # Return if the showq output is empty
-      return if completed_jobs.empty?
-
       # Initialize an empty hash of job records
       @jobacct={}
 
-      # Parse the XML output of showq, building job status records for each job
-      recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
+      begin
+
+        # Run showq to obtain the current status of queued jobs
+        completed_jobs=""
+        exit_status=0
+        completed_jobs,exit_status=WorkflowMgr.run("showq -c --noblock --xml -u #{username} 2>&1",30)
+
+        # Raise SchedulerDown if the showq failed
+        raise WorkflowMgr::SchedulerDown unless exit_status==0
+
+        # Return if the showq output is empty
+        return if completed_jobs.empty?
+
+        # Parse the XML output of showq, building job status records for each job
+        recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
+
+      rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{completed_jobs}") unless completed_jobs.empty?
+        raise WorkflowMgr::SchedulerDown        
+      end 
 
       # For each job, find the various attributes and create a job record
-      recordxml=recordxmldoc.root.find('//job')       
-      recordxml.each { |jobsearch|
-
-        job=jobsearch.copy("deep")
+      recordxml=recordxmldoc.find('//job')       
+      recordxml.each { |job|
 
         record={}
         record[:jobid]=job.attributes['JobID']
