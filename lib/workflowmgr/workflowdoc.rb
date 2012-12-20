@@ -47,7 +47,7 @@ module WorkflowMgr
       end
 
       # Parse the workflow xml string, set option to replace entities
-      @workflowdoc=LibXML::XML::Document.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT)
+      @workflowdoc=LibXML::XML::Parser.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT).parse
 
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
@@ -165,8 +165,7 @@ module WorkflowMgr
     ##########################################
     def log
  
-      logsearch=@workflowdoc.find('/workflow/log')
-      lognode=logsearch[0].copy("deep")
+      lognode=@workflowdoc.find('/workflow/log').first
       path=get_compound_time_string(lognode)
       verbosity=lognode.attributes['verbosity']
       verbosity=verbosity.to_i unless verbosity.nil?
@@ -188,8 +187,7 @@ module WorkflowMgr
  
       cycles=[]
       cyclenodes=@workflowdoc.find('/workflow/cycledef')
-      cyclenodes.each { |cyclenodesearch|
-        cyclenode=cyclenodesearch.copy("deep")
+      cyclenodes.each { |cyclenode|
         cyclefields=cyclenode.content.strip
         nfields=cyclefields.split.size
         group=cyclenode.attributes['group']
@@ -219,9 +217,7 @@ module WorkflowMgr
 
       tasks={}
       tasknodes=@workflowdoc.find('/workflow/task')
-      tasknodes.each_with_index do |tasknodesearch,seq|
-
-        tasknode=tasknodesearch.copy("deep")
+      tasknodes.each_with_index do |tasknode,seq|
 
         taskattrs={}
         taskenvars={}
@@ -299,8 +295,7 @@ module WorkflowMgr
 
       offsets=[]
       taskdepnodes=@workflowdoc.find('//taskdep')
-      taskdepnodes.each do |taskdepnodesearch|
-        taskdepnode=taskdepnodesearch.copy("deep")
+      taskdepnodes.each do |taskdepnode|
         offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode["cycle_offset"]) unless taskdepnode["cycle_offset"].nil?
       end
 
@@ -337,9 +332,7 @@ module WorkflowMgr
      # get_compound_time_string
      # 
      ##########################################
-     def get_compound_time_string(node)
-
-       element=node.copy("deep")
+     def get_compound_time_string(element)
 
        if element.nil?
          return nil
