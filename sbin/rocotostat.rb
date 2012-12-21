@@ -16,11 +16,19 @@ $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 # Load workflow status library
 require 'wfmstat/statusengine'
 require 'wfmstat/wfmstatoption'
+require 'workflowmgr/workflowconfig'
 
+# Set the Rocoto version
 WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
 
+# Set the Rocoto config and options
+WorkflowMgr::OPTIONS=WFMStat::WFMStatOption.new(ARGV)
+WorkflowMgr::CONFIG=WorkflowMgr::WorkflowYAMLConfig.new
+
 # Create workflow status and run it
-wfmStatOptions=WFMStat::WFMStatOption.new(ARGV)
-statusEngine=WFMStat::StatusEngine.new(wfmStatOptions)
+if WorkflowMgr::OPTIONS.verbose > 999
+  set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
+end
+statusEngine=WFMStat::StatusEngine.new(WorkflowMgr::OPTIONS)
 statusEngine.wfmstat
 

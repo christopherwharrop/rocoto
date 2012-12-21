@@ -16,14 +16,19 @@ $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
 require 'workflowmgr/workflowoption'
+require 'workflowmgr/workflowconfig'
 
+# Set the Rocoto version
 WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
 
+# Set the Rocoto config and options
+WorkflowMgr::OPTIONS=WorkflowMgr::WorkflowOption.new(ARGV)
+WorkflowMgr::CONFIG=WorkflowMgr::WorkflowYAMLConfig.new
+
 # Create workflow engine and run it
-workflowmgrOptions=WorkflowMgr::WorkflowOption.new(ARGV)
-if workflowmgrOptions.verbose > 999
+if WorkflowMgr::OPTIONS.verbose > 999
   set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
 end
-workflowengine=WorkflowMgr::WorkflowEngine.new(workflowmgrOptions)
+workflowengine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::OPTIONS)
 workflowengine.run
 
