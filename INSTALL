@@ -82,8 +82,7 @@ for file in `ls sbin`; do
 done
 
 # Package versions
-LIBXML2_VERSION="2.7.3"
-#LIBXML_RUBY_VERSION="2.0.9"
+LIBXML2_VERSION="2.9.0"
 LIBXML_RUBY_VERSION="2.4.0"
 SYSTEMTIMER_VERSION="1.2.3"
 SQLITE3_VERSION="autoconf-3070701"
@@ -102,7 +101,7 @@ fi
 mkdir -p ${BUILD_DIR}
 
 # Install libxml2 if needed
-if [ "$OS" == "AIX" ]; then
+#if [ "$OS" == "AIX" ]; then
   echo "==========================================="
   echo "= INSTALLING libxml2                      ="
   echo "==========================================="
@@ -115,17 +114,17 @@ if [ "$OS" == "AIX" ]; then
   make
   rm -rf ${LIB_DIR}/libxml2
   make install
-fi
+#fi
 
 # Install libxml-ruby
 echo "==========================================="
 echo "= INSTALLING libxml-ruby                  ="
 echo "==========================================="
-if [ "$OS" == "AIX" ]; then
+#if [ "$OS" == "AIX" ]; then
   libxml2_opts="--with-xml2-lib=${LIB_DIR}/libxml2/lib --with-xml2-include=${LIB_DIR}/libxml2/include/libxml2"
-else
-  libxml2_opts=""
-fi
+#else
+#  libxml2_opts=""
+#fi
 cd ${BUILD_DIR}
 gunzip -c ${TAR_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}.tar.gz | tar -xvf -
 cd libxml-ruby-${LIBXML_RUBY_VERSION}/ext/libxml
