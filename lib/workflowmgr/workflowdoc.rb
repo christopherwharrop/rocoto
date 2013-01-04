@@ -755,14 +755,14 @@ module WorkflowMgr
     def expand_metatasks
 
       # Parse and expand metatasks
-#      workflow=workflowdoc.root
-#      workflow.children.each {|ch|
-      @workflowdoc.root.children.each {|ch|
+      metatasks=[]
+      @workflowdoc.root.each_element {|ch|
         if ch.name == "metatask"
 	  pre_parse(ch)
-          ch.remove!
+          metatasks << ch
         end
       }
+      metatasks.each {|ch| ch.remove!}
 
     end
 
@@ -824,7 +824,7 @@ module WorkflowMgr
     0.upto(var_length - 1) {|index|
       metatask.children.each{|e|
         if e.name == "task"
-          task_copy = e.copy("deep")
+          task_copy = e.copy(true)
           traverse(task_copy,id_table, index)
           task_list << task_copy
         end
