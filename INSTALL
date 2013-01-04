@@ -100,37 +100,41 @@ fi
 # Create the build directory
 mkdir -p ${BUILD_DIR}
 
-# Install libxml2 if needed
-#if [ "$OS" == "AIX" ]; then
+# Install libxml2
+echo "==========================================="
+echo "= INSTALLING libxml2                      ="
+echo "==========================================="
+cd ${BUILD_DIR}
+gunzip -c ${TAR_DIR}/libxml2-${LIBXML2_VERSION}.tar.gz | tar -xvf -
+cd libxml2-${LIBXML2_VERSION}
+if [ "$LIBXML2_VERSION" == "2.9.0" ]; then    # version 2.9.0 requires must be patched
   echo "==========================================="
-  echo "= INSTALLING libxml2                      ="
+  echo "= PATCHING libxml2                        ="
   echo "==========================================="
-  cd ${BUILD_DIR}
-  gunzip -c ${TAR_DIR}/libxml2-${LIBXML2_VERSION}.tar.gz | tar -xvf -
-  cd libxml2-${LIBXML2_VERSION}
-  export OBJECT_MODE=64
-  ./configure --prefix=${LIB_DIR}/libxml2 CFLAGS="$AIX_CFLAGS" LDFLAGS="$AIX_LDFLAGS"
-  make clean
-  make
-  rm -rf ${LIB_DIR}/libxml2
-  make install
-#fi
+  patch -p2 -i ${TAR_DIR}/libxml2-2.9.0.patch
+fi
+export OBJECT_MODE=64
+./configure --prefix=${LIB_DIR}/libxml2 CFLAGS="$AIX_CFLAGS" LDFLAGS="$AIX_LDFLAGS"
+make clean
+make
+rm -rf ${LIB_DIR}/libxml2
+make install
 
 # Install libxml-ruby
 echo "==========================================="
 echo "= INSTALLING libxml-ruby                  ="
 echo "==========================================="
-#if [ "$OS" == "AIX" ]; then
-  libxml2_opts="--with-xml2-lib=${LIB_DIR}/libxml2/lib --with-xml2-include=${LIB_DIR}/libxml2/include/libxml2"
-#else
-#  libxml2_opts=""
-#fi
+libxml2_opts="--with-xml2-lib=${LIB_DIR}/libxml2/lib --with-xml2-include=${LIB_DIR}/libxml2/include/libxml2"
 cd ${BUILD_DIR}
 gunzip -c ${TAR_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}.tar.gz | tar -xvf -
 cd libxml-ruby-${LIBXML_RUBY_VERSION}/ext/libxml
 echo ${RUBY} extconf.rb $libxml2_opts
 ${RUBY} extconf.rb $libxml2_opts
-sed -i "/^ldflags/ s:$: -Wl,-rpath,${LIB_DIR}/libxml2/lib:" Makefile
+if [ "$OS" == "AIX" ]; then
+  :
+else
+  sed -i "/^ldflags/ s:$: -Wl,-rpath,${LIB_DIR}/libxml2/lib:" Makefile
+fi
 make clean
 make
 rm -rf ${LIB_DIR}/libxml-ruby
