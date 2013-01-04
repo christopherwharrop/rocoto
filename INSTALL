@@ -111,7 +111,7 @@ if [ "$LIBXML2_VERSION" == "2.9.0" ]; then    # version 2.9.0 requires must be p
   echo "==========================================="
   echo "= PATCHING libxml2                        ="
   echo "==========================================="
-  patch -p2 -i ${TAR_DIR}/libxml2-2.9.0.patch
+  patch -p1 -i ${TAR_DIR}/libxml2-2.9.0.patch
 fi
 export OBJECT_MODE=64
 ./configure --prefix=${LIB_DIR}/libxml2 CFLAGS="$AIX_CFLAGS" LDFLAGS="$AIX_LDFLAGS"
