@@ -130,6 +130,7 @@ gunzip -c ${TAR_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}.tar.gz | tar -xvf -
 cd libxml-ruby-${LIBXML_RUBY_VERSION}/ext/libxml
 echo ${RUBY} extconf.rb $libxml2_opts
 ${RUBY} extconf.rb $libxml2_opts
+sed -i "/^ldflags/ s:$: -Wl,-rpath,${LIB_DIR}/libxml2/lib:" Makefile
 make clean
 make
 rm -rf ${LIB_DIR}/libxml-ruby
