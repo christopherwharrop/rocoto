@@ -15,6 +15,7 @@ module WorkflowMgr
   class WorkflowIOHang < RuntimeError
   end
 
+
   ##########################################
   #
   # Class SchedulerDown
@@ -22,6 +23,19 @@ module WorkflowMgr
   ##########################################
   class SchedulerDown < RuntimeError
   end
+
+
+  ##########################################  
+  #
+  # WorkflowMgr.version
+  #
+  ##########################################
+  def WorkflowMgr.version
+
+    IO.readlines("#{File.expand_path('../../../',__FILE__)}/VERSION",nil)[0]
+
+  end
+
 
   ##########################################  
   #
@@ -89,12 +103,37 @@ module WorkflowMgr
 
   end
 
+
   ##########################################  
   #
-  # WorkflowMgr.notify
+  # WorkflowMgr.config_set
   #
   ##########################################
-  def WorkflowMgr.notify(message,level=0)
+  def WorkflowMgr.config_set(config)
+
+    WorkflowMgr.const_set("CONFIG",config)    
+
+  end
+
+
+  ##########################################  
+  #
+  # WorkflowMgr.options_set
+  #
+  ##########################################
+  def WorkflowMgr.options_set(options)
+
+    WorkflowMgr.const_set("OPTIONS",options)
+
+  end
+
+
+  ##########################################  
+  #
+  # WorkflowMgr.stderr
+  #
+  ##########################################
+  def WorkflowMgr.stderr(message,level=0)
 
     if OPTIONS.verbose >= level
      STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"

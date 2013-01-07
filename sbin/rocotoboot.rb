@@ -1,11 +1,7 @@
 #!/usr/bin/ruby
 
 # Get the base directory of the WFM installation
-if File.symlink?(__FILE__)
-  __WFMDIR__=File.dirname(File.dirname(File.expand_path(File.readlink(__FILE__),File.dirname(__FILE__))))
-else
-  __WFMDIR__=File.dirname(File.expand_path(File.dirname(__FILE__)))
-end
+__WFMDIR__=File.expand_path("../../",__FILE__)
 
 # Add include paths for WFM and libxml-ruby libraries
 $:.unshift("#{__WFMDIR__}/lib")
@@ -18,12 +14,9 @@ require 'workflowmgr/workflowengine'
 require 'wfmstat/checktaskoption'
 require 'workflowmgr/workflowconfig'
 
-# Set the Rocoto version
-WorkflowMgr::VERSION=IO.readlines("#{__WFMDIR__}/VERSION",nil)[0]
-
 # Set the Rocoto config and options
-WorkflowMgr::OPTIONS=WFMStat::CheckTaskOption.new(ARGV)
-WorkflowMgr::CONFIG=WorkflowMgr::WorkflowYAMLConfig.new
+WorkflowMgr.options_set(WorkflowMgr::WorkflowOption.new(ARGV))
+WorkflowMgr.config_set(WorkflowMgr::WorkflowYAMLConfig.new)
 
 # Create workflow status and run it
 if WorkflowMgr::OPTIONS.verbose > 999
