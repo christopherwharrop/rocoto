@@ -12,21 +12,24 @@ module WorkflowMgr
   ##########################################
   class BQSProxy
 
+    require 'workflowmgr/utilities'
     require 'workflowmgr/bqs'
     require 'system_timer'
     require 'drb'
+    require 'workflowmgr/workflowoption'
+    require 'workflowmgr/workflowconfig'
 
     ##########################################
     #
     # initialize
     #
     ##########################################
-    def initialize(batchSystem,dbFile,config)
+    def initialize(batchSystem,config,options)
 
       # Store the batch system proxy creation parameters
       @batchSystem=batchSystem
-      @dbFile=dbFile
       @config=config
+      @options=options
 
       # Initialize the batch system server
       initbqs
@@ -39,9 +42,13 @@ module WorkflowMgr
               @bqServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
-            puts "*** WARNING! *** Can't shut down batch queue server because it is not running."
+            msg="WARNING! Can't shut down batch queue server because it is not running."
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
           rescue Timeout::Error
-            puts "*** ERROR! ***  Can't shut down batch queue server process because it is unresponsive and is probably wedged."
+            msg="WARNING! Can't shut down batch queue server process because it is unresponsive and is probably wedged."
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
           end
         end
       end
@@ -58,14 +65,20 @@ module WorkflowMgr
             rescue DRb::DRbConnError
               if retries < 1
                 retries+=1
-                puts "*** WARNING! *** WorkflowBQS server process died.  Attempting to restart and try again."
+                msg="WARNING! WorkflowBQS server process died.  Attempting to restart and try again."
+                WorkflowMgr.stderr(msg,1)
+                WorkflowMgr.log(msg)
                 initbqs
                 retry
               else
-                raise "*** ERROR! *** WorkflowBQS server process died.  #{retries} attempts to restart the server have failed, giving up."
+                msg="ERROR! WorkflowBQS server process died.  #{retries} attempts to restart the server have failed, giving up."
+                WorkflowMgr.log(msg)
+                raise msg
               end
             rescue Timeout::Error
-              raise "*** ERROR! *** WorkflowBQS server process is unresponsive and is probably wedged."
+              msg="ERROR! WorkflowBQS server process is unresponsive and is probably wedged."
+              WorkflowMgr.log(msg)
+              raise msg
             end
 
           end
@@ -90,7 +103,7 @@ module WorkflowMgr
       begin
 
 	# Initialize the 
-        bqs=BQS.new(@batchSystem,@dbFile,@config)
+        bqs=BQS.new(@batchSystem,@options.database,@config)
 
 	if @config.BatchQueueServer
 
@@ -99,7 +112,7 @@ module WorkflowMgr
 
           # Launch server process
           @bqServer,@bqHost,@bqPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotobqserver")
-          @bqServer.setup(bqs)
+          @bqServer.setup(bqs,@options.verbose)
 
           # Restore default SIGINT handler
           Signal.trap("INT","DEFAULT")
@@ -116,7 +129,9 @@ module WorkflowMgr
         end
 
         # Raise fatal exception
-        raise "Could not launch batch queue server process\n#{$!}"
+        msg="ERROR: Could not launch batch queue server process. #{$!}"
+        WorkflowMgr.log(msg)
+        raise msg
 
       end
 

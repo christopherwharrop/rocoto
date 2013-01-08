@@ -135,7 +135,7 @@ module WorkflowMgr
   ##########################################
   def WorkflowMgr.stderr(message,level=0)
 
-    if OPTIONS.verbose >= level
+    if VERBOSE >= level
      STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
     end
 

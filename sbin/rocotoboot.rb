@@ -12,16 +12,8 @@ $:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 # Load workflow status library
 require 'workflowmgr/workflowengine'
 require 'wfmstat/checktaskoption'
-require 'workflowmgr/workflowconfig'
-
-# Set the Rocoto config and options
-WorkflowMgr.options_set(WorkflowMgr::WorkflowOption.new(ARGV))
-WorkflowMgr.config_set(WorkflowMgr::WorkflowYAMLConfig.new)
 
 # Create workflow status and run it
-if WorkflowMgr::OPTIONS.verbose > 999
-  set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
-end
-workflowEngine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::OPTIONS)
+workflowEngine=WorkflowMgr::WorkflowEngine.new(WFMStat::CheckTaskOption.new(ARGV))
 workflowEngine.boot
 

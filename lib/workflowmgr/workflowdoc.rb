@@ -42,8 +42,8 @@ module WorkflowMgr
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
       rescue WorkflowIOHang
-        puts $!
-        raise "Cannot read XML file, #{workflowdoc}, because it resides on an unresponsive filesystem"
+        WorkflowMgr.log($!)
+        raise "Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
 
       # Parse the workflow xml string, set option to replace entities
@@ -306,24 +306,6 @@ module WorkflowMgr
 
     end
 
-
-    ##########################################
-    #
-    # method_missing
-    # 
-    ##########################################
-    def method_missing(name,*args)
-
-      dockey=name.to_sym
-      if @workflow.has_key?(dockey)
-        return @workflow[dockey]
-      else
-	super
-      end
-
-    end
-
-
   private
 
 
@@ -447,7 +429,6 @@ module WorkflowMgr
        return DataDependency.new(get_compound_time_string(element),age_sec,minsize)
  
      end
-
  
 
      #####################################################
@@ -461,252 +442,6 @@ module WorkflowMgr
        return TimeDependency.new(get_compound_time_string(element))
  
      end
-
-
-    ##########################################
-    #
-    # to_h
-    # 
-    ##########################################
-    def to_h(doc)
-
-      # Initialize the workflow hash to contain the <workflow> attributes
-      workflow=get_node_attributes(doc.root)
-
-      # Build hashes for the <workflow> child elements
-      doc.root.each_element do |child|
-        key=child.name.to_sym
-	case key
-          when :log
-            value=log_to_h(child)
-          when :cycledef
-            value=cycledef_to_h(child)
-          when :task
-            value=task_to_h(child)
-        end
-        if workflow.has_key?(key)
-          workflow[key]=([workflow[key]] + [value]).flatten
-        else
-	  workflow[key]=value
-        end
-
-      end
-
-      return workflow
-
-    end
-
-
-    ##########################################
-    #
-    # get_node_attributes
-    # 
-    ##########################################
-    def get_node_attributes(node)
-
-      # Initialize empty hash
-      nodehash={}
-
-      # Loop over node's attributes and set hash key/value pairs
-      node.each_attr { |attr| nodehash[attr.name.to_sym]=attr.value }
-
-      return nodehash
-
-    end
-
-
-    ##########################################
-    #
-    # log_to_h
-    # 
-    ##########################################
-    def log_to_h(node)
-
-      # Get the log attributes
-      log=get_node_attributes(node)
-      
-      # Get the log path
-      log[:path]=compound_time_string_to_h(node)
-
-      return log
-
-    end
-
-
-    ##########################################
-    #
-    # cycledef_to_h
-    # 
-    ##########################################
-    def cycledef_to_h(node)
-
-      # Get the cycle attributes
-      cycledef=get_node_attributes(node)
-      
-      # Get the cycle field string
-      cycledef[:cycledef]=node.content.strip
-
-      return cycledef
-
-    end
-
-
-    ##########################################
-    #
-    # task_to_h
-    # 
-    ##########################################
-    def task_to_h(node)
-
-      # Get the task attributes
-      task=get_node_attributes(node)
-      
-      # Get the task elements
-      node.each_element do |child|
-        key=child.name.to_sym
-        case key
-          when :envar
-            value=envar_to_h(child)
-          when :dependency
-            value=dependency_to_h(child).first
-          when :cores,:maxtries                    # List integer-only attributes here
-	    value=child.content.to_i
-          when :id                                 # List string attributes that can't be compound time strings	here
-            value=child.content.strip              
-          else                                     # Everything else is a compound time string
-            value=compound_time_string_to_h(child)
-        end
-
-        if task.has_key?(key)
-          task[key]=([task[key]] + [value]).flatten
-        else
-          task[key]=value
-        end
-
-      end
-
-      return task
-
-    end
-
-
-    ##########################################
-    #
-    # envar_to_h
-    # 
-    ##########################################
-    def envar_to_h(node)
-
-      # Get the envar attributes
-      envar=get_node_attributes(node)
-
-      # Get the envar elements
-      node.each_element do |child|
-        envar[child.name.to_sym]=compound_time_string_to_h(child)
-      end
-
-      return envar
-
-    end
-
-
-    ##########################################
-    #
-    # dependency_to_h
-    # 
-    ##########################################
-    def dependency_to_h(node)
-
-      dependency=[]
-      node.each_element do |child|
-        key=child.name.to_sym
-        case key
-          when :datadep
-            value=datadep_to_h(child)
-          when :timedep
-            value=timedep_to_h(child)
-          when :taskdep
-            value=taskdep_to_h(child)
-          else
-            value=get_node_attributes(child)
-            value[key]=dependency_to_h(child)
-        end
-        dependency << value
-      end
-
-      return dependency
-
-    end
-
-
-    #####################################################
-    #
-    # datadep_to_h
-    #
-    #####################################################
-    def datadep_to_h(node)
-
-      # Get the datadeo attributes
-      datadep=get_node_attributes(node)
-
-      datadep[node.name.to_sym]=compound_time_string_to_h(node)
-
-      return datadep
-
-    end
-
-
-    #####################################################
-    #
-    # taskdep_to_h
-    #
-    #####################################################
-    def taskdep_to_h(node)
-
-      taskdep=get_node_attributes(node)
-      taskdep[node.name.to_sym]=taskdep[:task]
-      taskdep.delete(:task)
-
-      return taskdep
-
-    end
-
-
-    #####################################################
-    #
-    # timedep_to_h
-    #
-    #####################################################
-    def timedep_to_h(node)
-
-      timedep=get_node_attributes(node)
-
-      # Get the time cycle string
-      timedep[node.name.to_sym]=compound_time_string_to_h(node)
-
-      return timedep
-
-    end
-
-
-    ##########################################
-    #
-    # compound_time_string_to_h
-    # 
-    ##########################################
-    def compound_time_string_to_h(node)
-
-      # Build an array of strings/hashes
-      compound_time_string=node.collect do |child|       
-        next if child.content.strip.empty?
-        if child.name.to_sym==:text
-          child.content.strip
-        else          
-          { child.name.to_sym=>child.content.strip.gsub(/@(\^?[^@\s])/,'%\1').gsub(/@@/,'@') }.merge(get_node_attributes(child))
-        end
-      end
-      
-    end
 
 
     ##########################################
@@ -766,76 +501,73 @@ module WorkflowMgr
 
     end
 
-  #####################################################
-  #
-  # traverse
-  #
-  #####################################################
 
-  def traverse(node, id_table, index)
+    #####################################################
+    #
+    # traverse
+    #
+    #####################################################
+    def traverse(node, id_table, index)
     
-    if node.node_type_name == "text"
-      cont = node.content
-      id_table.each{|id, value|
-	next while cont.sub!("#"+id+"#", id_table[id][index])
-      }
-      node.content = cont
+      if node.node_type_name == "text"
+        cont = node.content
+        id_table.each{|id, value|
+          next while cont.sub!("#"+id+"#", id_table[id][index])
+        }
+        node.content = cont
       
-    else
-      node.attributes.each{|attr|
-	val = attr.value
-	id_table.each{|id, value|
-	  next while val.sub!("#"+id+"#", id_table[id][index])
-	}
-        attr.value = val
-      }
-      node.children.each{|ch| traverse(ch, id_table, index)}
+      else
+        node.attributes.each{|attr|
+          val = attr.value
+          id_table.each{|id, value|
+	    next while val.sub!("#"+id+"#", id_table[id][index])
+          }
+          attr.value = val
+        }
+        node.children.each{|ch| traverse(ch, id_table, index)}
+      end
+
     end
 
-  end
-
   
-  #####################################################
-  #
-  # pre-parse
-  #
-  #####################################################
-  
-  def pre_parse(metatask)
+    #####################################################
+    #
+    # pre-parse
+    #
+    #####################################################
+    def pre_parse(metatask)
     
-    id_table = {}
-    var_length = -1
+      id_table = {}
+      var_length = -1
 
-    metatask.children.each {|ch|
-      pre_parse(ch) if ch.name == "metatask"
-    }
+      metatask.children.each {|ch|
+        pre_parse(ch) if ch.name == "metatask"
+      }
 
-    metatask.children.each {|e|
-      if e.name == "var"
-	var_values = e.content.split
-        var_length = var_values.length if var_length == -1
-        raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
-        id_table[e["name"]] = var_values
-      end
-    }
-    raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
-
-    task_list = Array.new
-    0.upto(var_length - 1) {|index|
-      metatask.children.each{|e|
-        if e.name == "task"
-          task_copy = e.copy(true)
-          traverse(task_copy,id_table, index)
-          task_list << task_copy
+      metatask.children.each {|e|
+        if e.name == "var"  
+          var_values = e.content.split
+          var_length = var_values.length if var_length == -1
+          raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
+          id_table[e["name"]] = var_values
         end
       }
-    }
+      raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
 
-    (task_list.length - 1).downto(0) {|x| metatask.next = task_list[x]}
+      task_list = Array.new
+      0.upto(var_length - 1) {|index|
+        metatask.children.each{|e|
+          if e.name == "task"
+            task_copy = e.copy(true)
+            traverse(task_copy,id_table, index)
+            task_list << task_copy
+          end
+        }
+      }
 
-  end
+      (task_list.length - 1).downto(0) {|x| metatask.next = task_list[x]}
 
-
+    end
 
   end  # Class WorkflowXMLDoc
 

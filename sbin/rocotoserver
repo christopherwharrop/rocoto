@@ -29,7 +29,7 @@ if RUBY_VERSION < "1.9"
   exit if fork
   STDIN.reopen "/dev/null"
   STDOUT.reopen "/dev/null", "a" 
-  STDERR.reopen "/dev/null", "a" 
+#  STDERR.reopen "/dev/null", "a"  # We need STDERR to report errors
 else
   Process.daemon
 end

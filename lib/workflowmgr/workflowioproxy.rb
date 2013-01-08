@@ -22,11 +22,12 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(dbServer,config)
+    def initialize(dbServer,config,options)
 
       # Store the log creation parameters
       @dbServer=dbServer
       @config=config
+      @options=options
 
       # Get the list of down file paths from the database
       @downpaths=@dbServer.get_downpaths
@@ -45,9 +46,13 @@ module WorkflowMgr
               @workflowIOServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
-            puts "*** WARNING! *** Could not shut down WorkflowIO server process because it is not running."
+            msg="WARNING! Can't shut down WorkflowIO server process because it is not running."
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
           rescue Timeout::Error
-            puts "*** ERROR! *** Could not shut down WorkflowIO server process because it is unresponsive and is probably wedged."
+            msg="ERROR! Can't shut down WorkflowIO server process because it is unresponsive and is probably wedged."
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
           end
         end
       end
@@ -63,7 +68,7 @@ module WorkflowMgr
               @newdownpaths.each do |downpath|
                 if downpath[:path]==args[0][0,downpath[:path].length]
                   # Don't try to access the path because we just detected that accesses to it hang.  Raise exception.
-                  raise WorkflowIOHang, "!!! WARNING !!! Cannot attempt to access #{args[0]}, filesystem unresponsive"
+                  raise WorkflowIOHang, "WARNING! Cannot attempt to access #{args[0]} because previous attempts to access the filesystem have hung."
                 end
               end
             end
@@ -81,7 +86,7 @@ module WorkflowMgr
                   if $?.exitstatus==0
 
                     # The process is still hung, so don't try to access the path because it's still bad.  Raise exception.
-                    raise WorkflowIOHang, "!!! WARNING !!! Cannot attempt to access #{args[0]}, filesystem unresponsive"
+                    raise WorkflowIOHang, "WARNING! Cannot attempt to access #{args[0]}, because previous attempts to access the filesystem have hung."
 
                   else
 
@@ -109,11 +114,15 @@ module WorkflowMgr
             rescue DRb::DRbConnError
               if retries < 1
                 retries+=1
-                puts "*** WARNING! *** WorkflowIO server process died.  Attempting to restart and try again."
+                msg="WARNING! WorkflowIO server process died.  Attempting to restart and try again."
+                WorkflowMgr.stderr(msg,1)
+                WorkflowMgr.log(msg)
                 workflowIO_init
                 retry
               else
-                raise "*** ERROR! *** WorkflowIO server process died.  #{retries} attempts to restart the server have failed, giving up."
+                msg="ERROR! WorkflowIO server process died.  #{retries} attempts to restart the server have failed, giving up."
+                WorkflowMgr.log(msg)
+                raise msg
               end
             rescue Timeout::Error
 
@@ -163,8 +172,8 @@ module WorkflowMgr
 
               # Restart the workflowIO server
               workflowIO_init
-
-              raise WorkflowIOHang, "*** ERROR! *** WorkflowIO server process is unresponsive and is probably wedged."
+              msg="ERROR! WorkflowIO server process is unresponsive and is probably wedged."
+              raise WorkflowIOHang, msg
 
             end  # begin
 
@@ -198,7 +207,7 @@ module WorkflowMgr
           Signal.trap("INT",nil)
 
           @workflowIOServer,@workflowIOHost,@workflowIOPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotoioserver")
-          @workflowIOServer.setup(workflowIO)
+          @workflowIOServer.setup(workflowIO,@options.verbose)
 
           # Restore default SIGINT handler
           Signal.trap("INT","DEFAULT")

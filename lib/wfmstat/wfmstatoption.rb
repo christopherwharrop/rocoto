@@ -113,6 +113,7 @@ module WFMStat
           else
             @verbose=verbose.to_i
           end
+          WorkflowMgr.const_set("VERBOSE",@verbose)
         end
 
         begin
@@ -122,6 +123,9 @@ module WFMStat
 
           # Parse the options
           opts.parse!(args)
+
+          # Set verbose to 0 if not set by options
+          WorkflowMgr.const_set("VERBOSE",0) unless WorkflowMgr.const_defined?("VERBOSE")
 
           # Print usage information if unknown options were passed
           raise OptionParser::ParseError,"Unrecognized options" unless args.empty?

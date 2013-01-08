@@ -69,11 +69,12 @@ module WorkflowMgr
           else
             @verbose=verbose.to_i
           end
+          WorkflowMgr.const_set("VERBOSE",@verbose)
         end
 
         # Handle option for version
         opts.on("--version","Show Workflow Manager version") do
-          puts "Workflow Manager Version #{WorkflowMgr::VERSION}"
+          puts "Workflow Manager Version #{WorkflowMgr.version}"
           exit
         end
 
@@ -89,6 +90,9 @@ module WorkflowMgr
 
           # Parse the options
           opts.parse!(args)
+
+          # Set verbose to 0 if not set by options
+          WorkflowMgr.const_set("VERBOSE",0) unless WorkflowMgr.const_defined?("VERBOSE")
 
           # The -d and -w options are mandatory
           raise OptionParser::ParseError,"A database file must be specified" if @database.nil?

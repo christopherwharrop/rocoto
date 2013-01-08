@@ -44,7 +44,7 @@ module WorkflowMgr
         @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
         # Set up an object to serve the workflow database (but do not open the database)
-        @dbServer=DBProxy.new(@options.database,@config)
+        @dbServer=DBProxy.new(@config,@options)
 
         # Initialize the workflow lock
         @locked=false
@@ -166,7 +166,7 @@ module WorkflowMgr
       @taskthrottle=workflowdoc.taskthrottle || 9999999
 
       # Get the scheduler
-      @bqServer=BQSProxy.new(workflowdoc.scheduler,@options.database,@config)
+      @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
       
       # Add this scheduler to the bqserver database if needed
       @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer

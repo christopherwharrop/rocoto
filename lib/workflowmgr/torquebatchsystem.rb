@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'etc'
     require 'parsedate'
     require 'libxml'
+    require 'workflowmgr/utilities'
 
     #####################################################
     #
@@ -33,6 +34,9 @@ module WorkflowMgr
       # look back at finished jobs. So set this to a big value
       @hrsback=120
 
+      # Assume the scheduler is up
+      @schedup=true
+
     end
 
 
@@ -43,14 +47,23 @@ module WorkflowMgr
     #####################################################
     def status(jobid)
 
-      # Populate the jobs status table if it is empty
-      refresh_jobqueue if @jobqueue.empty?
+      begin
 
-      # Return the jobqueue record if there is one
-      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+        raise WorkflowMgr::SchedulerDown unless @schedup
 
-      # We didn't find the job, so return an uknown status record
-      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+        # Populate the jobs status table if it is empty
+        refresh_jobqueue if @jobqueue.empty?
+
+        # Return the jobqueue record if there is one
+        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+
+        # We didn't find the job, so return an uknown status record
+        return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+        return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+      end
 
     end
 
@@ -148,28 +161,40 @@ private
     #####################################################
     def refresh_jobqueue
 
-      # Get the username of this process
-      username=Etc.getpwuid(Process.uid).name
+      begin
 
-      # Run qstat to obtain the current status of queued jobs
-      queued_jobs=`qstat -x 2>&1`
+        # Get the username of this process
+        username=Etc.getpwuid(Process.uid).name
 
-      # Return if there is no qstat output
-      return if queued_jobs.empty?
+        # Run qstat to obtain the current status of queued jobs
+        queued_jobs=""
+        exit_status=0
+        queued_jobs,exit_status=WorkflowMgr.run("qstat -x 2>&1",30)
 
-      # Parse the XML output of showq, building job status records for each job
-      queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
+        # Raise SchedulerDown if the showq failed
+        raise WorkflowMgr::SchedulerDown unless exit_status==0
 
+        # Return if the showq output is empty
+        return if queued_jobs.empty?
+
+        # Parse the XML output of showq, building job status records for each job
+        queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
+
+      rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{queued_jobs}") unless queued_jobs.empty?
+        raise WorkflowMgr::SchedulerDown
+      end
+      
       # For each job, find the various attributes and create a job record
       queued_jobs=queued_jobs_doc.root.find('//Job')
       queued_jobs.each { |jobsearch|
 
         job=jobsearch.copy("deep")
 
-	# Initialize an empty job record
-	record={}
+        # Initialize an empty job record
+  	record={}
 
-	# Look at all the attributes for this job and build the record
+  	# Look at all the attributes for this job and build the record
 	job.each_element { |jobstat| 
         
           case jobstat.name
@@ -182,10 +207,10 @@ private
                 when /^R$/,/^E$/
     	          record[:state]="RUNNING"
                 else
-    	          record[:state]="UNKNOWN"
+                  record[:state]="UNKNOWN"
               end
-	      record[:native_state]=jobstat.content
-	    when /Job_Name/
+              record[:native_state]=jobstat.content
+            when /Job_Name/
 	      record[:jobname]=jobstat.content
 	    when /Job_Owner/
 	      record[:user]=jobstat.content
@@ -196,15 +221,15 @@ private
                   break
                 end
             }
-	    when /queue/
+  	    when /queue/
 	      record[:queue]=jobstat.content
 	    when /qtime/
 	      record[:submit_time]=Time.at(jobstat.content.to_i).getgm
-	    when /start_time/
+  	    when /start_time/
               record[:start_time]=Time.at(jobstat.content.to_i).getgm
 	    when /comp_time/
               record[:end_time]=Time.at(jobstat.content.to_i).getgm
-	    when /Priority/
+ 	    when /Priority/
 	      record[:priority]=jobstat.content.to_i            
             when /exit_status/
               record[:exit_status]=jobstat.content.to_i
@@ -216,9 +241,9 @@ private
 	    else
               record[jobstat.name]=jobstat.content
           end  # case jobstat
-	}  # job.children
+  	}  # job.children
 
-	# Put the job record in the jobqueue
+  	# Put the job record in the jobqueue
 	@jobqueue[record[:jobid]]=record
 
       }  #  queued_jobs.find
@@ -226,9 +251,9 @@ private
       queued_jobs=nil
       GC.start
 
-    end
+    end  # job_queue
 
-  end
+  end  # class
 
-end
+end  # module
 

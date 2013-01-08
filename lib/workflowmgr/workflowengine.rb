@@ -34,23 +34,25 @@ module WorkflowMgr
 
       begin
 
-        # Get command line options
-        @options=options
+        # Turn on full program tracing for verbosity 1000+
+        if WorkflowMgr::VERBOSE > 999
+          set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
+        end
 
         # Get configuration file options
         @config=WorkflowYAMLConfig.new
 
-        # Get the base directory of the WFM installation
-        @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
+        # Get command line options
+        @options=options
 
         # Set up an object to serve the workflow database (but do not open the database)
-        @dbServer=DBProxy.new(@options.database,@config)
+        @dbServer=DBProxy.new(@config,@options)
 
         # Initialize the workflow lock
         @locked=false
 
       rescue
-        puts $!
+        WorkflowMgr.stderr($!)
         Process.exit(1)
       end
 
@@ -74,7 +76,7 @@ module WorkflowMgr
         Process.exit(0) unless @locked
 
         # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)        
+        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)        
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -102,7 +104,7 @@ module WorkflowMgr
         submit_new_jobs
 
       rescue
-        puts $!
+        WorkflowMgr.stderr($!)
         Process.exit(1)
         
       ensure
@@ -152,7 +154,7 @@ module WorkflowMgr
         boot_cycle_time=@options.cycles.first
 
         # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)        
+        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -277,7 +279,7 @@ module WorkflowMgr
           if jobid.nil?
             # Delete the job from the database since it failed to submit.  It will be retried next time around.
             @dbServer.delete_jobs([job])
-            puts output
+            WorkflowMgr.stderr(output,0)
             @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
           else
             job.id=jobid
@@ -292,7 +294,7 @@ module WorkflowMgr
         puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
 
       rescue
-        puts $!
+        WorkflowMgr.stderr($!,0)
         Process.exit(1)
         
       ensure
@@ -349,7 +351,7 @@ module WorkflowMgr
       @taskthrottle=workflowdoc.taskthrottle || 9999999
 
       # Get the scheduler
-      @bqServer=BQSProxy.new(workflowdoc.scheduler,@options.database,@config)
+      @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
       
       # Add this scheduler to the bqserver database if needed
       @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer
@@ -628,10 +630,12 @@ module WorkflowMgr
           if !bqservers.has_key?(uri)
 
             # Log the fact that the submission status could not be retrieved
-            puts "Submission status of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} could not be retrieved because the server process at #{uri} died"
-            puts "Submission of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} probably, but not necessarily, failed.  It will be resubmitted"
-            @logServer.log(job.cycle,"Submission status of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} could not be retrieved because the server process at #{uri} died")
-            @logServer.log(job.cycle,"Submission of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} probably, but not necessarily, failed.  It will be resubmitted")
+            msg="Submission status of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} could not be retrieved because the server process at #{uri} died"
+            WorkflowMgr.stderr(msg,1)
+            @logServer.log(job.cycle,msg)
+            msg="Submission of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} probably, but not necessarily, failed.  It will be resubmitted"
+            WorkflowMgr.stderr(msg,1)
+            @logServer.log(job.cycle,msg)
 
             # Delete the job from the database since it failed to submit.  It will be retried immediately.
             @dbServer.delete_jobs([job])
@@ -659,7 +663,7 @@ module WorkflowMgr
               @active_jobs[job.task].delete(job.cycle)
               @active_jobs.delete(job.task) if @active_jobs[job.task].empty?           
 
-              puts output
+              WorkflowMgr.stderr(output,1)
               @logServer.log(job.cycle,"Submission status of previously pending #{job.task} is failure!  #{output}")
 
               next
@@ -689,7 +693,9 @@ module WorkflowMgr
             end
           # Catch exceptions for bqservers that have died unexpectedly
           rescue DRb::DRbConnError
-            puts "WARNING: BQS Server process at #{uri} died unexpectedly.  Submission status of some jobs may have been lost"
+            msg="WARNING! BQS Server process at #{uri} died unexpectedly.  Submission status of some jobs may have been lost"
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
             @dbServer.delete_bqservers([uri])
           end
 
@@ -756,7 +762,9 @@ module WorkflowMgr
           job.native_state=status[:native_state]            
           if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
             job.exit_status=status[:exit_status]
-            if status[:start_time]==Time.at(0).getgm
+            if !status[:duration].nil?
+              duration=status[:duration]
+            elsif status[:start_time]==Time.at(0).getgm
               duration=0
             else
               duration=status[:end_time] - status[:start_time]
@@ -836,9 +844,7 @@ module WorkflowMgr
           @logServer.log(job.cycle,statemsg+runmsg+unknownmsg+triesmsg)
 
           if job.failed? || job.expired?
-            if @options.verbose > 0
-              puts "Cycle #{job.cycle.strftime("%Y%m%d%H%M")}, #{statemsg+runmsg+unknownmsg+triesmsg}"
-            end
+            WorkflowMgr.stderr("Cycle #{job.cycle.strftime("%Y%m%d%H%M")}, #{statemsg+runmsg+unknownmsg+triesmsg}",1)
           end
 
         end # @active_jobs.each
@@ -1146,8 +1152,10 @@ module WorkflowMgr
             end
 
           rescue WorkflowIOHang
-            @logServer.log(cycletime,"Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!")
-            puts "!!! WARNING !!! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"
+            msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"            
+            @logServer.log(cycletime,msg)
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
           end
 
           # Submit the task
@@ -1171,8 +1179,9 @@ module WorkflowMgr
           if jobid.nil?
             # Delete the job from the database since it failed to submit.  It will be retried next time around.
             @dbServer.delete_jobs([job])
-            puts output
-            @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
+            msg="Submission of #{job.task} failed!  #{output}"
+            @logServer.log(job.cycle,msg)
+            WorkflowMgr.stderr(msg,1)
           else
             job.id=jobid
             job.state="QUEUED"

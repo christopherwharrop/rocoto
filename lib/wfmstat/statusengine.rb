@@ -17,7 +17,6 @@ module WFMStat
     require 'workflowmgr/cycledef'
     require "workflowmgr/cycle"
     require 'workflowmgr/dependency'
-
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/launchserver'
     require 'workflowmgr/dbproxy'
@@ -30,17 +29,26 @@ module WFMStat
     ##########################################
     def initialize(options)
 
-      # Get command line options
-      @options=options
+      begin
 
-      # Get configuration file options
-      @config=WorkflowMgr::WorkflowYAMLConfig.new
+        # Turn on full program tracing for verbosity 1000+
+        if WorkflowMgr::VERBOSE > 999
+          set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
+        end
 
-      # Get the base directory of the WFM installation
-      @wfmdir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
+        # Get configuration file options
+        @config=WorkflowMgr::WorkflowYAMLConfig.new
 
-      # Set up an object to serve the workflow database (but do not open the database)
-      @dbServer=WorkflowMgr::DBProxy.new(@options.database,@config)
+        # Get command line options
+        @options=options
+
+        # Set up an object to serve the workflow database (but do not open the database)
+        @dbServer=WorkflowMgr::DBProxy.new(@config,@options)
+
+      rescue
+        puts $!
+        Process.exit(1)
+      end
 
     end  # initialize
 
@@ -58,7 +66,7 @@ module WFMStat
         @dbServer.dbopen
 
         # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config)        
+        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
 
         # Open the workflow document
         @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
@@ -101,7 +109,7 @@ module WFMStat
         @dbServer.dbopen
 
         # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config)        
+        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
 
         # Open the workflow document
         @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)

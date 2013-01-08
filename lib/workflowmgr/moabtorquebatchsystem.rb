@@ -16,6 +16,7 @@ module WorkflowMgr
     require 'parsedate'
     require 'libxml'
     require 'workflowmgr/utilities'
+    require 'workflowmgr/torquebatchsystem'
 
     #####################################################
     #
@@ -23,6 +24,9 @@ module WorkflowMgr
     #
     #####################################################
     def initialize(moab_root=nil,torque_root=nil)
+
+      # Initialize a Torque batch system object
+      @torque=TORQUEBatchSystem.new
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -67,14 +71,9 @@ module WorkflowMgr
         # Return the jobacct record if there is one
         return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
-        # If we still didn't find the job, look 72 hours back if we haven't already
-        if @hrsback < 72
-          refresh_jobacct(72)
-  	  return @jobacct[jobid] if @jobacct.has_key?(jobid)
-        end
-
-        # We didn't find the job, so return an uknown status record
-        return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+        # If we still didn't find the job, maybe Moab hasn't gotten the info from Torque yet
+        # Try to get the status from Torque directly
+        return @torque.status(jobid)
 
       rescue WorkflowMgr::SchedulerDown
         @schedup=false
@@ -258,7 +257,7 @@ private
     # refresh_jobacct
     #
     #####################################################
-    def refresh_jobacct(hrsback=1)
+    def refresh_jobacct
 
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
@@ -301,6 +300,7 @@ private
         record[:submit_time]=Time.at(job.attributes['SubmissionTime'].to_i).getgm
         record[:start_time]=Time.at(job.attributes['StartTime'].to_i).getgm
         record[:end_time]=Time.at(job.attributes['CompletionTime'].to_i).getgm
+        record[:duration]=job.attributes['AWDuration'].to_i
         record[:priority]=job.attributes['StartPriority'].to_i
         if job.attributes['State']=~/^Removed/ || job.attributes['CompletionCode']=~/^CNCLD/
           record[:exit_status]=255

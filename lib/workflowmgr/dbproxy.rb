@@ -21,11 +21,11 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(dbFile,config)
+    def initialize(config,options)
 
       # Store the database creation parameters
-      @dbFile=dbFile
       @config=config
+      @options=options
 
       # Initialize the database
       initdb
@@ -38,9 +38,13 @@ module WorkflowMgr
               @dbServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
-            puts "*** WARNING! *** Can't shut down WorkflowDB server process because it is not running."
+            msg="WARNING! Can't shut down WorkflowDB server process because it is not running."
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
           rescue Timeout::Error
-            puts "*** ERROR! ***  Can't shut down WorkflowDB server process because it is unresponsive and is probably wedged."
+            msg="ERROR! Can't shut down WorkflowDB server process because it is unresponsive and is probably wedged."
+            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.log(msg)
           end
         end
       end
@@ -58,11 +62,15 @@ module WorkflowMgr
             rescue DRb::DRbConnError
               if retries < 1
                 retries+=1
-                puts "*** WARNING! *** WorkflowDB server process died.  Attempting to restart and try again."
+                msg="WARNING! WorkflowDB server process died.  Attempting to restart and try again."
+                WorkflowMgr.stderr(msg,1)
+                WorkflowMgr.log(msg)
                 initdb
                 retry
               else
-                raise "*** ERROR! *** WorkflowDB server process died.  #{retries} attempts to restart the server have failed, giving up."
+                msg="ERROR! WorkflowDB server process died.  #{retries} attempts to restart the server have failed, giving up."
+                WorkflowMgr.log(msg)
+                raise msg
               end
             rescue WorkflowMgr::WorkflowDBLockedException
               if busy_retries < 20
@@ -70,10 +78,14 @@ module WorkflowMgr
                 sleep(rand*(2**(busy_retries/10)))
                 retry
               else
-                raise "*** ERROR! *** WorkflowDB is locked.  #{busy_retries} attempts to access the database have failed, giving up.\n#{$!}"
+                msg="ERROR! WorkflowDB is locked.  #{busy_retries} attempts to access the database have failed, giving up."
+                WorkflowMgr.log(msg)
+                raise msg
               end            
             rescue Timeout::Error
-              raise "*** ERROR! *** WorkflowDB server process is unresponsive and is probably wedged."
+              msg="ERROR! WorkflowDB server process is unresponsive and is probably wedged."
+              WorkflowMgr.log(msg)
+              raise msg
             end
 
           end
@@ -98,7 +110,7 @@ module WorkflowMgr
       begin
 
 	# Initialize the database but do not open it (call dbopen to open it)
-	database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@dbFile)
+	database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@options.database)
 	if @config.DatabaseServer
 
           # Ignore SIGINT while launching server process
@@ -106,7 +118,7 @@ module WorkflowMgr
 
           # Launch server process
           @dbServer,@dbHost,@dbPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotodbserver")
-          @dbServer.setup(database)
+          @dbServer.setup(database,@options.verbose)
 
           # Restore default SIGINT handler
           Signal.trap("INT","DEFAULT")
@@ -122,8 +134,10 @@ module WorkflowMgr
           @dbServer.stop! unless @dbServer.nil?
         end
 
-        # Raise fatal exception
-	raise "Could not launch database server process\n#{$!}"
+        # Raise fatal exception        
+        msg="Could not launch database server process. #{$!}"
+        WorkflowMgr.log(msg)
+	raise msg
 
       end
 
