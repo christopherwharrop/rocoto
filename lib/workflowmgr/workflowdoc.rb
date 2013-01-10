@@ -34,10 +34,14 @@ module WorkflowMgr
       # Set the workflowIOServer
       @workflowIOServer=workflowIOServer
 
-      # Get the text from the xml file and put it into a string
+      # Get the text from the xml file and put it into a string.
+      # We have to do the full parsing in @workflowIOServer 
+      # because we must ensure all external entities (i.e. files) 
+      # are referenced inside the @workflowIOServer process and 
+      # not locally.
       begin
         if @workflowIOServer.exists?(workflowdoc)
-          xmlstring=@workflowIOServer.ioreadlines(workflowdoc)
+          xmlstring=@workflowIOServer.parseXMLFile(workflowdoc)
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
@@ -452,7 +456,8 @@ module WorkflowMgr
     def validate_with_metatasks(doc)
 
       # Parse the Relax NG schema XML document
-      relaxng_document = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
+      xmlstring=@workflowIOServer.parseXMLFile("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
+      relaxng_document=LibXML::XML::Parser.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT).parse
 
       # Prepare the Relax NG schemas for validation
       relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
@@ -471,7 +476,8 @@ module WorkflowMgr
     def validate_without_metatasks(doc)
 
       # Parse the Relax NG schema XML document
-      relaxng_document = LibXML::XML::Document.file("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
+      xmlstring=@workflowIOServer.parseXMLFile("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
+      relaxng_document=LibXML::XML::Parser.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT).parse
 
       # Prepare the Relax NG schemas for validation
       relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)

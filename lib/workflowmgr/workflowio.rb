@@ -13,6 +13,8 @@ module WorkflowMgr
   class WorkflowIO
 
     require 'fileutils'
+    require 'libxml-ruby/libxml'
+
 
     ##########################################
     #
@@ -20,6 +22,19 @@ module WorkflowMgr
     #
     ##########################################
     def initialize
+
+    end
+
+
+    ##########################################
+    #
+    # parseXMLFile
+    #
+    ##########################################
+    def parseXMLFile(filename)
+
+      document= LibXML::XML::Parser.file(filename,:options => LibXML::XML::Parser::Options::NOENT).parse
+      return document.to_s
 
     end
 
@@ -34,6 +49,7 @@ module WorkflowMgr
       return IO.readlines(filename,nil)[0]
 
     end
+
 
     ##########################################
     #
@@ -110,8 +126,6 @@ module WorkflowMgr
       }
 
     end
-
-
 
 
   end
