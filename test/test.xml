@@ -60,7 +60,7 @@
   <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
   <cycledef group="group1">201201010000 201301010000 01:00:00</cycledef>
 -->
-  <cycledef group="group1">201210190900 201301010000 01:00:00</cycledef>
+  <cycledef group="group1">201301010000 201401010000 01:00:00</cycledef>
 
   <metatask>
 
