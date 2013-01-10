@@ -134,6 +134,7 @@ module WorkflowMgr
 
       # Add the command to submit
       cmd += " #{task.attributes[:command]}"
+      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",10)
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
