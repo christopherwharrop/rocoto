@@ -43,6 +43,14 @@
  <!ENTITY QUEUE "debug">
  <!ENTITY SCHED "lsf">
 -->
+<!--
+ <!ENTITY TEST_HOME "/glade/u/home/harrop/opt/rocoto-devel/test">
+ <!ENTITY DATA_HOME "/glade/scratch/harrop/test">
+ <!ENTITY PROJECT "P48500053">
+ <!ENTITY QUEUE "regular">
+ <!ENTITY SCHED "lsf">
+-->
+
 ]>
 
 <workflow realtime="t" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
