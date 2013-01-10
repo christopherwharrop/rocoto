@@ -277,7 +277,7 @@ module WorkflowMgr
         while !Date.valid_civil?(prevyear,prevmonth,prevday)
           prevday -= 1
           if prevday < 1
-	    prevday=31
+            prevday=31
             prevmonth -=1
             if prevmonth < 1
               prevmonth=12
@@ -477,7 +477,7 @@ module WorkflowMgr
               c=$3.to_i      
               (a..b).find_all {|i| (i-a)%c==0}
             else
-	      raise "Illegal Cycle cron field, '#{str}'"
+              raise "Illegal Cycle cron field, '#{str}'"
           end
         }.flatten.sort.uniq
         if cronarr & field_range.to_a != cronarr
@@ -511,7 +511,7 @@ module WorkflowMgr
         when :weekday
           (0..6)
         else
-	  raise "Unsupported cycle cron field '#{field}'"
+          raise "Unsupported cycle cron field '#{field}'"
       end
 
     end
@@ -545,11 +545,15 @@ module WorkflowMgr
                      fields[0][6..7],
                      fields[0][8..9],
                      fields[0][10..11])
-      @finish=Time.gm(fields[1][0..3],
-                      fields[1][4..5],
-                      fields[1][6..7],
-                      fields[1][8..9],
-                      fields[1][10..11])
+      if fields[1] =~ /\d{12}/
+              @finish=Time.gm(fields[1][0..3],
+                              fields[1][4..5],
+                              fields[1][6..7],
+                              fields[1][8..9],
+                              fields[1][10..11])
+      else
+              @finish=@start + WorkflowMgr.ddhhmmss_to_seconds(fields[1])
+      end
 
       raise "Invalid <cycledef>  Start time is greater than the end time" if @start > @finish
 

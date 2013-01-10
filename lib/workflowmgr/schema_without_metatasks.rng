@@ -104,6 +104,11 @@
                 <ref name="YYYYMMDDHHMM"/>
                 <ref name="nonNegativeTime"/>
               </list>
+              <list>
+                <ref name="YYYYMMDDHHMM"/>
+                <ref name="nonNegativeTime"/>
+                <ref name="nonNegativeTime"/>
+              </list>
             </choice>
           </element>
         </oneOrMore>
