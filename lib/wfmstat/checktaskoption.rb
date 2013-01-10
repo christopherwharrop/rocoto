@@ -31,7 +31,7 @@ module WFMStat
       @tasks=nil
       @summary=false
       @taskfirst=false
-      @verbose=0
+      @verbose=1
       parse(args)
 
     end  # initialize
@@ -85,7 +85,7 @@ module WFMStat
         # Handle option for verbose
         opts.on("-v","--verbose [LEVEL]",/^[0-9]+$/,"Run Rocoto in verbose mode") do |verbose|
           if verbose.nil?
-            @verbose=0
+            @verbose=1
           else
             @verbose=verbose.to_i
           end
