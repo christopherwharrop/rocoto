@@ -15,6 +15,7 @@ require 'drb'
 require 'socket'
 require 'workflowmgr/workflowserver'
 require 'workflowmgr/utilities'
+require 'fileutils'
 
 # Set the name of the URI file based on the pid of this process
 # This must happen before the server process is daemonized.
@@ -38,7 +39,8 @@ end
 DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 
 # Write the URI to a temp dir so the client can connect
-File.open(uri_file,"w") { |file| file.puts "#{DRb.uri}" }
+File.open("#{uri_file}.tmp","w") { |file| file.puts "#{DRb.uri}" }
+FileUtils.mv("#{uri_file}.tmp",uri_file)
 
 # Set up a safety thread to shutdown orphaned/abandoned server processes
 Thread.new do

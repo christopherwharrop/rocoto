@@ -172,7 +172,7 @@ module WorkflowMgr
 
               # Restart the workflowIO server
               workflowIO_init
-              msg="ERROR! WorkflowIO server process is unresponsive and is probably wedged."
+              msg="ERROR! WorkflowIO server process is unresponsive while accessing #{args[0]} and is probably wedged."
               raise WorkflowIOHang, msg
 
             end  # begin
