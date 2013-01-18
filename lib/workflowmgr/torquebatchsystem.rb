@@ -169,8 +169,9 @@ private
 
         # Run qstat to obtain the current status of queued jobs
         queued_jobs=""
+        errors=""
         exit_status=0
-        queued_jobs,exit_status=WorkflowMgr.run("qstat -x 2>&1",30)
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("qstat -x",30)
 
         # Raise SchedulerDown if the showq failed
         raise WorkflowMgr::SchedulerDown unless exit_status==0
@@ -182,7 +183,7 @@ private
         queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{queued_jobs}") unless queued_jobs.empty?
+        WorkflowMgr.log("#{errors}") unless errors.empty?
         raise WorkflowMgr::SchedulerDown
       end
       
