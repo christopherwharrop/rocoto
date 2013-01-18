@@ -87,6 +87,7 @@ LIBXML_RUBY_VERSION="2.4.0"
 SYSTEMTIMER_VERSION="1.2.3"
 SQLITE3_VERSION="autoconf-3070701"
 SQLITE3_RUBY_VERSION="1.3.1"
+OPEN4_VERSION="1.3.0"
 
 # Set AIX_CFLAGS and AIX_LDFLAGS
 if [ "$OS" == "AIX" ]; then
@@ -99,6 +100,14 @@ fi
 
 # Create the build directory
 mkdir -p ${BUILD_DIR}
+
+# Install Open4
+echo "==========================================="
+echo "= INSTALLING Open4"
+echo "==========================================="
+cd ${LIB_DIR}
+gunzip -c ${TAR_DIR}/open4-${OPEN4_VERSION}.tar.gz | tar -xvf -
+mv open4-${OPEN4_VERSION} open4
 
 # Install libxml2
 echo "==========================================="
