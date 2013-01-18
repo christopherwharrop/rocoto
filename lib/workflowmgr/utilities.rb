@@ -6,6 +6,7 @@
 module WorkflowMgr
 
   require 'system_timer'
+  require 'open4'
 
   ##########################################
   #
@@ -189,5 +190,52 @@ module WorkflowMgr
     [output,exit_status]
 
   end
+
+
+  ##########################################  
+  #
+  # WorkflowMgr.run4
+  #
+  ##########################################
+  def WorkflowMgr.run4(command,timeout=30)
+
+
+    begin
+      pid, stdin, stdout, stderr = Open4::popen4(command)
+      stdin.close
+    rescue Exception
+      WorkflowMgr.log("WARNING! Could not run'#{command}': #{$!}")
+      raise "Execution of command #{command} unsuccessful"
+    end
+
+    error = ""
+    output = ""
+    exit_status=0
+    begin
+      SystemTimer.timeout(timeout) do
+        while (!stdout.eof?)  do
+          output += stdout.gets(nil)
+        end
+        stdout.close
+
+        while (!stderr.eof?)  do
+          error += stderr.gets(nil)
+        end
+        stderr.close
+
+        status=Process.waitpid2(pid)
+        exit_status=status[1].exitstatus
+      end
+    rescue Timeout::Error
+      Process.kill('KILL', pid)
+      stdout.close
+      stderr.close
+      WorkflowMgr.log("WARNING! The command '#{command}' timed out after #{timeout} seconds.")
+      raise Timeout::Error
+    end
+    [output,error,exit_status]
+
+  end
+
 
 end  # module workflowmgr
