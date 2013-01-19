@@ -48,6 +48,25 @@ DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 File.open("#{uri_file}.tmp","w") { |file| file.puts "#{DRb.uri}" }
 FileUtils.mv("#{uri_file}.tmp",uri_file)
 
+Thread.new do
+
+  while true do
+
+    # Test if the rocoto process that launched this server process has become a zombie
+    system("ps -eo pid,stat | grep Z | grep #{ARGV[0].to_i} 2>&1 > /dev/null")
+
+    # If our parent has become a zombie, it's time to close STDERR so that the zombie parent can go away
+    if $?.exitstatus==0
+      STDERR.reopen "/dev/null", "a"
+      break
+    end
+
+    sleep 5
+
+  end
+
+end
+
 # Set up a safety thread to shutdown orphaned/abandoned server processes
 Thread.new do
 
