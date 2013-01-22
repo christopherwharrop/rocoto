@@ -207,7 +207,7 @@ module WorkflowMgr
           Signal.trap("INT",nil)
 
           @workflowIOServer,@workflowIOHost,@workflowIOPID=WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotoioserver")
-          @workflowIOServer.setup(workflowIO,@options.verbose)
+          @workflowIOServer.setup(workflowIO)
 
           # Restore default SIGINT handler
           Signal.trap("INT","DEFAULT")

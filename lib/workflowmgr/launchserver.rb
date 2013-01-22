@@ -18,7 +18,6 @@ module WorkflowMgr
   ##########################################
   def WorkflowMgr.launchServer(server)
 
-
     # Fork a child process that will start the server process
     server_pid = fork
 
@@ -26,7 +25,7 @@ module WorkflowMgr
 
       # This is the child process, so exec the server command
       # Tell the server the pid of the process that is launching it
-      exec("#{server} #{Process.ppid}")
+      exec("#{server} #{Process.ppid} #{WorkflowMgr::VERBOSE}")
 
     else     
 

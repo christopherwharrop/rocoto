@@ -19,6 +19,9 @@ require 'workflowmgr/utilities'
 require 'libxml'
 require 'fileutils'
 
+# Set the verbosity for the server process
+WorkflowMgr.const_set("VERBOSE",ARGV[1].to_i)
+
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
 # We want to control what output goes where and when                                     
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
@@ -45,18 +48,35 @@ end
 DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 
 # Write the URI to a temp dir so the client can connect
-File.open("#{uri_file}.tmp","w") { |file| file.puts "#{DRb.uri}" }
-FileUtils.mv("#{uri_file}.tmp",uri_file)
+begin
+  File.open("#{uri_file}.tmp","w") { |file| file.puts "#{DRb.uri}" }
+  FileUtils.mv("#{uri_file}.tmp",uri_file)
+rescue
+  # If we can't write the URI file, shut down the server because nothing is going to be able to talk to it
+  WorkflowMgr.log($!)
+  WorkflowMgr.stderr($!,1)
+  DRb.stop_service
+  Process.exit(1)
+end
 
 Thread.new do
 
   while true do
 
-    # Test if the rocoto process that launched this server process has become a zombie
-    system("ps -eo pid,stat | grep Z | grep #{ARGV[0].to_i} 2>&1 > /dev/null")
+    begin
 
-    # If our parent has become a zombie, it's time to close STDERR so that the zombie parent can go away
-    if $?.exitstatus==0
+      # Test if the rocoto process that launched this server process has become a zombie
+      system("ps -eo pid,stat | grep Z | grep #{ARGV[0].to_i} 2>&1 > /dev/null")
+
+      # If our parent has become a zombie, it's time to close STDERR so that the zombie parent can go away
+      if $?.exitstatus==0
+        STDERR.reopen "/dev/null", "a"
+        break
+      end
+
+    rescue
+      WorkflowMgr.log($!)
+      WorkflowMgr.stderr($!,1)
       STDERR.reopen "/dev/null", "a"
       break
     end

@@ -55,11 +55,7 @@ module WorkflowMgr
     #
     #
     #####################################################
-    def setup(serveobj,verbose)
-
-      # The verbosity has to be set explicitly for the server processes
-      # since they are launched under a different Ruby environment
-      WorkflowMgr.const_set("VERBOSE",verbose)
+    def setup(serveobj)
 
       @server=serveobj
       @setup=true
