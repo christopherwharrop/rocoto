@@ -1062,6 +1062,11 @@ module WorkflowMgr
 
           end
           
+          # Reject this task if dependencies are not satisfied
+          unless task.dependency.nil?
+            next unless task.dependency.resolved?(cycletime,@active_jobs,@workflowIOServer)
+          end
+
           # Reject this task if core throttle will be exceeded
           if @active_core_count + task.attributes[:cores] > @corethrottle
             @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum core throttle of #{@corethrottle} will be violated.",2)
@@ -1072,11 +1077,6 @@ module WorkflowMgr
           if @active_task_count + 1 > @taskthrottle
             @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum task throttle of #{@taskthrottle} will be violated.",2)
             next
-          end
-
-          # Reject this task if dependencies are not satisfied
-          unless task.dependency.nil?
-            next unless task.dependency.resolved?(cycletime,@active_jobs,@workflowIOServer)
           end
 
           # Reject this task if retries has been exceeded
