@@ -189,9 +189,7 @@ private
       
       # For each job, find the various attributes and create a job record
       queued_jobs=queued_jobs_doc.root.find('//Job')
-      queued_jobs.each { |jobsearch|
-
-        job=jobsearch.copy("deep")
+      queued_jobs.each { |job|
 
         # Initialize an empty job record
   	record={}
