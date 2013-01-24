@@ -1,0 +1,72 @@
+.\"-
+.\" Manual page written by Timothy Brown <Timothy.P.Brown@noaa.org>
+.\"
+.\"
+.Dd January 23, 2013
+.Os
+.Dt ROCOTORUN 1 CON
+.Sh NAME
+.Nm rocotorun
+.Nd execute a workflow
+.Sh SYNOPSIS
+.Nm
+.Op Fl h
+.Op Fl v Ar #
+.Fl d Ar database_file
+.Fl w Ar workflow_file
+.Sh DESCRIPTION
+.Nm
+is a Ruby program that interfaces to the underlying batch system. It
+does all the book keeping necessary to submit tasks when dependencies are
+satisfied and tracks the progress of the workflow. It will automatically
+resubmit failed tasks and can recover from system outages without human
+intervention.
+.Pp
+The rocotorun command requires two arguments. The 
+.Cm -w
+flag specifies the name
+of the workflow definition file. For now, this must be an XML file containing
+the workflow definition. The 
+.Cm -d
+flag specifies the name of the database file
+that is to be used to store the state of the workflow. The database file is a
+sqlite binary file created and used only by Rocoto and need not exist prior to
+the first time the command is run.
+The following options are available:
+.Bl -tag -width flag
+.It Fl -version
+Display the version number and exit.
+.It Fl h, -help
+Display a short help message and exit.
+.It Fl v, -verbose Ar #
+Run Rocoto in verbose mode with the specified level. If no level is
+specified a level of 1 is used.
+.It Fl d, -database Ar file
+The path to the Rocoto database file for the current workflow.
+.It Fl w, -workflow Ar file
+The path to the Rocoto workflow file.
+.Sh EXAMPLES
+The command:
+.Pp
+.Dl "rocotorun -d foo.db -w foo.xml"
+.Pp
+Will run the workflow contained in the file named
+.Qq foo.xml
+and create a database file named
+.Qq foo.db
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr rocotoboot 1 ,
+.Xr rocotocheck 1 ,
+.Xr rocotostat 1
+.Sh STANDARDS
+The
+.Nm
+command is expected to be
+.St -p1003.2
+compatible.
+.Sh AUTHOR
+Written by Christopher Harrop
+.Sh BUGS
+Report bugs to <christopher.w.harrop@noaa.gov>
