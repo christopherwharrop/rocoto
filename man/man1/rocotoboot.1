@@ -1,0 +1,98 @@
+.\"-
+.\" Manual page written by Timothy Brown <Timothy.P.Brown@noaa.org>
+.\"
+.\"
+.Dd January 25, 2013
+.Os
+.Dt ROCOTOBOOT 1 CON
+.Sh NAME
+.Nm rocotoboot
+.Nd force a specific task for a specific cycle of a specific Rocoto workflow to run.
+.Sh SYNOPSIS
+.Nm
+.Op Fl h
+.Op Fl v Ar #
+.Op Fl -version
+.Fl d Ar database_file
+.Fl w Ar workflow_file
+.Fl t Ar task
+.Fl c Ar cycle
+.Sh DESCRIPTION
+.Nm
+is a tool to force a specific task for a specific cycle of a specific Rocoto workflow
+to run.  All dependencies and throttle limits are ignored, but some limitations still
+apply.
+.Pp
+The rocotoboot command is useful for running a task that has already been run 
+successfully, but which needs to be rerun after making changes to the task.
+It can also be used to manually circumvent dependencies and throttle limits
+in special situations when applicable.
+.Pp
+The following limitations apply:
+.Pp
+.Nd A task cannot be booted if its state is EXPIRED.
+.Pp
+.Nd A task cannot be booted for a cycle is EXPIRED. 
+.Pp
+.Nd A task cannot be booted if a task already exists for the spcified cycle and has not yet completed.
+.Pp
+The rocotoboot command requires four arguments. The 
+.Cm -w
+flag specifies the name
+of the workflow definition file. The 
+.Cm -d
+flag specifies the name of the database file
+that contains the state of the workflow for the task that is to be booted. 
+The
+.Cm -t
+flag specifies the task name to boot. The
+.Cm -c
+flag specifies the appropriate cycle number.
+The following options are available:
+.Bl -tag -width flag
+.It Fl -version
+Display the version number and exit.
+.It Fl h, -help
+Display a short help message and exit.
+.It Fl v, -verbose Ar #
+Run Rocoto in verbose mode with the specified level. If no level is
+specified a level of 1 is used.
+.It Fl d, -database Ar file
+The path to the Rocoto database file for the workflow containing the task to be booted.
+.It Fl w, -workflow Ar file
+The path to the Rocoto workflow file defining the task that is to be booted
+.It Fl t, -task Ar taskname
+The task name to boot.
+.It Fl c, -cycle Ar YYYYMMDDHHMM
+The full cycle name for which the task is to be booted.
+.Sh EXAMPLES
+The command:
+.Pp
+.Dl "rocotoboot -d foo.db -w foo.xml -t wrf -c 201301010000"
+.Pp
+Will boot (forcibly run) the
+.Qq wrf
+task for the cycle
+.Qq 201301010000
+defined in the workflow definition file named
+.Qq foo.xml
+and contained in the database file named
+.Qq foo.db
+.Sh EXIT STATUS
+.Ex -std
+.Sh DOCUMENTATION
+Complete documentation can be found at: http://rdhpcs.noaa.gov/rocoto/
+.Sh SEE ALSO
+.Xr rocotocheck 1 ,
+.Xr rocotorun 1 ,
+.Xr rocotostat 1
+.Sh STANDARDS
+The
+.Nm
+command is expected to be
+.St -p1003.2
+compatible.
+.Sh AUTHOR
+Written by Christopher Harrop
+.Sh BUGS
+Report bugs to <christopher.w.harrop@noaa.gov>
