@@ -1,5 +1,5 @@
 .\"-
-.\" Manual page written by Timothy Brown <Timothy.P.Brown@noaa.org>
+.\" Manual page written by Christopher Harrop <christopher.w.harrop@noaa.gov>
 .\"
 .\"
 .Dd January 25, 2013
@@ -7,7 +7,7 @@
 .Dt ROCOTOBOOT 1 CON
 .Sh NAME
 .Nm rocotoboot
-.Nd force a specific task for a specific cycle of a specific Rocoto workflow to run.
+.Nd force a specific task of a cycle in a Rocoto workflow to run.
 .Sh SYNOPSIS
 .Nm
 .Op Fl h
@@ -19,35 +19,43 @@
 .Fl c Ar cycle
 .Sh DESCRIPTION
 .Nm
-is a tool to force a specific task for a specific cycle of a specific Rocoto workflow
-to run.  All dependencies and throttle limits are ignored, but some limitations still
-apply.
+is a tool to force a specific task for a specific cycle of a specific Rocoto
+workflow to run. All dependencies and throttle limits are ignored, but some
+limitations still apply.
 .Pp
-The rocotoboot command is useful for running a task that has already been run 
-successfully, but which needs to be rerun after making changes to the task.
+The
+.Nm
+command is useful for running a task that has already been run successfully,
+but which needs to be rerun after making changes to the task.
 It can also be used to manually circumvent dependencies and throttle limits
 in special situations when applicable.
 .Pp
 The following limitations apply:
+.Bl -bullet -offset indent -compact
+.It
+A task cannot be booted if its state is EXPIRED.
+.It
+A task cannot be booted for a cycle is EXPIRED.
+.It
+A task cannot be booted if a task already exists for the spcified cycle
+and has not yet completed.
+.El
 .Pp
-.Nd A task cannot be booted if its state is EXPIRED.
-.Pp
-.Nd A task cannot be booted for a cycle is EXPIRED. 
-.Pp
-.Nd A task cannot be booted if a task already exists for the spcified cycle and has not yet completed.
-.Pp
-The rocotoboot command requires four arguments. The 
+The
+.Nm
+command requires four arguments. The
 .Cm -w
 flag specifies the name
-of the workflow definition file. The 
+of the workflow definition file. The
 .Cm -d
 flag specifies the name of the database file
-that contains the state of the workflow for the task that is to be booted. 
+that contains the state of the workflow for the task that is to be booted.
 The
 .Cm -t
 flag specifies the task name to boot. The
 .Cm -c
 flag specifies the appropriate cycle number.
+.Pp
 The following options are available:
 .Bl -tag -width flag
 .It Fl -version
@@ -68,7 +76,7 @@ The full cycle name for which the task is to be booted.
 .Sh EXAMPLES
 The command:
 .Pp
-.Dl "rocotoboot -d foo.db -w foo.xml -t wrf -c 201301010000"
+.Ic "rocotoboot -d foo.db -w foo.xml -t wrf -c 201301010000"
 .Pp
 Will boot (forcibly run) the
 .Qq wrf
