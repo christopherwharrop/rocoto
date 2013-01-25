@@ -44,7 +44,7 @@ module WorkflowMgr
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  rocotorun -d database_file -w workflow_document [options]"
+        opts.banner = "Usage:  rocotorun [-h] [-v #] -d database_file -w workflow_document"
 
         # Handle option for specifying the database file
         opts.on("-d","--database PATH",String,"Path to database store file") do |db|
