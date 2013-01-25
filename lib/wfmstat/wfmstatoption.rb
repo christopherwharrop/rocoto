@@ -48,7 +48,7 @@ module WFMStat
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  rocotostat -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s]"
+        opts.banner = "Usage:  rocotostat [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s] [-T]"
 
         # Specify the database file
         opts.on("-d","--database file",String,"Path to workflow database file") do |db|

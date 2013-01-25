@@ -48,7 +48,7 @@ module WFMStat
       OptionParser.new do |opts|
 
         # Command usage text
-        opts.banner = "Usage:  #{File.basename($0).split(".").first} -d database_file -w workflow_document -c cycle -t task"
+        opts.banner = "Usage:  #{File.basename($0).split(".").first} [-h] [-v #] -d database_file -w workflow_document -c cycle -t task"
 
         # Specify the database file
         opts.on("-d","--database FILE",String,"Path to workflow database file") do |db|
