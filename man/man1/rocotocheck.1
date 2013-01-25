@@ -1,0 +1,84 @@
+.\"-
+.\" Manual page written by Timothy Brown <Timothy.P.Brown@noaa.org>
+.\"
+.\"
+.Dd January 25, 2013
+.Os
+.Dt ROCOTOCHECK 1 CON
+.Sh NAME
+.Nm rocotocheck
+.Nd query detailed information about a specific task for a specific cycle
+.Sh SYNOPSIS
+.Nm
+.Op Fl h
+.Op Fl v Ar #
+.Op Fl -version
+.Fl d Ar database_file
+.Fl w Ar workflow_file
+.Fl t Ar task
+.Fl c Ar cycle
+.Sh DESCRIPTION
+.Nm
+is a tool to query detailed information about a specific task for a specific
+cycle. 
+.Pp
+The rocotocheck command requires four arguments. The 
+.Cm -w
+flag specifies the name
+of the workflow definition file. For now, this must be an XML file containing
+the workflow definition. The 
+.Cm -d
+flag specifies the name of the database file
+that is to be used to store the state of the workflow. The database file is a
+sqlite binary file created and used only by Rocoto and need not exist prior to
+the first time the command is run. The
+.Cm -t
+flag specifies the task name to query. The
+.Cm -c
+flag specifies the appropriate cycle number.
+The following options are available:
+.Bl -tag -width flag
+.It Fl -version
+Display the version number and exit.
+.It Fl h, -help
+Display a short help message and exit.
+.It Fl v, -verbose Ar #
+Run Rocoto in verbose mode with the specified level. If no level is
+specified a level of 1 is used.
+.It Fl d, -database Ar file
+The path to the Rocoto database file for the current workflow.
+.It Fl w, -workflow Ar file
+The path to the Rocoto workflow file.
+.It Fl t, -task Ar taskname
+The task name to query.
+.It Fl c, -cycle Ar YYYYMMDDHHMM
+The full cycle name that contains the task to query.
+.Sh EXAMPLES
+The command:
+.Pp
+.Dl "rocotocheck -d foo.db -w foo.xml -t wrf -c 201301010000"
+.Pp
+Will check the
+.Qq wrf
+task for the cycle
+.Qq 201301010000
+defined in the workflow file named
+.Qq foo.xml
+and contained in the database file named
+.Qq foo.db
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr rocotoboot 1 ,
+.Xr rocotorun 1 ,
+.Xr rocotostat 1
+.Sh STANDARDS
+The
+.Nm
+command is expected to be
+.St -p1003.2
+compatible.
+.Sh AUTHOR
+Written by Christopher Harrop
+.Sh BUGS
+Report bugs to <christopher.w.harrop@noaa.gov>
