@@ -7,7 +7,7 @@
 .Dt ROCOTOCHECK 1 CON
 .Sh NAME
 .Nm rocotocheck
-.Nd query detailed information about a specific task for a specific cycle
+.Nd query detailed information about a specific task for a specific cycle of a specific Rocoto workflow.
 .Sh SYNOPSIS
 .Nm
 .Op Fl h
@@ -20,18 +20,21 @@
 .Sh DESCRIPTION
 .Nm
 is a tool to query detailed information about a specific task for a specific
-cycle. 
+cycle of a specific Rocoto workflow.
+.Pp
+The rocotocheck command is particularly useful for determining why a particular 
+task cannot be submitted.  Rocotocheck reports which dependencies are satisfied
+and which are not, as well as any throttle violations that are preventing a 
+task from being submitted.
 .Pp
 The rocotocheck command requires four arguments. The 
 .Cm -w
 flag specifies the name
-of the workflow definition file. For now, this must be an XML file containing
-the workflow definition. The 
+of the workflow definition file. The 
 .Cm -d
 flag specifies the name of the database file
-that is to be used to store the state of the workflow. The database file is a
-sqlite binary file created and used only by Rocoto and need not exist prior to
-the first time the command is run. The
+that contains the state of the workflow to be queried. 
+The
 .Cm -t
 flag specifies the task name to query. The
 .Cm -c
@@ -46,9 +49,9 @@ Display a short help message and exit.
 Run Rocoto in verbose mode with the specified level. If no level is
 specified a level of 1 is used.
 .It Fl d, -database Ar file
-The path to the Rocoto database file for the current workflow.
+The path to the Rocoto database file for the workflow to be queried.
 .It Fl w, -workflow Ar file
-The path to the Rocoto workflow file.
+The path to the Rocoto workflow file to be queried.
 .It Fl t, -task Ar taskname
 The task name to query.
 .It Fl c, -cycle Ar YYYYMMDDHHMM
@@ -62,12 +65,14 @@ Will check the
 .Qq wrf
 task for the cycle
 .Qq 201301010000
-defined in the workflow file named
+defined in the workflow definition file named
 .Qq foo.xml
 and contained in the database file named
 .Qq foo.db
 .Sh EXIT STATUS
 .Ex -std
+.Sh DOCUMENTATION
+Complete documentation can be found at: http://rdhpcs.noaa.gov/rocoto/
 .Sh SEE ALSO
 .Xr rocotoboot 1 ,
 .Xr rocotorun 1 ,
