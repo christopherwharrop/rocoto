@@ -199,6 +199,10 @@ module WorkflowMgr
   ##########################################
   def WorkflowMgr.run4(command,timeout=30)
 
+    # Turn off garbage collection to avoid possible seg faults caused by Ruby 
+    # trying to allocate objects during GC when calling IO.select and IO#read.
+    # See: http://tickets.opscode.com/browse/CHEF-2916
+    GC.disable
 
     begin
       pid, stdin, stdout, stderr = Open4::popen4(command)
@@ -234,6 +238,10 @@ module WorkflowMgr
       raise Timeout::Error
     end
     [output,error,exit_status]
+
+  ensure
+    # Make sure we turn garbage collection back on!
+    GC.enable
 
   end
 
