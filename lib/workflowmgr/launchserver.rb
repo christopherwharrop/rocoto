@@ -49,7 +49,6 @@ module WorkflowMgr
           file=File.new(uri_file)
           uri=file.gets
           while uri.nil? do
-            WorkflowMgr.log("Delay in finding URI of #{File.basename(server)} in #{uri_file}.  The #{Dir.tmpdir} filesystem may be exhibiting incoherency issues.")
             sleep 0.25
             uri=file.gets
           end
