@@ -45,8 +45,11 @@ module WFMStat
         # Set up an object to serve the workflow database (but do not open the database)
         @dbServer=WorkflowMgr::DBProxy.new(@config,@options)
 
-      rescue
-        puts $!
+      rescue => crash
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.backtrace.join("\n"))
+        WorkflowMgr.log(crash.message)
+        WorkflowMgr.log(crash.backtrace.join("\n"))
         Process.exit(1)
       end
 
@@ -78,6 +81,13 @@ module WFMStat
           print_status
         end
     
+      rescue => crash
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.backtrace.join("\n"))
+        WorkflowMgr.log(crash.message)
+        WorkflowMgr.log(crash.backtrace.join("\n"))
+        Process.exit(1)
+
       ensure
   
         # Make sure we release the workflow lock in the database and shutdown the dbserver
@@ -164,6 +174,13 @@ module WFMStat
 
         # Print throttling violations
         print_violations(task,cycle,dependencies) if job.nil?
+
+      rescue => crash
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.backtrace.join("\n"))
+        WorkflowMgr.log(crash.message)
+        WorkflowMgr.log(crash.backtrace.join("\n"))
+        Process.exit(1)
 
       ensure
   

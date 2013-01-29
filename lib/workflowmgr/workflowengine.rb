@@ -51,8 +51,11 @@ module WorkflowMgr
         # Initialize the workflow lock
         @locked=false
 
-      rescue
-        WorkflowMgr.stderr($!)
+      rescue => crash
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.backtrace.join("\n"))
+        WorkflowMgr.log(crash.message)
+        WorkflowMgr.log(crash.backtrace.join("\n"))
         Process.exit(1)
       end
 
@@ -103,8 +106,11 @@ module WorkflowMgr
         # Submit new tasks where possible
         submit_new_jobs
 
-      rescue
-        WorkflowMgr.stderr($!)
+      rescue => crash
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.backtrace.join("\n"))
+        WorkflowMgr.log(crash.message)
+        WorkflowMgr.log(crash.backtrace.join("\n"))
         Process.exit(1)
         
       ensure
@@ -293,8 +299,11 @@ module WorkflowMgr
 
         puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
 
-      rescue
-        WorkflowMgr.stderr($!,0)
+      rescue => crash
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.backtrace.join("\n"))
+        WorkflowMgr.log(crash.message)
+        WorkflowMgr.log(crash.backtrace.join("\n"))
         Process.exit(1)
         
       ensure
