@@ -108,7 +108,16 @@ defined in the workflow definition file named
 .Qq foo.xml
 and contained in the database file named
 .Qq foo.db
-
+.Pp
+The command:
+.Pp
+.Ic "rocotostat -d foo.db -w foo.xml -c 201301010000:201301312359 -t '^post_.*'"
+.Pp
+Will report the status of all workflow tasks whose name starts with "post_" for all the cycles in January 2013
+defined in the workflow definition file named
+.Qq foo.xml
+and contained in the database file named
+.Qq foo.db
 .Sh EXIT STATUS
 .Ex -std
 .Sh DOCUMENTATION
