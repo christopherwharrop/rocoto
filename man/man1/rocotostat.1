@@ -58,15 +58,33 @@ specified a level of 1 is used.
 .It Fl d, -database Ar file
 The path to the Rocoto database file for the workflow containing the task to be stated.
 .It Fl w, -workflow Ar file
-The path to the Rocoto workflow file defining the task that is to be stated
+The path to the Rocoto workflow file defining the task that is to be stated.
 .It Fl t, -task Ar taskspec
-The tasks to query
-.It Fl c, -cycle Ar cyclespec
-The cycles to query
+The tasks to query.  Tasks may be specified in one of two ways:
+.Pp
+.Bl -bullet -offset indent -compact
+.It
+task1,task2,...,taskN  (all tasks in the list)
+.It
+.Qq regular expression
+.El
+.It Fl c, -cycle Ar cyclespec.
+The cycles to query.  Cycles may be specified using the YYYYMMDDHHMM format in one of four ways:
+.Pp
+.Bl -bullet -offset indent -compact
+.It
+c1,c2,...,cN (all cycles in the list)
+.It
+c1:2 (all cycles inclusively between c1 and c2)
+.It
+:c2 (all cycles <= c2)
+.It
+c1: (all cycles >= c1)
+.El
 .It Fl s
-Print a cycle status summary
+Print a cycle status summary.
 .It Fl T
-Sort the output by taskname instead of cycle
+Sort the output by task sequence (the order in which tasks are defined in the workflow definition file) instead of cycle.
 .Sh EXAMPLES
 The command:
 .Pp
@@ -80,6 +98,17 @@ defined in the workflow definition file named
 .Qq foo.xml
 and contained in the database file named
 .Qq foo.db
+.Pp
+The command:
+.Pp
+.Ic "rocotostat -d foo.db -w foo.xml -c 201301010000:201301312359 -T"
+.Pp
+Will report the status, sorted by task sequence, of all workflow tasks for all the cycles in January 2013
+defined in the workflow definition file named
+.Qq foo.xml
+and contained in the database file named
+.Qq foo.db
+
 .Sh EXIT STATUS
 .Ex -std
 .Sh DOCUMENTATION
