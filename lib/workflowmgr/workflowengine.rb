@@ -37,6 +37,18 @@ module WorkflowMgr
         # Turn on full program tracing for verbosity 1000+
         if WorkflowMgr::VERBOSE > 999
           set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
+
+        # Turn on program tracing for Rocoto code only for verbosity 100+
+        elsif WorkflowMgr::VERBOSE > 99
+          set_trace_func proc { |event,file,line,id,binding,classname|
+            case event
+              when "call","return","line"
+                if file=~/\/lib\/workflowmgr\/|\/lib\/wfmstat\//
+                  printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname
+                end
+              else
+            end
+          }
         end
 
         # Get configuration file options
