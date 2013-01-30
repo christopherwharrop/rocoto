@@ -19,7 +19,7 @@ module WorkflowMgr
   def WorkflowMgr.launchServer(server)
 
     # Fork a child process that will start the server process
-    parent_pid=Process.ppid
+    parent_pid=Process.pid
     server_pid = fork
     if server_pid.nil?
 
