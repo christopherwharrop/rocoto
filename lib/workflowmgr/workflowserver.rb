@@ -12,16 +12,6 @@ module WorkflowMgr
   ##########################################
   class WorkflowServer
 
-    # Get the base directory of the WFM installation
-    if File.symlink?(__FILE__)
-      __WFMDIR__=File.dirname(File.dirname(File.dirname(File.expand_path(File.readlink(__FILE__),File.dirname(__FILE__)))))
-    else
-      __WFMDIR__=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
-    end
-
-    $:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/lib")
-    $:.unshift("#{__WFMDIR__}/SystemTimer-1.2.3/ext/system_timer")
-
     require 'drb'
     require 'system_timer'
 
