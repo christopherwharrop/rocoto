@@ -59,9 +59,13 @@ module WFMStat
 
       rescue => crash
         WorkflowMgr.stderr(crash.message)
-        WorkflowMgr.stderr(crash.backtrace.join("\n"))
         WorkflowMgr.log(crash.message)
-        WorkflowMgr.log(crash.backtrace.join("\n"))
+        case
+          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
+            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.log(crash.backtrace.join("\n"))
+          else
+        end
         Process.exit(1)
       end
 
@@ -92,12 +96,16 @@ module WFMStat
         else
           print_status
         end
-    
+
       rescue => crash
         WorkflowMgr.stderr(crash.message)
-        WorkflowMgr.stderr(crash.backtrace.join("\n"))
         WorkflowMgr.log(crash.message)
-        WorkflowMgr.log(crash.backtrace.join("\n"))
+        case
+          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
+            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.log(crash.backtrace.join("\n"))
+          else
+        end
         Process.exit(1)
 
       ensure
