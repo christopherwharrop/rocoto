@@ -759,7 +759,7 @@ module WorkflowMgr
 
           # No need to query or update the status of jobs that we already know are done successfully or that remain failed
           # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
-          next if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED"
+          next if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED" || job.state=="LOST"
 
           # No point in trying to update the status of jobs with pending submission status
           next if job.pending_submit?
@@ -812,7 +812,7 @@ module WorkflowMgr
             # Assume the job failed if too many consecutive UNKNOWNS
             unknownmsg=""
             if job.nunknowns >= @config.MaxUnknowns
-              job.state="FAILED"
+              job.state="LOST"
               unknownmsg+=", giving up because job state could not be determined #{job.nunknowns} consecutive times"
             end
 
@@ -848,10 +848,10 @@ module WorkflowMgr
           end
            
           # Check for maxtries violation and update counters
-          if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED"
+          if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED" || job.state=="LOST"
             job.tries+=1
             maxtries=@tasks[job.task].nil? ? job.tries : @tasks[job.task].attributes[:maxtries]
-            if job.state=="FAILED"
+            if job.state=="FAILED" || job.state=="LOST"
               if job.tries >= maxtries
                 job.state="DEAD"
               end
@@ -1052,8 +1052,8 @@ module WorkflowMgr
           unless @active_jobs[task.attributes[:name]].nil?
             unless @active_jobs[task.attributes[:name]][cycletime].nil?
 
-              # Since this task has already been submitted at least once, reject it unless the job for it has failed
-              next unless @active_jobs[task.attributes[:name]][cycletime].state == "FAILED"
+              # Since this task has already been submitted at least once, reject it unless the job for it has failed or was lost
+              next unless @active_jobs[task.attributes[:name]][cycletime].state == "FAILED" || @active_jobs[task.attributes[:name]][cycletime].state == "LOST"
 
               # This task is a resubmission
               resubmit=true

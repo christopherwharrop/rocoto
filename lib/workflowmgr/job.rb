@@ -54,7 +54,7 @@ module WorkflowMgr
     #####################################################
     def done?
 
-      @state == "SUCCEEDED" || @state == "FAILED" || @state == "DEAD"
+      @state == "SUCCEEDED" || @state == "FAILED" || @state == "DEAD" || @state == "LOST"
 
     end
 
@@ -66,7 +66,7 @@ module WorkflowMgr
     #####################################################
     def failed?
 
-      @state == "FAILED" || @state == "DEAD"
+      @state == "FAILED" || @state == "DEAD" || @state == "LOST"
 
     end
 
