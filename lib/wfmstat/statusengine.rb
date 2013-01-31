@@ -82,7 +82,7 @@ module WFMStat
       begin
 
         # Open/Create the database
-        @dbServer.dbopen
+        Process.exit(0) unless @dbServer.dbopen
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
@@ -136,7 +136,7 @@ module WFMStat
       begin
 
         # Open/Create the database
-        @dbServer.dbopen
+        Process.exit(0) unless @dbServer.dbopen
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
