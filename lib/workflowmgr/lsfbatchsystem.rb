@@ -256,12 +256,12 @@ private
         recordstring.gsub!(/\n\s{3,}/,'')
         recordstring.split(/\n+/).each { |event|
           case event.strip
-            when /^Job <(\d+)>, Job Name <(\w+)>, User <(\w+)>,/
+            when /^Job <(\d+)>, Job Name <([^>]+)>, User <([^>]+)>,/
               record[:jobid]=$1
               record[:jobname]=$2
               record[:user]=$3
               record[:native_state]="DONE"
-            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <\w+>, to Queue <(\w+)>,/
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, to Queue <([^>]+)>,/
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
