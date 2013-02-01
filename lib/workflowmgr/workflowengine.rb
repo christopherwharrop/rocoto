@@ -765,7 +765,11 @@ module WorkflowMgr
           next if job.pending_submit?
 
           # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts, but only if the task is still defined and has not expired
-          if job.state=="DEAD" && !@tasks[job.task].nil?
+          if job.state=="DEAD"
+
+            # Can't resurrect a task that is no longer defined in the XML
+            next if @tasks[job.task].nil?
+
             if job.tries < @tasks[job.task].attributes[:maxtries] && !@tasks[job.task].expired?(job.cycle)
 
               # Reset the state to FAILED so a resubmission can occur
