@@ -77,7 +77,7 @@ module WorkflowMgr
 
       rescue SQLite3::BusyException
         msg="WorkflowSQLite3DB.dbopen: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
-        WorkflowMgr.log(stderr,1)
+        WorkflowMgr.stderr(msg,1)
         WorkflowMgr.log(msg)
         return false
       end  # begin
