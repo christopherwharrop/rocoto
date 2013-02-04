@@ -63,7 +63,7 @@ module WorkflowMgr
       
       # The URI file could not be read, so we cannot contact the server.
       # Either the server process died before it could write the URI and pid
-      # or there was some sort of network problem.# The server process will 
+      # or there was some sort of network problem.  The server process will 
       # shut itself down once it detects that this process has terminated.
       WorkflowMgr.log("Never received the URI and/or pid of #{File.basename(server)}.")
       raise "Never the received URI and/or pid of #{File.basename(server)}."

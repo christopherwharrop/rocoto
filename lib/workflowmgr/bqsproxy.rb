@@ -121,7 +121,7 @@ module WorkflowMgr
           @bqServer=bqs
         end
 
-      rescue
+      rescue => crash
 
         # Try to stop the bqserver if something went wrong
 	if @config.BatchQueueServer
@@ -129,9 +129,15 @@ module WorkflowMgr
         end
 
         # Raise fatal exception
-        msg="ERROR: Could not launch batch queue server process. #{$!}"
-        WorkflowMgr.log(msg)
-        raise msg
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.log(crash.message)
+        case
+          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
+            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.log(crash.backtrace.join("\n"))
+          else
+        end
+        raise "Could not launch batch queue server process."
 
       end
 

@@ -216,7 +216,7 @@ module WorkflowMgr
           @workflowIOServer=workflowIO
         end
 
-      rescue
+      rescue => crash
 
         # Try to stop the log server if something went wrong
         if @config.WorkflowIOServer
@@ -224,7 +224,15 @@ module WorkflowMgr
         end
 
         # Raise fatal exception
-        raise "Could not launch IO server process\n#{$!}"
+        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.log(crash.message)
+        case
+          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
+            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.log(crash.backtrace.join("\n"))
+          else
+        end
+        raise "Could not launch IO server process."
 
       end
 
