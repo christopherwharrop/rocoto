@@ -38,11 +38,11 @@ module WorkflowMgr
               @dbServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
-            msg="WARNING! Can't shut down WorkflowDB server process because it is not running."
+            msg="WARNING! Can't shut down rocotodbserver process #{@dbPID} on host #{@dbHost} because it is not running."
             WorkflowMgr.stderr(msg,1)
             WorkflowMgr.log(msg)
           rescue Timeout::Error
-            msg="ERROR! Can't shut down WorkflowDB server process because it is unresponsive and is probably wedged."
+            msg="ERROR! Can't shut down rocotodbserver process #{@dbPID} on host #{@dbHost} because it is unresponsive and is probably wedged."
             WorkflowMgr.stderr(msg,1)
             WorkflowMgr.log(msg)
           end
@@ -54,37 +54,33 @@ module WorkflowMgr
         (class << self; self; end).instance_eval do
           define_method m do |*args|
             retries=0
-            busy_retries=0
+            busy_retries=0.0
             begin
-              SystemTimer.timeout(60) do
+              SystemTimer.timeout(45) do
                 @dbServer.send(m,*args)
               end
             rescue DRb::DRbConnError
               if retries < 1
                 retries+=1
-                msg="WARNING! WorkflowDB server process died.  Attempting to restart and try again."
+                msg="WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} died.  Attempting to restart and try again."
                 WorkflowMgr.stderr(msg,1)
                 WorkflowMgr.log(msg)
                 initdb
                 retry
               else
-                msg="ERROR! WorkflowDB server process died.  #{retries} attempts to restart the server have failed, giving up."
-                WorkflowMgr.log(msg)
+                msg="WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} died.  #{retries} attempts to restart the server have failed, giving up."
                 raise msg
               end
             rescue WorkflowMgr::WorkflowDBLockedException
-              if busy_retries < 20
-                busy_retries+=1
-                sleep(rand*(2**(busy_retries/10)))
+              if busy_retries < 10
+                busy_retries+=1.0
+                sleep(1+0.25*rand*(2.0**(busy_retries/2.5)))
                 retry
               else
-                msg="ERROR! WorkflowDB is locked.  #{busy_retries} attempts to access the database have failed, giving up."
-                WorkflowMgr.log(msg)
-                raise msg
+                raise
               end            
             rescue Timeout::Error
-              msg="ERROR! WorkflowDB server process is unresponsive and is probably wedged."
-              WorkflowMgr.log(msg)
+              msg="WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} is unresponsive and is probably wedged." 
               raise msg
             end
 
@@ -143,7 +139,7 @@ module WorkflowMgr
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
-	raise "Could not launch database server process."
+	raise "ERROR! Could not launch database server process."
 
       end
 

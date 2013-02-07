@@ -45,9 +45,10 @@ module WorkflowMgr
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
-      rescue WorkflowIOHang
+      rescue WorkflowIOHang     
         WorkflowMgr.log($!)
-        raise "Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
+        WorkflowMgr.stderr($!,1)
+        raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
 
       # Parse the workflow xml string, set option to replace entities

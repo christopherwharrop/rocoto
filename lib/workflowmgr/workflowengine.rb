@@ -88,7 +88,7 @@ module WorkflowMgr
       begin
 
         # Open/Create the database
-        Process.exit(0) unless @dbServer.dbopen
+        @dbServer.dbopen
 
         # Acquire a lock on the workflow in the database
         @locked=@dbServer.lock_workflow
@@ -169,7 +169,7 @@ module WorkflowMgr
       begin
 
         # Open/Create the database
-        Process.exit(0) unless @dbServer.dbopen
+        @dbServer.dbopen
 
         # Acquire a lock on the workflow in the database
         @locked=@dbServer.lock_workflow

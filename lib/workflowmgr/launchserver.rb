@@ -55,7 +55,7 @@ module WorkflowMgr
       # Read the URI and pid of the server from the read end of the pipe we just created
       SystemTimer.timeout(10) do
         uri=rd.gets
-        server_pid=rd.gets
+        server_pid=rd.gets.chomp
         rd.close
       end
 

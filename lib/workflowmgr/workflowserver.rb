@@ -88,13 +88,17 @@ module WorkflowMgr
     def method_missing(name,*args,&block)
 
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
+
       begin
-        SystemTimer.timeout(60) do
+        SystemTimer.timeout(40) do
           return @server.send(name,*args,&block)
         end
       rescue Timeout::Error
-        WorkflowMgr.log("#{@server.class} server is unresponsive")        
-        raise Timeout::Error,"#{@server.class} server is unresponsive"
+        localhostinfo=Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0]
+        msg="WARNING! #{File.basename($0)} process #{Process.pid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) timed out while calling #{@server.class}.#{name}"
+        WorkflowMgr.log(msg)
+        WorkflowMgr.stderr(msg,1)
+        raise
       end
 
     end
