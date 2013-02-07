@@ -206,7 +206,7 @@ private
         queued_jobs,errors,exit_status=WorkflowMgr.run4("showq --noblock --xml -u #{username}",30)
                 
         # Raise SchedulerDown if the showq failed
-        raise WorkflowMgr::SchedulerDown unless exit_status==0
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
         # Return if the showq output is empty
         return if queued_jobs.empty?
@@ -215,7 +215,10 @@ private
         queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{errors}") unless errors.empty?
+        unless $!.empty?
+          WorkflowMgr.log("#{$!}")
+          WorkflowMgr.stderr("#{$!}",1)
+        end
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -293,7 +296,7 @@ private
         completed_jobs,errors,exit_status=WorkflowMgr.run4("showq -c --noblock --xml -u #{username}",30)
 
         # Raise SchedulerDown if the showq failed
-        raise WorkflowMgr::SchedulerDown unless exit_status==0
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
         # Return if the showq output is empty
         return if completed_jobs.empty?
@@ -302,7 +305,10 @@ private
         recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{errors}") unless errors.empty?
+        unless $!.empty?
+          WorkflowMgr.log("#{$!}")
+          WorkflowMgr.stderr("#{$!}",1)
+        end
         raise WorkflowMgr::SchedulerDown        
       end 
 

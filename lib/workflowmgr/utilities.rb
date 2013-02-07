@@ -208,8 +208,7 @@ module WorkflowMgr
       pid, stdin, stdout, stderr = Open4::popen4(command)
       stdin.close
     rescue Exception
-      WorkflowMgr.log("WARNING! Could not run'#{command}': #{$!}")
-      raise "Execution of command #{command} unsuccessful"
+      raise "Execution of '#{command}' unsuccessful: #{$!}"
     end
 
     error = ""
