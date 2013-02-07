@@ -55,25 +55,42 @@ module WorkflowMgr
 
       begin
 
-        raise WorkflowMgr::SchedulerDown unless @schedup         
+        raise WorkflowMgr::SchedulerDown unless @schedup
 
-        # Populate the jobs status table if it is empty
-        refresh_jobqueue if @jobqueue.empty?
+        # Try to get the status from Torque first
+        job_status=@torque.status(jobid)
 
-        # Return the jobqueue record if there is one
-        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+        # If Torque doesn't know what the status is, ask MOAB
+        if job_status[:state]=="UNKNOWN"
 
-        # If we didn't find the job in the jobqueue, look for it in the accounting records
+          # Populate the job accounting log table if it is empty
+          refresh_jobacct if @jobacct.empty?
+
+          # Return the jobacct record if there is one
+          return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+        # If Torque is down, try to get status from Moab
+        elsif job_status[:state]=="UNAVAILABLE"
+
+          # Populate the jobs status table if it is empty
+          refresh_jobqueue if @jobqueue.empty?
+
+          # Return the jobqueue record if there is one
+          return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+
+          # Populate the job accounting log table if it is empty
+          refresh_jobacct if @jobacct.empty?
+
+          # Return the jobacct record if there is one
+          return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+          # The state is unavailable since Torque is down and Moab doesn't have the state
+          return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+  
+        end
  
-        # Populate the job accounting log table if it is empty
-        refresh_jobacct if @jobacct.empty?
-
-        # Return the jobacct record if there is one
-        return @jobacct[jobid] if @jobacct.has_key?(jobid)
-
-        # If we still didn't find the job, maybe Moab hasn't gotten the info from Torque yet
-        # Try to get the status from Torque directly
-        return @torque.status(jobid)
+        # Return the status from Torque
+        return job_status
 
       rescue WorkflowMgr::SchedulerDown
         @schedup=false
