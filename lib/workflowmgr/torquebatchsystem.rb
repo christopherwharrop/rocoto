@@ -246,8 +246,10 @@ private
           end  # case jobstat
   	}  # job.children
 
-  	# Put the job record in the jobqueue
-	@jobqueue[record[:jobid]]=record
+  	# Put the job record in the jobqueue unless it's complete but doesn't have both a start time and an end time
+        unless record[:native_state]=="C" && (record[:start_time].nil? || record[:end_time].nil?)
+  	  @jobqueue[record[:jobid]]=record
+        end
 
       }  #  queued_jobs.find
 
