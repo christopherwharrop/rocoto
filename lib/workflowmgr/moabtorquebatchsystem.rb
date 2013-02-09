@@ -215,10 +215,8 @@ private
         queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
-        unless $!.empty?
-          WorkflowMgr.log("#{$!}")
-          WorkflowMgr.stderr("#{$!}",1)
-        end
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",1)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -305,10 +303,8 @@ private
         recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
-        unless $!.empty?
-          WorkflowMgr.log("#{$!}")
-          WorkflowMgr.stderr("#{$!}",1)
-        end
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",1)
         raise WorkflowMgr::SchedulerDown        
       end 
 

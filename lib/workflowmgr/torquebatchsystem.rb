@@ -27,9 +27,6 @@ module WorkflowMgr
       # Initialize an empty hash for job queue records
       @jobqueue={}
 
-      # Initialize an empty hash for job accounting records
-      @jobacct={}
-
       # Currently there is no way to specify the amount of time to 
       # look back at finished jobs. So set this to a big value
       @hrsback=120
@@ -183,10 +180,8 @@ private
         queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
-        unless $!.empty?
-          WorkflowMgr.log("#{$!}")
-          WorkflowMgr.stderr("#{$!}",1)
-        end
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",1)
         raise WorkflowMgr::SchedulerDown
       end
       
@@ -247,7 +242,7 @@ private
   	}  # job.children
 
   	# Put the job record in the jobqueue unless it's complete but doesn't have both a start time and an end time
-        unless record[:native_state]=="C" && (record[:start_time].nil? || record[:end_time].nil?)
+        unless !record[:exit_status].nil? && (record[:start_time].nil? || record[:end_time].nil?)
   	  @jobqueue[record[:jobid]]=record
         end
 
