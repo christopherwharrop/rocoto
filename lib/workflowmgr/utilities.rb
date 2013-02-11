@@ -136,6 +136,9 @@ module WorkflowMgr
   ##########################################
   def WorkflowMgr.stderr(message,level=0)
 
+    return if message.nil?
+    return if message.empty?
+
     if VERBOSE >= level
      STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
     end
@@ -148,6 +151,9 @@ module WorkflowMgr
   #
   ##########################################
   def WorkflowMgr.log(message)
+
+    return if message.nil?
+    return if message.empty?
 
     File.open("#{ENV['HOME']}/.rocoto/log","a") { |f|
       f.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
