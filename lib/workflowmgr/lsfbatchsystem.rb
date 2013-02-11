@@ -12,6 +12,7 @@ module WorkflowMgr
   ##########################################
   class LSFBatchSystem
 
+    require 'workflowmgr/utilities'
     require 'fileutils'
     require 'etc'
 
@@ -25,15 +26,17 @@ module WorkflowMgr
     #####################################################
     def initialize
 
-
       # Initialize an empty hash for job queue records
-      @jobqueue=nil
+      @jobqueue={}
 
       # Initialize an empty hash for job accounting records
       @jobacct={}
 
       # Initialize the number of accounting files examined to produce the jobacct hash
       @nacctfiles=1
+
+      # Assume the scheduler is up
+      @schedup=true
 
     end
 
@@ -45,28 +48,37 @@ module WorkflowMgr
     #####################################################
     def status(jobid)
 
-      # Populate the jobs status table if it is empty
-      refresh_jobqueue if @jobqueue.nil?
+      begin
 
-      # Return the jobqueue record if there is one
-      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+        raise WorkflowMgr::SchedulerDown unless @schedup
 
-      # If we didn't find the job in the jobqueue, look for it in the accounting records
+        # Populate the jobs status table if it is empty
+        refresh_jobqueue if @jobqueue.empty?
 
-      # Populate the job accounting log table if it is empty
-      refresh_jobacct if @jobacct.empty?
+        # Return the jobqueue record if there is one
+        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
-      # Return the jobacct record if there is one
-      return @jobacct[jobid] if @jobacct.has_key?(jobid)
+        # If we didn't find the job in the jobqueue, look for it in the accounting records
 
-      # If we still didn't find the job, look at all accounting files if we haven't already
-      if @nacctfiles != 25
-	refresh_jobacct(25)
-	return @jobacct[jobid] if @jobacct.has_key?(jobid)
+        # Populate the job accounting log table if it is empty
+        refresh_jobacct if @jobacct.empty?
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+        # If we still didn't find the job, look at all accounting files if we haven't already
+        if @nacctfiles != 25
+          refresh_jobacct(25)
+          return @jobacct[jobid] if @jobacct.has_key?(jobid)
+        end
+
+        # We didn't find the job, so return an uknown status record
+        return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+        return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
       end
-
-      # We didn't find the job, so return an uknown status record
-      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
 
     end
 
@@ -172,8 +184,25 @@ private
       # Initialize an empty hash for job queue records
       @jobqueue={}
 
-      # run bjobs to obtain the current status of queued jobs
-      queued_jobs=`bjobs -w 2>&1`
+      begin
+
+        # run bjobs to obtain the current status of queued jobs
+        queued_jobs=""
+        errors=""
+        exit_status=0
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -w",30)
+
+        # Raise SchedulerDown if the bjobs failed
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+        # Return if the bjobs output is empty
+        return if queued_jobs.empty? || queued_jobs=~/^No unfinished job found$/
+
+      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",1)
+        raise WorkflowMgr::SchedulerDown
+      end
 
       # Parse the output of bjobs, building job status records for each job
       queued_jobs.split(/\n/).each { |s|
@@ -243,11 +272,29 @@ private
       # Initialize an empty hash of job records
       @jobacct={}
 
-      # Run bhist to obtain the current status of queued jobs
-      output=`bhist -n #{nacctfiles} -l -d -w 2>&1`
+      begin
+
+        # Run bhist to obtain the current status of queued jobs
+        completed_jobs=""
+        errors=""
+        exit_status=0
+        timeout=nacctfiles==1 ? 30 : 90
+        completed_jobs,errors,exit_status=WorkflowMgr.run4("bhist -n #{nacctfiles} -l -d -w",timeout)
+
+        # Return if the bhist output is empty
+        return if completed_jobs.empty? || completed_jobs=~/^No matching job found$/
+
+        # Raise SchedulerDown if the bhist failed
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",1)
+        raise WorkflowMgr::SchedulerDown
+      end
 
       # Build job records from output of bhist
-      output.split(/^-{10,}\n$/).each { |s|
+      completed_jobs.split(/^-{10,}\n$/).each { |s|
 
         record={}
 
