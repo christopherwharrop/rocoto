@@ -151,8 +151,8 @@ module WorkflowMgr
         return true
 
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr($!,1)
-        WorkflowMgr.log($!)
+        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.log("#{$!}")
         return false
       rescue SQLite3::BusyException
         msg="WARNING: WorkflowSQLite3DB.lock_workflow: Could not open workflow database file '#{@database_file}' because it is locked by SQLite."
@@ -189,8 +189,8 @@ module WorkflowMgr
         end  # database transaction
 
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr($!,1)
-        WorkflowMgr.log($!)
+        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.log("#{$!}")
         Process.exit(1)
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.unlock_workflow: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
