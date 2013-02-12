@@ -35,8 +35,8 @@ module WorkflowMgr
       begin
         return(@root.resolved?(cycle,jobList,workflowIOServer))
       rescue WorkflowIOHang
-        WorkflowMgr.stderr($!,1)
-        WorkflowMgr.log($!)
+        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.log("#{$!}")
         return false
       end
 
@@ -52,8 +52,8 @@ module WorkflowMgr
       begin
         return(@root.query(cycle,jobList,workflowIOServer))
       rescue WorkflowIOHang
-        WorkflowMgr.stderr($!,1)
-        WorkflowMgr.log($!)
+        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.log("#{$!}")
         return false
       end
 
