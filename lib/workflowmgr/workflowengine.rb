@@ -1176,6 +1176,7 @@ module WorkflowMgr
           # Create output directories for <stdout>,<stderr>,<join> paths
           begin
 
+            outdir=""
             localtask.attributes.each do |option,value|
               case option
                 when :stdout,:stderr,:join
