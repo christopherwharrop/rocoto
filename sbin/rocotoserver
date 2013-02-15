@@ -46,8 +46,8 @@ begin
   uri_io.close                 # Close the write end of the pipe, the read end has already been closed
 rescue
   # If we can't write the URI file, shut down the server because nothing is going to be able to talk to it
-  WorkflowMgr.log($!)
-  WorkflowMgr.stderr($!,1)
+  WorkflowMgr.log("#{$!}")
+  WorkflowMgr.stderr("#{$!}",1)
   DRb.stop_service
   Process.exit(1)
 end
@@ -68,8 +68,8 @@ Thread.new do
       end
 
     rescue
-      WorkflowMgr.log($!)
-      WorkflowMgr.stderr($!,1)
+      WorkflowMgr.log("#{$!}")
+      WorkflowMgr.stderr("#{$!}",1)
       # Close STDERR on an excepttion to detatch from crond and ensure the process shuts down
       STDERR.reopen "/dev/null", "a"
       break
