@@ -137,8 +137,9 @@ module WorkflowMgr
       end
 
       # Add environment vars
+      save_env={}.merge(ENV)
+      vars = "" 
       unless task.envars.empty?
-        vars = "" 
         task.envars.each { |name,env|
           if vars.empty?
             vars += " -v #{name}"
@@ -147,7 +148,14 @@ module WorkflowMgr
           end
           vars += "=\"#{env}\"" unless env.nil?
         }
-        cmd += "#{vars}"
+        if "#{cmd}#{vars}".length > 2048
+          task.envars.each { |name,env|
+            ENV[name]=env
+          }
+          cmd += " -V"          
+        else
+          cmd += "#{vars}"
+        end
       end
 
       # Add the command arguments
@@ -162,6 +170,12 @@ module WorkflowMgr
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
+
+      # Restore the environment if necessary
+      if "#{cmd}#{vars}".length > 2048
+        ENV.clear
+        save_env.each { |k,v| ENV[k]=v }
+      end
 
       # Parse the output of the submit command
       if output=~/^(\d+)(\.\w+)*$/
