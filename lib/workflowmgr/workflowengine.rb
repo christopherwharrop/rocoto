@@ -838,7 +838,7 @@ module WorkflowMgr
               if job.state=="RUNNING"
                 if @tasks[job.task].hangdependency.resolved?(job.cycle,@active_jobs,@workflowIOServer)
                   job.state="FAILED"
-                  runmsg=".  A job hang has been detected.  The job will be killed and resubmitted"
+                  runmsg=".  A job hang has been detected.  The job will be killed.  It will be resubmitted if the retry count has not been exceeded."
                   @bqServer.delete(job.id)
                 end
               end
