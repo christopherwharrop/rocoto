@@ -12,6 +12,9 @@ module WorkflowMgr
   ##########################################
   class CycleString
 
+    attr :str
+    attr :offset
+
     #####################################################
     #
     # initialize
@@ -32,6 +35,30 @@ module WorkflowMgr
     def to_s(cycle)
 
       return (cycle.gmtime+@offset).strftime(@str)
+
+    end
+
+
+    #####################################################
+    #
+    # hash
+    #
+    #####################################################
+    def hash
+
+      @str.hash ^ @offset.hash
+
+    end
+
+
+    #####################################################
+    #
+    # eql?
+    #
+    #####################################################
+    def eql?(other)
+
+      return @str==other.str && @offset==other.offset
 
     end
 

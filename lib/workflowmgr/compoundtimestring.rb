@@ -16,6 +16,8 @@ module WorkflowMgr
     require 'workflowmgr/cyclestring'
     require 'workflowmgr/utilities'
 
+    attr :str_objects
+
     #####################################################
     #
     # initialize
@@ -45,7 +47,32 @@ module WorkflowMgr
 
     end
 
+
+    #####################################################
+    #
+    # hash
+    #
+    #####################################################
+    def hash
+
+      @str_objects.hash
+
+    end 
+
+
+    #####################################################
+    #
+    # eql?
+    #
+    #####################################################
+    def eql?(other)
+
+      return @str_objects==other.str_objects
+
+    end
+
   end
+
 
 end
 

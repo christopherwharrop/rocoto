@@ -250,12 +250,12 @@ module WorkflowMgr
               e.each_element do |element|
                 case element.name
                   when /^name$/
-                    envar_name=element
+                    envar_name=get_compound_time_string(element)
                   when /^value$/
-                    envar_value=element
+                    envar_value=get_compound_time_string(element)
                 end
               end
-              taskenvars[get_compound_time_string(envar_name)] = get_compound_time_string(envar_value)
+              taskenvars[envar_name] = envar_value
             when /^dependency$/
               e.each_element do |element| 
                 raise "ERROR: <dependency> tag contains too many elements" unless taskdep.nil?
@@ -328,12 +328,12 @@ module WorkflowMgr
        strarray=[] 
        element.each do |e|
          if e.node_type==LibXML::XML::Node::TEXT_NODE
-           strarray << e.content.clone
+           strarray << e.content
          else
            offset_sec=WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
            case e.name
              when "cyclestr"
-               formatstr=e.content.clone
+               formatstr=e.content
                formatstr.gsub!(/%/,'%%')
                formatstr.gsub!(/@(\^?[^@\s])/,'%\1')
                formatstr.gsub!(/@@/,'@')
@@ -345,7 +345,7 @@ module WorkflowMgr
        end
 
        return CompoundTimeString.new(strarray)
- 
+
      end
 
 
