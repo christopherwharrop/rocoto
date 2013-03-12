@@ -97,25 +97,37 @@ module WorkflowMgr
           when :jobname
             cmd += " -N #{value}"
           when :native
-	    cmd += " #{value}"
+            cmd += " #{value}"
         end
       end
 
-      # Add environment vars
+      # Build the -v string to pass environment to the job
+      vars = "" 
       unless task.envars.empty?
-        vars = "" 
         task.envars.each { |name,env|
-          if vars.empty?
-            vars += " -v #{name}"
-          else
-            vars += ",#{name}"
-          end
+          vars += ",#{name}"
           vars += "=\"#{env}\"" unless env.nil?
         }
-        cmd += "#{vars}"
+        # Remove the leading comma
+        vars.slice!(0)
       end
 
-      # Add the command arguments
+      # Choose -v or -V depending on how long -v is
+      save_env={}
+      if vars.length > 2048
+        # Save a copy of the current environment so we can restore it later
+        save_env.merge(ENV) 
+
+        # Set all envars in the current environment so they get passed with -V
+        task.envars.each { |name,env|
+          ENV[name]=env
+        }
+        cmd += " -V"
+      else
+        cmd += " -v #{vars}"
+      end
+
+      # Build the -F string to pass job script arguments to batch script
       cmdargs=task.attributes[:command].split[1..-1].join(" ")
       unless cmdargs.empty?
         cmd += " -F \"#{cmdargs}\""
@@ -123,16 +135,22 @@ module WorkflowMgr
 
       # Add the command to submit
       cmd += " #{task.attributes[:command].split.first}"
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",10)
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using '#{cmd}'",10)
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
+
+      # Restore the environment if necessary
+      unless save_env.empty?
+        ENV.clear
+        save_env.each { |k,v| ENV[k]=v }
+      end
 
       # Parse the output of the submit command
       if output=~/^(\d+)(\.[a-zA-Z0-9-]+)*$/
         return $1,output
       else
- 	return nil,output
+        return nil,output
       end
 
     end
