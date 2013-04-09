@@ -233,7 +233,7 @@ module WorkflowMgr
         tasknode.attributes.each do |attr|
           attrkey=attr.name.to_sym
           case attrkey
-            when :maxtries              # Attributes with integer values go here
+            when :maxtries,:throttle    # Attributes with integer values go here
               attrval=attr.value.to_i
             else                        # Attributes with string values
               attrval=attr.value

@@ -32,6 +32,9 @@ module WorkflowMgr
       # Set a default value for maxtries
       @attributes[:maxtries]=9999999 if @attributes[:maxtries].nil?
 
+      # Set a default value for throttle
+      @attributes[:throttle]=9999999 if @attributes[:throttle].nil?
+
     end
 
 

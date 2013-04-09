@@ -273,6 +273,13 @@
         </attribute>
       </optional>
 
+      <!-- Optional task throttle attribute -->
+      <optional>
+	<attribute name="throttle">
+          <data type="positiveInteger"/>
+        </attribute>
+      </optional>
+
       <!-- Optional task cycledefs attribute -->
       <optional>
         <attribute name="cycledefs">

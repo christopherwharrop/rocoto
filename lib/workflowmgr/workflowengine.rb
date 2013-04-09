@@ -757,6 +757,7 @@ module WorkflowMgr
         # Initialize counters for keeping track of active workflow parameters
         @active_task_count=0
         @active_core_count=0
+        @active_task_instance_count={}
 
         # Loop over all active jobs and retrieve and update their current status
         @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].nil? ? 999999999 : @tasks[job.task].seq] }.each do |job|
@@ -869,6 +870,11 @@ module WorkflowMgr
             # Update counters for jobs that are still QUEUED, RUNNING, or UNKNOWN
             @active_task_count+=1
             @active_core_count+=job.cores
+            if @active_task_instance_count[job.task].nil?
+              @active_task_instance_count[job.task]=1
+            else
+              @active_task_instance_count[job.task]+=1
+            end
             triesmsg=""
           end
 
@@ -1116,6 +1122,13 @@ module WorkflowMgr
             next
           end
 
+          # Reject this task if task instance throttle has been exceeded
+          @active_task_instance_count[task.attributes[:name]]=0 if @active_task_instance_count[task.attributes[:name]].nil?
+          if @active_task_instance_count[task.attributes[:name]] + 1 > task.attributes[:throttle]
+            @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum task instance throttle of #{task.attributes[:throttle]} will be violated.",2)
+            next
+          end
+
           # Reject this task if retries has been exceeded
           # This code block should never execute since state should be DEAD if retries is exceeded and we should never get here for a DEAD job
           if resubmit
@@ -1128,6 +1141,7 @@ module WorkflowMgr
           # Increment counters
           @active_core_count += task.attributes[:cores]
           @active_task_count += 1
+          @active_task_instance_count[task.attributes[:name]] += 1
 
           # If we are resubmitting the job, initialize the new job to the old job
           if @config.BatchQueueServer
