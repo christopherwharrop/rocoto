@@ -408,6 +408,22 @@
 
   <define name="metatask">
     <element name="metatask">
+
+      <!-- Optional metatask name attribute -->
+      <optional>
+        <attribute name="name">
+          <data type="string"/>          
+        </attribute>
+      </optional>
+
+
+      <!-- Optional metatask throttle attribute -->
+      <optional>
+        <attribute name="throttle">
+          <data type="positiveInteger"/>
+        </attribute>
+      </optional>
+
       <!-- Metatasks must have at least one var tag -->
       <oneOrMore>
         <element name="var">

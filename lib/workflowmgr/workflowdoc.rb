@@ -133,6 +133,18 @@ module WorkflowMgr
 
     ##########################################
     #
+    # metatask_throttles
+    # 
+    ##########################################
+    def metatask_throttles
+
+      return @metatask_throttles
+
+    end
+
+
+    ##########################################
+    #
     # corethrottle
     # 
     ##########################################
@@ -498,9 +510,17 @@ module WorkflowMgr
 
       # Parse and expand metatasks
       metatasks=[]
+      @metatask_seq=1
+      @metatask_throttles={}
       @workflowdoc.root.each_element {|ch|
         if ch.name == "metatask"
-	  pre_parse(ch)
+          if ch["name"].nil?
+            ch["name"]="metatask#{@metatask_seq}"
+            @metatask_seq+=1
+          end
+          metatask_name=ch["name"]
+          @metatask_throttles[metatask_name]=ch["throttle"].nil? ? 999999 : ch["throttle"].to_i
+	  pre_parse(ch,metatask_name)
           metatasks << ch
         end
       }
@@ -542,15 +562,33 @@ module WorkflowMgr
     # pre-parse
     #
     #####################################################
-    def pre_parse(metatask)
+    def pre_parse(metatask,metatask_list)
     
       id_table = {}
       var_length = -1
 
-      metatask.children.each {|ch|
-        pre_parse(ch) if ch.name == "metatask"
+      # Set the metatask list for all task children of this metatask
+      metatask.children.each{|e|
+        if e.name == "task"
+          e["metatasks"]=metatask_list
+        end
       }
 
+      # Parse each metatask child of this metatask, adding the metatask child to the metatask list
+      metatask.children.each {|ch|
+        if ch.name == "metatask"
+          if ch["name"].nil?
+            ch["name"]="metatask#{@metatask_seq}"
+            @metatask_seq+=1
+          end
+          metatask_name=ch["name"]
+          metatask_list += ",#{metatask_name}"
+          @metatask_throttles[metatask_name]=ch["throttle"].nil? ? 999999 : ch["throttle"].to_i
+          pre_parse(ch,metatask_list)
+        end
+      }
+
+      # Build a table of var tags and their values for this metatask
       metatask.children.each {|e|
         if e.name == "var"  
           var_values = e.content.split
@@ -561,17 +599,22 @@ module WorkflowMgr
       }
       raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
 
+      # Expand the metatasks, adding metatask list only to the expanded tasks from nested metatasks
       task_list = Array.new
       0.upto(var_length - 1) {|index|
         metatask.children.each{|e|
           if e.name == "task"
             task_copy = e.copy(true)
+            if task_copy["metatasks"].nil?
+              task_copy["metatasks"]=metatask_list
+            end
             traverse(task_copy,id_table, index)
             task_list << task_copy
           end
         }
       }
 
+       # Insert the expanded tasks into the XML tree
       (task_list.length - 1).downto(0) {|x| metatask.next = task_list[x]}
 
     end

@@ -287,6 +287,13 @@
         </attribute>
       </optional>
 
+      <!-- Optional task metatasks attribute -->
+      <optional>
+        <attribute name="metatasks">
+          <data type="string"/>
+        </attribute>
+      </optional>
+
       <!-- Order of task property tags does not matter -->
       <interleave>
 
