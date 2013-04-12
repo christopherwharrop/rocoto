@@ -529,9 +529,10 @@ module WorkflowMgr
             tasks=@workflowdoc.find("//task[contains(@metatasks,'#{metatask}')]")
             tasks.each { |task| tasknames << task["name"] if task["metatasks"]=~/^([^,]+,)*#{metatask}(,[^,]+)*$/ }
 
-            # Insert an "and" element after the metataskdep element
-            andnode=LibXML::XML::Node.new("and")
-            metataskdep.next=andnode
+            # Insert a "some" element after the metataskdep element
+            somenode=LibXML::XML::Node.new("some")
+            somenode["threshold"] = metataskdep["threshold"].nil? ? "1.0" : metataskdep["threshold"]
+            metataskdep.next=somenode
 
             # Add taskdep elements as children to the and element
             tasknames.each do |task|
@@ -539,7 +540,7 @@ module WorkflowMgr
               taskdepnode["task"]=task
               taskdepnode["cycle_offset"]=metataskdep["cycle_offset"] unless metataskdep["cycle_offset"].nil?
               taskdepnode["state"]=metataskdep["state"] unless metataskdep["state"].nil?
-              andnode << taskdepnode
+              somenode << taskdepnode
             end
 
           }

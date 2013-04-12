@@ -228,6 +228,11 @@
             </choice>
           </attribute>
         </optional>
+        <optional>
+          <attribute name="threshold">
+            <data type="float"><param name="minInclusive">0.0</param><param name="maxInclusive">1.0</param></data>
+          </attribute>
+        </optional>
         <empty/>
       </element>
       <element name="datadep">
