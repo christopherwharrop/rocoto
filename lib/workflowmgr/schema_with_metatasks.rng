@@ -207,6 +207,29 @@
         </optional>
         <empty/>
       </element>
+      <element name="metataskdep">
+        <attribute name="metatask">
+          <data type="string"/>          
+        </attribute>
+        <optional>
+          <attribute name="cycle_offset">
+            <ref name="time"/>
+          </attribute>
+        </optional>
+        <optional>
+          <attribute name="state">
+            <choice>
+	      <value>SUCCEEDED</value>
+              <value>DEAD</value>
+	      <value>Succeeded</value>
+              <value>Dead</value>
+	      <value>succeeded</value>
+              <value>dead</value>
+            </choice>
+          </attribute>
+        </optional>
+        <empty/>
+      </element>
       <element name="datadep">
         <optional>
           <attribute name="age">

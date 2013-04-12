@@ -60,6 +60,9 @@ module WorkflowMgr
       # Expand metatasks
       expand_metatasks
 
+      # Expand metatask dependencies
+      expand_metataskdeps
+
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
       validate_without_metatasks(@workflowdoc)
@@ -497,6 +500,55 @@ module WorkflowMgr
 
       # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
       doc.validate_relaxng(relaxng_schema)
+
+    end
+
+    ##########################################
+    #
+    # expand_metataskdeps
+    #
+    ##########################################
+    def expand_metataskdeps
+
+      @workflowdoc.root.each_element {|ch|
+        if ch.name == "task"
+          # Find the metataskdep nodes
+          metataskdeps=ch.find('.//metataskdep')
+
+          # Replace each of them with the equivalient <and><taskdep/><taskdep/>...</and> expression
+          metataskelements=[]
+          metataskdeps.each { |metataskdep|
+
+            metataskelements << metataskdep
+
+            # Get the name of the metatask
+            metatask=metataskdep["metatask"]
+
+            # Find all names of tasks descended from the metatask
+            tasknames=[]
+            tasks=@workflowdoc.find("//task[contains(@metatasks,'#{metatask}')]")
+            tasks.each { |task| tasknames << task["name"] if task["metatasks"]=~/^([^,]+,)*#{metatask}(,[^,]+)*$/ }
+
+            # Insert an "and" element after the metataskdep element
+            andnode=LibXML::XML::Node.new("and")
+            metataskdep.next=andnode
+
+            # Add taskdep elements as children to the and element
+            tasknames.each do |task|
+              taskdepnode=LibXML::XML::Node.new("taskdep")
+              taskdepnode["task"]=task
+              taskdepnode["cycle_offset"]=metataskdep["cycle_offset"] unless metataskdep["cycle_offset"].nil?
+              taskdepnode["state"]=metataskdep["state"] unless metataskdep["state"].nil?
+              andnode << taskdepnode
+            end
+
+          }
+
+          # Remove the metataskdep elements
+          metataskelements.each { |metataskelement| metataskelement.remove! }
+
+        end
+      }    
 
     end
 
