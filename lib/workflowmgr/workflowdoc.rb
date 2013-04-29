@@ -286,6 +286,25 @@ module WorkflowMgr
               case attrkey
                 when :cores                      # <task> elements with integer values go here
                   attrval=e.content.to_i
+                when :nodes
+                  attrval=e.content
+                  taskattrs[:cores]=0
+                  attrval.split("+").each { |nodespec|
+                    resources=nodespec.split(":")
+                    nodes=resources.shift.to_i
+                    tpp=1
+                    ppn=0
+                    resources.each { |resource|
+                      case resource
+                        when /ppn=(\d+)/
+                          ppn=$1.to_i
+                        when /tpp=(\d+)/
+                          tpp=$1.to_i
+                      end
+                    }
+                    raise "ERROR: <node> tag must contain a :ppn setting for each nodespec" if ppn==0
+                    taskattrs[:cores]+=nodes * ppn * tpp
+                  }
                 else                             # <task> elements with compoundtimestring values
                   attrval=get_compound_time_string(e)
               end

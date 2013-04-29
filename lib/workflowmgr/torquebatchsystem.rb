@@ -83,7 +83,12 @@ module WorkflowMgr
           when :queue            
             cmd += " -q #{value}"
           when :cores
+            # Ignore this attribute if the "nodes" attribute is present
+            next unless task.attributes[:nodes].nil?
             cmd += " -l procs=#{value}"
+          when :nodes
+            # Remove any occurrences of :tpp=N
+            cmd += " -l nodes=#{value.gsub(/:tpp=\d+/,"")}"
           when :walltime
             cmd += " -l walltime=#{value}"
           when :memory

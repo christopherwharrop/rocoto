@@ -100,8 +100,44 @@ module WorkflowMgr
             cmd += " -P #{value}"
           when :queue            
             cmd += " -q #{value}"
-          when :cores
+          when :cores  
+            next unless task.attributes[:nodes].nil?          
             cmd += " -n #{value}"
+          when :nodes
+            # Get largest ppn*tpp to calculate ptile
+            # -n is ptile * number of nodes
+            ptile=0
+            nnodes=0
+            task_index=0
+            task_geometry="{"
+            value.split("+").each { |nodespec|
+              resources=nodespec.split(":")
+              nnodes+=resources.shift.to_i
+              ppn=0
+              tpp=1
+              resources.each { |resource|
+                case resource
+                  when /ppn=(\d+)/
+                    ppn=$1.to_i
+                  when /tpp=(\d+)/
+                    tpp=$1.to_i
+                end
+              }
+              procs=ppn*tpp
+              ptile=procs if procs > ptile
+              task_geometry += "(#{(task_index..task_index+ppn-1).to_a.join(",")})"
+              task_index += ppn
+            }
+            task_geometry+="}"
+
+            # Add the ptile to the command
+            cmd += " -R span[ptile=#{ptile}]"
+
+            # Add -n to the command
+            cmd += " -n #{nnodes*ptile}"
+ 
+            # Setenv the PBL_TASK_GEOMETRY to specify task layout
+            ENV["PBL_TASK_GEOMETRY"]=task_geometry
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"

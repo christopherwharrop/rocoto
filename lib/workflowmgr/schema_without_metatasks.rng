@@ -316,12 +316,15 @@
           </element>
         </optional>
 
-        <!-- Zero or one cores tag -->
-        <optional>
+        <!-- Either one cores tag or one nodes tag-->
+        <choice>
           <element name="cores">
-            <data type="positiveInteger"/>          
+            <data type="positiveInteger"/>
           </element>
-        </optional>
+          <element name="nodes">
+            <data type="string"/>
+          </element>
+        </choice>
 
         <!-- One walltime tag -->
         <element name="walltime">
