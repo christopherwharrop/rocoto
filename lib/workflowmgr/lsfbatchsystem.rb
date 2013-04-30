@@ -149,17 +149,17 @@ module WorkflowMgr
             amount=value[0..-2].to_i
             case units
               when /B|b/
-                amount=(amount / 1024.0).ceil
+                amount=(amount / 1024.0 / 1024.0).ceil
               when /K|k/
-                amount=amount.ceil
+                amount=(amount / 1024.0).ceil
               when /M|m/
-                amount=(amount * 1024.0).ceil
+                amount=amount.ceil
               when /G|g/
-                amount=(amount * 1024.0 * 1024.0).ceil
+                amount=(amount * 1024.0).ceil
               when /[0-9]/
-                amount=(value.to_i / 1024.0).ceil
+                amount=(value.to_i / 1024.0 / 1024.0).ceil
             end          
-            cmd += " -M #{amount}"
+            cmd += " -R rusage[mem=#{amount}]"
           when :stdout
             cmd += " -o #{value}"
           when :stderr
