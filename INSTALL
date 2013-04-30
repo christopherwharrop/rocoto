@@ -59,7 +59,7 @@ if [ "$good_ruby" == "false" ]; then
 fi
 
 # Replace ruby shebangs with path to ruby
-for file in `ls sbin`; do
+for file in `ls sbin | grep -v '\.sh'`; do
 
   # Skip files that are links
   if [ -L sbin/$file ]; then
@@ -80,7 +80,7 @@ for file in `ls sbin`; do
   chmod ugo+x sbin/$file
 
 done
-
+exit
 # Package versions
 LIBXML2_VERSION="2.9.0"
 LIBXML_RUBY_VERSION="2.4.0"
