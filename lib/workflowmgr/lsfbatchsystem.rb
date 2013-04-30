@@ -92,6 +92,9 @@ module WorkflowMgr
       # Initialize the submit command
       cmd="bsub"
 
+      # Get the Rocoto installation directory
+      rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
+
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
@@ -181,7 +184,7 @@ module WorkflowMgr
       }
 
       # Add the command to submit
-      cmd += " #{task.attributes[:command]}"
+      cmd += " #{rocotodir}/sbin/lsfwrapper.sh #{task.attributes[:command]}"
       WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",10)
 
       # Run the submit command
