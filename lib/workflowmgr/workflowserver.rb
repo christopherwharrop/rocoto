@@ -20,6 +20,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowio'
     require 'workflowmgr/bqsproxy'
     require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'
