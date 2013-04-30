@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x 
-
 # Get the directory where the WFM is installed
 wfmdir=`dirname $0`
 
@@ -12,7 +10,6 @@ $*
 error=$?
 
 # If we are using POE, call special exit script
-echo "LSF_PJL_TYPE=${LSF_PJL_TYPE}"
 if [ "${LSF_PJL_TYPE}" == "poe" ]; then
   export LSB_PJL_TASK_GEOMETRY="{(0)}"
   mpirun.lsf ${wfmdir}/lsfexit.sh ${error}
