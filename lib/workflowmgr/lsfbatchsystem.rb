@@ -137,7 +137,7 @@ module WorkflowMgr
             cmd += " -n #{nnodes*ptile}"
  
             # Setenv the PBL_TASK_GEOMETRY to specify task layout
-            ENV["PBL_TASK_GEOMETRY"]=task_geometry
+            ENV["LSB_PJL_TASK_GEOMETRY"]=task_geometry
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
