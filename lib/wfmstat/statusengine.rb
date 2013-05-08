@@ -506,11 +506,15 @@ module WFMStat
           end
         end
       end
-      if ntasks + 1 > @workflowdoc.taskthrottle
-        puts "  Task throttle violation (#{ntasks} of #{@workflowdoc.taskthrottle} tasks are already active)"
+      unless @workflowdoc.taskthrottle.nil?
+        if ntasks + 1 > @workflowdoc.taskthrottle
+          puts "  Task throttle violation (#{ntasks} of #{@workflowdoc.taskthrottle} tasks are already active)"
+        end
       end
-      if ncores + task.attributes[:cores] > @workflowdoc.corethrottle
-        puts "  Core throttle violation (#{ncores} of #{@workflowdoc.corethrottle} cores are already in use)"
+      unless @workflowdoc.corethrottle.nil?
+        if ncores + task.attributes[:cores] > @workflowdoc.corethrottle
+          puts "  Core throttle violation (#{ncores} of #{@workflowdoc.corethrottle} cores are already in use)"
+        end
       end
 
     end
