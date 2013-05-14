@@ -80,7 +80,7 @@ for file in `ls sbin | grep -v '\.sh'`; do
   chmod ugo+x sbin/$file
 
 done
-exit
+
 # Package versions
 LIBXML2_VERSION="2.9.0"
 LIBXML_RUBY_VERSION="2.4.0"
