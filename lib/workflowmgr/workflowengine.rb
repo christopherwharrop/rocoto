@@ -1141,18 +1141,20 @@ module WorkflowMgr
           end
 
           # Reject this task if a metatask instance throttle will be exceeded
-          violation=false
-          catch (:violation) do
-            task.attributes[:metatasks].split(",").each do |metatask|
-              @active_metatask_instance_count[metatask]=0 if @active_metatask_instance_count[metatask].nil?
-              if @active_metatask_instance_count[metatask] + 1 > @metatask_throttles[metatask]
-                violation=true
-                @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum metatask throttle of #{@metatask_throttles[metatask]} will be violated.",2)
-                throw :violation
+          unless task.attributes[:metatasks].nil?
+            violation=false
+            catch (:violation) do
+              task.attributes[:metatasks].split(",").each do |metatask|
+                @active_metatask_instance_count[metatask]=0 if @active_metatask_instance_count[metatask].nil?
+                if @active_metatask_instance_count[metatask] + 1 > @metatask_throttles[metatask]
+                  violation=true
+                  @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum metatask throttle of #{@metatask_throttles[metatask]} will be violated.",2)
+                  throw :violation
+                end
               end
             end
+            next if violation 
           end
-          next if violation 
 
           # Reject this task if retries has been exceeded
           # This code block should never execute since state should be DEAD if retries is exceeded and we should never get here for a DEAD job
@@ -1167,10 +1169,11 @@ module WorkflowMgr
           @active_core_count += task.attributes[:cores]
           @active_task_count += 1
           @active_task_instance_count[task.attributes[:name]] += 1
-          task.attributes[:metatasks].split(",").each do |metatask|
-            @active_metatask_instance_count[metatask]+=1
+          unless task.attributes[:metatasks].nil?
+            task.attributes[:metatasks].split(",").each do |metatask|
+              @active_metatask_instance_count[metatask]+=1
+            end
           end
-
 
           # If we are resubmitting the job, initialize the new job to the old job
           if @config.BatchQueueServer
