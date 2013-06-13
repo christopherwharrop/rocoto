@@ -879,11 +879,13 @@ module WorkflowMgr
             else
               @active_task_instance_count[job.task]+=1
             end
-            @tasks[job.task].attributes[:metatasks].split(",").each do |metatask| 
-              if @active_metatask_instance_count[metatask].nil?
-                @active_metatask_instance_count[metatask]=1
-              else
-                @active_metatask_instance_count[metatask]+=1
+            unless @tasks[job.task].attributes[:metatasks].nil?
+              @tasks[job.task].attributes[:metatasks].split(",").each do |metatask| 
+                if @active_metatask_instance_count[metatask].nil?
+                  @active_metatask_instance_count[metatask]=1
+                else
+                  @active_metatask_instance_count[metatask]+=1
+                end
               end
             end
             triesmsg=""
