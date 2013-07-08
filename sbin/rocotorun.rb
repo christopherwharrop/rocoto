@@ -17,7 +17,10 @@ require 'libxml'
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
 # We want to control what output goes where and when
-LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
+#LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
+LibXML::XML::Error.set_handler do |error|
+  raise error
+end
 
 # Create workflow engine and run it
 workflowengine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowOption.new(ARGV))
