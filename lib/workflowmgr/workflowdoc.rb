@@ -40,9 +40,18 @@ module WorkflowMgr
       # because we must ensure all external entities (i.e. files) 
       # are referenced inside the @workflowIOServer process and 
       # not locally.
+      #
+      # Update:  The above doesn't work properly because the resulting
+      # XML string does not include the linefeeds in the XML header.
+      # That, in turn, causes XML validation error messages to contain
+      # an incorrect line number.  Therefore, existence of the top-level
+      # document is checked, and then the file is parsed (including possible
+      # external entities on other filesystems) outside the IO server
+      # process.
       begin
         if @workflowIOServer.exists?(workflowdoc)
-          xmlstring=@workflowIOServer.parseXMLFile(workflowdoc)
+#          xmlstring=@workflowIOServer.parseXMLFile(workflowdoc)
+          @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT).parse
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
@@ -53,7 +62,7 @@ module WorkflowMgr
       end
 
       # Parse the workflow xml string, set option to replace entities
-      @workflowdoc=LibXML::XML::Parser.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT).parse
+ #     @workflowdoc=LibXML::XML::Parser.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT).parse
 
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
