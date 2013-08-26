@@ -69,9 +69,12 @@ module WorkflowMgr
 
       # Expand metatasks
       expand_metatasks
-
+      
       # Expand metatask dependencies
       expand_metataskdeps
+
+      # Insert dependencies for auto-serialized metatasks
+      expand_serialdeps
 
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
@@ -585,6 +588,77 @@ module WorkflowMgr
 
     ##########################################
     #
+    # expand_serialdeps
+    #
+    ##########################################
+    def expand_serialdeps
+
+      @workflowdoc.root.each_element {|ch|
+        if ch.name=="task"
+
+          depnode=nil
+          andnode=nil
+
+          # Add dependencies for each serial metatask that this task is a member of
+          ch["metatasks"].split(",").each_with_index do |m,idx|
+
+            # Ignore parallel metatasks
+            if @metatask_modes[m]=="serial"
+
+              # Find the seqnum for the tasks on which this task depends
+              seqdeps=ch["seqnum"].split(",")[0..idx].collect {|s| s.to_i }
+              seqdeps[idx] -= 1
+
+              # Unless this is the first task in the sequence, it has a dependency for this metatask
+              if seqdeps[idx] > 0
+
+                # Find the <dependency> node for this task, or make one if it isn't found
+                if depnode.nil?
+                  depnode=ch.find_first("./dependency")
+                  if depnode.nil?
+                    depnode=LibXML::XML::Node.new("dependency")
+                    andnode=LibXML::XML::Node.new("and")
+                    depnode << andnode
+                    ch << depnode
+                  else
+                    depchild=depnode.find_first("./*[1]")
+                    depchildren=depnode.children
+                    if depchild.name=="and"
+                      andnode=depchild
+                    else
+                      andnode=LibXML::XML::Node.new("and")
+                      depnode << andnode
+                      depchildren.each { |c| andnode << c }
+                    end
+                  end
+                end
+
+                # Find all tasks that match the sequence number for dependent tasks
+                tasks=@workflowdoc.find("//task[starts-with(@seqnum,'#{seqdeps.join(",")},')]").to_a
+                tasks = tasks | @workflowdoc.find("//task[@seqnum='#{seqdeps.join(",")}']").to_a
+
+                # Insert a task dep for each dependent task
+                tasks.each do |t|
+                  taskdepnode=LibXML::XML::Node.new("taskdep")
+                  taskdepnode["task"]=t["name"]
+                  andnode << taskdepnode
+                end
+
+              end
+
+            end
+
+          end
+
+        end
+
+      }
+
+    end
+
+
+    ##########################################
+    #
     # expand_metatasks
     #
     ##########################################
@@ -594,6 +668,7 @@ module WorkflowMgr
       metatasks=[]
       @metatask_seq=1
       @metatask_throttles={}
+      @metatask_modes={}
       @workflowdoc.root.each_element {|ch|
         if ch.name == "metatask"
           if ch["name"].nil?
@@ -602,6 +677,7 @@ module WorkflowMgr
           end
           metatask_name=ch["name"]
           @metatask_throttles[metatask_name]=ch["throttle"].nil? ? 999999 : ch["throttle"].to_i
+          @metatask_modes[metatask_name]=ch["mode"].nil? ? "parallel" : ch["mode"]
 	  pre_parse(ch,metatask_name)
           metatasks << ch
         end
@@ -650,9 +726,22 @@ module WorkflowMgr
       var_length = -1
 
       # Set the metatask list for all task children of this metatask
+      seqnum=0
+      if metatask["seqnum"].nil?
+        metatask["seqnum"]=""
+      else
+        metatask["seqnum"]+=","
+      end
       metatask.children.each{|e|
         if e.name == "task"
           e["metatasks"]=metatask_list
+          e["seqnum"]=metatask["seqnum"]
+          seqnum+=1
+          e["seqnum"]+="#{seqnum}"
+        elsif e.name == "metatask"
+          e["seqnum"]=metatask["seqnum"]
+          seqnum+=1
+          e["seqnum"]+="#{seqnum}"
         end
       }
 
@@ -664,9 +753,9 @@ module WorkflowMgr
             @metatask_seq+=1
           end
           metatask_name=ch["name"]
-          metatask_list += ",#{metatask_name}"
           @metatask_throttles[metatask_name]=ch["throttle"].nil? ? 999999 : ch["throttle"].to_i
-          pre_parse(ch,metatask_list)
+          @metatask_modes[metatask_name]=ch["mode"].nil? ? "parallel" : ch["mode"]
+          pre_parse(ch,metatask_list + ",#{metatask_name}")
         end
       }
 
@@ -683,6 +772,8 @@ module WorkflowMgr
 
       # Expand the metatasks, adding metatask list only to the expanded tasks from nested metatasks
       task_list = Array.new
+      depth=metatask_list.split(",").size
+      maxseq=0
       0.upto(var_length - 1) {|index|
         metatask.children.each{|e|
           if e.name == "task"
@@ -690,7 +781,14 @@ module WorkflowMgr
             if task_copy["metatasks"].nil?
               task_copy["metatasks"]=metatask_list
             end
-            traverse(task_copy,id_table, index)
+            traverse(task_copy,id_table, index)        
+            seqarr=task_copy["seqnum"].split(",")
+            if index==0
+              maxseq=seqarr[depth-1].to_i
+            else
+              seqarr[depth-1] = seqarr[depth-1].to_i + maxseq * index
+              task_copy["seqnum"] = seqarr.join(",")
+            end
             task_list << task_copy
           end
         }

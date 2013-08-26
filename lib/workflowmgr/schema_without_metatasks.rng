@@ -294,6 +294,13 @@
         </attribute>
       </optional>
 
+      <!-- Optional task seqnum attribute -->
+      <optional>
+        <attribute name="seqnum">
+          <data type="string"/>
+        </attribute>
+      </optional>
+
       <!-- Order of task property tags does not matter -->
       <interleave>
 

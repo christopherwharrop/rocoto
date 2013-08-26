@@ -447,6 +447,12 @@
         </attribute>
       </optional>
 
+      <!-- Optional metatask mode attribute -->
+      <optional>
+        <attribute name="mode">
+          <data type="string"/>          
+        </attribute>
+      </optional>
 
       <!-- Optional metatask throttle attribute -->
       <optional>
