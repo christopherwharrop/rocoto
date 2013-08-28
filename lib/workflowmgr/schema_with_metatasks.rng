@@ -131,25 +131,25 @@
 
   <define name="nonNegativeTime">
     <choice>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
     </choice>
   </define>
 
   <define name="time">
     <choice>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
     </choice>
   </define>
 
 
   <define name="YYYYMMDDHHMM">
-    <data type="string"><param name="pattern">\d\d\d\d\d\d\d\d\d\d\d\d</param></data>
+    <data type="string"><param name="pattern">\s*\d\d\d\d\d\d\d\d\d\d\d\d\s*</param></data>
   </define>
 
   <define name="cronField">

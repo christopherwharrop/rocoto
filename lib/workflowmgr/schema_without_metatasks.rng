@@ -128,24 +128,24 @@
 
   <define name="nonNegativeTime">
     <choice>
-      <data type="string"><param name="pattern">\d+</param></data>
-      <data type="string"><param name="pattern">\d+:\d+</param></data>
-      <data type="string"><param name="pattern">\d+:\d+:\d+</param></data>
-      <data type="string"><param name="pattern">\d+:\d+:\d+:\d+</param></data>
+      <data type="string"><param name="pattern">\s*\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*\d+:\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*\d+:\d+:\d+:\d+\s*</param></data>
     </choice>
   </define>
 
   <define name="time">
     <choice>
-      <data type="string"><param name="pattern">-?\d+</param></data>
-      <data type="string"><param name="pattern">-?\d+:\d+</param></data>
-      <data type="string"><param name="pattern">-?\d+:\d+:\d+</param></data>
-      <data type="string"><param name="pattern">-?\d+:\d+:\d+:\d+</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+:\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+:\d+:\d+:\d+\s*</param></data>
     </choice>
   </define>
 
   <define name="YYYYMMDDHHMM">
-    <data type="string"><param name="pattern">\d\d\d\d\d\d\d\d\d\d\d\d</param></data>
+    <data type="string"><param name="pattern">\s*\d\d\d\d\d\d\d\d\d\d\d\d\s*</param></data>
   </define>
 
   <define name="cronField">
