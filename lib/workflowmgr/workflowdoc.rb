@@ -596,6 +596,9 @@ module WorkflowMgr
       @workflowdoc.root.each_element {|ch|
         if ch.name=="task"
 
+          # Skip tasks that are not members of a metatask
+          next if ch["metatasks"].nil?
+
           depnode=nil
           andnode=nil
 
