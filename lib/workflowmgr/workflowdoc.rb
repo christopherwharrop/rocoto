@@ -57,7 +57,7 @@ module WorkflowMgr
         end
       rescue WorkflowIOHang     
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",2)
         raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
 

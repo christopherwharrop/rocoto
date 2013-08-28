@@ -140,7 +140,7 @@ module WorkflowMgr
 
       # Add the command to submit
       cmd += " #{task.attributes[:command].split.first}"
-      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using '#{cmd}'",10)
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using '#{cmd}'",4)
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
@@ -204,7 +204,7 @@ private
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
       

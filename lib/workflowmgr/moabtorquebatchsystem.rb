@@ -119,7 +119,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      @torque.delete
+      @torque.delete(jobid)
 
     end
 
@@ -155,7 +155,7 @@ private
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -243,7 +243,7 @@ private
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown        
       end 
 

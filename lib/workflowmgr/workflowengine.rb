@@ -64,11 +64,11 @@ module WorkflowMgr
         @locked=false
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -123,11 +123,11 @@ module WorkflowMgr
         submit_new_jobs
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case 
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -305,7 +305,7 @@ module WorkflowMgr
           if jobid.nil?
             # Delete the job from the database since it failed to submit.  It will be retried next time around.
             @dbServer.delete_jobs([job])
-            WorkflowMgr.stderr(output,0)
+            WorkflowMgr.stderr(output,1)
             @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
           else
             job.id=jobid
@@ -320,11 +320,11 @@ module WorkflowMgr
         puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case 
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -667,10 +667,10 @@ module WorkflowMgr
 
             # Log the fact that the submission status could not be retrieved
             msg="Submission status of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} could not be retrieved because the server process at #{uri} died"
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             @logServer.log(job.cycle,msg)
             msg="Submission of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} probably, but not necessarily, failed.  It will be resubmitted"
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             @logServer.log(job.cycle,msg)
 
             # Delete the job from the database since it failed to submit.  It will be retried immediately.
@@ -730,7 +730,7 @@ module WorkflowMgr
           # Catch exceptions for bqservers that have died unexpectedly
           rescue DRb::DRbConnError
             msg="WARNING! BQS Server process at #{uri} died unexpectedly.  Submission status of some jobs may have been lost"
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             WorkflowMgr.log(msg)
             @dbServer.delete_bqservers([uri])
           end
@@ -900,7 +900,7 @@ module WorkflowMgr
           @logServer.log(job.cycle,statemsg+runmsg+unknownmsg+triesmsg)
 
           if job.failed? || job.expired?
-            WorkflowMgr.stderr("Cycle #{job.cycle.strftime("%Y%m%d%H%M")}, #{statemsg+runmsg+unknownmsg+triesmsg}",1)
+            WorkflowMgr.stderr("Cycle #{job.cycle.strftime("%Y%m%d%H%M")}, #{statemsg+runmsg+unknownmsg+triesmsg}",3)
           end
 
         end # @active_jobs.each
@@ -1240,7 +1240,7 @@ module WorkflowMgr
           rescue WorkflowIOHang
             msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"            
             @logServer.log(cycletime,msg)
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             WorkflowMgr.log(msg)
           end
 
