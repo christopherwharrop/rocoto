@@ -107,29 +107,30 @@ module WorkflowMgr
       end
 
       # Build the -v string to pass environment to the job
-      vars = "" 
       unless task.envars.empty?
+        vars = "" 
         task.envars.each { |name,env|
           vars += ",#{name}"
           vars += "=\"#{env}\"" unless env.nil?
         }
+
         # Remove the leading comma
         vars.slice!(0)
-      end
 
-      # Choose -v or -V depending on how long -v is
-      save_env={}
-      if vars.length > 2048
-        # Save a copy of the current environment so we can restore it later
-        save_env.merge(ENV) 
+        # Choose -v or -V depending on how long -v is
+        save_env={}
+        if vars.length > 2048
+          # Save a copy of the current environment so we can restore it later
+          save_env.merge(ENV) 
 
-        # Set all envars in the current environment so they get passed with -V
-        task.envars.each { |name,env|
-          ENV[name]=env
-        }
-        cmd += " -V"
-      else
-        cmd += " -v #{vars}"
+          # Set all envars in the current environment so they get passed with -V
+          task.envars.each { |name,env|
+            ENV[name]=env
+          }
+          cmd += " -V"
+        else
+          cmd += " -v #{vars}"
+        end
       end
 
       # Build the -F string to pass job script arguments to batch script
