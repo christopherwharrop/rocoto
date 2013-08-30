@@ -107,6 +107,7 @@ module WorkflowMgr
       end
 
       # Build the -v string to pass environment to the job
+      save_env={}
       unless task.envars.empty?
         vars = "" 
         task.envars.each { |name,env|
@@ -118,7 +119,6 @@ module WorkflowMgr
         vars.slice!(0)
 
         # Choose -v or -V depending on how long -v is
-        save_env={}
         if vars.length > 2048
           # Save a copy of the current environment so we can restore it later
           save_env.merge(ENV) 
