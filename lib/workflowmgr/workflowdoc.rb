@@ -561,14 +561,17 @@ module WorkflowMgr
             tasks=@workflowdoc.find("//task[contains(@metatasks,'#{metatask}')]")
             tasks.each { |task| tasknames << task["name"] if task["metatasks"]=~/^([^,]+,)*#{metatask}(,[^,]+)*$/ }
 
+            tasks=nil
+            GC.start
+
             # Insert a "some" element after the metataskdep element
-            somenode=LibXML::XML::Node.new("some")
+            somenode=@workflowdoc.import(LibXML::XML::Node.new("some"))
             somenode["threshold"] = metataskdep["threshold"].nil? ? "1.0" : metataskdep["threshold"]
             metataskdep.next=somenode
 
             # Add taskdep elements as children to the and element
             tasknames.each do |task|
-              taskdepnode=LibXML::XML::Node.new("taskdep")
+              taskdepnode=@workflowdoc.import(LibXML::XML::Node.new("taskdep"))
               taskdepnode["task"]=task
               taskdepnode["cycle_offset"]=metataskdep["cycle_offset"] unless metataskdep["cycle_offset"].nil?
               taskdepnode["state"]=metataskdep["state"] unless metataskdep["state"].nil?
@@ -576,6 +579,9 @@ module WorkflowMgr
             end
 
           }
+
+          metataskdeps=nil
+          GC.start
 
           # Remove the metataskdep elements
           metataskelements.each { |metataskelement| metataskelement.remove! }
@@ -601,6 +607,7 @@ module WorkflowMgr
 
           depnode=nil
           andnode=nil
+          GC.start
 
           # Add dependencies for each serial metatask that this task is a member of
           ch["metatasks"].split(",").each_with_index do |m,idx|
@@ -619,21 +626,23 @@ module WorkflowMgr
                 if depnode.nil?
                   depnode=ch.find_first("./dependency")
                   if depnode.nil?
-                    depnode=LibXML::XML::Node.new("dependency")
-                    andnode=LibXML::XML::Node.new("and")
-                    depnode << andnode
+                    depnode=@workflowdoc.import(LibXML::XML::Node.new("dependency"))
+                    andnode=@workflowdoc.import(LibXML::XML::Node.new("and"))
                     ch << depnode
+                    depnode << andnode
                   else
                     depchild=depnode.find_first("./*[1]")
-                    depchildren=depnode.children
                     if depchild.name=="and"
                       andnode=depchild
                     else
-                      andnode=LibXML::XML::Node.new("and")
+                      depchildren=depnode.children
+                      andnode=@workflowdoc.import(LibXML::XML::Node.new("and"))
                       depnode << andnode
                       depchildren.each { |c| andnode << c }
                     end
                   end
+                  depnode=nil
+                  GC.start
                 end
 
                 # Find all tasks that match the sequence number for dependent tasks
@@ -642,10 +651,13 @@ module WorkflowMgr
 
                 # Insert a task dep for each dependent task
                 tasks.each do |t|
-                  taskdepnode=LibXML::XML::Node.new("taskdep")
+                  taskdepnode=@workflowdoc.import(LibXML::XML::Node.new("taskdep"))
                   taskdepnode["task"]=t["name"]
                   andnode << taskdepnode
                 end
+
+                tasks=nil
+                GC.start
 
               end
 
