@@ -67,14 +67,22 @@ module WorkflowMgr
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
 
-      # Expand metatasks
-      expand_metatasks
-      
-      # Expand metatask dependencies
-      expand_metataskdeps
+      begin
 
-      # Insert dependencies for auto-serialized metatasks
-      expand_serialdeps
+        GC.disable
+
+        # Expand metatasks
+        expand_metatasks
+      
+        # Expand metatask dependencies
+        expand_metataskdeps
+  
+        # Insert dependencies for auto-serialized metatasks
+        expand_serialdeps
+
+      ensure
+        GC.enable
+      end
 
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
