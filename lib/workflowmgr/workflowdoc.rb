@@ -579,15 +579,15 @@ module WorkflowMgr
             # Insert a "some" element after the metataskdep element
             somenode=LibXML::XML::Node.new("some")
             threshold=metataskdep.attributes["threshold"].nil? ? "1.0" : metataskdep.attributes["threshold"]
-            XML::Attr.new( somenode, "threshold", threshold )
+            LibXML::XML::Attr.new( somenode, "threshold", threshold )
             metataskdep.next=somenode
 
             # Add taskdep elements as children to the and element
             tasknames.each do |task|
               taskdepnode=LibXML::XML::Node.new("taskdep")
-              XML::Attr.new(taskdepnode, "task", task )
-              XML::Attr.new(taskdepnode, "cycle_offset", metataskdep.attributes["cycle_offset"]) unless metataskdep["cycle_offset"].nil?
-              XML::Attr.new(taskdepnode, "state", metataskdep.attributes["state"]) unless metataskdep.attributes["state"].nil?
+              LibXML::XML::Attr.new(taskdepnode, "task", task )
+              LibXML::XML::Attr.new(taskdepnode, "cycle_offset", metataskdep.attributes["cycle_offset"]) unless metataskdep["cycle_offset"].nil?
+              LibXML::XML::Attr.new(taskdepnode, "state", metataskdep.attributes["state"]) unless metataskdep.attributes["state"].nil?
               somenode << taskdepnode
             end
 
@@ -669,15 +669,15 @@ module WorkflowMgr
                   andnode << taskdepnode
                 end
 
-              end
+               end  # if seqdeps[idx]
 
-            end
+            end  # if @metatask_modes
 
-          end
+          end  # metatasklist.split.each
 
-        end
+        end  # if ch.name
 
-      }
+      }  # workflowdoc.root.each
 
     end
 
