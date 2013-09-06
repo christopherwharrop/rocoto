@@ -559,6 +559,11 @@ module WorkflowMgr
 
       @workflowdoc.root.each_element {|ch|
         if ch.name == "task"
+
+          # Initiate garbage collection to avoid seg faults resulting from LibXML
+          # memory management issues/bugs
+          GC.start
+
           # Find the metataskdep nodes
           metataskdeps=ch.find('.//metataskdep')
 
@@ -617,6 +622,9 @@ module WorkflowMgr
 
           depnode=nil
           andnode=nil
+
+          # Initiate garbage collection to avoid seg faults resulting from LibXML
+          # memory management issues/bugs
           GC.start
 
           # Add dependencies for each serial metatask that this task is a member of
