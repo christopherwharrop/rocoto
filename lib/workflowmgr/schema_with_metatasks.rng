@@ -131,25 +131,25 @@
 
   <define name="nonNegativeTime">
     <choice>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
     </choice>
   </define>
 
   <define name="time">
     <choice>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
-      <data type="string"><param name="pattern">-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+:(\d+|(#[^#\s]+#))+\s*</param></data>
     </choice>
   </define>
 
 
   <define name="YYYYMMDDHHMM">
-    <data type="string"><param name="pattern">\d\d\d\d\d\d\d\d\d\d\d\d</param></data>
+    <data type="string"><param name="pattern">\s*\d\d\d\d\d\d\d\d\d\d\d\d\s*</param></data>
   </define>
 
   <define name="cronField">
@@ -203,6 +203,34 @@
 	      <value>succeeded</value>
               <value>dead</value>
             </choice>
+          </attribute>
+        </optional>
+        <empty/>
+      </element>
+      <element name="metataskdep">
+        <attribute name="metatask">
+          <data type="string"/>          
+        </attribute>
+        <optional>
+          <attribute name="cycle_offset">
+            <ref name="time"/>
+          </attribute>
+        </optional>
+        <optional>
+          <attribute name="state">
+            <choice>
+	      <value>SUCCEEDED</value>
+              <value>DEAD</value>
+	      <value>Succeeded</value>
+              <value>Dead</value>
+	      <value>succeeded</value>
+              <value>dead</value>
+            </choice>
+          </attribute>
+        </optional>
+        <optional>
+          <attribute name="threshold">
+            <data type="float"><param name="minInclusive">0.0</param><param name="maxInclusive">1.0</param></data>
           </attribute>
         </optional>
         <empty/>
@@ -277,6 +305,13 @@
         </attribute>
       </optional>
 
+      <!-- Optional task throttle attribute -->
+      <optional>
+        <attribute name="throttle">
+          <data type="positiveInteger"/>          
+        </attribute>
+      </optional>
+
       <!-- Optional task cycledefs attribute -->
       <optional>
         <attribute name="cycledefs">
@@ -306,12 +341,15 @@
           </element>
         </optional>
 
-        <!-- Zero or one cores tag -->
-        <optional>
+        <!-- Either one cores tag or one nodes tag-->
+        <choice>
           <element name="cores">
             <data type="positiveInteger"/>          
           </element>
-        </optional>
+          <element name="nodes">
+            <data type="string"/>          
+          </element>
+        </choice>
 
         <!-- One walltime tag -->
         <element name="walltime">
@@ -401,6 +439,28 @@
 
   <define name="metatask">
     <element name="metatask">
+
+      <!-- Optional metatask name attribute -->
+      <optional>
+        <attribute name="name">
+          <data type="string"/>          
+        </attribute>
+      </optional>
+
+      <!-- Optional metatask mode attribute -->
+      <optional>
+        <attribute name="mode">
+          <data type="string"/>          
+        </attribute>
+      </optional>
+
+      <!-- Optional metatask throttle attribute -->
+      <optional>
+        <attribute name="throttle">
+          <data type="positiveInteger"/>
+        </attribute>
+      </optional>
+
       <!-- Metatasks must have at least one var tag -->
       <oneOrMore>
         <element name="var">

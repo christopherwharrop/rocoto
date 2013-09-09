@@ -18,6 +18,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'    
@@ -39,26 +40,37 @@ module WorkflowMgr
       # because we must ensure all external entities (i.e. files) 
       # are referenced inside the @workflowIOServer process and 
       # not locally.
+      #
+      # Update:  The above doesn't work properly because the resulting
+      # XML string does not include the linefeeds in the XML header.
+      # That, in turn, causes XML validation error messages to contain
+      # an incorrect line number.  Therefore, existence of the top-level
+      # document is checked, and then the file is parsed (including possible
+      # external entities on other filesystems) outside the IO server
+      # process.
       begin
         if @workflowIOServer.exists?(workflowdoc)
-          xmlstring=@workflowIOServer.parseXMLFile(workflowdoc)
+          @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT).parse
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
       rescue WorkflowIOHang     
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",2)
         raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
-
-      # Parse the workflow xml string, set option to replace entities
-      @workflowdoc=LibXML::XML::Parser.string(xmlstring,:options => LibXML::XML::Parser::Options::NOENT).parse
 
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
 
       # Expand metatasks
       expand_metatasks
+      
+      # Expand metatask dependencies
+      expand_metataskdeps
+  
+      # Insert dependencies for auto-serialized metatasks
+      expand_serialdeps
 
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
@@ -74,10 +86,15 @@ module WorkflowMgr
     ##########################################
     def realtime?
 
-      if @workflowdoc.root["realtime"].nil?
-        return nil
+      if @workflowdoc.root.attributes?
+        realtime=@workflowdoc.root.attributes["realtime"]
+        if realtime.nil?
+          return nil
+        else
+          return !(realtime.downcase =~ /^t|true$/).nil?
+        end
       else
-        return !(@workflowdoc.root["realtime"].downcase =~ /^t|true$/).nil?
+        return nil
       end
 
     end
@@ -90,10 +107,15 @@ module WorkflowMgr
     ##########################################
     def cyclelifespan
 
-      if @workflowdoc.root["cyclelifespan"].nil?
-        return nil
+      if @workflowdoc.root.attributes?
+        cls=@workflowdoc.root.attributes["cyclelifespan"]
+        if cls.nil?
+          return nil
+        else
+          return WorkflowMgr.ddhhmmss_to_seconds(cls)
+        end
       else
-        return WorkflowMgr.ddhhmmss_to_seconds(@workflowdoc.root["cyclelifespan"])
+        return nil
       end
 
     end
@@ -106,10 +128,15 @@ module WorkflowMgr
     ##########################################
     def cyclethrottle
 
-      if @workflowdoc.root["cyclethrottle"].nil?
-        return nil
+      if @workflowdoc.root.attributes?
+        ct=@workflowdoc.root.attributes["cyclethrottle"]
+        if ct.nil?
+          return nil
+        else
+          return ct.to_i
+        end
       else
-        return @workflowdoc.root["cyclethrottle"].to_i
+        return nil
       end
 
     end
@@ -122,11 +149,28 @@ module WorkflowMgr
     ##########################################
     def taskthrottle
 
-      if @workflowdoc.root["taskthrottle"].nil?
-        return nil
+      if @workflowdoc.root.attributes?
+        tt=@workflowdoc.root.attributes["taskthrottle"]
+        if tt.nil?
+          return nil
+        else
+          return tt.to_i
+        end
       else
-        return @workflowdoc.root["taskthrottle"].to_i
+        return nil
       end
+
+    end
+
+
+    ##########################################
+    #
+    # metatask_throttles
+    # 
+    ##########################################
+    def metatask_throttles
+
+      return @metatask_throttles
 
     end
 
@@ -138,10 +182,15 @@ module WorkflowMgr
     ##########################################
     def corethrottle
 
-      if @workflowdoc.root["corethrottle"].nil?
-        return nil
+      if @workflowdoc.root.attributes?
+        ct=@workflowdoc.root["corethrottle"]
+        if ct.nil?
+          return nil
+        else
+          return ct.to_i
+        end
       else
-        return @workflowdoc.root["corethrottle"].to_i
+        return nil
       end
 
     end
@@ -154,10 +203,15 @@ module WorkflowMgr
     ##########################################
     def scheduler
 
-      if @workflowdoc.root["scheduler"].nil?
-        return nil
+      if @workflowdoc.root.attributes?
+        sched=@workflowdoc.root["scheduler"]
+        if sched.nil?
+          return nil
+        else
+          return WorkflowMgr::const_get("#{sched.upcase}BatchSystem").new
+        end
       else
-        return WorkflowMgr::const_get("#{@workflowdoc.root["scheduler"].upcase}BatchSystem").new
+        return nil
       end
 
     end
@@ -169,14 +223,12 @@ module WorkflowMgr
     # 
     ##########################################
     def log
- 
-      lognode=@workflowdoc.find('/workflow/log').first
+
+      lognodes=@workflowdoc.find('/workflow/log')
+      lognode=lognodes.first
       path=get_compound_time_string(lognode)
       verbosity=lognode.attributes['verbosity']
       verbosity=verbosity.to_i unless verbosity.nil?
-
-      logsearch=nil
-      GC.start
 
       return WorkflowLog.new(path,verbosity,@workflowIOServer)
 
@@ -205,9 +257,6 @@ module WorkflowMgr
         end
       }
 
-      cyclenodes=nil
-      GC.start
-
       return cycles
 
     end
@@ -233,7 +282,7 @@ module WorkflowMgr
         tasknode.attributes.each do |attr|
           attrkey=attr.name.to_sym
           case attrkey
-            when :maxtries              # Attributes with integer values go here
+            when :maxtries,:throttle    # Attributes with integer values go here
               attrval=attr.value.to_i
             else                        # Attributes with string values
               attrval=attr.value
@@ -271,6 +320,25 @@ module WorkflowMgr
               case attrkey
                 when :cores                      # <task> elements with integer values go here
                   attrval=e.content.to_i
+                when :nodes
+                  attrval=e.content
+                  taskattrs[:cores]=0
+                  attrval.split("+").each { |nodespec|
+                    resources=nodespec.split(":")
+                    nodes=resources.shift.to_i
+                    tpp=1
+                    ppn=0
+                    resources.each { |resource|
+                      case resource
+                        when /ppn=(\d+)/
+                          ppn=$1.to_i
+                        when /tpp=(\d+)/
+                          tpp=$1.to_i
+                      end
+                    }
+                    raise "ERROR: <node> tag must contain a :ppn setting for each nodespec" if ppn==0
+                    taskattrs[:cores]+=nodes * ppn * tpp
+                  }
                 else                             # <task> elements with compoundtimestring values
                   attrval=get_compound_time_string(e)
               end
@@ -282,9 +350,6 @@ module WorkflowMgr
         tasks[task.attributes[:name]]=task
 
       end
-
-      tasknodes=nil
-      GC.start
 
       return tasks
 
@@ -301,11 +366,8 @@ module WorkflowMgr
       offsets=[]
       taskdepnodes=@workflowdoc.find('//taskdep')
       taskdepnodes.each do |taskdepnode|
-        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode["cycle_offset"]) unless taskdepnode["cycle_offset"].nil?
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
       end
-
-      taskdepnodes=nil
-      GC.start
 
       return offsets.uniq  
 
@@ -373,7 +435,7 @@ module WorkflowMgr
          when "xor"
            return Dependency_XOR_Operator.new(children.collect { |child|  get_dependency_node(child) })
          when "some"
-           return Dependency_SOME_Operator.new(children.collect { |child|  get_dependency_node(child) }, element["threshold"].to_f)
+           return Dependency_SOME_Operator.new(children.collect { |child|  get_dependency_node(child) }, element.attributes["threshold"].to_f)
          when "taskdep"
            return get_taskdep(element)
          when "datadep"
@@ -488,6 +550,145 @@ module WorkflowMgr
 
     end
 
+    ##########################################
+    #
+    # expand_metataskdeps
+    #
+    ##########################################
+    def expand_metataskdeps
+
+      @workflowdoc.root.each_element {|ch|
+        if ch.name == "task"
+
+          # Initiate garbage collection to avoid seg faults resulting from LibXML
+          # memory management issues/bugs
+          GC.start
+
+          # Find the metataskdep nodes
+          metataskdeps=ch.find('.//metataskdep')
+
+          # Replace each of them with the equivalient <and><taskdep/><taskdep/>...</and> expression
+          metataskelements=[]
+          metataskdeps.each { |metataskdep|
+
+            metataskelements << metataskdep
+
+            # Get the name of the metatask
+            metatask=metataskdep.attributes["metatask"]
+
+            # Find all names of tasks descended from the metatask
+            tasknames=[]
+            tasks=@workflowdoc.find("//task[contains(@metatasks,'#{metatask}')]")
+            tasks.each { |task| tasknames << task.attributes["name"] if task.attributes["metatasks"]=~/^([^,]+,)*#{metatask}(,[^,]+)*$/ }
+
+            # Insert a "some" element after the metataskdep element
+            somenode=LibXML::XML::Node.new("some")
+            threshold=metataskdep.attributes["threshold"].nil? ? "1.0" : metataskdep.attributes["threshold"]
+            LibXML::XML::Attr.new( somenode, "threshold", threshold )
+            metataskdep.next=somenode
+
+            # Add taskdep elements as children to the and element
+            tasknames.each do |task|
+              taskdepnode=LibXML::XML::Node.new("taskdep")
+              LibXML::XML::Attr.new(taskdepnode, "task", task )
+              LibXML::XML::Attr.new(taskdepnode, "cycle_offset", metataskdep.attributes["cycle_offset"]) unless metataskdep["cycle_offset"].nil?
+              LibXML::XML::Attr.new(taskdepnode, "state", metataskdep.attributes["state"]) unless metataskdep.attributes["state"].nil?
+              somenode << taskdepnode
+            end
+
+          }
+
+          # Remove the metataskdep elements
+          metataskelements.each { |metataskelement| metataskelement.remove! }
+
+        end
+      }    
+
+    end
+
+
+    ##########################################
+    #
+    # expand_serialdeps
+    #
+    ##########################################
+    def expand_serialdeps
+
+      @workflowdoc.root.each_element {|ch|
+        if ch.name=="task"
+
+          # Skip tasks that are not members of a metatask
+          next if ch.attributes["metatasks"].nil?
+
+          depnode=nil
+          andnode=nil
+
+          # Initiate garbage collection to avoid seg faults resulting from LibXML
+          # memory management issues/bugs
+          GC.start
+
+          # Add dependencies for each serial metatask that this task is a member of
+          metatasklist=ch.attributes["metatasks"]
+          metatasklist.split(",").each_with_index do |m,idx|
+
+            # Ignore parallel metatasks
+            if @metatask_modes[m]=="serial"
+
+              # Find the seqnum for the tasks on which this task depends
+              seqdeplist=ch.attributes["seqnum"]
+              seqdeps=seqdeplist.split(",")[0..idx].collect {|s| s.to_i }
+              seqdeps[idx] -= 1
+
+              # Unless this is the first task in the sequence, it has a dependency for this metatask
+              if seqdeps[idx] > 0
+
+                # Find the <dependency> node for this task, or make one if it isn't found
+                if depnode.nil?
+                  depnode=ch.find_first("./dependency")
+                  if depnode.nil?
+                    depnode=LibXML::XML::Node.new("dependency")
+                    andnode=LibXML::XML::Node.new("and")
+                    ch << depnode
+                    depnode << andnode
+                  else
+                    depchild=depnode.find_first("./*[1]")
+                    if depchild.name=="and"
+                      andnode=depchild
+                    else
+                      depchildren=depnode.children
+                      andnode=LibXML::XML::Node.new("and")
+                      depnode << andnode
+                      depchildren.each do |c| 
+                        andnode << c
+                      end
+                    end
+                  end
+                end
+
+                # Find all tasks that match the sequence number for dependent tasks
+                tasks1=@workflowdoc.find("//task[starts-with(@seqnum,'#{seqdeps.join(",")},')]")
+                tasks2=@workflowdoc.find("//task[@seqnum='#{seqdeps.join(",")}']")
+                tasks = tasks1.to_a | tasks2.to_a
+
+                # Insert a task dep for each dependent task
+                tasks.each do |t|
+                  taskdepnode=LibXML::XML::Node.new("taskdep")
+                  LibXML::XML::Attr.new( taskdepnode, "task", t.attributes["name"] )
+                  andnode << taskdepnode
+                end
+
+               end  # if seqdeps[idx]
+
+            end  # if @metatask_modes
+
+          end  # metatasklist.split.each
+
+        end  # if ch.name
+
+      }  # workflowdoc.root.each
+
+    end
+
 
     ##########################################
     #
@@ -498,9 +699,19 @@ module WorkflowMgr
 
       # Parse and expand metatasks
       metatasks=[]
+      @metatask_seq=1
+      @metatask_throttles={}
+      @metatask_modes={}
       @workflowdoc.root.each_element {|ch|
         if ch.name == "metatask"
-	  pre_parse(ch)
+          if ch.attributes["name"].nil?
+            LibXML::XML::Attr.new( ch, "name", "metatask#{@metatask_seq}")
+            @metatask_seq+=1
+          end
+          metatask_name=ch.attributes["name"]
+          @metatask_throttles[metatask_name]=ch.attributes["throttle"].nil? ? 999999 : ch.attributes["throttle"].to_i
+          @metatask_modes[metatask_name]=ch.attributes["mode"].nil? ? "parallel" : ch.attributes["mode"]
+	  pre_parse(ch,metatask_name)
           metatasks << ch
         end
       }
@@ -542,36 +753,81 @@ module WorkflowMgr
     # pre-parse
     #
     #####################################################
-    def pre_parse(metatask)
+    def pre_parse(metatask,metatask_list)
     
       id_table = {}
       var_length = -1
 
-      metatask.children.each {|ch|
-        pre_parse(ch) if ch.name == "metatask"
+      # Set the metatask list for all task children of this metatask
+      seqnum=0
+      if metatask.attributes["seqnum"].nil?
+        LibXML::XML::Attr.new( metatask, "seqnum", "")
+      else
+        metatask.attributes["seqnum"]+=","
+      end
+      metatask.children.each{|e|
+        if e.name == "task"
+          e.attributes["metatasks"]=metatask_list
+          e.attributes["seqnum"]=metatask["seqnum"]
+          seqnum+=1
+          e.attributes["seqnum"]+="#{seqnum}"
+        elsif e.name == "metatask"
+          e.attributes["seqnum"]=metatask.attributes["seqnum"]
+          seqnum+=1
+          e.attributes["seqnum"]+="#{seqnum}"
+        end
       }
 
+      # Parse each metatask child of this metatask, adding the metatask child to the metatask list
+      metatask.children.each {|ch|
+        if ch.name == "metatask"
+          if ch.attributes["name"].nil?
+            LibXML::XML::Attr.new(ch, "name", "metatask#{@metatask_seq}")
+            @metatask_seq+=1
+          end
+          metatask_name=ch.attributes["name"]
+          @metatask_throttles[metatask_name]=ch.attributes["throttle"].nil? ? 999999 : ch.attributes["throttle"].to_i
+          @metatask_modes[metatask_name]=ch.attributes["mode"].nil? ? "parallel" : ch.attributes["mode"]
+          pre_parse(ch,metatask_list + ",#{metatask_name}")
+        end
+      }
+
+      # Build a table of var tags and their values for this metatask
       metatask.children.each {|e|
         if e.name == "var"  
           var_values = e.content.split
           var_length = var_values.length if var_length == -1
           raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
-          id_table[e["name"]] = var_values
+          id_table[e.attributes["name"]] = var_values
         end
       }
       raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
 
+      # Expand the metatasks, adding metatask list only to the expanded tasks from nested metatasks
       task_list = Array.new
+      depth=metatask_list.split(",").size
+      maxseq=0
       0.upto(var_length - 1) {|index|
         metatask.children.each{|e|
           if e.name == "task"
             task_copy = e.copy(true)
-            traverse(task_copy,id_table, index)
+            if task_copy.attributes["metatasks"].nil?
+              LibXML::XML::Attr.new(task_copy, "metatasks", metatask_list)
+            end
+            traverse(task_copy,id_table, index)        
+            seqarr=task_copy.attributes["seqnum"].split(",")
+            if index==0
+              maxseq=seqarr[depth-1].to_i
+            else
+              seqarr[depth-1] = seqarr[depth-1].to_i + maxseq * index
+              task_copy.attributes["seqnum"] = seqarr.join(",")
+            end
             task_list << task_copy
           end
         }
       }
 
+       # Insert the expanded tasks into the XML tree
       (task_list.length - 1).downto(0) {|x| metatask.next = task_list[x]}
 
     end

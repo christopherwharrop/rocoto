@@ -20,6 +20,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowio'
     require 'workflowmgr/bqsproxy'
     require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'
@@ -97,7 +98,7 @@ module WorkflowMgr
         localhostinfo=Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0]
         msg="WARNING! #{File.basename($0)} process #{Process.pid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) timed out while calling #{@server.class}.#{name}"
         WorkflowMgr.log(msg)
-        WorkflowMgr.stderr(msg,1)
+        WorkflowMgr.stderr(msg,2)
         raise
       end
 

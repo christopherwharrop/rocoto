@@ -6,7 +6,7 @@
  <!ENTITY HJET "-l partition=hjet">
  <!ENTITY RESERVATION_ID "fimens">
  <!ENTITY RESERVATION "<cyclestr>-l flags=ADVRES:&RESERVATION_ID;-@Hz</cyclestr>">
- <!ENTITY CUSTOM "<native></native>">
+ <!ENTITY CUSTOM "<native>&HJET;</native>">
 
 <!--
  <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/rocoto-devel/test">
@@ -16,18 +16,25 @@
  <!ENTITY SCHED "moabtorque">
 -->
 
- <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
+ <!ENTITY TEST_HOME "/home/harrop/rocoto-1.1/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
- <!ENTITY QUEUE "thfip">
- <!ENTITY SCHED "sge">
+ <!ENTITY QUEUE "batch">
+ <!ENTITY SCHED "moabtorque">
 
 <!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
+ <!ENTITY QUEUE "thfip">
+ <!ENTITY SCHED "sge">
+-->
+<!--
+ <!ENTITY TEST_HOME "/home/harrop/rocoto-1.1/test">
+ <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
+ <!ENTITY PROJECT "jetmgmt">
  <!ENTITY QUEUE "batch">
- <!ENTITY SCHED "moabtorque">
+ <!ENTITY SCHED "lsf">
 -->
 <!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
@@ -53,7 +60,7 @@
 
 ]>
 
-<workflow realtime="t" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="10" corethrottle="5" taskthrottle="5">
+<workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="5" corethrottle="10" taskthrottle="10">
 
   <log verbosity="10">&TEST_HOME;/log/workflow/<cyclestr>workflow_@Y@m@d@H@M.log</cyclestr></log>
 <!--
@@ -62,11 +69,11 @@
 -->
   <cycledef group="group1">201301010000 201401010000 01:00:00</cycledef>
 
-  <metatask>
+  <metatask name="foo" mode="serial">
 
-    <var name="x">1 2 3 4 5 6 7 8 9 10</var>
+    <var name="foo">1 2 3 4 5 6 7 8 9 10</var>
 
-    <task name="test#x#" maxtries="3" cycledefs="group1">
+    <task name="foo_#foo#" maxtries="3" cycledefs="group1">
 
 
       &CUSTOM;
@@ -79,13 +86,16 @@
 
       <cores>1</cores>
 
-      <walltime>01:10</walltime>
+<!--
+      <nodes> 1:ppn=1+1:ppn=4:tpp=2 </nodes>
+-->
+      <walltime> 01:10 </walltime>
 
-      <join>&TEST_HOME;/log/test/test_#x#.join</join>
+      <join>&TEST_HOME;/log/test/test_#foo#.join</join>
 
       <memory>512M</memory>
 
-      <jobname>test#x#</jobname>
+      <jobname>test#foo#</jobname>
 <!--
       <deadline><cyclestr offset="00:30:00">@Y@m@d@H@M@S</cyclestr></deadline>
 -->

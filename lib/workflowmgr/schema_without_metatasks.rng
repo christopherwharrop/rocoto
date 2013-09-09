@@ -128,24 +128,24 @@
 
   <define name="nonNegativeTime">
     <choice>
-      <data type="string"><param name="pattern">\d+</param></data>
-      <data type="string"><param name="pattern">\d+:\d+</param></data>
-      <data type="string"><param name="pattern">\d+:\d+:\d+</param></data>
-      <data type="string"><param name="pattern">\d+:\d+:\d+:\d+</param></data>
+      <data type="string"><param name="pattern">\s*\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*\d+:\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*\d+:\d+:\d+:\d+\s*</param></data>
     </choice>
   </define>
 
   <define name="time">
     <choice>
-      <data type="string"><param name="pattern">-?\d+</param></data>
-      <data type="string"><param name="pattern">-?\d+:\d+</param></data>
-      <data type="string"><param name="pattern">-?\d+:\d+:\d+</param></data>
-      <data type="string"><param name="pattern">-?\d+:\d+:\d+:\d+</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+:\d+:\d+\s*</param></data>
+      <data type="string"><param name="pattern">\s*-?\d+:\d+:\d+:\d+\s*</param></data>
     </choice>
   </define>
 
   <define name="YYYYMMDDHHMM">
-    <data type="string"><param name="pattern">\d\d\d\d\d\d\d\d\d\d\d\d</param></data>
+    <data type="string"><param name="pattern">\s*\d\d\d\d\d\d\d\d\d\d\d\d\s*</param></data>
   </define>
 
   <define name="cronField">
@@ -273,9 +273,30 @@
         </attribute>
       </optional>
 
+      <!-- Optional task throttle attribute -->
+      <optional>
+	<attribute name="throttle">
+          <data type="positiveInteger"/>
+        </attribute>
+      </optional>
+
       <!-- Optional task cycledefs attribute -->
       <optional>
         <attribute name="cycledefs">
+          <data type="string"/>
+        </attribute>
+      </optional>
+
+      <!-- Optional task metatasks attribute -->
+      <optional>
+        <attribute name="metatasks">
+          <data type="string"/>
+        </attribute>
+      </optional>
+
+      <!-- Optional task seqnum attribute -->
+      <optional>
+        <attribute name="seqnum">
           <data type="string"/>
         </attribute>
       </optional>
@@ -302,12 +323,15 @@
           </element>
         </optional>
 
-        <!-- Zero or one cores tag -->
-        <optional>
+        <!-- Either one cores tag or one nodes tag-->
+        <choice>
           <element name="cores">
-            <data type="positiveInteger"/>          
+            <data type="positiveInteger"/>
           </element>
-        </optional>
+          <element name="nodes">
+            <data type="string"/>
+          </element>
+        </choice>
 
         <!-- One walltime tag -->
         <element name="walltime">

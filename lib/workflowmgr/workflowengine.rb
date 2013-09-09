@@ -64,11 +64,11 @@ module WorkflowMgr
         @locked=false
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -123,11 +123,11 @@ module WorkflowMgr
         submit_new_jobs
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case 
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -305,7 +305,7 @@ module WorkflowMgr
           if jobid.nil?
             # Delete the job from the database since it failed to submit.  It will be retried next time around.
             @dbServer.delete_jobs([job])
-            WorkflowMgr.stderr(output,0)
+            WorkflowMgr.stderr(output,1)
             @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
           else
             job.id=jobid
@@ -320,11 +320,11 @@ module WorkflowMgr
         puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case 
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -382,6 +382,9 @@ module WorkflowMgr
 
       # Get the taskthrottle
       @taskthrottle=workflowdoc.taskthrottle || 9999999
+
+      # Get the metatask taskthrottles
+      @metatask_throttles=workflowdoc.metatask_throttles
 
       # Get the scheduler
       @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
@@ -664,10 +667,10 @@ module WorkflowMgr
 
             # Log the fact that the submission status could not be retrieved
             msg="Submission status of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} could not be retrieved because the server process at #{uri} died"
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             @logServer.log(job.cycle,msg)
             msg="Submission of #{job.task} for cycle #{job.cycle.strftime("%Y%m%d%H%M")} probably, but not necessarily, failed.  It will be resubmitted"
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             @logServer.log(job.cycle,msg)
 
             # Delete the job from the database since it failed to submit.  It will be retried immediately.
@@ -727,7 +730,7 @@ module WorkflowMgr
           # Catch exceptions for bqservers that have died unexpectedly
           rescue DRb::DRbConnError
             msg="WARNING! BQS Server process at #{uri} died unexpectedly.  Submission status of some jobs may have been lost"
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             WorkflowMgr.log(msg)
             @dbServer.delete_bqservers([uri])
           end
@@ -757,6 +760,8 @@ module WorkflowMgr
         # Initialize counters for keeping track of active workflow parameters
         @active_task_count=0
         @active_core_count=0
+        @active_task_instance_count={}
+        @active_metatask_instance_count={}
 
         # Loop over all active jobs and retrieve and update their current status
         @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].nil? ? 999999999 : @tasks[job.task].seq] }.each do |job|
@@ -869,6 +874,20 @@ module WorkflowMgr
             # Update counters for jobs that are still QUEUED, RUNNING, or UNKNOWN
             @active_task_count+=1
             @active_core_count+=job.cores
+            if @active_task_instance_count[job.task].nil?
+              @active_task_instance_count[job.task]=1
+            else
+              @active_task_instance_count[job.task]+=1
+            end
+            unless @tasks[job.task].attributes[:metatasks].nil?
+              @tasks[job.task].attributes[:metatasks].split(",").each do |metatask| 
+                if @active_metatask_instance_count[metatask].nil?
+                  @active_metatask_instance_count[metatask]=1
+                else
+                  @active_metatask_instance_count[metatask]+=1
+                end
+              end
+            end
             triesmsg=""
           end
 
@@ -880,8 +899,10 @@ module WorkflowMgr
           # Log the state of the job
           @logServer.log(job.cycle,statemsg+runmsg+unknownmsg+triesmsg)
 
-          if job.failed? || job.expired?
+          if job.dead? || job.expired?
             WorkflowMgr.stderr("Cycle #{job.cycle.strftime("%Y%m%d%H%M")}, #{statemsg+runmsg+unknownmsg+triesmsg}",1)
+          elsif job.failed?
+            WorkflowMgr.stderr("Cycle #{job.cycle.strftime("%Y%m%d%H%M")}, #{statemsg+runmsg+unknownmsg+triesmsg}",3)
           end
 
         end # @active_jobs.each
@@ -1112,8 +1133,31 @@ module WorkflowMgr
 
           # Reject this task if task throttle will be exceeded
           if @active_task_count + 1 > @taskthrottle
-            @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum task throttle of #{@taskthrottle} will be violated.",2)
+            @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum global task throttle of #{@taskthrottle} will be violated.",2)
             next
+          end
+
+          # Reject this task if task instance throttle has been exceeded
+          @active_task_instance_count[task.attributes[:name]]=0 if @active_task_instance_count[task.attributes[:name]].nil?
+          if @active_task_instance_count[task.attributes[:name]] + 1 > task.attributes[:throttle]
+            @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum task instance throttle of #{task.attributes[:throttle]} will be violated.",2)
+            next
+          end
+
+          # Reject this task if a metatask instance throttle will be exceeded
+          unless task.attributes[:metatasks].nil?
+            violation=false
+            catch (:violation) do
+              task.attributes[:metatasks].split(",").each do |metatask|
+                @active_metatask_instance_count[metatask]=0 if @active_metatask_instance_count[metatask].nil?
+                if @active_metatask_instance_count[metatask] + 1 > @metatask_throttles[metatask]
+                  violation=true
+                  @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum metatask throttle of #{@metatask_throttles[metatask]} will be violated.",2)
+                  throw :violation
+                end
+              end
+            end
+            next if violation 
           end
 
           # Reject this task if retries has been exceeded
@@ -1128,6 +1172,12 @@ module WorkflowMgr
           # Increment counters
           @active_core_count += task.attributes[:cores]
           @active_task_count += 1
+          @active_task_instance_count[task.attributes[:name]] += 1
+          unless task.attributes[:metatasks].nil?
+            task.attributes[:metatasks].split(",").each do |metatask|
+              @active_metatask_instance_count[metatask]+=1
+            end
+          end
 
           # If we are resubmitting the job, initialize the new job to the old job
           if @config.BatchQueueServer
@@ -1192,7 +1242,7 @@ module WorkflowMgr
           rescue WorkflowIOHang
             msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"            
             @logServer.log(cycletime,msg)
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             WorkflowMgr.log(msg)
           end
 

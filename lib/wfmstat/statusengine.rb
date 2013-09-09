@@ -58,11 +58,11 @@ module WFMStat
         @dbServer=WorkflowMgr::DBProxy.new(@config,@options)
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -98,11 +98,11 @@ module WFMStat
         end
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
@@ -196,8 +196,8 @@ module WFMStat
         print_violations(task,cycle,dependencies) if job.nil?
 
       rescue => crash
-        WorkflowMgr.stderr(crash.message)
-        WorkflowMgr.stderr(crash.backtrace.join("\n"))
+        WorkflowMgr.stderr(crash.message,1)
+        WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
         WorkflowMgr.log(crash.message)
         WorkflowMgr.log(crash.backtrace.join("\n"))
         Process.exit(1)
@@ -506,11 +506,15 @@ module WFMStat
           end
         end
       end
-      if ntasks + 1 > @workflowdoc.taskthrottle
-        puts "  Task throttle violation (#{ntasks} of #{@workflowdoc.taskthrottle} tasks are already active)"
+      unless @workflowdoc.taskthrottle.nil?
+        if ntasks + 1 > @workflowdoc.taskthrottle
+          puts "  Task throttle violation (#{ntasks} of #{@workflowdoc.taskthrottle} tasks are already active)"
+        end
       end
-      if ncores + task.attributes[:cores] > @workflowdoc.corethrottle
-        puts "  Core throttle violation (#{ncores} of #{@workflowdoc.corethrottle} cores are already in use)"
+      unless @workflowdoc.corethrottle.nil?
+        if ncores + task.attributes[:cores] > @workflowdoc.corethrottle
+          puts "  Core throttle violation (#{ncores} of #{@workflowdoc.corethrottle} cores are already in use)"
+        end
       end
 
     end

@@ -47,11 +47,11 @@ module WorkflowMgr
             end
           rescue DRb::DRbConnError
             msg="WARNING! Can't shut down rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} because it is not running."
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             WorkflowMgr.log(msg)
           rescue Timeout::Error
             msg="WARNING! Can't shut down rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} because it is unresponsive and is probably wedged."
-            WorkflowMgr.stderr(msg,1)
+            WorkflowMgr.stderr(msg,2)
             WorkflowMgr.log(msg)
           end
         end
@@ -115,7 +115,7 @@ module WorkflowMgr
               if retries < 1
                 retries+=1
                 msg="WARNING! The rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} died.  Attempting to restart and try again."
-                WorkflowMgr.stderr(msg,1)
+                WorkflowMgr.stderr(msg,2)
                 WorkflowMgr.log(msg)
                 workflowIO_init
                 retry
@@ -223,11 +223,11 @@ module WorkflowMgr
         end
 
         # Raise fatal exception
-        WorkflowMgr.stderr(crash.message)
+        WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"))
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end

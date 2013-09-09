@@ -83,7 +83,12 @@ module WorkflowMgr
           when :queue            
             cmd += " -q #{value}"
           when :cores
+            # Ignore this attribute if the "nodes" attribute is present
+            next unless task.attributes[:nodes].nil?
             cmd += " -l procs=#{value}"
+          when :nodes
+            # Remove any occurrences of :tpp=N
+            cmd += " -l nodes=#{value.gsub(/:tpp=\d+/,"")}"
           when :walltime
             cmd += " -l walltime=#{value}"
           when :memory
@@ -97,25 +102,38 @@ module WorkflowMgr
           when :jobname
             cmd += " -N #{value}"
           when :native
-	    cmd += " #{value}"
+            cmd += " #{value}"
         end
       end
 
-      # Add environment vars
+      # Build the -v string to pass environment to the job
+      save_env={}
       unless task.envars.empty?
         vars = "" 
         task.envars.each { |name,env|
-          if vars.empty?
-            vars += " -v #{name}"
-          else
-            vars += ",#{name}"
-          end
+          vars += ",#{name}"
           vars += "=\"#{env}\"" unless env.nil?
         }
-        cmd += "#{vars}"
+
+        # Remove the leading comma
+        vars.slice!(0)
+
+        # Choose -v or -V depending on how long -v is
+        if vars.length > 2048
+          # Save a copy of the current environment so we can restore it later
+          save_env.merge(ENV) 
+
+          # Set all envars in the current environment so they get passed with -V
+          task.envars.each { |name,env|
+            ENV[name]=env
+          }
+          cmd += " -V"
+        else
+          cmd += " -v #{vars}"
+        end
       end
 
-      # Add the command arguments
+      # Build the -F string to pass job script arguments to batch script
       cmdargs=task.attributes[:command].split[1..-1].join(" ")
       unless cmdargs.empty?
         cmd += " -F \"#{cmdargs}\""
@@ -123,16 +141,22 @@ module WorkflowMgr
 
       # Add the command to submit
       cmd += " #{task.attributes[:command].split.first}"
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",10)
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using '#{cmd}'",4)
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
+
+      # Restore the environment if necessary
+      unless save_env.empty?
+        ENV.clear
+        save_env.each { |k,v| ENV[k]=v }
+      end
 
       # Parse the output of the submit command
       if output=~/^(\d+)(\.[a-zA-Z0-9-]+)*$/
         return $1,output
       else
- 	return nil,output
+        return nil,output
       end
 
     end
@@ -181,7 +205,7 @@ private
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
       

@@ -59,7 +59,7 @@ if [ "$good_ruby" == "false" ]; then
 fi
 
 # Replace ruby shebangs with path to ruby
-for file in `ls sbin`; do
+for file in `ls sbin | grep -v '\.sh'`; do
 
   # Skip files that are links
   if [ -L sbin/$file ]; then
@@ -82,11 +82,11 @@ for file in `ls sbin`; do
 done
 
 # Package versions
-LIBXML2_VERSION="2.9.0"
-LIBXML_RUBY_VERSION="2.4.0"
+LIBXML2_VERSION="2.9.1"
+LIBXML_RUBY_VERSION="2.7.0"
 SYSTEMTIMER_VERSION="1.2.3"
-SQLITE3_VERSION="autoconf-3070701"
-SQLITE3_RUBY_VERSION="1.3.1"
+SQLITE3_VERSION="autoconf-3080002"
+SQLITE3_RUBY_VERSION="1.3.8"
 OPEN4_VERSION="1.3.0"
 
 # Set AIX_CFLAGS and AIX_LDFLAGS
@@ -107,6 +107,7 @@ echo "= INSTALLING Open4"
 echo "==========================================="
 cd ${LIB_DIR}
 gunzip -c ${TAR_DIR}/open4-${OPEN4_VERSION}.tar.gz | tar -xvf -
+rm -rf open4
 mv open4-${OPEN4_VERSION} open4
 
 # Install libxml2
@@ -123,7 +124,7 @@ if [ "$LIBXML2_VERSION" == "2.9.0" ]; then    # version 2.9.0 requires must be p
   patch -p1 -i ${TAR_DIR}/libxml2-2.9.0.patch
 fi
 export OBJECT_MODE=64
-./configure --prefix=${LIB_DIR}/libxml2 CFLAGS="$AIX_CFLAGS" LDFLAGS="$AIX_LDFLAGS"
+./configure --prefix=${LIB_DIR}/libxml2 CFLAGS="$AIX_CFLAGS" LDFLAGS="$AIX_LDFLAGS" --without-python
 make clean
 make
 rm -rf ${LIB_DIR}/libxml2

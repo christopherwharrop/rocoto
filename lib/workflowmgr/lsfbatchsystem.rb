@@ -92,6 +92,9 @@ module WorkflowMgr
       # Initialize the submit command
       cmd="bsub"
 
+      # Get the Rocoto installation directory
+      rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
+
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
@@ -100,8 +103,44 @@ module WorkflowMgr
             cmd += " -P #{value}"
           when :queue            
             cmd += " -q #{value}"
-          when :cores
+          when :cores  
+            next unless task.attributes[:nodes].nil?          
             cmd += " -n #{value}"
+          when :nodes
+            # Get largest ppn*tpp to calculate ptile
+            # -n is ptile * number of nodes
+            ptile=0
+            nnodes=0
+            task_index=0
+            task_geometry="{"
+            value.split("+").each { |nodespec|
+              resources=nodespec.split(":")
+              nnodes+=resources.shift.to_i
+              ppn=0
+              tpp=1
+              resources.each { |resource|
+                case resource
+                  when /ppn=(\d+)/
+                    ppn=$1.to_i
+                  when /tpp=(\d+)/
+                    tpp=$1.to_i
+                end
+              }
+              procs=ppn*tpp
+              ptile=procs if procs > ptile
+              task_geometry += "(#{(task_index..task_index+ppn-1).to_a.join(",")})"
+              task_index += ppn
+            }
+            task_geometry+="}"
+
+            # Add the ptile to the command
+            cmd += " -R span[ptile=#{ptile}]"
+
+            # Add -n to the command
+            cmd += " -n #{nnodes*ptile}"
+ 
+            # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
+            ENV["LSB_PJL_TASK_GEOMETRY"]=task_geometry
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
@@ -110,17 +149,17 @@ module WorkflowMgr
             amount=value[0..-2].to_i
             case units
               when /B|b/
-                amount=(amount / 1024.0).ceil
+                amount=(amount / 1024.0 / 1024.0).ceil
               when /K|k/
-                amount=amount.ceil
+                amount=(amount / 1024.0).ceil
               when /M|m/
-                amount=(amount * 1024.0).ceil
+                amount=amount.ceil
               when /G|g/
-                amount=(amount * 1024.0 * 1024.0).ceil
+                amount=(amount * 1024.0).ceil
               when /[0-9]/
-                amount=(value.to_i / 1024.0).ceil
+                amount=(value.to_i / 1024.0 / 1024.0).ceil
             end          
-            cmd += " -M #{amount}"
+            cmd += " -R rusage[mem=#{amount}]"
           when :stdout
             cmd += " -o #{value}"
           when :stderr
@@ -145,14 +184,14 @@ module WorkflowMgr
       }
 
       # Add the command to submit
-      cmd += " #{task.attributes[:command]}"
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",10)
+      cmd += " #{rocotodir}/sbin/lsfwrapper.sh #{task.attributes[:command]}"
+      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",4)
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
 
       # Parse the output of the submit command
-      if output=~/Job <(\d+)> is submitted to queue/
+      if output=~/Job <(\d+)> is submitted to (default )*queue/
         return $1,output
       else
  	return nil,output
@@ -200,7 +239,7 @@ private
 
       rescue Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -289,7 +328,7 @@ private
 
       rescue Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -303,10 +342,10 @@ private
         recordstring.gsub!(/\n\s{3,}/,'')
         recordstring.split(/\n+/).each { |event|
           case event.strip
-            when /^Job <(\d+)>, Job Name <([^>]+)>, User <([^>]+)>,/
+            when /^Job <(\d+)>,( Job Name <([^>]+)>,)* User <([^>]+)>,/
               record[:jobid]=$1
-              record[:jobname]=$2
-              record[:user]=$3
+              record[:jobname]=$3
+              record[:user]=$4
               record[:native_state]="DONE"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, to Queue <([^>]+)>,/
               timestamp=ParseDate.parsedate($1,true)

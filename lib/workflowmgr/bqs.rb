@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'thread'
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/sgebatchsystem'
+    require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'

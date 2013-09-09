@@ -66,7 +66,7 @@ module WorkflowMgr
       # or there was some sort of network problem.  The server process will 
       # shut itself down once it detects that this process has terminated.
       WorkflowMgr.log("Never received the URI and/or pid of #{File.basename(server)}.")
-      raise "Never the received URI and/or pid of #{File.basename(server)}."
+      raise "Never received the URI and/or pid of #{File.basename(server)}."
 
     end
 

@@ -137,7 +137,7 @@ module WorkflowMgr
               db.execute("DELETE FROM lock;")
               db.execute("INSERT INTO lock VALUES (#{Process.pid},'#{localhostinfo[3]}',#{Time.now.to_i});")
               msg="WARNING: Rocoto pid #{Process.pid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) stole stale lock from Rocoto pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]})."
-              WorkflowMgr.stderr(msg,1)
+              WorkflowMgr.stderr(msg,3)
               WorkflowMgr.log(msg)
             else
               msg="ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]}) since #{Time.at(lock[0][2])}."
@@ -151,7 +151,7 @@ module WorkflowMgr
         return true
 
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         WorkflowMgr.log("#{$!}")
         return false
       rescue SQLite3::BusyException
@@ -189,7 +189,7 @@ module WorkflowMgr
         end  # database transaction
 
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         WorkflowMgr.log("#{$!}")
         Process.exit(1)
       rescue SQLite3::BusyException

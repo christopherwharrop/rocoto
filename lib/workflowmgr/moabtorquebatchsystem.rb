@@ -107,82 +107,7 @@ module WorkflowMgr
     #####################################################
     def submit(task)
 
-      # Initialize the submit command
-      cmd="qsub"
-
-      # Add Torque batch system options translated from the generic options specification
-      task.attributes.each do |option,value|
-        case option
-          when :account
-            cmd += " -A #{value}"
-          when :queue            
-            cmd += " -q #{value}"
-          when :cores
-            cmd += " -l procs=#{value}"
-          when :walltime
-            cmd += " -l walltime=#{value}"
-          when :memory
-            cmd += " -l vmem=#{value}"
-          when :stdout
-            cmd += " -o #{value}"
-          when :stderr
-            cmd += " -e #{value}"
-          when :join
-            cmd += " -j oe -o #{value}"           
-          when :jobname
-            cmd += " -N #{value}"
-          when :native
-	    cmd += " #{value}"
-        end
-      end
-
-      # Add environment vars
-      save_env={}.merge(ENV)
-      vars = "" 
-      unless task.envars.empty?
-        task.envars.each { |name,env|
-          if vars.empty?
-            vars += " -v #{name}"
-          else
-            vars += ",#{name}"
-          end
-          vars += "=\"#{env}\"" unless env.nil?
-        }
-        if "#{cmd}#{vars}".length > 2048
-          task.envars.each { |name,env|
-            ENV[name]=env
-          }
-          cmd += " -V"          
-        else
-          cmd += "#{vars}"
-        end
-      end
-
-      # Add the command arguments
-      cmdargs=task.attributes[:command].split[1..-1].join(" ")
-      unless cmdargs.empty?
-        cmd += " -F \"#{cmdargs}\""
-      end
-
-      # Add the command to submit
-      cmd += " #{task.attributes[:command].split.first}"
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",10)
-
-      # Run the submit command
-      output=`#{cmd} 2>&1`.chomp
-
-      # Restore the environment if necessary
-      if "#{cmd}#{vars}".length > 2048
-        ENV.clear
-        save_env.each { |k,v| ENV[k]=v }
-      end
-
-      # Parse the output of the submit command
-      if output=~/^(\d+)(\.\w+)*$/
-        return $1,output
-      else
- 	return nil,output
-      end
+      @torque.submit(task)
 
     end
 
@@ -194,7 +119,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`qdel #{jobid}`      
+      @torque.delete(jobid)
 
     end
 
@@ -230,7 +155,7 @@ private
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -318,7 +243,7 @@ private
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",1)
+        WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown        
       end 
 
