@@ -282,8 +282,9 @@ module WorkflowMgr
                       "SUBMITTING",                        # state
                       "SUBMITTING",                        # native state
                       0,                                   # exit_status
-                      boot_job.nil? ? 0 : boot_job.tries+1,  # tries
-                      0                                    # nunknowns
+                      boot_job.nil? ? 0 : boot_job.tries+1,# tries
+                      0,                                   # nunknowns
+                      0.0                                  # duration
                      )
 
         # Add the new job to the database
@@ -805,13 +806,13 @@ module WorkflowMgr
           if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
             job.exit_status=status[:exit_status]
             if !status[:duration].nil?
-              duration=status[:duration]
+              job.duration=status[:duration]
             elsif status[:start_time]==Time.at(0).getgm
-              duration=0
+              job.duration=0
             else
-              duration=status[:end_time] - status[:start_time]
+              job.duration=status[:end_time] - status[:start_time]
             end
-            runmsg=", ran for #{duration} seconds, exit status=#{status[:exit_status]}"
+            runmsg=", ran for #{job.duration} seconds, exit status=#{status[:exit_status]}"
           else
             runmsg=""
           end
@@ -1194,7 +1195,8 @@ module WorkflowMgr
                              "SUBMITTING",             # native state
                              0,                        # exit_status
                              @active_jobs[task.attributes[:name]][cycletime].tries,    # tries
-                             0                         # nunknowns
+                             0,                        # nunknowns
+                             0.0                       # duration
                             )
 
           else
@@ -1206,7 +1208,8 @@ module WorkflowMgr
                              "SUBMITTING",             # native state
                              0,                        # exit_status
                              0,                        # tries
-                             0                         # nunknowns
+                             0,                        # nunknowns
+                             0.0                       # duration
                             )          
           end
  

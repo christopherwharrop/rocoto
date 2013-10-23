@@ -325,9 +325,10 @@ module WFMStat
       # Print the job status info
       if @options.taskfirst
 
-        format = "%20s    %12s    %24s    %16s    %16s    %6s\n"
+        format = "%20s    %12s    %24s    %16s    %16s    %6s    %10s\n"
         header = "TASK".rjust(20),"CYCLE".rjust(12),"JOBID".rjust(24),
-                 "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6)
+                 "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6),
+                 "DURATION".rjust(10)
         puts format % header
 
         # Sort the task list in sequence order
@@ -345,15 +346,15 @@ module WFMStat
           cyclelist=(dbcycles | xmlcycles).collect { |c| c.cycle }.sort
           cyclelist.each do |cycle|
             if jobs[task].nil?
-              jobdata=["-","-","-","-"]
+              jobdata=["-","-","-","-","-"]
             elsif jobs[task][cycle].nil?
-              jobdata=["-","-","-","-"]
+              jobdata=["-","-","-","-","-"]
             else
               case jobs[task][cycle].state
                 when "SUCCEEDED","DEAD","FAILED"
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries]
+                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries,jobs[task][cycle].duration]
                 else
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries]                 
+                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries,jobs[task][cycle].duration]                 
               end
             end
             puts format % ([task,cycle.strftime("%Y%m%d%H%M")] + jobdata)
@@ -362,9 +363,10 @@ module WFMStat
  
      else 
 
-        format = "%12s    %20s    %24s    %16s    %16s    %6s\n"
+        format = "%12s    %20s    %24s    %16s    %16s    %6s    %10s\n"
         header = "CYCLE".rjust(12),"TASK".rjust(20),"JOBID".rjust(24),
-                 "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6)
+                 "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6),
+                 "DURATION".rjust(10)
         puts format % header
 
         # Print status of jobs for each cycle
@@ -381,15 +383,15 @@ module WFMStat
           tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
           tasklist.each do |task|
             if jobs[task].nil?
-              jobdata=["-","-","-","-"]
+              jobdata=["-","-","-","-","-"]
             elsif jobs[task][cycle].nil?
-              jobdata=["-","-","-","-"]
+              jobdata=["-","-","-","-","-"]
             else
               case jobs[task][cycle].state
                 when "SUCCEEDED","DEAD","FAILED"
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries]
+                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries,jobs[task][cycle].duration]
                 else
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries]                 
+                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries,jobs[task][cycle].duration]
               end
             end
             puts format % ([cycle.strftime("%Y%m%d%H%M"),task] + jobdata)
@@ -458,6 +460,7 @@ module WFMStat
         puts "  Exit Status:  #{job.done? ? job.exit_status : "-"}"
         puts "  Tries:  #{job.tries}"
         puts "  Unknown count:  #{job.nunknowns}"
+        puts "  Duration:  #{job.duration}"
       end
 
     end

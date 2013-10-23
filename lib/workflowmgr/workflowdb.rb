@@ -70,6 +70,9 @@ module WorkflowMgr
           # Create all tables that are missing from the database 
           create_tables(db,tables.flatten)
 
+          # Update the tables if needed
+          update_tables(db)
+
         end  # database transaction
 
       rescue SQLite3::BusyException
@@ -78,7 +81,7 @@ module WorkflowMgr
 
       end  # begin
 
-    end  # initialize
+    end  # dbopen
 
 
     ##########################################
@@ -497,35 +500,38 @@ module WorkflowMgr
         # Start a transaction so that the database will be locked
         database.transaction do |db|
 
+          db.results_as_hash = true
           if cycles.nil?
 
             # Retrieve all jobs from the job table
-            dbjobs=db.execute("SELECT jobid,taskname,cycle,cores,state,native_state,exit_status,tries,nunknowns FROM jobs;")
+            dbjobs=db.execute("SELECT * FROM jobs;")
 
           else
 
             # Retrieve all jobs from the job table that match the cycles provided
             cycles.each do |cycle|
-              dbjobs+=db.execute("SELECT jobid,taskname,cycle,cores,state,native_state,exit_status,tries,nunknowns FROM jobs WHERE cycle = #{cycle.to_i};")
+              dbjobs+=db.execute("SELECT * FROM jobs WHERE cycle = #{cycle.to_i};")
             end
 
           end        
 
         end  # database transaction
 
+#jobid,taskname,cycle,cores,state,native_state,exit_status,tries,nunknowns,duration
         dbjobs.each do |job|
-          task=job[1]
-          cycle=Time.at(job[2]).getgm
+          task=job['taskname']
+          cycle=Time.at(job['cycle']).getgm
           jobs[task]={} if jobs[task].nil?
-          jobs[task][cycle] = Job.new(job[0],                   # jobid
+          jobs[task][cycle] = Job.new(job['jobid'],             # jobid
                                       task,                     # taskname
                                       cycle,                    # cycle
-                                      job[3].to_i,              # cores
-                                      job[4],                   # state
-                                      job[5],                   # native state
-                                      job[6].to_i,              # exit_status
-                                      job[7].to_i,              # tries
-                                      job[8].to_i               # nunknowns
+                                      job['cores'].to_i,        # cores
+                                      job['state'],             # state
+                                      job['native_state'],      # native state
+                                      job['exit_status'].to_i,  # exit_status
+                                      job['tries'].to_i,        # tries
+                                      job['nunknowns'].to_i,    # nunknowns
+                                      job['duration'].to_f      # duration
                                      )
 
         end
@@ -557,7 +563,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("INSERT INTO jobs VALUES (NULL,'#{job.id}','#{job.task}',#{job.cycle.to_i},#{job.cores},'#{job.state}','#{job.native_state}',#{job.exit_status},#{job.tries},#{job.nunknowns});")
+            db.execute("INSERT INTO jobs VALUES (NULL,'#{job.id}','#{job.task}',#{job.cycle.to_i},#{job.cores},'#{job.state}','#{job.native_state}',#{job.exit_status},#{job.tries},#{job.nunknowns},#{job.duration});")
           end
 
         end  # database transaction
@@ -586,7 +592,7 @@ module WorkflowMgr
 
           # Add or update each job in the database
           jobs.each do |job|
-            db.execute("UPDATE jobs SET jobid='#{job.id}',state='#{job.state}',native_state='#{job.native_state}',exit_status=#{job.exit_status},tries=#{job.tries},nunknowns=#{job.nunknowns} WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
+            db.execute("UPDATE jobs SET jobid='#{job.id}',state='#{job.state}',native_state='#{job.native_state}',exit_status=#{job.exit_status},tries=#{job.tries},nunknowns=#{job.nunknowns},duration=#{job.duration} WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
           end
 
         end  # database transaction
@@ -926,7 +932,7 @@ module WorkflowMgr
 
      # Create the jobs table
      unless tables.member?("jobs")
-       db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], native_state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER);")
+       db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], native_state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER, duration REAL);")
      end
 
      # Create the bqservers table
@@ -940,6 +946,25 @@ module WorkflowMgr
      end
 
     end  # create_tables
+
+    ##########################################
+    #
+    # update_tables
+    #
+    ##########################################
+    def update_tables(db)
+
+      raise "WorkflowSQLite3DB::update_tables must be called inside a transaction" unless db.transaction_active?
+
+      # Get the command used to create the jobs table
+      jobscrt = db.execute("SELECT sql FROM sqlite_master WHERE tbl_name='jobs' AND type='table';")
+
+      # prase the jobs command to see if the duration column is not there
+      if (! jobscrt.grep(/duration/))
+        db.execute("ALTER TABLE jobs ADD COLUMN duration REAL;")
+      end
+
+    end  # update_tables
 
   end  # Class WorkflowSQLite3DB
 

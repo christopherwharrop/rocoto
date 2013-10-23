@@ -13,14 +13,14 @@ module WorkflowMgr
   class Job
 
     attr_reader   :task,:cycle,:cores
-    attr_accessor :id,:state,:native_state,:exit_status,:tries,:nunknowns
+    attr_accessor :id,:state,:native_state,:exit_status,:tries,:nunknowns,:duration
 
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(id,task,cycle,cores,state,native_state,exit_status,tries,nunknowns)
+    def initialize(id,task,cycle,cores,state,native_state,exit_status,tries,nunknowns,duration)
 
       @id=id
       @task=task
@@ -31,6 +31,7 @@ module WorkflowMgr
       @exit_status=exit_status
       @tries=tries
       @nunknowns=nunknowns
+      @duration=duration
 
     end
 
