@@ -249,6 +249,8 @@ module WFMStat
             dbcycles += cycle
           end
         end
+      elsif @options.cycles == "all"
+        dbcycles += @dbServer.get_cycles()
       else
         puts "Invalid cycle specification"
       end
