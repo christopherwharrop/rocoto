@@ -428,6 +428,9 @@ module WorkflowMgr
     ##########################################
     def get_new_cycles
 
+      # Don't look for new cycles if the cyclethrottle is already satisfied
+      return unless @cyclethrottle > @active_cycles.size
+
       # Activate new cycles
       if @realtime
         newcycles=get_new_realtime_cycle
