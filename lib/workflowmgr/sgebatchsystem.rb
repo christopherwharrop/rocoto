@@ -295,7 +295,7 @@ module WorkflowMgr
       return if queued_jobs.empty?
 
       # Parse the XML output of the qstat, building job status records for each job
-      queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
+      queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs, :options => LibXML::XML::Parser::Options::HUGE).parse
 
       # For each job, find the various attributes and create a job record
       queued_jobs=queued_jobs_doc.root.find('//job_list')

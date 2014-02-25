@@ -33,7 +33,7 @@ module WorkflowMgr
     ##########################################
     def parseXMLFile(filename)
 
-      document= LibXML::XML::Parser.file(filename,:options => LibXML::XML::Parser::Options::NOENT).parse
+      document= LibXML::XML::Parser.file(filename,:options => LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
       return document.to_s
 
     end

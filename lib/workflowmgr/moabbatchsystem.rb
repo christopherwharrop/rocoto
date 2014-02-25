@@ -207,7 +207,7 @@ private
         return if queued_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs).parse
+        queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs, :options => LibXML::XML::Parser::Options::HUGE).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
@@ -296,7 +296,7 @@ private
         return if completed_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        recordxmldoc=LibXML::XML::Parser.string(completed_jobs).parse
+        recordxmldoc=LibXML::XML::Parser.string(completed_jobs, :options => LibXML::XML::Parser::Options::HUGE).parse
 
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")

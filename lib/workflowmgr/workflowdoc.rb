@@ -50,7 +50,7 @@ module WorkflowMgr
       # process.
       begin
         if @workflowIOServer.exists?(workflowdoc)
-          @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT).parse
+          @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
