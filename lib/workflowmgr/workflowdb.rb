@@ -957,10 +957,10 @@ module WorkflowMgr
       raise "WorkflowSQLite3DB::update_tables must be called inside a transaction" unless db.transaction_active?
 
       # Get the command used to create the jobs table
-      jobscrt = db.execute("SELECT sql FROM sqlite_master WHERE tbl_name='jobs' AND type='table';")
+      jobscrt = db.execute("SELECT sql FROM sqlite_master WHERE tbl_name='jobs' AND type='table';").to_s
 
-      # prase the jobs command to see if the duration column is not there
-      if (! jobscrt.grep(/duration/))
+      # parse the jobs command to see if the duration column is not there
+      unless jobscrt=~/duration REAL/
         db.execute("ALTER TABLE jobs ADD COLUMN duration REAL;")
       end
 
