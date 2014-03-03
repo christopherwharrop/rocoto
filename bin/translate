@@ -70,7 +70,6 @@ end
 ##########################################
 def traverse(node)
 
-#puts node.inspect
   return if node.entity?
   return if node.entity_ref?
   case node.name
@@ -232,6 +231,7 @@ joins.each {|n| n.remove! }
 
 end
 
+GC.disable
 
 # Check for command line arguments
 if ARGV.size != 1
@@ -252,3 +252,4 @@ fix_cyclestrs(workflowdoc.root)
 kill_joins(workflowdoc.root)
 
 puts workflowdoc
+GC.enable

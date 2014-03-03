@@ -74,7 +74,7 @@ module WorkflowMgr
             rescue WorkflowMgr::WorkflowDBLockedException
               if busy_retries < 10
                 busy_retries+=1.0
-                sleep(1+0.25*rand*(2.0**(busy_retries/2.5)))
+                sleep 0.5
                 retry
               else
                 raise

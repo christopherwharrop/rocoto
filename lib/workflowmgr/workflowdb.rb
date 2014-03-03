@@ -59,10 +59,16 @@ module WorkflowMgr
       begin
 
         # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
+        @database = SQLite3::Database.new(@database_file)
+
+        # Set the retry limit (milliseconds) for locked resources
+        @database.busy_timeout=10000
+
+        # Return results as arrays
+        @database.results_as_hash=false
 
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Get a listing of the database tables
           tables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -93,11 +99,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        # Start a transaction and immediately acquire an exclusive lock
+        @database.transaction(mode=:exclusive) do |db|
 
           # Access the workflow lock maintained by the workflow manager
           lock=db.execute("SELECT * FROM lock;")      
@@ -174,11 +177,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           lock=db.execute("SELECT * FROM lock;")      
 
@@ -214,17 +214,9 @@ module WorkflowMgr
 
         dbcycledefs=[]
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
+        # Retrieve the cycle definitions from the database
+        dbcycledefs=@database.execute("SELECT groupname,cycledef,dirty FROM cycledef;")
 
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
-
-          # Access the workflow lock maintained by the workflow manager
-          dbcycledefs=db.execute("SELECT groupname,cycledef,dirty FROM cycledef;")
-
-        end  # database transaction
-          
         # Return the array of cycledefs
         dbcycledefs.collect! do |cycledef| 
           if cycledef[2].nil?
@@ -253,11 +245,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Delete all current cycledefs from the database
           dbspecs=db.execute("DELETE FROM cycledef;")
@@ -292,17 +281,9 @@ module WorkflowMgr
 
         dbcycles=[]
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
+        # Retrieve all cycles from the cycle table
+        dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle == #{reftime.getgm.to_i};")
 
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
-
-          # Retrieve all cycles from the cycle table
-          dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle == #{reftime.getgm.to_i};")
-
-        end  # database transaction
-          
         # Return an array of cycles
         dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm}) }
 
@@ -326,21 +307,13 @@ module WorkflowMgr
 
         dbcycles=[]
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Get the starting and ending cycle times
         startcycle=reftime[:start].nil? ? startcycle=Time.gm(1900,1,1,0,0) : reftime[:start].getgm
         endcycle=reftime[:end].nil? ? endcycle=Time.gm(9999,12,31,23,59) : reftime[:end].getgm+1 
 
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        # Retrieve all cycles from the cycle table
+        dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle >= #{startcycle.getgm.to_i} and cycle <= #{endcycle.getgm.to_i};")
 
-          # Retrieve all cycles from the cycle table
-          dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle >= #{startcycle.getgm.to_i} and cycle <= #{endcycle.getgm.to_i};")
-
-        end  # database transaction
-          
         # Return an array of cycles
         dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm }) }
 
@@ -363,21 +336,13 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         dbcycles=[]
 
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
-
-          # Get the maximum cycle time from the database
-          max_cycle=db.execute("SELECT MAX(cycle) FROM cycles")[0][0]
-          unless max_cycle.nil?
-            dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle=#{max_cycle}")
-          end
-
-        end  # database transaction
+        # Get the maximum cycle time from the database
+        max_cycle=@database.execute("SELECT MAX(cycle) FROM cycles")[0][0]
+        unless max_cycle.nil?
+          dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle=#{max_cycle}")
+        end
           
         # Return the last cycle
         dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm }) }
@@ -399,19 +364,11 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         dbcycles=[]
 
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        # Get the cycles that are neither done nor expired
+        dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE done=0 and expired=0;")
 
-          # Get the cycles that are neither done nor expired
-          dbcycles=db.execute("SELECT cycle,activated,expired,done FROM cycles WHERE done=0 and expired=0;")
-
-        end  # database transaction
-          
         # Return the array of cycle specs
         dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm}) }
 
@@ -433,11 +390,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Update each cycle in the database
           cycles.each { |newcycle|
@@ -462,11 +416,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Add each cycle to the database
           cycles.each { |newcycle|
@@ -479,6 +430,7 @@ module WorkflowMgr
         msg="ERROR: WorkflowSQLite3DB.add_cycles: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
 
@@ -494,30 +446,23 @@ module WorkflowMgr
         jobs={}
         dbjobs=[]
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.results_as_hash = true
+        if cycles.nil?
 
-          db.results_as_hash = true
-          if cycles.nil?
+          # Retrieve all jobs from the job table
+          dbjobs=@database.execute("SELECT * FROM jobs;")
 
-            # Retrieve all jobs from the job table
-            dbjobs=db.execute("SELECT * FROM jobs;")
+        else
 
-          else
+          # Retrieve all jobs from the job table that match the cycles provided
+          cycles.each do |cycle|
+            dbjobs+=@database.execute("SELECT * FROM jobs WHERE cycle = #{cycle.to_i};")
+          end
 
-            # Retrieve all jobs from the job table that match the cycles provided
-            cycles.each do |cycle|
-              dbjobs+=db.execute("SELECT * FROM jobs WHERE cycle = #{cycle.to_i};")
-            end
+        end        
 
-          end        
-
-        end  # database transaction
-
-#jobid,taskname,cycle,cores,state,native_state,exit_status,tries,nunknowns,duration
+        # jobid,taskname,cycle,cores,state,native_state,exit_status,tries,nunknowns,duration
         dbjobs.each do |job|
           task=job['taskname']
           cycle=Time.at(job['cycle']).getgm
@@ -542,7 +487,10 @@ module WorkflowMgr
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.get_jobs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
+      ensure
+        @database.results_as_hash = false
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
 
@@ -555,11 +503,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Add or update each job in the database
           jobs.each do |job|
@@ -572,6 +517,7 @@ module WorkflowMgr
         msg="ERROR: WorkflowSQLite3DB.add_jobs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
 
@@ -584,11 +530,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Add or update each job in the database
           jobs.each do |job|
@@ -601,6 +544,7 @@ module WorkflowMgr
         msg="ERROR: WorkflowSQLite3DB.update_jobs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
     ##########################################
@@ -612,11 +556,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Add or update each job in the database
           jobs.each do |job|
@@ -629,6 +570,7 @@ module WorkflowMgr
         msg="ERROR: WorkflowSQLite3DB.update_jobids: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
 
@@ -641,11 +583,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Delete each job from the database
           jobs.each do |job|
@@ -658,6 +597,7 @@ module WorkflowMgr
         msg="ERROR: WorkflowSQLite3DB.delete_jobs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
 
@@ -672,16 +612,7 @@ module WorkflowMgr
 
         dbbqservers=[]
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
-
-          # Retrieve all bqservers from the job table
-          dbbqservers=db.execute("SELECT uri FROM bqservers;")
-
-        end  # database transaction
+        dbbqservers=@database.execute("SELECT uri FROM bqservers;")
 
         # Return jobs hash
         return dbbqservers.flatten
@@ -690,6 +621,7 @@ module WorkflowMgr
         msg="ERROR: WorkflowSQLite3DB.get_bqservers: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
 
@@ -702,11 +634,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Add or update each bqserver in the database
           bqservers.each do |bqserver|
@@ -719,6 +648,7 @@ module WorkflowMgr
         msg="ERROR: WorkflowSQLite3DB.add_bqservers: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin                                                                                                                                                                                                                                                         
+
     end
 
     ##########################################
@@ -730,11 +660,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Delete each job from the database
           bqservers.each do |bqserver|
@@ -761,16 +688,8 @@ module WorkflowMgr
 
         dbdownpaths=[]
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
-
-          # Retrieve all downpaths from the job table
-          dbdownpaths=db.execute("SELECT path,downdate,host,pid FROM downpaths;")
-
-        end  # database transaction
+        # Retrieve all downpaths from the job table
+        dbdownpaths=@database.execute("SELECT path,downdate,host,pid FROM downpaths;")
 
         # Return an array of downpaths
         dbdownpaths.collect! { |downpath| {:path=>downpath[0], :downtime=>Time.at(downpath[1]).getgm, :host=>downpath[2], :pid=>downpath[3]} }
@@ -794,11 +713,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Add or update each job in the database
           downpaths.each do |downpath|
@@ -823,11 +739,8 @@ module WorkflowMgr
 
       begin
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
-
         # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        @database.transaction do |db|
 
           # Delete each downpath from the database
           downpaths.each do |downpath|
@@ -854,45 +767,37 @@ module WorkflowMgr
 
         tables={}
 
-        # Get a handle to the database
-        database = SQLite3::Database.new(@database_file)
+        # Get a listing of the database tables
+        dbtables = @database.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+        dbtables.flatten!
 
-        # Start a transaction so that the database will be locked
-        database.transaction do |db|
+        # Create an array of rows for each table
+        dbtables.each do |table|
 
-          # Get a listing of the database tables
-          dbtables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
-          dbtables.flatten!
+          # Initialize the array of rows to be empty
+          tables[table.to_sym]=[]
 
-          # Create an array of rows for each table
-          dbtables.each do |table|
+          # Get all rows for the table, where first row is column names
+          dbtable=@database.execute2("SELECT * FROM #{table};")
 
-            # Initialize the array of rows to be empty
-            tables[table.to_sym]=[]
+          # Get the table column names
+          columns=dbtable.shift
 
-            # Get all rows for the table, where first row is column names
-            dbtable=db.execute2("SELECT * FROM #{table};")
+          # Add each table row to the array of rows for this table
+          dbtable.each do |row|
+            rowdata={}
 
-            # Get the table column names
-            columns=dbtable.shift
+            # Loop over columns, creating a hash for this row's data
+            columns.each_with_index do |column,idx|
+              rowdata[column.to_sym]=row[idx]
+            end
 
-            # Add each table row to the array of rows for this table
-            dbtable.each do |row|
-              rowdata={}
+            # Add the hash representing this row to the array of rows for this table
+            tables[table.to_sym] << rowdata
 
-              # Loop over columns, creating a hash for this row's data
-              columns.each_with_index do |column,idx|
-                rowdata[column.to_sym]=row[idx]
-              end
+          end 
 
-              # Add the hash representing this row to the array of rows for this table
-              tables[table.to_sym] << rowdata
-
-            end 
-
-          end  # dbtables.each
-
-        end  # database transaction
+        end  # dbtables.each
 
         # Return the tables
         tables
