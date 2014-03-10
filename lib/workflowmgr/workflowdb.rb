@@ -250,15 +250,19 @@ module WorkflowMgr
 
           # Delete all current cycledefs from the database
           dbspecs=db.execute("DELETE FROM cycledef;")
+
+          @database.prepare("INSERT INTO cycledef VALUES (NULL,?,?,?)") do |stmt|
  
-          # Add new cycledefs to the database
-          cycledefs.each do |cycledef|
-            if cycledef[:position].nil?
-              db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',NULL);")
-            else
-              db.execute("INSERT INTO cycledef VALUES (NULL,'#{cycledef[:group]}','#{cycledef[:cycledef]}',#{cycledef[:position].to_i});")
+            # Add new cycledefs to the database
+            cycledefs.each do |cycledef|
+              if cycledef[:position].nil?
+                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}")
+              else
+                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}",cycledef[:position].to_i)
+              end
             end
-          end
+
+          end  # prepare
 
         end  # database transaction
 
