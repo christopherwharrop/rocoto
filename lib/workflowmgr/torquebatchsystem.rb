@@ -255,19 +255,23 @@ private
 	      record[:priority]=jobstat.content.to_i            
             when /exit_status/
               record[:exit_status]=jobstat.content.to_i
-              if record[:exit_status]==0
-                record[:state]="SUCCEEDED"
-              else
-                record[:state]="FAILED"
-              end
 	    else
               record[jobstat.name]=jobstat.content
           end  # case jobstat
   	}  # job.children
 
-  	# Put the job record in the jobqueue unless it's complete but doesn't have both a start time and an end time
-        unless !record[:exit_status].nil? && (record[:start_time].nil? || record[:end_time].nil?)
-  	  @jobqueue[record[:jobid]]=record
+        # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
+        if record[:state]=="UNKNOWN" && !record[:exit_status].nil?
+          if record[:exit_status]==0
+            record[:state]="SUCCEEDED"
+          else
+            record[:state]="FAILED"
+          end
+        end
+
+        # Put the job record in the jobqueue unless it's complete but doesn't have a start time, an end time, and an exit status
+        unless record[:state]=="UNKNOWN" || ((record[:state]=="SUCCEEDED" || record[:state]=="FAILED") && (record[:start_time].nil? || record[:end_time].nil?))
+          @jobqueue[record[:jobid]]=record
         end
 
       }  #  queued_jobs.find
