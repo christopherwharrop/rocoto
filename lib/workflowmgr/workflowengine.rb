@@ -1105,7 +1105,8 @@ module WorkflowMgr
                               "SUBMITTING",             # native state
                               0,                        # exit_status
                               0,                        # tries
-                              0                         # nunknowns
+                              0,                        # nunknowns
+                              0.0                       # duration
                              )
             @dbServer.add_jobs([fakejob])
             next
