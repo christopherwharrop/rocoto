@@ -35,6 +35,9 @@ module WorkflowMgr
       # Set a default value for throttle
       @attributes[:throttle]=9999999 if @attributes[:throttle].nil?
 
+      # Set a default value for final
+      @attributes[:final]=false if @attributes[:final].nil?
+
     end
 
 

@@ -929,85 +929,148 @@ module WorkflowMgr
       # Initialize a hash of task cycledefs
       taskcycledefs={}
 
+      # Partition the workflow tasks by value of the final attribute and sort
+      final_tasks=[]
+      non_final_tasks=[]
+      unless @active_cycles.empty?
+        final_tasks,non_final_tasks=@tasks.values.partition {|t| t.attributes[:final] }
+
+        # Sort final tasks in sequential order to increase chances of finding completed final task quickly
+        final_tasks.sort! { |t1,t2| t1.seq <=> t2.seq }
+
+        # Sort non final tasks in reverse sequential order to increase chances of finding incompleted task quickly
+        non_final_tasks.sort! { |t1,t2| t2.seq <=> t1.seq }
+      end
+
       # Loop over all active cycles
       @active_cycles.each do |cycle|
 
-        # Initialize done flag to true for this cycle
-        cycle_done=false
-        cycle_success=true
-        
-        catch (:not_done) do
+        # Drain the cycle if a "final" task has completed
+        if !cycle.draining?
 
-          # Loop over all tasks
-          @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
+          final_tasks.each do |task|
 
             # Validate that this cycle is a member of at least one of the cycledefs specified for this task
             unless task.attributes[:cycledefs].nil?
 
-              # Get the cycledefs associated with this task
+              # Get the cycledefs associated with this task                                                                                                                                                                                                                                                               
               if taskcycledefs[task].nil?
                 taskcycledefs[task]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
               end
 
+              # Reject this task if the cycle is not a member of the tasks cycle list                                                                                                                                                                                                                                     
+              next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle.cycle) }
+              
+            end  # unless
+            
+            # Skip to next final task if this task has not been submitted yet for any cycle
+            next if @active_jobs[task.attributes[:name]].nil?
+
+            # Skip to next final task if this task has not been submitted yet for this active cycle
+            next if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
+
+            # The cycle needs to drain if this task is successful
+            if @active_jobs[task.attributes[:name]][cycle.cycle].state == "SUCCEEDED"
+              cycle.drain!
+              @logServer.log(cycle.cycle,"This cycle is draining") 
+
+              # Update the draining cycle in the database 
+              @dbServer.update_cycles([cycle])
+
+              break
+            end
+
+          end  # final_tasks.each
+
+        end # if !cycle.draining?
+
+        # Initialize done flag to false for this cycle
+        cycle_done=false
+        cycle_success=true
+        
+        catch (:not_done) do
+          
+          # Loop over all final tasks
+          (final_tasks + non_final_tasks).each do |task|
+            
+            # Validate that this cycle is a member of at least one of the cycledefs specified for this task
+            unless task.attributes[:cycledefs].nil?
+              
+              # Get the cycledefs associated with this task
+              if taskcycledefs[task].nil?
+                taskcycledefs[task]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              end
+              
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle.cycle) }
-
+              
             end  # unless
-
-            # The cycle is not done if this task has not been submitted yet for any of the active cycles
-            throw :not_done if @active_jobs[task.attributes[:name]].nil?
-
-            # The cycle is not done if this task has not been submitted yet for this cycle
-            throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
-
-            # The cycle is not done if the job for this task and cycle is not in the done state
-            throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].state != "SUCCEEDED"
-
-# For now, only tag cycles as done if they are done successfully, meaning that all tasks are complete and have exit status = 0.
-# If we mark cycles as done when they have tasks that exceeded retries, then increasing retries won't cause them to rerun again
-#
-#            # The cycle is not done if the job for this task and cycle is done, but has crashed and has not yet exceeded the retry count
-#            if @active_jobs[task.attributes[:name]][cycle.cycle].tries >= task.attributes[:maxtries]
-#              cycle_success=false
-#            else
-#              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].exit_status != 0 
-#            end
+            
+            if cycle.draining?
+              
+              # A draining cycle is not done if any task is still running
+              next if @active_jobs[task.attributes[:name]].nil?
+              next if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
+              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].state == "RUNNING"
+              
+            else 
+              
+              # An active cycle is not done if this task has not been submitted yet for any of the active cycles
+              throw :not_done if @active_jobs[task.attributes[:name]].nil?
+              
+              # An active cycle is not done if this task has not been submitted yet for this cycle
+              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
+              
+              # An active cycle is not done if the job for this task and cycle is not in the done state
+              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].state != "SUCCEEDED"
+              
+              # For now, only tag cycles as done if they are done successfully, meaning that all tasks are complete and have exit status = 0.
+              # If we mark cycles as done when they have tasks that exceeded retries, then increasing retries won't cause them to rerun again
+              #
+              #            # The cycle is not done if the job for this task and cycle is done, but has crashed and has not yet exceeded the retry count
+              #            if @active_jobs[task.attributes[:name]][cycle.cycle].tries >= task.attributes[:maxtries]
+              #              cycle_success=false
+              #            else
+              #              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].exit_status != 0 
+              #            end
+              
+            end  # if cycle.draining?
 
           end  # tasks.each
-
+            
           cycle_done=true
-          
-        end  # catch
+            
+        end  # catch :not_done
 
         # If the cycle is done, record the time and update active cycle list
         if cycle_done
-        
+          
           # Mark the cycle as done
           cycle.done!
-
+          
           # Add to list of done cycles
           done_cycles << cycle
-
+          
           # Log the done status of this cycle
           if cycle_success
             @logServer.log(cycle.cycle,"This cycle is complete: Success") 
           else
             @logServer.log(cycle.cycle,"This cycle is complete: Failed") 
           end
-
+          
           # Update the done cycle in the database 
           @dbServer.update_cycles([cycle])
-
-        # Otherwise add the cycle to a new list of active cycles
+          
+          # Otherwise add the cycle to a new list of active cycles
         else
           active_cycles << cycle
         end
-
+        
       end  # active_cycles.each
-
+      
       # Update the active cycle list
       @active_cycles=active_cycles
-
+      
     end
 
 
@@ -1077,6 +1140,10 @@ module WorkflowMgr
 
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.sort { |c1,c2| c1.cycle <=> c2.cycle }.each do |cycle|
+
+        # Don't submit jobs for draining cycles
+        next if cycle.draining?
+
         cycletime=cycle.cycle
         @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 

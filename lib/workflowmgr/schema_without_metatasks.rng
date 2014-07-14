@@ -287,6 +287,24 @@
         </attribute>
       </optional>
 
+      <!-- Optional task final attribute -->
+      <optional>
+        <attribute name="final">
+          <choice>
+            <value>f</value>
+            <value>F</value>
+            <value>false</value>
+            <value>False</value>
+            <value>FALSE</value>
+            <value>t</value>
+            <value>T</value>
+            <value>true</value>
+            <value>True</value>
+            <value>TRUE</value>
+          </choice>
+        </attribute>
+      </optional>
+
       <!-- Optional task metatasks attribute -->
       <optional>
         <attribute name="metatasks">

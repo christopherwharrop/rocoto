@@ -284,6 +284,8 @@ module WorkflowMgr
           case attrkey
             when :maxtries,:throttle    # Attributes with integer values go here
               attrval=attr.value.to_i
+            when :final                 # Attributes with boolean values go here
+              attrval=!(attr.value.downcase =~ /^t|true$/).nil?
             else                        # Attributes with string values
               attrval=attr.value
           end

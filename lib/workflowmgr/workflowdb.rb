@@ -286,10 +286,10 @@ module WorkflowMgr
         dbcycles=[]
 
         # Retrieve all cycles from the cycle table
-        dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle == #{reftime.getgm.to_i};")
+        dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle == #{reftime.getgm.to_i};")
 
         # Return an array of cycles
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm}) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm }) }
 
         return dbcycles
 
@@ -316,10 +316,10 @@ module WorkflowMgr
         endcycle=reftime[:end].nil? ? endcycle=Time.gm(9999,12,31,23,59) : reftime[:end].getgm+1 
 
         # Retrieve all cycles from the cycle table
-        dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle >= #{startcycle.getgm.to_i} and cycle <= #{endcycle.getgm.to_i};")
+        dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle >= #{startcycle.getgm.to_i} and cycle <= #{endcycle.getgm.to_i};")
 
         # Return an array of cycles
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm }) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm }) }
 
         return dbcycles
 
@@ -345,11 +345,11 @@ module WorkflowMgr
         # Get the maximum cycle time from the database
         max_cycle=@database.execute("SELECT MAX(cycle) FROM cycles")[0][0]
         unless max_cycle.nil?
-          dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE cycle=#{max_cycle}")
+          dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle=#{max_cycle}")
         end
           
         # Return the last cycle
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm }) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm }) }
 
         return dbcycles.first
 
@@ -371,10 +371,10 @@ module WorkflowMgr
         dbcycles=[]
 
         # Get the cycles that are neither done nor expired
-        dbcycles=@database.execute("SELECT cycle,activated,expired,done FROM cycles WHERE done=0 and expired=0;")
+        dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE done=0 and expired=0;")
 
         # Return the array of cycle specs
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm}) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm}) }
 
         return dbcycles
 
@@ -399,7 +399,7 @@ module WorkflowMgr
 
           # Update each cycle in the database
           cycles.each { |newcycle|
-            db.execute("UPDATE cycles SET activated=#{newcycle.activated.to_i},expired=#{newcycle.expired.to_i},done=#{newcycle.done.to_i} WHERE cycle=#{newcycle.cycle.to_i};")
+            db.execute("UPDATE cycles SET activated=#{newcycle.activated.to_i},expired=#{newcycle.expired.to_i},done=#{newcycle.done.to_i},draining=#{newcycle.draining.to_i} WHERE cycle=#{newcycle.cycle.to_i};")
           }
 
         end  # database transaction
@@ -425,7 +425,7 @@ module WorkflowMgr
 
           # Add each cycle to the database
           cycles.each { |newcycle|
-            db.execute("INSERT INTO cycles VALUES (NULL,#{newcycle.cycle.to_i},#{newcycle.activated.to_i},#{newcycle.expired.to_i},#{newcycle.done.to_i});")
+            db.execute("INSERT INTO cycles VALUES (NULL,#{newcycle.cycle.to_i},#{newcycle.activated.to_i},#{newcycle.expired.to_i},#{newcycle.done.to_i},#{newcycle.draining.to_i});")
           }
 
         end  # database transaction
@@ -836,23 +836,23 @@ module WorkflowMgr
 
       # Create the cycles table
       unless tables.member?("cycles")
-        db.execute("CREATE TABLE cycles (id INTEGER PRIMARY KEY, cycle DATETIME, activated DATETIME, expired DATETIME, done DATETIME);")
-     end
+        db.execute("CREATE TABLE cycles (id INTEGER PRIMARY KEY, cycle DATETIME, activated DATETIME, expired DATETIME, done DATETIME, draining DATETIME);")
+      end
 
-     # Create the jobs table
-     unless tables.member?("jobs")
-       db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], native_state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER, duration REAL);")
-     end
-
-     # Create the bqservers table
+      # Create the jobs table
+      unless tables.member?("jobs")
+        db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], native_state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER, duration REAL);")
+      end
+      
+      # Create the bqservers table
       unless tables.member?("bqservers")
         db.execute("CREATE TABLE bqservers (id INTEGER PRIMARY KEY, uri VARCHAR(1024));")
-     end
-
-     # Create the downpaths table
+      end
+      
+      # Create the downpaths table
       unless tables.member?("downpaths")
         db.execute("CREATE TABLE downpaths (id INTEGER PRIMARY KEY, path VARCHAR(1024), downdate DATETIME, host VARCHAR[64], pid INTEGER);")
-     end
+      end
 
     end  # create_tables
 
@@ -868,9 +868,17 @@ module WorkflowMgr
       # Get the command used to create the jobs table
       jobscrt = db.execute("SELECT sql FROM sqlite_master WHERE tbl_name='jobs' AND type='table';").to_s
 
-      # parse the jobs command to see if the duration column is not there
+      # Parse the jobs command to see if the duration column is not there
       unless jobscrt=~/duration REAL/
         db.execute("ALTER TABLE jobs ADD COLUMN duration REAL;")
+      end
+
+      # Get the command used to create the cycle table
+      cyclescrt = db.execute("SELECT sql FROM sqlite_master WHERE tbl_name='cycles' AND type='table';").to_s
+
+      # Parse the cycle command to see if the draining column is not there
+      unless cyclescrt=~/draining DATETIME/
+        db.execute("ALTER TABLE cycles ADD COLUMN draining DATETIME;")
       end
 
     end  # update_tables
