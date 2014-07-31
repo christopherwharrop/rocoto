@@ -30,10 +30,10 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       begin
-        return(@root.resolved?(cycle,jobList,workflowIOServer))
+        return(@root.resolved?(cycle,jobList,workflowIOServer,cycledefs))
       rescue WorkflowIOHang
         WorkflowMgr.stderr("#{$!}",2)
         WorkflowMgr.log("#{$!}")
@@ -47,10 +47,10 @@ module WorkflowMgr
     # Query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       begin
-        return(@root.query(cycle,jobList,workflowIOServer))
+        return(@root.query(cycle,jobList,workflowIOServer,cycledefs))
       rescue WorkflowIOHang
         WorkflowMgr.stderr("#{$!}",2)
         WorkflowMgr.log("#{$!}")
@@ -87,9 +87,9 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
-      return !@operand.resolved?(cycle,jobList,workflowIOServer)
+      return !@operand.resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
     end
 
@@ -98,9 +98,8 @@ module WorkflowMgr
     # query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
-
-      query=@operand.resolved?(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
+      query=@operand.query(cycle,jobList,workflowIOServer,cycledefs)
       if query.first[:resolved]
         return [{:dep=>"NOT", :msg=>"is not satisfied", :resolved=>false }, query]
       else
@@ -136,10 +135,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       @operands.each { |operand|
-        return false unless operand.resolved?(cycle,jobList,workflowIOServer)
+        return false unless operand.resolved?(cycle,jobList,workflowIOServer,cycledefs)
       }
       return true
 
@@ -151,11 +150,11 @@ module WorkflowMgr
     # query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       queries=[]
       @operands.each { |operand|
-        query = operand.query(cycle,jobList,workflowIOServer)
+        query = operand.query(cycle,jobList,workflowIOServer,cycledefs)
         queries += query
         return [{:dep=>"AND", :msg=>"is not satisfied", :resolved=>false }, queries] unless query.first[:resolved]
       }
@@ -190,10 +189,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       @operands.each { |operand|
-        return true if operand.resolved?(cycle,jobList,workflowIOServer)
+        return true if operand.resolved?(cycle,jobList,workflowIOServer,cycledefs)
       }
       return false
 
@@ -205,11 +204,11 @@ module WorkflowMgr
     # query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       queries=[]
       @operands.each { |operand|
-        query = operand.query(cycle,jobList,workflowIOServer)
+        query = operand.query(cycle,jobList,workflowIOServer,cycledefs)
         queries += query
         return [{:dep=>"OR", :msg=>"is satisfied", :resolved=>true }, queries] if query.first[:resolved]
       }
@@ -244,10 +243,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       @operands.each { |operand|
-        return true if !operand.resolved?(cycle,jobList,workflowIOServer)
+        return true if !operand.resolved?(cycle,jobList,workflowIOServer,cycledefs)
       }
       return false
 
@@ -258,11 +257,11 @@ module WorkflowMgr
     # query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       queries=[]
       @operands.each { |operand|
-        query = operand.query(cycle,jobList,workflowIOServer)
+        query = operand.query(cycle,jobList,workflowIOServer,cycledefs)
         queries += query
         return [{:dep=>"<nand>", :msg=>"is satisfied", :resolved=>true }, queries] if !query.first[:resolved]
       }
@@ -295,10 +294,10 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       @operands.each { |operand|
-        return false if operand.resolved?(cycle,jobList,workflowIOServer)
+        return false if operand.resolved?(cycle,jobList,workflowIOServer,cycledefs)
       }
       return true
 
@@ -309,11 +308,11 @@ module WorkflowMgr
     # query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       queries=[]
       @operands.each { |operand|
-        query=operand.query(cycle,jobList,workflowIOServer)
+        query=operand.query(cycle,jobList,workflowIOServer,cycledefs)
         queries += query
         return [{:dep=>"NOR", :msg=>"is not satisfied", :resolved=>false }, queries] if query.first[:resolved]
       }
@@ -346,11 +345,11 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       ntrue=0
       @operands.each { |operand|
-        ntrue += 1 if operand.resolved?(cycle,jobList,workflowIOServer)
+        ntrue += 1 if operand.resolved?(cycle,jobList,workflowIOServer,cycledefs)
         return false if ntrue > 1
       }
       return ntrue==1
@@ -362,12 +361,12 @@ module WorkflowMgr
     # query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       queries=[]
       ntrue=0
       @operands.each { |operand|
-        query = operand.query(cycle,jobList,workflowIOServer)
+        query = operand.query(cycle,jobList,workflowIOServer,cycledefs)
         queries += query
         ntrue += 1 if query.first.resolved?
         return [{:dep=>"XOR", :msg=>"is not satisfied", :resolved=>false }, queries] if ntrue > 1
@@ -406,11 +405,11 @@ module WorkflowMgr
     # resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       ntrue=0.0
       @operands.each { |operand|
-        ntrue += 1.0 if operand.resolved?(cycle,jobList,workflowIOServer)
+        ntrue += 1.0 if operand.resolved?(cycle,jobList,workflowIOServer,cycledefs)
         return true if ntrue/@operands.size >= @threshold
       }
       return false
@@ -422,12 +421,12 @@ module WorkflowMgr
     # query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycldefs)
 
       queries=[]
       ntrue=0.0
       @operands.each { |operand|
-        query = operand.query(cycle,jobList,workflowIOServer)
+        query = operand.query(cycle,jobList,workflowIOServer,cycledefs)
         queries += query
         ntrue += 1.0 if query.first[:resolved]
         return [{:dep=>"SOME", :msg=>"is satisfied", :resolved=>true }, queries] if ntrue/@operands.size >= @threshold
@@ -465,7 +464,7 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       return false if jobList.nil?      
       return false if jobList[@task].nil?
@@ -479,7 +478,7 @@ module WorkflowMgr
     # Query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if jobList.nil?
       return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if jobList[@task].nil?
@@ -489,6 +488,56 @@ module WorkflowMgr
       else
         return [{:dep=>"#{@task} of cycle #{(cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }]
       end
+    end
+
+  end
+
+
+
+  ##########################################
+  #
+  # Class CycleExistDependency 
+  #
+  ##########################################
+  class CycleExistDependency
+
+    #####################################################
+    #
+    # initialize
+    #
+    #####################################################
+    def initialize(cycle_offset)
+      @cycle_offset=cycle_offset
+    end
+
+    #####################################################
+    #
+    # Resolved?
+    #
+    #####################################################
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
+      relcycle=cycle.getgm+@cycle_offset
+      cycledefs.each do |cycledef|
+        if cycledef.member?(relcycle)
+              return true
+        end
+      end
+      return false
+    end
+
+    #####################################################
+    #
+    # Query
+    #
+    #####################################################
+    def query(cycle,jobList,workflowIOServer,cycledefs)
+      relcycle=cycle.getgm+@cycle_offset
+      cycledefs.each do |cycledef|
+        if cycledef.member?(relcycle)
+          return [{:dep=>"cycle #{relcycle.strftime("%Y%m%d%H%M")}", :msg=>"exists", :resolved=>true }]
+        end
+      end
+      return [{:dep=>"cycle #{relcycle.strftime("%Y%m%d%H%M")}", :msg=>"does not exist", :resolved=>false }]
     end
 
   end
@@ -518,7 +567,7 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       timestr=@timestr.to_s(cycle)
       t=Time.gm(timestr[0..3],
@@ -537,7 +586,7 @@ module WorkflowMgr
     # Query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       timestr=@timestr.to_s(cycle)
       t=Time.gm(timestr[0..3],
@@ -582,7 +631,7 @@ module WorkflowMgr
     # Resolved?
     #
     #####################################################
-    def resolved?(cycle,jobList,workflowIOServer)
+    def resolved?(cycle,jobList,workflowIOServer,cycledefs)
 
       filename=@datapath.to_s(cycle)
       if workflowIOServer.exists?(filename)
@@ -602,7 +651,7 @@ module WorkflowMgr
     # Query
     #
     #####################################################
-    def query(cycle,jobList,workflowIOServer)
+    def query(cycle,jobList,workflowIOServer,cycledefs)
 
       filename=@datapath.to_s(cycle)
       if workflowIOServer.exists?(filename)

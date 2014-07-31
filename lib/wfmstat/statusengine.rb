@@ -175,12 +175,12 @@ module WFMStat
         hangdependencies=nil
         unless task.nil?
           unless task.dependency.nil?
-            dependencies=task.dependency.query(cycle.cycle,jobs,@workflowIOServer)
+            dependencies=task.dependency.query(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs)
             printf "%2s%s\n", "","dependencies"
             print_deps(dependencies,0)
           end
           unless task.hangdependency.nil?
-            hangdependencies=task.hangdependency.query(cycle.cycle,jobs,@workflowIOServer)
+            hangdependencies=task.hangdependency.query(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs)
             printf "%2s%s\n", "","hang dependencies"
             print_deps(hangdependencies,0)
           end

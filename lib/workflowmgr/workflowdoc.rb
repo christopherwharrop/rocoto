@@ -371,6 +371,11 @@ module WorkflowMgr
         offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
       end
 
+      taskdepnodes=@workflowdoc.find('//cycleexistdep')
+      taskdepnodes.each do |taskdepnode|
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
+      end
+
       return offsets.uniq  
 
     end
@@ -440,6 +445,8 @@ module WorkflowMgr
            return Dependency_SOME_Operator.new(children.collect { |child|  get_dependency_node(child) }, element.attributes["threshold"].to_f)
          when "taskdep"
            return get_taskdep(element)
+         when "cycleexistdep"
+           return get_cycleexistdep(element)
          when "datadep"
            return get_datadep(element)
          when "timedep"
@@ -467,6 +474,20 @@ module WorkflowMgr
  
        return TaskDependency.new(task,state,cycle_offset)
 
+     end
+
+
+     #####################################################
+     #
+     # get_cycleexistdep
+     #
+     #####################################################
+     def get_cycleexistdep(element)
+ 
+       # Get the cycle offset, if there is one
+       cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"])
+ 
+       return CycleExistDependency.new(cycle_offset)
      end
 
 

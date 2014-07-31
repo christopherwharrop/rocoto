@@ -203,6 +203,12 @@
         </optional>
         <empty/>
       </element>
+      <element name="cycleexistdep">
+        <attribute name="cycle_offset">
+          <ref name="time"/>
+        </attribute>
+        <empty/>
+      </element>
       <element name="datadep">
 	<optional>
           <attribute name="age">

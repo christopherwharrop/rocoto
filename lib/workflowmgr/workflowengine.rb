@@ -845,7 +845,7 @@ module WorkflowMgr
             # Check for job hang
             unless @tasks[job.task].hangdependency.nil?
               if job.state=="RUNNING"
-                if @tasks[job.task].hangdependency.resolved?(job.cycle,@active_jobs,@workflowIOServer)
+                if @tasks[job.task].hangdependency.resolved?(job.cycle,@active_jobs,@workflowIOServer,@cycledefs)
                   job.state="FAILED"
                   runmsg=".  A job hang has been detected.  The job will be killed.  It will be resubmitted if the retry count has not been exceeded."
                   @bqServer.delete(job.id)
@@ -1194,7 +1194,7 @@ module WorkflowMgr
           
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
-            next unless task.dependency.resolved?(cycletime,@active_jobs,@workflowIOServer)
+            next unless task.dependency.resolved?(cycletime,@active_jobs,@workflowIOServer,@cycledefs)
           end
 
           # Reject this task if core throttle will be exceeded

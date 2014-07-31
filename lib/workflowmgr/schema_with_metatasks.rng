@@ -207,6 +207,12 @@
         </optional>
         <empty/>
       </element>
+      <element name="cycleexistdep">
+        <attribute name="cycle_offset">
+          <ref name="time"/>
+        </attribute>
+        <empty/>
+      </element>
       <element name="metataskdep">
         <attribute name="metatask">
           <data type="string"/>          
