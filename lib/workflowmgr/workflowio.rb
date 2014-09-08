@@ -113,6 +113,22 @@ module WorkflowMgr
 
     ##########################################
     #
+    # filescan
+    #
+    ##########################################
+    def grep(filename,pattern)
+      File.open(filename,'rt') { |f|
+        f.each_line do |line|
+          if line =~ /#{pattern}/
+            return true
+          end
+        end
+      }
+    end
+
+
+    ##########################################
+    #
     # log
     #
     ##########################################

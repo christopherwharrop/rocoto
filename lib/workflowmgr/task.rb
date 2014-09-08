@@ -28,6 +28,7 @@ module WorkflowMgr
       @envars=envars
       @dependency=dependency
       @hangdependency=hangdependency
+      @rewind_list=[]
 
       # Set a default value for maxtries
       @attributes[:maxtries]=9999999 if @attributes[:maxtries].nil?
@@ -40,6 +41,19 @@ module WorkflowMgr
 
     end
 
+    #####################################################
+    #
+    # rewind functionality
+    #
+    #####################################################
+    def add_rewind_action(rewinder)
+      @rewind_list.push(rewinder)
+    end
+    def rewind!(wstate)
+      @rewind_list.each do |rewinder|
+        rewinder.rewind!(wstate)
+      end
+    end
 
     #####################################################
     #

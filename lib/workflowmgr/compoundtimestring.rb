@@ -35,13 +35,13 @@ module WorkflowMgr
     # to_s
     #
     #####################################################
-    def to_s(time)
+    def to_s(time=nil)
 
       @str_objects.collect {|obj|
         if obj.is_a?(String)
           obj
         else 
-          obj.to_s(time.gmtime)
+          obj.to_s(time)
         end
       }.join.strip
 

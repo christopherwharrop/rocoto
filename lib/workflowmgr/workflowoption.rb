@@ -24,25 +24,33 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(args)
-
       @database=nil
       @workflowdoc=nil
       @verbose=1
-      parse(args)
+      @more_args=parse(args)
 
     end  # initialize
+
+    ##########################################
+    # 
+    # each_arg
+    # 
+    ##########################################
+    def each_arg
+      # Loops over unparsed arguments, yielding each one.
+      @more_args.each { |i|
+        yield i
+      }
+    end
 
   private
 
     ##########################################  
     #
-    # parse
+    # add_opts
     #
     ##########################################
-    def parse(args)
-
-      OptionParser.new do |opts|
-
+    def add_opts(opts)
         # Command usage text
         opts.banner = "Usage:  rocotorun [-h] [-v #] -d database_file -w workflow_document"
 
@@ -76,6 +84,37 @@ module WorkflowMgr
         opts.on("-w","--workflow PATH",String,"Path to workflow definition file") do |workflowdoc|
           @workflowdoc=workflowdoc
         end
+    end
+
+
+    ##########################################  
+    #
+    # validate_opts
+    #
+    ##########################################
+    def validate_opts(opts,args)
+      # Raises exceptions if the options passed were invalid.  The
+      # "args" argument is the arguments remaining after parsing all
+      # dash options.
+      if !args.empty?
+        puts "Unrecognized arguments: #{args.join(' ')}"
+      end
+      raise OptionParser::ParseError,"Unrecognized options" unless args.empty?
+      # The -d and -w options are mandatory
+      raise OptionParser::ParseError,"A database file must be specified" if @database.nil?
+      raise OptionParser::ParseError,"A workflow definition file must be specified" if @workflowdoc.nil?
+    end
+
+    ##########################################  
+    #
+    # parse
+    #
+    ##########################################
+    def parse(args)
+
+      OptionParser.new do |opts|
+
+        add_opts(opts)
 
         begin
 
@@ -89,12 +128,12 @@ module WorkflowMgr
           WorkflowMgr.const_set("VERBOSE",@verbose)
 
           # Print usage information if unknown options were passed
-          raise OptionParser::ParseError,"Unrecognized options" unless args.empty?
+          validate_opts(opts,args)
 
-          # The -d and -w options are mandatory
-          raise OptionParser::ParseError,"A database file must be specified" if @database.nil?
-          raise OptionParser::ParseError,"A workflow definition file must be specified" if @workflowdoc.nil?
-  
+          # Return the remaining arguments.  Note that args is always empty
+          # here in the WorkflowOption class because that class raises
+          # an exception in unrecognized_opts unless args is empty.
+          return args
         rescue OptionParser::ParseError => e
           STDERR.puts e.message, "\n",opts
           Process.exit(-1)

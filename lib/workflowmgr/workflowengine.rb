@@ -17,8 +17,10 @@ module WorkflowMgr
     require 'drb'
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/workflowoption'
+    require 'workflowmgr/workflowstate'
     require 'workflowmgr/launchserver'
     require 'workflowmgr/workflowdoc'
+    require 'workflowmgr/workflowstate'
     require 'workflowmgr/dbproxy'
     require 'workflowmgr/workflowioproxy'
     require 'workflowmgr/cycledef'
@@ -64,10 +66,12 @@ module WorkflowMgr
         @locked=false
 
       rescue => crash
+        WorkflowMgr.stderr('Workflow Manager Initialization failed.',1)
         WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
+            WorkflowMgr.stderr('Unexpected failure: Workflow Manager Initialization failed.',1)
             WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
@@ -80,23 +84,141 @@ module WorkflowMgr
 
     ##########################################
     #
+    # rewind!
+    #
+    ##########################################
+    def rewind!
+      with_locked_db {
+        # Get task name and cycle time:
+        rewind_task_name=@options.tasks.first
+        rewind_cycle_time=@options.cycles.first
+
+        # If the task name is / then we rewind all tasks:
+        if rewind_task_name=='/'
+          all_tasks=true
+        else
+          all_tasks=false
+        end
+        
+        # Build the workflow objects from the contents of the workflow document
+        build_workflow
+
+        # Get the active cycles
+        get_active_cycles
+
+        # Get the active jobs, which may include jobs from cycles that have just expired
+        # as well as jobs needed for evaluating inter cycle dependencies
+        get_active_jobs
+
+        # Update the status of all active jobs
+        update_active_jobs
+
+        # Deactivate completed cycles
+        deactivate_done_cycles
+
+        # Expire active cycles that have exceeded the cycle life span
+        expire_cycles
+
+        if @options.all_cycles?
+          # Process all active cycles
+          cycles=@active_cycles
+        else
+          cycles=@options.cycles
+        end
+
+        did_something=false
+        cycles.each do |cycle|
+          strcyc=cycle.strftime('%Y%m%d%H%M')
+          puts "#{strcyc}: consider this cycle"
+          # Find the cycle, or nil if the cycle was never attempted
+          rewind_cycle=find_cycle(cycle)
+          
+          if rewind_cycle.nil?
+            puts "#{strcyc}: cycle has never been started so all of its tasks should already have 0 tries."
+            puts "#{strcyc}: I will take no further action on this cycle."
+            next
+          end
+
+          if rewind_cycle.expired?
+            puts "ERROR: Cycle #{strcyc} is expired.  Expired cycles cannot be reactivated, so I cannot rewind tasks for this cycle."
+            next
+          end
+        
+          if rewind_cycle.draining?
+            puts "ERROR: Cycle #{strcyc} has completed a \"final\" state task.  Such cycles cannot be reactivated, so I cannot rewind tasks for this cycle."
+            next
+          end
+          
+          
+          if all_tasks
+            job_hash=@dbServer.get_jobs(cycle)
+            task_list=job_hash.keys
+          else
+            task_list=@options.tasks
+          end
+
+          rewind_list=[]
+          did_something=false
+          puts "ACTIVE JOBS: <#{@active_jobs.keys.join('><')}>"
+          task_list.each do |task_name|
+            puts "#{strcyc}: #{task_name}: consider this task"
+            cycjob=@active_jobs[task_name.to_s]
+            if cycjob.nil?
+              puts "#{strcyc}: #{task_name}: job has not been tried yet for any cycle.  Doing nothing to this task."
+              next
+            end
+            puts "#{strcyc}: #{task_name}: jobs exist for <#{cycjob.keys.join(', ')}>"
+            rewind_job=cycjob[cycle]
+            if rewind_job.nil?
+              puts "#{strcyc}: #{task_name}: job has not been tried yet for cycle #{strcyc}.  Doing nothing to this task."
+              next
+            end
+
+            if rewind_job.done?
+              puts "#{strcyc}: #{task_name}: job is done, but setting tries to 0 anyway."
+            end
+
+            task=@tasks[task_name.to_s]
+            if task.nil?
+              puts "#{strcyc}: #{task_name}: No entry in @tasks.  Task does not exist.  INTERNAL ERROR."
+              fail
+            end
+            wstate=WorkflowState.new(cycle,@active_jobs,@workflowIOServer,@cycledefs,task_name,task)
+            task.rewind!(wstate)
+
+            puts "#{strcyc}: #{task_name}: deleting all records of this job."
+            rewind_job.tries=0
+            @dbServer.delete_jobs([rewind_job])
+            did_something=true
+          end # task loop
+
+          if did_something
+            if rewind_cycle.done?
+              puts "#{strcyc}: WARNING: Cycle is done.  Setting its tasks' tries to 0 may start other tasks."
+              rewind_cycle.reactivate!
+              @dbServer.update_cycles([rewind_cycle])
+            end
+            
+            if not rewind_cycle.active?
+              puts "#{strcyc}: ERROR: Unable to active cycle.  Cycle is in state #{rewind_cycle.state}."
+              return
+            end
+          end
+
+        end # cycle loop
+
+      }
+    end  # rewind
+
+
+
+    ##########################################
+    #
     # run
     #
     ##########################################
     def run
-
-      begin
-
-        # Open/Create the database
-        @dbServer.dbopen
-
-        # Acquire a lock on the workflow in the database
-        @locked=@dbServer.lock_workflow
-        Process.exit(0) unless @locked
-
-        # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)        
-
+      with_locked_db {
         # Build the workflow objects from the contents of the workflow document
         build_workflow
 
@@ -121,43 +243,27 @@ module WorkflowMgr
 
         # Submit new tasks where possible
         submit_new_jobs
-
-      rescue => crash
-        WorkflowMgr.stderr(crash.message,1)
-        WorkflowMgr.log(crash.message)
-        case 
-          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
-            WorkflowMgr.log(crash.backtrace.join("\n"))
-          else
-        end
-        Process.exit(1)
-        
-      ensure
-
-        # Shut down the batch queue server if it is no longer needed
-        unless @bqServer.nil? || !@config.BatchQueueServer
-          unless @bqServer.running?
-            uri=@bqServer.__drburi
-            @bqServer.stop!
-            @dbServer.delete_bqservers([uri])
-          end
-        end
-
-        # Make sure we release the workflow lock in the database and shutdown the dbserver
-        unless @dbServer.nil?
-          @dbServer.unlock_workflow if @locked
-          @dbServer.stop! if @config.DatabaseServer
-        end
-
-        # Make sure to shut down the workflow file stat server
-        unless @workflowIOServer.nil?
-          @workflowIOServer.stop! if @config.WorkflowIOServer
-        end
-
-      end
- 
+      }
     end  # run
+
+    ##########################################
+    #
+    # find_cycle
+    #
+    ##########################################
+    def find_cycle(cycle_time)
+      # Look for the boot cycle in the active cycles
+      boot_cycle=@active_cycles.find { |c| cycle_time==c.cycle }
+      
+      # If it wasn't in the active cycle list, look for it in the
+      # database and add the jobs for that cycle to the active job
+      # list as well
+      if boot_cycle.nil?
+        boot_cycle=@dbServer.get_cycle(cycle_time).first
+        @active_jobs.merge!(@dbServer.get_jobs([cycle_time]))
+      end
+      return boot_cycle
+    end
 
     ##########################################
     #
@@ -166,21 +272,10 @@ module WorkflowMgr
     ##########################################
     def boot
 
-      begin
-
-        # Open/Create the database
-        @dbServer.dbopen
-
-        # Acquire a lock on the workflow in the database
-        @locked=@dbServer.lock_workflow
-        Process.exit(0) unless @locked
-
+      with_locked_db {
         # Get task name and cycle time
         boot_task_name=@options.tasks.first
         boot_cycle_time=@options.cycles.first
-
-        # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -212,14 +307,8 @@ module WorkflowMgr
           raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task is not defined in the workflow definition"
         end
 
-        # Look for the boot cycle in the active cycles
-      	boot_cycle=@active_cycles.find { |c| boot_cycle_time==c.cycle }
-
-        # If it wasn't in the active cycle list, look for it in the database and add the jobs for that cycle to the active job list as well
-        if boot_cycle.nil?
-          boot_cycle=@dbServer.get_cycle(boot_cycle_time).first
-          @active_jobs.merge!(@dbServer.get_jobs([boot_cycle_time]))
-        end
+        # Find the requested cycle
+        boot_cycle=find_cycle(boot_cycle_time)
 
         # Activate a new cycle if necessary and add it to the database
         if boot_cycle.nil?
@@ -319,6 +408,42 @@ module WorkflowMgr
         end
 
         puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
+      } # with_locked_db
+
+    end # boot
+
+  private
+
+
+
+    ##########################################
+    #
+    # with_locked_db
+    #
+    ##########################################
+    def with_locked_db
+
+      # This locks the database and passes control to a code block,
+      # and then unlocks the database afterwards, even on error.
+
+      begin
+
+        # Open/Create the database
+        @dbServer.dbopen
+
+        # Acquire a lock on the workflow in the database
+        @locked=@dbServer.lock_workflow
+        Process.exit(0) unless @locked
+
+        # Set up an object to serve file stat info
+        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)        
+        ######################################
+        #
+        # Pass control to the code block
+        #
+        yield
+        #
+        ######################################
 
       rescue => crash
         WorkflowMgr.stderr(crash.message,1)
@@ -330,7 +455,7 @@ module WorkflowMgr
           else
         end
         Process.exit(1)
-                
+        
       ensure
 
         # Shut down the batch queue server if it is no longer needed
@@ -354,10 +479,8 @@ module WorkflowMgr
         end
 
       end
-
-    end
-
-  private
+ 
+    end  # run
 
     ##########################################
     #
@@ -756,6 +879,8 @@ module WorkflowMgr
       # Harvest job ids from pending job submissions
       harvest_pending_jobids
 
+      wstate=nil
+
       begin
 
         # Initialize array of jobs whose job ids have been updated
@@ -845,7 +970,8 @@ module WorkflowMgr
             # Check for job hang
             unless @tasks[job.task].hangdependency.nil?
               if job.state=="RUNNING"
-                if @tasks[job.task].hangdependency.resolved?(job.cycle,@active_jobs,@workflowIOServer,@cycledefs)
+                wstate=WorkflowState.new(job.cycle,@active_jobs,@workflowIOServer,@cycledefs,job.task,@tasks[job.task])
+                if @tasks[job.task].hangdependency.resolved?(wstate)
                   job.state="FAILED"
                   runmsg=".  A job hang has been detected.  The job will be killed.  It will be resubmitted if the retry count has not been exceeded."
                   @bqServer.delete(job.id)
@@ -1147,7 +1273,7 @@ module WorkflowMgr
         cycletime=cycle.cycle
         @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 
-          # Mqke sure the task is eligible for submission
+          # Make sure the task is eligible for submission
           resubmit=false
           unless @active_jobs[task.attributes[:name]].nil?
             unless @active_jobs[task.attributes[:name]][cycletime].nil?
@@ -1194,7 +1320,8 @@ module WorkflowMgr
           
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
-            next unless task.dependency.resolved?(cycletime,@active_jobs,@workflowIOServer,@cycledefs)
+            wstate=WorkflowState.new(cycletime,@active_jobs,@workflowIOServer,@cycledefs,task.attributes[:name],task)
+            next unless task.dependency.resolved?(wstate)
           end
 
           # Reject this task if core throttle will be exceeded
@@ -1222,7 +1349,8 @@ module WorkflowMgr
             catch (:violation) do
               task.attributes[:metatasks].split(",").each do |metatask|
                 @active_metatask_instance_count[metatask]=0 if @active_metatask_instance_count[metatask].nil?
-                if @active_metatask_instance_count[metatask] + 1 > @metatask_throttles[metatask]
+                mthrottle=@metatask_throttles[metatask]
+                if !mthrottle.nil? and @active_metatask_instance_count[metatask] + 1 > mthrottle
                   violation=true
                   @logServer.log(cycletime,"Cannot submit #{task.attributes[:name]}, because maximum metatask throttle of #{@metatask_throttles[metatask]} will be violated.",2)
                   throw :violation

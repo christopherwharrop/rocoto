@@ -129,6 +129,38 @@
 
   <!-- Type definitions -->
 
+  <define name="rb_or_sh">
+    <choice>
+      <element name="rb">
+        <optional>
+          <attribute name="name">
+            <data type="string"/>
+          </attribute>
+        </optional>
+        <ref name="compoundTimeString"/>
+      </element>
+
+      <element name="sh">
+        <optional>
+          <attribute name="name">
+            <data type="string"/>
+          </attribute>
+        </optional>
+        <optional>
+          <attribute name="shell">
+            <data type="string"/>
+          </attribute>
+        </optional>
+        <optional>
+          <attribute name="runopt">
+            <data type="string"/>
+          </attribute>
+        </optional>
+        <ref name="compoundTimeString"/>
+      </element>
+    </choice>
+  </define>
+
   <define name="nonNegativeTime">
     <choice>
       <data type="string"><param name="pattern">\s*(\d+|(#[^#\s]+#))+\s*</param></data>
@@ -196,6 +228,9 @@
         <optional>
           <attribute name="state">
             <choice>
+	      <value>RUNNING</value>
+	      <value>Running</value>
+	      <value>running</value>
 	      <value>SUCCEEDED</value>
               <value>DEAD</value>
 	      <value>Succeeded</value>
@@ -206,6 +241,29 @@
           </attribute>
         </optional>
         <empty/>
+      </element>
+      <ref name="rb_or_sh"/>
+      <element name="true">
+        <empty/>
+      </element>
+      <element name="false">
+        <empty/>
+      </element>
+      <element name="streq">
+        <element name="left">
+          <ref name="compoundTimeString"/>
+        </element>
+        <element name="right">
+          <ref name="compoundTimeString"/>
+        </element>
+      </element>
+      <element name="strneq">
+        <element name="left">
+          <ref name="compoundTimeString"/>
+        </element>
+        <element name="right">
+          <ref name="compoundTimeString"/>
+        </element>
       </element>
       <element name="cycleexistdep">
         <attribute name="cycle_offset">
@@ -345,6 +403,15 @@
 
       <!-- Order of task property tags does not matter -->
       <interleave>
+
+        <!-- Rewind tag is optional -->
+        <optional>
+          <element name="rewind">
+            <oneOrMore>
+              <ref name="rb_or_sh"/>
+            </oneOrMore>
+          </element>
+        </optional>
 
         <!-- Exactly one command tag -->
         <element name="command">

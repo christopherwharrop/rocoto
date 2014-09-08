@@ -48,6 +48,27 @@ module WorkflowMgr
 
     end
 
+
+    ##########################################
+    #
+    # to_s
+    #
+    ##########################################
+    def to_s
+      strcyc=@cycle.strftime("%Y%m%d%H%M")
+      if done?
+        return "#{strcyc}:done@#{@done.strftime('%Y%m%d%H%M')}"
+      elsif drained?
+        return "#{strcyc}:drained@#{@done.strftime('%Y%m%d%H%M')}"
+      elsif expired?
+        return "#{strcyc}:expired@#{@done.strftime('%Y%m%d%H%M')}"
+      elsif active?
+        return "#{strcyc}:activated@#{@done.strftime('%Y%m%d%H%M')}"
+      else
+        return "#{strcyc}:inactive"
+      end
+    end
+
     
     ##########################################
     #
