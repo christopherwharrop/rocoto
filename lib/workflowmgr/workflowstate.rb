@@ -77,7 +77,12 @@ module WorkflowMgr
     #
     ##########################################
     def ruby_bool(evalexpr,cycle)
-      return se(cycle).run_bool(evalexpr)
+      begin
+        return se(cycle).run_bool(evalexpr)
+      rescue SystemCallError => e
+        WorkflowMgr.stderr("<rb> tag: SystemCallError: #{e}",1)
+        return false
+      end
     end
 
 
