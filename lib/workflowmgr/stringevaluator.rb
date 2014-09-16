@@ -218,7 +218,18 @@ module WorkflowMgr
           if v.is_a?(CompoundTimeString)
             ENV[k.to_s]=v.to_s(cycle)
           elsif v.is_a?(Hash)
-            # Skip hashes.
+            if k=='env'
+              v.each do |k2,v2|
+                if v2.is_a?(CompoundTimeString)
+                  v2s=v2.to_s(cycle)
+                  ENV[k2.to_s] = v2s
+                elsif v.is_a?(String)
+                  ENV[k2.to_s] = v2
+                end
+              end
+            else
+              # Skip other hashes.
+            end
           else
             ENV[k.to_s]=v.to_s
           end
