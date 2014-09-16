@@ -21,15 +21,15 @@ module WorkflowMgr
     def initialize(args)
       @cycles=nil
       @tasks=nil
-      @all_tasks=false
-      @all_cycles=false  # always false; no dash option exists
+      @all_tasks=nil
+      @all_cycles=nil
       super(args)
     end
 
     def dump()
       puts "Cycles: #{@cycles}"
       puts "Tasks: #{@tasks}"
-      puts "Flags: all_tasks=#{@all_tasks} all_cycles=#{@all_cycles}"
+      puts "Flags: all_tasks=#{@all_tasks.inspect} all_cycles=#{@all_cycles.inspect}"
     end
 
     ##########################################  
@@ -38,7 +38,11 @@ module WorkflowMgr
     #
     ##########################################
     def all_cycles?
-      return @all_cycles
+      if @all_cycles.nil?
+        return false
+      else
+        return @all_cycles[0]
+      end
     end
     def each_cycle
       @cycles.each do |cycle|
@@ -71,7 +75,11 @@ module WorkflowMgr
     #
     ##########################################
     def all_tasks?
-      return @all_tasks
+      if @all_tasks.nil?
+        return false
+      else
+        return @all_tasks[0]
+      end
     end
     def each_task
       @tasks.each do |task|
@@ -100,6 +108,8 @@ module WorkflowMgr
 
       @cycles=Array.new
       @tasks=Array.new
+      @all_tasks=Array.new
+      @all_tasks.push(false)
 
       # Specify the cycle
       opts.on("-c","--cycle CYCLE",String,"Cycle") do |c|
@@ -120,7 +130,8 @@ module WorkflowMgr
 
       # Retry all tasks for the specified cycles instead of a list of tasks:
       opts.on("-a",'--all',"Selects all tasks.") do |flag|
-        @all_tasks=flag
+        puts "Requesting rewind of all tasks."
+        @all_tasks[0]=true
       end
     end
 
@@ -133,7 +144,7 @@ module WorkflowMgr
       super(opts,args)
       raise OptionParser::ParseError,"A cycle must be specified." unless cycles?
 
-      if tasks? and @all_tasks
+      if tasks? and @all_tasks[0]
         raise OptionParser::ParseError,"You cannot specify a task list (-t) AND request all tasks (-a).  Give one or the other."
       elsif not tasks and not @all_tasks
         raise OptionParser::ParseError,"A task must be specified."

@@ -219,7 +219,7 @@ module WorkflowMgr
     #
     ##########################################
     def resolved?(d)
-      return d.ruby_bool(@script.to_s(d.cycle))
+      return d.ruby_bool(@script.to_s(d.cycle),d.cycle)
     end
 
     ##########################################
@@ -228,7 +228,7 @@ module WorkflowMgr
     #
     ##########################################
     def rewind!(d)
-      d.ruby_bool(@script.to_s(d.cycle))
+      d.ruby_bool(@script.to_s(d.cycle),d.cycle)
     end
   end
 
@@ -258,6 +258,7 @@ module WorkflowMgr
       raise 'In ShellDependency, runopt must not be nil' if runopt.nil?
       raise 'In ShellDependency, shell must not be nil' if shell.nil?
       raise 'In ShellDependency, shellexpr must not be nil' if shellexpr.nil?
+      raise 'In ShellDependency, shellexpr must be a CompoundTimeString' unless shellexpr.is_a?(CompoundTimeString)
       @shellexpr=shellexpr
       @runopt=runopt
       @shell=shell
@@ -289,7 +290,9 @@ module WorkflowMgr
     #
     ##########################################
     def resolved?(d)
-      return d.shell_bool(@shell.to_s(d.cycle),@runopt,@shellexpr)
+      ex=@shellexpr.to_s(d.cycle)
+      puts "#{@shell} #{@runopt} #{ex} (#{d.cycle})"
+      return d.shell_bool(@shell,@runopt,ex,d.cycle)
     end
 
     ##########################################
@@ -298,7 +301,9 @@ module WorkflowMgr
     #
     ##########################################
     def rewind!(d)
-      d.shell_bool(@shell.to_s(d.cycle),@runopt,@shellexpr)
+      ex=@shellexpr.to_s(d.cycle)
+      puts "#{@shell} #{@runopt} #{ex} (#{d.cycle})"
+      d.shell_bool(@shell,@runopt,ex,d.cycle)
     end
   end
 

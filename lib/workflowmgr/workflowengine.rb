@@ -92,13 +92,7 @@ module WorkflowMgr
         # Get task name and cycle time:
         rewind_task_name=@options.tasks.first
         rewind_cycle_time=@options.cycles.first
-
-        # If the task name is / then we rewind all tasks:
-        if rewind_task_name=='/'
-          all_tasks=true
-        else
-          all_tasks=false
-        end
+        all_tasks=@options.all_tasks?
         
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -151,9 +145,10 @@ module WorkflowMgr
           
           
           if all_tasks
-            job_hash=@dbServer.get_jobs(cycle)
-            task_list=job_hash.keys
+            puts "Rewind all tasks!!"
+            task_list=@active_jobs.keys
           else
+            puts "Rewind specified tasks."
             task_list=@options.tasks
           end
 

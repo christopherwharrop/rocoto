@@ -76,8 +76,8 @@ module WorkflowMgr
     # ruby_bool
     #
     ##########################################
-    def ruby_bool(evalexpr)
-      return se.run_bool(evalexpr)
+    def ruby_bool(evalexpr,cycle)
+      return se(cycle).run_bool(evalexpr)
     end
 
 
@@ -86,8 +86,11 @@ module WorkflowMgr
     # shell_bool
     #
     ##########################################
-    def shell_bool(shell,runopt,evalexpr)
-      return se.shell_bool(shell,runopt,evalexpr)
+    def shell_bool(shell,runopt,evalexpr,cycle)
+      raise "in shell_bool, shell must be a string" unless shell.is_a?(String)
+      raise "in shell_bool, runopt must be a string" unless runopt.is_a?(String)
+      raise "in shell_bool, evalexpr must be a string" unless evalexpr.is_a?(String)
+      return se(cycle).shell_bool(shell,runopt,evalexpr,cycle)
     end
 
   private
@@ -98,7 +101,7 @@ module WorkflowMgr
     # Create or return the StringEvaluator
     #
     ##########################################
-    def se()
+    def se(cycle)
       if @se.nil?
         # Make the StringEvaluator object:
         nse=StringEvaluator.new

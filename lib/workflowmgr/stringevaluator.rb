@@ -7,6 +7,8 @@
 ##########################################
 module WorkflowMgr
 
+  require 'workflowmgr/compoundtimestring'
+
   ##########################################
   # 
   # StringEvaluator
@@ -33,6 +35,8 @@ module WorkflowMgr
     #
     ##########################################
     def []=(var,value)
+      raise 'var must be a string' unless var.is_a?(String)
+      raise 'value must be a string' unless value.is_a?(String)
       svar=var.to_s
       var_name_ok?(var)
       @vars[svar]=value
@@ -46,7 +50,6 @@ module WorkflowMgr
       elsif @defaults.has_key?(svar)
         return @defaults[svar]
       else
-        #puts "CANNOT FIND #{svar}: #{@vars[svar]} #{@defaults[svar]}"
         return nil
       end
     end
@@ -81,12 +84,15 @@ module WorkflowMgr
       # variables are already set.
       strev.each_var do |k,v|
         if not @defaults.has_key?(k)
+          raise 'key must be a string in defaults_from' unless k.is_a?(String)
+          raise 'value must be a string in defaults_from' unless v.is_a?(String)
           setdef(k,v)
         end
       end
     end
 
     def setdef(var,value)
+      raise 'var must be a string in setdef' unless var.is_a?(String)
       svar=var.to_s
       var_name_ok?(var)
       @defaults[svar]=value
@@ -199,7 +205,7 @@ module WorkflowMgr
     # shell_bool
     #
     ##########################################
-    def shell_bool(shell,runopt,evalexpr)
+    def shell_bool(shell,runopt,evalexpr,cycle)
       # shell     -->  "/bin/sh"
       # runopt    -->  "-c"
       # evalexpr  -->  "echo hello world"
@@ -208,8 +214,14 @@ module WorkflowMgr
         save_env[k]=v
       end
       begin
-        each_var do |k,v|
-          ENV[k.to_s]=v.to_s
+       each_var do |k,v|
+          if v.is_a?(CompoundTimeString)
+            ENV[k.to_s]=v.to_s(cycle)
+          elsif v.is_a?(Hash)
+            # Skip hashes.
+          else
+            ENV[k.to_s]=v.to_s
+          end
         end
         result=system(shell,runopt,evalexpr)
         if(result)
