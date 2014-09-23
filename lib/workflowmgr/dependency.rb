@@ -122,7 +122,7 @@ module WorkflowMgr
       else
           result=(sleft!=sright)
       end
-      return [{:dep=>@name, :msg=>"is #{result}", :resolved=>result},result]
+      return [{:dep=>@name, :msg=>"is #{result}", :resolved=>result}]
     end
   end
 
@@ -162,7 +162,7 @@ module WorkflowMgr
     #
     ##########################################
     def query(d)
-      return [{:dep=>@name, :msg=>"is #{value}", :resolved=>@value},@value]
+      return [{:dep=>@name, :msg=>"is #{value}", :resolved=>@value}]
     end
   end
 
@@ -207,9 +207,9 @@ module WorkflowMgr
     ##########################################
     def query(d)
       if resolved?(d)
-        return [{:dep=>@name, :msg=>"returned true", :resolved=>true },true]
+        return [{:dep=>@name, :msg=>"returned true", :resolved=>true }]
       else
-        return [{:dep=>@name, :msg=>"returned false", :resolved=>false },false]
+        return [{:dep=>@name, :msg=>"returned false", :resolved=>false }]
       end
     end
 
@@ -278,9 +278,9 @@ module WorkflowMgr
     ##########################################
     def query(d)
       if resolved?(d)
-        return [{:dep=>@name, :msg=>"returned true", :resolved=>true },true]
+        return [{:dep=>@name, :msg=>"returned true", :resolved=>true }]
       else
-        return [{:dep=>@name, :msg=>"returned false", :resolved=>false },false]
+        return [{:dep=>@name, :msg=>"returned false", :resolved=>false }]
       end
     end
 
