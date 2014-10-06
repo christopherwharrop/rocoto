@@ -77,11 +77,11 @@ module WorkflowMgr
 
       # Add Slurm batch system options translated from the generic options specification
       task.attributes.each do |option,value|
-#        case option
-#          when :account
-#            cmd += " -A #{value}"
-#          when :queue            
-#            cmd += " -q #{value}"
+        case option
+          when :account
+            cmd += " --account #{value}"
+          when :queue            
+            cmd += " -p #{value}"
 #          when :cores
 #            # Ignore this attribute if the "nodes" attribute is present
 #            next unless task.attributes[:nodes].nil?
@@ -89,68 +89,63 @@ module WorkflowMgr
 #          when :nodes
 #            # Remove any occurrences of :tpp=N
 #            cmd += " -l nodes=#{value.gsub(/:tpp=\d+/,"")}"
-#          when :walltime
-#            cmd += " -l walltime=#{value}"
-#          when :memory
-#            cmd += " -l vmem=#{value}"
-#          when :stdout
-#            cmd += " -o #{value}"
-#          when :stderr
-#            cmd += " -e #{value}"
-#          when :join
-#            cmd += " -j oe -o #{value}"           
-#          when :jobname
-#            cmd += " -N #{value}"
-#          when :native
-#            cmd += " #{value}"
-#        end
+          when :walltime
+            # Make sure format is dd-hh:mm:ss if days are included
+            cmd += " -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}"
+          when :memory
+            cmd += " --mem #{value}"
+          when :stdout
+            cmd += " -o #{value}"
+          when :stderr
+            cmd += " -e #{value}"
+          when :join
+            cmd += " -o #{value}"           
+          when :jobname
+            cmd += " --job-name #{value}"
+          when :native
+            cmd += " #{value}"
+        end
       end
 
       # Build the -v string to pass environment to the job
-#      save_env={}
-#      unless task.envars.empty?
-#        vars = "-v " 
-#        task.envars.each { |name,env|
-#          if env=~/[\s,-]+/ || vars.length > 2048
-#            vars="-V"
-#            break
-#          end
-#          vars += "," unless vars=="-v "
-#          vars += "#{name}"
-#          vars += "=\"#{env}\"" unless env.nil?
-#        }
+      save_env={}
+      unless task.envars.empty?
+        vars = "--export=" 
+        task.envars.each { |name,env|
+          if env=~/[\s,-]+/ || vars.length > 2048
+            vars="--export=ALL"
+            break
+          end
+          vars += "," unless vars=="--export="
+          vars += "#{name}"
+          vars += "=\"#{env}\"" unless env.nil?
+        }
 
-#        # Choose -v or -V depending on how long -v is
-#        if vars=="-V"
-#          # Save a copy of the current environment so we can restore it later
-#          save_env.merge(ENV) 
-#
-#          # Set all envars in the current environment so they get passed with -V
-#          task.envars.each { |name,env|
-#            ENV[name]=env
-#          }
-#        end          
-#        cmd += " #{vars}"
-#      end
+        # Choose -v or -V depending on how long -v is
+        if vars=="--export=ALL"
+          # Save a copy of the current environment so we can restore it later
+          save_env.merge(ENV) 
 
-#      # Build the -F string to pass job script arguments to batch script
-#      cmdargs=task.attributes[:command].split[1..-1].join(" ")
-#      unless cmdargs.empty?
-#        cmd += " -F \"#{cmdargs}\""
-#      end
+          # Set all envars in the current environment so they get passed with -V
+          task.envars.each { |name,env|
+            ENV[name]=env
+          }
+        end          
+        cmd += " #{vars}"
+      end
 
       # Add the command to submit
-      cmd += " #{task.attributes[:command].split.first}"
+      cmd += " #{task.attributes[:command]}"
       WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using '#{cmd}'",4)
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
 
-#      # Restore the environment if necessary
-#      unless save_env.empty?
-#        ENV.clear
-#        save_env.each { |k,v| ENV[k]=v }
-#      end
+      # Restore the environment if necessary
+      unless save_env.empty?
+        ENV.clear
+        save_env.each { |k,v| ENV[k]=v }
+      end
 
       # Parse the output of the submit command
       if output=~/^Submitted batch job (\d+)$/
