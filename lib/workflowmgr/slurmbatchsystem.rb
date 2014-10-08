@@ -223,7 +223,7 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username}",30)
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("scontrol -o show job",30)
 
         # Raise SchedulerDown if the command failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -244,68 +244,70 @@ private
   	record={}
 
   	# Look at all the attributes for this job and build the record
-	jobfields=job.strip.split(/\s+/)
+	jobfields=Hash[job.split.collect {|f| f.split("=") }]
+
+        # Skip records for other users
+        next unless jobfields["UserId"] =~/^#{username}\(/
 
         # Extract job id        
-        record[:jobid]=jobfields[0]
+        record[:jobid]=jobfields["JobId"]
+
+        # Extract job name
+        record[:jobname]=jobfields["Name"]
+
+        # Extract job owner
+        record[:user]=jobfields["UserId"].split("(").first
+
+        # Extract core count
+        record[:cores]=jobfields["NumCPUs"].to_i
+
+        # Extract the partition
+        record[:queue]=jobfields["Partition"]
+
+        # Extract the submit time
+        record[:submit_time]=Time.local(*jobfields["SubmitTime"].split(/[-:T]/)).getgm
+
+        # Extract the start time
+        record[:start_time]=Time.local(*jobfields["StartTime"].split(/[-:T]/)).getgm
+
+        # Extract the end time
+        record[:end_time]=Time.local(*jobfields["EndTime"].split(/[-:T]/)).getgm
+
+        # Extract the priority
+        record[:priority]=jobfields["Priority"]
+
+        # Extract the exit status
+        code,signal=jobfields["ExitCode"].split(":").collect {|i| i.to_i}
+        if code==0
+          record[:exit_status]=signal
+        else
+          record[:exit_status]=code
+        end            
 
         # Extract job state
-        case jobfields[4]
-          when /^Q$/,/^H$/,/^W$/,/^S$/,/^T$/
+        case jobfields["JobState"]       
+          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
             record[:state]="QUEUED"
-          when /^R$/,/^E$/
+          when /^RUNNING$/,/^COMPLETING$/
             record[:state]="RUNNING"
+          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/
+            record[:state]="FAILED"
+            record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
+          when /^COMPLETED$/
+            if record[:exit_status]==0
+              record[:state]="SUCCEEDED"
+            else    
+              record[:state]="FAILED"
+            end
           else
             record[:state]="UNKNOWN"
         end
-        record[:native_state]=jobfields[4]
+        record[:native_state]=jobfields["JobState"]
 
-#            when /Job_Name/
-#	      record[:jobname]=jobstat.content
-#	    when /Job_Owner/
-#	      record[:user]=jobstat.content
-#            when /Resource_List/       
-#              jobstat.each_element { |e|
-#                if e.name=='procs'
-#                  record[:cores]=e.content.to_i
-#                  break
-#                end
-#            }
-#  	    when /queue/
-#	      record[:queue]=jobstat.content
-#	    when /qtime/
-#	      record[:submit_time]=Time.at(jobstat.content.to_i).getgm
-#  	    when /start_time/
-#              record[:start_time]=Time.at(jobstat.content.to_i).getgm
-#	    when /comp_time/
-#              record[:end_time]=Time.at(jobstat.content.to_i).getgm
-# 	    when /Priority/
-#	      record[:priority]=jobstat.content.to_i            
-#            when /exit_status/
-#              record[:exit_status]=jobstat.content.to_i
-#	    else
-#              record[jobstat.name]=jobstat.content
-#          end  # case jobstat
-#  	}  # job.children
-
-#        # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
-#        if record[:state]=="UNKNOWN" && !record[:exit_status].nil?
-#          if record[:exit_status]==0
-#            record[:state]="SUCCEEDED"
-#          else
-#            record[:state]="FAILED"
-#          end
-#        end
-
-        # Put the job record in the jobqueue unless it's complete but doesn't have a start time, an end time, and an exit status
-        unless record[:state]=="UNKNOWN" || ((record[:state]=="SUCCEEDED" || record[:state]=="FAILED") && (record[:start_time].nil? || record[:end_time].nil?))
-          @jobqueue[record[:jobid]]=record
-        end
+        # Add record to job queue
+        @jobqueue[record[:jobid]]=record
 
       }  #  queued_jobs.find
-
-#      queued_jobs=nil
-#      GC.start
 
     end  # job_queue
 
