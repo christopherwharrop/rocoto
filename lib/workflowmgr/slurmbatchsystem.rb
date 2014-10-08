@@ -82,14 +82,50 @@ module WorkflowMgr
             cmd += " --account #{value}"
           when :queue            
             cmd += " -p #{value}"
-#          when :cores
-#            # Ignore this attribute if the "nodes" attribute is present
-#            next unless task.attributes[:nodes].nil?
-#            cmd += " -l procs=#{value}"
-#          when :nodes
-#            # Remove any occurrences of :tpp=N
-#            cmd += " -l nodes=#{value.gsub(/:tpp=\d+/,"")}"
-          when :walltime
+          when :cores
+            # Ignore this attribute if the "nodes" attribute is present
+            next unless task.attributes[:nodes].nil?
+            cmd += " --ntasks=#{value}"
+          when :nodes
+            # Arbitrary processor geometry is not support by sbatch (it is supported by srun)
+            # Request number of nodes and tasks per node large enough to accommodate nodespec
+            # Get the total number of nodes and the maximum ppn
+            maxppn=1
+            nnodes=0
+            nodespecs=value.split("+")
+            nodespecs.each { |nodespec|
+              resources=nodespec.split(":")
+              nnodes+=resources.shift.to_i
+              ppn=0
+              resources.each { |resource|
+                case resource
+                  when /ppn=(\d+)/
+                    ppn=$1.to_i
+                  when /tpp=(\d+)/
+                    tpp=$1.to_i
+                end
+              }
+              maxppn=ppn if ppn > maxppn
+            }
+
+            # Request total number of nodes
+            cmd += " --nodes=#{nnodes}-#{nnodes}"
+
+            # Request max tasks per node
+            cmd += " --tasks-per-node=#{maxppn}"
+
+            # Make sure exclusive access to nodes is enforced
+            cmd += " --exclusive"
+
+            # Print a warning if multiple nodespecs are specified
+            if nodespecs.size > 1
+              WorkflowMgr.stderr("WARNING: SLURM does not support multiple types of node requests for batch jobs",1)
+              WorkflowMgr.stderr("WARNING: You must use the -m option of the srun command in your script to launch your code with an arbitrary distribution of tasks",1)
+              WorkflowMgr.stderr("WARNING: Please see https://computing.llnl.gov/linux/slurm/faq.html#arbitrary for details",1)
+              WorkflowMgr.stderr("WARNING: Rocoto has automatically converted '#{value}' to '#{nnodes}:ppn=#{maxppn}' to facilitate the desired arbitrary task distribution",1)
+            end
+
+           when :walltime
             # Make sure format is dd-hh:mm:ss if days are included
             cmd += " -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}"
           when :memory
