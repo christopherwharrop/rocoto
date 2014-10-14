@@ -27,9 +27,8 @@ module WorkflowMgr
       # Initialize an empty hash for job queue records
       @jobqueue={}
 
-      # Currently there is no way to specify the amount of time to 
-      # look back at finished jobs. So set this to a big value
-      @hrsback=120
+      # Initialize an empty hash for job accounting records
+      @jobacct={}
 
       # Assume the scheduler is up
       @schedup=true
@@ -53,6 +52,12 @@ module WorkflowMgr
 
         # Return the jobqueue record if there is one
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+
+        # Populate the job accounting log table if it is empty
+        refresh_jobacct if @jobacct.empty?
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
         # We didn't find the job, so return an uknown status record
         return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
@@ -310,6 +315,111 @@ private
       }  #  queued_jobs.find
 
     end  # job_queue
+
+
+    #####################################################
+    #
+    # refresh_jobacct
+    #
+    #####################################################
+    def refresh_jobacct
+
+      begin
+
+        # Get the username of this process
+        username=Etc.getpwuid(Process.uid).name
+
+        # Run qstat to obtain the current status of queued jobs
+        completed_jobs=""
+        errors=""
+        exit_status=0
+        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
+
+        # Raise SchedulerDown if the command failed
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+        # Return if the output is empty
+        return if completed_jobs.empty?
+
+      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",3)
+        raise WorkflowMgr::SchedulerDown
+      end
+
+      # For each job, find the various attributes and create a job record
+      completed_jobs.split("\n").each { |job|
+
+        # Initialize an empty job record
+  	record={}
+
+  	# Look at all the attributes for this job and build the record
+	jobfields=job.split("|")
+
+        # Skip records for other users
+        next unless jobfields[1] =~/^\s*#{username}$/
+
+        # Extract job id        
+        record[:jobid]=jobfields[0]
+
+        # Extract job name
+        record[:jobname]=jobfields[2]
+
+        # Extract job owner
+        record[:user]=jobfields[1].split("(").first
+
+        # Extract core count
+        record[:cores]=jobfields[8].to_i
+
+        # Extract the partition
+        record[:queue]=jobfields[3]
+
+        # Extract the submit time
+        record[:submit_time]=Time.local(*jobfields[5].split(/[-:T]/)).getgm
+
+        # Extract the start time
+        record[:start_time]=Time.local(*jobfields[6].split(/[-:T]/)).getgm
+
+        # Extract the end time
+        record[:end_time]=Time.local(*jobfields[7].split(/[-:T]/)).getgm
+
+        # Extract the priority
+        record[:priority]=jobfields[4]
+
+        # Extract the exit status
+        code,signal=jobfields[9].split(":").collect {|i| i.to_i}
+        if code==0
+          record[:exit_status]=signal
+        else
+          record[:exit_status]=code
+        end            
+
+        # Extract job state
+        case jobfields[10]       
+          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
+            record[:state]="QUEUED"
+          when /^RUNNING$/,/^COMPLETING$/
+            record[:state]="RUNNING"
+          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/
+            record[:state]="FAILED"
+            record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
+          when /^COMPLETED$/
+            if record[:exit_status]==0
+              record[:state]="SUCCEEDED"
+            else    
+              record[:state]="FAILED"
+            end
+          else
+            record[:state]="UNKNOWN"
+        end
+        record[:native_state]=jobfields[10]
+
+        # Add record to job queue
+        @jobacct[record[:jobid]]=record
+
+      }  #  completed_jobs.find
+
+    end  # job_acct
 
   end  # class
 
