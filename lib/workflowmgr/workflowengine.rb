@@ -167,10 +167,19 @@ module WorkflowMgr
             if rewind_job.nil?
               puts "#{strcyc}: #{task_name}: job has not been tried yet for cycle #{strcyc}.  Doing nothing to this task."
               next
-            end
-
-            if rewind_job.done?
-              puts "#{strcyc}: #{task_name}: job is done, but setting tries to 0 anyway."
+            else
+              if rewind_job.dead?
+                puts "#{strcyc}: #{task_name}: rewinding dead job."
+              elsif rewind_job.failed?
+                puts "#{strcyc}: #{task_name}: rewinding failed job."
+              elsif rewind_job.done?
+                puts "#{strcyc}: #{task_name}: rewinding successful job."
+              else
+                strid=rewind_job.id.to_s
+                puts "#{strcyc}: #{task_name}: killing job #{strid}..."
+                @bqServer.delete(strid)
+                puts "#{strcyc}: #{task_name}: will now rewind."
+              end
             end
 
             task=@tasks[task_name.to_s]
