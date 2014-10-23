@@ -467,9 +467,18 @@
           </element>
         </optional>
 
-        <!-- Zero or one native tag -->
+        <!-- Zero or more native tags -->
         <optional>
-          <element name="native">
+          <oneOrMore>
+            <element name="native">
+              <ref name="compoundTimeString"/>
+            </element>
+          </oneOrMore>
+        </optional>
+
+        <!-- Optional nodesize tag -->
+        <optional>
+          <element name="nodesize">
             <ref name="compoundTimeString"/>
           </element>
         </optional>

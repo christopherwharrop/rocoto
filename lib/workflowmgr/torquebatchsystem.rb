@@ -102,9 +102,11 @@ module WorkflowMgr
             input += "#PBS -j oe -o #{value}\n"           
           when :jobname
             input += "#PBS -N #{value}\n"
-          when :native
-            input += "#PBS #{value}\n"
         end
+      end
+
+      task.each_native do |native_line|
+        input += "#PBS #{native_line}\n"
       end
 
       # Build the -v string to pass environment to the job

@@ -232,9 +232,11 @@ module WorkflowMgr
             cmd += " -o #{value} -j y"           
           when :jobname
             cmd += " -N #{value}"
-          when :native
-	    cmd += " #{value}"
         end
+      end
+
+      task.each_native do |native_line|
+        cmd += " #{native_line}"
       end
 
       # Add environment vars

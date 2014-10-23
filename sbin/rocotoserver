@@ -32,7 +32,7 @@ exit if fork
 Process.setsid
 exit if fork
 STDIN.reopen "/dev/null"
-STDOUT.reopen "/dev/null", "a" 
+#STDOUT.reopen "/dev/null", "a" 
 #  STDERR.reopen "/dev/null", "a"  # We need STDERR to report errors
 
 # Start a Drb Server that will serve the workflow server object
