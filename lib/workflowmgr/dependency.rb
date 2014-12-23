@@ -144,7 +144,11 @@ module WorkflowMgr
     ##########################################
     def initialize(value,name)
       @value=!!value
-      @name=name.to_s(Time.new)
+      begin
+        @name=name.to_s(Time.new)
+      rescue
+        @name=name.to_s
+      end
     end
 
     ##########################################
