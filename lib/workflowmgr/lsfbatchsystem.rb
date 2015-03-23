@@ -54,7 +54,6 @@ module WorkflowMgr
       begin
 
         raise WorkflowMgr::SchedulerDown unless @schedup
-        puts "LOOKING FOR #{jobid}"
         # Populate the jobs status table if it is empty
         refresh_jobqueue if @jobqueue.empty?
 
@@ -63,12 +62,10 @@ module WorkflowMgr
 
         # If we didn't find the job in the jobqueue, look for it in the accounting records
 
-        puts 'GOT PAST JOBQUEUE - LOOKING AT BJOBS LONG OUTPUT'
 
         refresh_bjobs if @bjobs.empty?
         return @bjobs[jobid] if @bjobs.has_key?(jobid)
 
-        puts 'GOT PAST BJOBS - LOOKING AT BHIST'
 
         # Populate the job accounting log table if it is empty
         refresh_jobacct if @bhist.empty?
@@ -85,9 +82,10 @@ module WorkflowMgr
         # We didn't find the job, so return an uknown status record
         return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
 
-      rescue WorkflowMgr::SchedulerDown
+      rescue WorkflowMgr::SchedulerDown => ex
         @schedup=false
-        return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+        WorkflowMgr.stderr("Received SchedulerDown '#{ex.message}'",2)
+        return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
       end
 
     end
@@ -105,6 +103,10 @@ module WorkflowMgr
       # Get the Rocoto installation directory
       rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
+      if ENV.has_key?('ROCOTO_TASK_GEO')
+        ENV.delete('ROCOTO_TASK_GEO')
+      end
+
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
@@ -119,11 +121,9 @@ module WorkflowMgr
             next unless task.attributes[:nodes].nil?          
             wantcores=value.to_s.to_i
             if task.attributes[:nodesize].nil?
-              puts "NODE SIZE NIL"
               cmd += " -n #{value}"
             else
               nodesize=task.attributes[:nodesize].to_i
-              puts "NODE SIZE #{nodesize}"
               if wantcores>nodesize
                 rounddown=wantcores/nodesize
                 roundup=(wantcores+nodesize-1)/nodesize
@@ -131,9 +131,7 @@ module WorkflowMgr
                 overcores=lowcores*roundup
                 bignodes=wantcores-overcores
                 littlenodes=roundup-bignodes
-                puts "Need #{bignodes} nodes with #{lowcores+1} cores and #{littlenodes} with #{lowcores}"
                 totalcores=bignodes*(lowcores+1) + littlenodes*(lowcores)
-                puts "Off by #{totalcores-wantcores}"
                 if bignodes>0
                   span="-R span[ptile=#{lowcores+1}]"
                 else
@@ -149,9 +147,7 @@ module WorkflowMgr
                   task_geometry += '('+(iproc..(iproc+lowcores-1)).to_a.join(',')+')'
                   iproc+=lowcores
                 end
-                puts "ended with iproc=#{iproc}"
                 task_geometry += '}'
-                puts "task_geometry=#{task_geometry}"
                 if bignodes>0
                   nval=(bignodes+littlenodes)*(lowcores+1)
                   span=lowcores+1
@@ -164,13 +160,11 @@ module WorkflowMgr
                 task_geometry="{(#{(0..(wantcores-1)).to_a.join(',')})}"
                 nval=wantcores
               end
-              puts "END: nval=#{nval} span=#{span} and task_geo=#{task_geometry}"
               cmd += " -R span[ptile=#{span}]"
               cmd += " -n #{nval}"
               ENV["ROCOTO_TASK_GEO"]=task_geometry
             end
           when :nodes
-          puts 'NODESPEC'
             # Get largest ppn*tpp to calculate ptile
             # -n is ptile * number of nodes
             ptile=0
@@ -201,7 +195,6 @@ module WorkflowMgr
                 inode+=1
               end
               task_geometry += appendme
-              puts "#{nnodes}:ppn=#{ppn}:tpp=#{tpp} = #{appendme}"
             }
             task_geometry+="}"
 
@@ -247,11 +240,9 @@ module WorkflowMgr
 
       inl=0
       task.each_native do |native_line|
-        puts "NATIVE LINE #{native_line}"
         cmd += " #{native_line}"
         inl+=1
       end
-      puts "FOUND #{inl} NATIVE LINES"
 
       # LSF does not have an option to pass environment vars
       # Instead, the vars must be set in the environment before submission
@@ -265,19 +256,18 @@ module WorkflowMgr
 
       # Add the command to submit
       cmd += " #{rocotodir}/sbin/lsfwrapper.sh #{task.attributes[:command]}"
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",4)
+      #WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",4)
 
       # Run the submit command
       output=`#{cmd} 2>&1`.chomp
 
-      puts "#{cmd} 2>&1 ==> #{output}"
+      WorkflowMgr.log("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}")
+      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}",4)
 
       # Parse the output of the submit command
       if output=~/Job <(\d+)> is submitted to (default )*queue/
-        puts "RETURNING #{$1}"
         return $1,output
       else
-        puts "RETURNING NIL"
  	return nil,output
       end
 
@@ -306,7 +296,6 @@ private
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
-puts 'GOT TO refresh_jobqueue'
       begin
 
         # run bjobs to obtain the current status of queued jobs
@@ -316,7 +305,11 @@ puts 'GOT TO refresh_jobqueue'
         queued_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -w",30)
 
         # Raise SchedulerDown if the bjobs failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+        unless exit_status==0
+          WorkflowMgr.stderr("Exit status #{exit_status} from bjobs.",2)
+          # Raise SchedulerDown if the bhist failed
+          raise WorkflowMgr::SchedulerDown,errors
+        end
 
         # Return if the bjobs output is empty
         return if queued_jobs.empty? || queued_jobs=~/^No unfinished job found$/
@@ -326,11 +319,9 @@ puts 'GOT TO refresh_jobqueue'
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
-puts 'GOT PAST BIG BEGINRESCUE'
 
       # Parse the output of bjobs, building job status records for each job
       queued_jobs.split(/\n/).each { |s|
-        #puts "LINE #{s}"
         # Skip the header line
 	next if s=~/^JOBID/
 
@@ -415,7 +406,6 @@ puts 'GOT PAST BIG BEGINRESCUE'
     #####################################################
     def run_bhist_bjobs(nacctfiles=1,bjobs=true)
 
-puts 'GOT TO refresh_jobacct'
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
 
@@ -430,25 +420,28 @@ puts 'GOT TO refresh_jobacct'
         exit_status=0
         timeout=nacctfiles==1 ? 30 : 90
         if(bjobs) then
-          puts "RUNNING BJOBS NOW"
           completed_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -l -a",timeout)
         else
-          puts "RUNNING BHIST NOW"
           completed_jobs,errors,exit_status=WorkflowMgr.run4("bhist -n #{nacctfiles} -l -d -w",timeout)
         end
 
         # Return if the bhist output is empty
         return {} if completed_jobs.empty? || completed_jobs=~/^No matching job found$/
-
-        # Raise SchedulerDown if the bhist failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+        unless exit_status==0
+          if bjobs then
+            WorkflowMgr.stderr("Exit status #{exit_status} from bjobs.",2)
+          else
+            WorkflowMgr.stderr("Exit status #{exit_status} from bhist.",2)
+          end
+          # Raise SchedulerDown if the bhist failed
+          raise WorkflowMgr::SchedulerDown,errors
+        end
 
       rescue Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
-puts "GOT PAST BIG BEGINRESCUE (2)"
       # Build job records from output of bhist
       completed_jobs.split(/^-{10,}\n$/).each { |s|
 
@@ -458,15 +451,12 @@ puts "GOT PAST BIG BEGINRESCUE (2)"
         recordstring=s.strip
         recordstring.gsub!(/\n\s{3,}/,'')
         recordstring.split(/\n+/).each { |event|
-          #puts "LINE #{event.strip}"
           case event.strip
             when /^Job <(\d+)>,( Job Name <([^>]+)>,)* User <([^>]+)>,/
-            puts "Job = #{$1} #{$3} #{$4}"
               record[:jobid]=$1
               record[:jobname]=$3
               record[:user]=$4
               if(event.strip=~/Queue <([^>]*)>/)
-                puts "Queue = #{$1}"
                 record[:queue]=$1
               end
               if(event.strip=~/Status <([^>]*)>/)
@@ -474,24 +464,18 @@ puts "GOT PAST BIG BEGINRESCUE (2)"
                 record[:native_state]=state
                 case state
                 when 'RUN'
-                  puts "RUNNING"
                   record[:state]='RUNNING'
                 when 'PEND'
-                  puts "QUEUED"
                   record[:state]='QUEUED'
                 when 'DONE'
-                  puts "DONE (1)"
                   record[:native_state]='DONE'
                 else
-                  puts "UNKNOWN"
                   record[:state]='UNKNOWN'
                 end
               else
-                puts "DONE (2)"
                 record[:native_state]="DONE"
               end
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, to Queue <([^>]+)>,/
-            puts "SUBMITTED FROM #{$1} QUEUE #{$2}"
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
@@ -503,7 +487,6 @@ puts "GOT PAST BIG BEGINRESCUE (2)"
               record[:submit_time]=Time.local(*timestamp).getgm
               record[:queue]=$2        
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, CWD/
-            puts "SUBMITTED FROM #{$1} (CWD)"
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
@@ -514,7 +497,6 @@ puts "GOT PAST BIG BEGINRESCUE (2)"
               end
               record[:submit_time]=Time.local(*timestamp).getgm
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: (Dispatched to|Started on) /
-            puts "DISPATCHED TO #{$1}"
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
@@ -525,7 +507,6 @@ puts "GOT PAST BIG BEGINRESCUE (2)"
               end
               record[:start_time]=Time.local(*timestamp).getgm
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Done successfully. /
-            puts "DONE #{$1}"
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
                 now=Time.now
@@ -566,7 +547,6 @@ puts "GOT PAST BIG BEGINRESCUE (2)"
         }
 
         if !jobacct.has_key?(record[:jobid])
-          puts "Job id #{record[:jobid]} record is #{record.inspect}"
           jobacct[record[:jobid]]=record
         end
 
