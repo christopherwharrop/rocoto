@@ -295,7 +295,6 @@ module WorkflowMgr
         taskenvars={}
         taskdep=nil
         taskhangdep=nil
-        #puts 'CLEARING NATIVES'
         # Get task attributes insde the <task> tag
         tasknode.attributes.each do |attr|
           attrkey=attr.name.to_sym
@@ -375,11 +374,8 @@ module WorkflowMgr
                   attrval=get_compound_time_string(e)
               end
               if (attrkey.to_s=='native')
-                #puts "native #{attrkey} #{attrval.inspect}"
                 natives.push(attrval)
-                #puts "natives is now #{natives.inspect}"
               else
-                #puts "not native #{attrkey} #{attrval.inspect}"
                 taskattrs[attrkey]=attrval
               end
           end
@@ -390,21 +386,16 @@ module WorkflowMgr
         rewinders.each do |rewinder|
           task.add_rewind_action(rewinder)
         end
-        #puts "AT THE END, natives is #{natives.inspect}"
         inv=0
         natives.each do |native|
-          #puts "add native #{native.inspect}"
           task.add_native(native)
           inv+=1
         end
-        #puts "added #{inv} natives"
 
         knnv=0
         task.each_native do |native|
           knnv+=1
-          #puts "task native #{native.inspect}"
         end
-        # puts "have #{knnv} natives"
         if knnv!=inv
           raise "ERROR: Ruby did not add all objects to the internal list: #{knnv}!=#{inv}"
         end

@@ -26,10 +26,7 @@ LibXML::XML::Error.set_handler do |error|
 end
 
 # Create workflow engine and run it
-puts 'retry'
 opt=WorkflowMgr::WorkflowRetryOption.new(ARGV)
-puts 'read the thing'
 opt.dump()
-puts 'now make engine'
 workflowengine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowengine.rewind!

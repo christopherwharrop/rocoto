@@ -7,10 +7,10 @@ module WorkflowMgr
 
   ##########################################  
   #
-  # Class WorkflowRetryOption
+  # Class WorkflowRewindOption
   #
   ##########################################
-  class WorkflowRetryOption < WorkflowOption
+  class WorkflowRewindOption < WorkflowOption
     require 'workflowmgr/workflowoption'
 
     ##########################################  
@@ -104,7 +104,7 @@ module WorkflowMgr
       super(opts)
 
       # Override the command usage text
-      opts.banner = "Usage:  rocotoretry [-h] [-D] [-v #] -d database_file -w workflow_document -c cycle [-c cycle [...]] ( -a | -t task [-t task [...]] )"
+      opts.banner = "Usage:  rocotorewind [-h] [-D] [-v #] -d database_file -w workflow_document -c cycle [-c cycle [...]] ( -a | -t task [-t task [...]] )"
 
       @cycles=Array.new
       @tasks=Array.new
@@ -128,7 +128,7 @@ module WorkflowMgr
         @tasks.push(taskstr.split(','))
       end
 
-      # Retry all tasks for the specified cycles instead of a list of tasks:
+      # Rewind all tasks for the specified cycles instead of a list of tasks:
       opts.on("-a",'--all',"Selects all tasks.") do |flag|
         puts "Requesting rewind of all tasks."
         @all_tasks[0]=true
@@ -158,8 +158,6 @@ module WorkflowMgr
         fail "@cycles is nil"
       elsif @cycles.empty?
         fail "@cycles is empty"
-      else
-        puts "In validate, @cycles is <#{@cycles}>"
       end
     end
   end

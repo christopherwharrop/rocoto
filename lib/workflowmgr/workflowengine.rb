@@ -159,7 +159,7 @@ module WorkflowMgr
             puts "#{strcyc}: #{task_name}: consider this task"
             cycjob=@active_jobs[task_name.to_s]
             if cycjob.nil?
-              puts "#{strcyc}: #{task_name}: job has not been tried yet for any cycle.  Doing nothing to this task."
+              puts "#{strcyc}: #{task_name}: job has not been tried yet.  Doing nothing to this task."
               next
             end
             puts "#{strcyc}: #{task_name}: jobs exist for <#{cycjob.keys.join(', ')}>"
