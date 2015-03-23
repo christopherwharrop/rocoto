@@ -12,7 +12,7 @@ $:.unshift("#{__WFMDIR__}/lib/open4/lib")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowretryoption'
+require 'workflowmgr/workflowrewindoption'
 require 'workflowmgr/utilities'
 require 'libxml'
 
@@ -26,7 +26,7 @@ LibXML::XML::Error.set_handler do |error|
 end
 
 # Create workflow engine and run it
-opt=WorkflowMgr::WorkflowRetryOption.new(ARGV)
+opt=WorkflowMgr::WorkflowRewindOption.new(ARGV)
 opt.dump()
 workflowengine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowengine.rewind!
