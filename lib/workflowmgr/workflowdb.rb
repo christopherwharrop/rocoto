@@ -289,7 +289,7 @@ module WorkflowMgr
         dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle == #{reftime.getgm.to_i};")
 
         # Return an array of cycles
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm }) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
 
         return dbcycles
 
@@ -319,7 +319,7 @@ module WorkflowMgr
         dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle >= #{startcycle.getgm.to_i} and cycle <= #{endcycle.getgm.to_i};")
 
         # Return an array of cycles
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm }) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
 
         return dbcycles
 
@@ -349,7 +349,7 @@ module WorkflowMgr
         end
           
         # Return the last cycle
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm }) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
 
         return dbcycles.first
 
@@ -374,7 +374,7 @@ module WorkflowMgr
         dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE done=0 and expired=0;")
 
         # Return the array of cycle specs
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4]).getgm}) }
+        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm}) }
 
         return dbcycles
 

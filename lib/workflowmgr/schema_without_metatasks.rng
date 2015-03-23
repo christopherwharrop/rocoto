@@ -30,6 +30,7 @@
           <value>moabtorque</value>
           <value>torque</value>
           <value>pbs</value>
+          <value>slurm</value>
         </choice>
       </attribute>
 

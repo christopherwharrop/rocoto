@@ -530,6 +530,18 @@ private
               record[:end_time]=Time.local(*timestamp).getgm
               record[:exit_status]=$3.to_i             
               record[:state]="FAILED"
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited; job has been forced to exit with exit code (\d+)/
+              timestamp=ParseDate.parsedate($1,true)
+              if timestamp[0].nil?
+                now=Time.now
+                timestamp[0]=now.year
+                if Time.local(*timestamp) > now
+                  timestamp[0]=now.year-1
+                end
+              end
+              record[:end_time]=Time.local(*timestamp).getgm
+              record[:exit_status]=$3.to_i             
+              record[:state]="FAILED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited\./
               timestamp=ParseDate.parsedate($1,true)
               if timestamp[0].nil?
