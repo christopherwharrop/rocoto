@@ -1013,7 +1013,7 @@ module WorkflowMgr
             else
               @active_task_instance_count[job.task]+=1
             end
-            unless @tasks[job.task].attributes[:metatasks].nil?
+            unless @tasks[job.task].nil? || @tasks[job.task].attributes[:metatasks].nil?
               @tasks[job.task].attributes[:metatasks].split(",").each do |metatask| 
                 if @active_metatask_instance_count[metatask].nil?
                   @active_metatask_instance_count[metatask]=1
