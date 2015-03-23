@@ -144,9 +144,11 @@ module WorkflowMgr
             cmd += " -o #{value}"           
           when :jobname
             cmd += " --job-name #{value}"
-          when :native
-            cmd += " #{value}"
         end
+      end
+
+      task.each_native do |value|
+        cmd += " #{value}"
       end
 
       # Build the -v string to pass environment to the job
