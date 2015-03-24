@@ -28,6 +28,9 @@ module WorkflowMgr
       @envars=envars
       @dependency=dependency
       @hangdependency=hangdependency
+      @rewind_list=[]
+
+      @native_list=[]
 
       # Set a default value for maxtries
       @attributes[:maxtries]=9999999 if @attributes[:maxtries].nil?
@@ -40,6 +43,41 @@ module WorkflowMgr
 
     end
 
+    #####################################################
+    #
+    # native job card line functionality
+    #
+    #####################################################
+    def add_native(native)
+      @native_list.push(native)
+    end
+    def each_native()
+      @native_list.each do |x|
+        yield x
+      end
+    end
+    def natives?()
+      return ! @native.empty?
+    end
+
+    #####################################################
+    #
+    # rewind functionality
+    #
+    #####################################################
+    def add_rewind_action(rewinder)
+      @rewind_list.push(rewinder)
+    end
+    def rewind!(wstate)
+      @rewind_list.each do |rewinder|
+        rewinder.rewind!(wstate)
+      end
+    end
+    def each_rewind_action()
+      @rewind_list.each do |rewinder|
+        yield rewinder
+      end
+    end
 
     #####################################################
     #
@@ -73,8 +111,22 @@ module WorkflowMgr
         envars[key]=val
       end
 
-      return Task.new(@seq,attributes,envars,@dependency,@hangdependency)
+      t=Task.new(@seq,attributes,envars,@dependency,@hangdependency)
 
+      each_rewind_action do |rewinder|
+        t.add_rewind_action(rewinder)
+      end
+
+      natives=[]
+      each_native do |native|
+        if native.is_a?(CompoundTimeString)
+          t.add_native(native.to_s(cycle))
+        else
+          t.add_native(native)
+        end
+      end
+
+      return t
     end
 
     #####################################################

@@ -12,6 +12,8 @@ module WorkflowMgr
   ##########################################
   class WorkflowXMLDoc
 
+    require 'time'
+
     require 'libxml-ruby/libxml'
     require 'workflowmgr/utilities'
     require 'workflowmgr/cycledef'
@@ -23,7 +25,17 @@ module WorkflowMgr
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'    
     require 'workflowmgr/task'
-
+    
+    def unescape(s)
+      # This is a workaround for a LibXML bug: it is impossible to
+      # disable output escaping.  That means strings will have &quot;
+      # instead of " no matter what you do.  This function replaces
+      # some common XML entities with their corresponding values.
+      t=s.gsub(/&quot;/,'"').gsub(/&lt;/,'<').gsub(/&gt;/,'>')
+      
+      # The &amp; must be last:
+      return t.gsub(/&amp/,'&')
+    end
 
     ##########################################
     #
@@ -50,7 +62,11 @@ module WorkflowMgr
       # process.
       begin
         if @workflowIOServer.exists?(workflowdoc)
-          @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
+          # @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
+          context = LibXML::XML::Parser::Context.file(workflowdoc)
+          context.options=LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
+          parser=LibXML::XML::Parser.new(context)
+          @workflowdoc=parser.parse
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
@@ -62,13 +78,12 @@ module WorkflowMgr
 
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
-
       # Expand metatasks
       expand_metatasks
       
       # Expand metatask dependencies
       expand_metataskdeps
-  
+
       # Insert dependencies for auto-serialized metatasks
       expand_serialdeps
 
@@ -245,7 +260,8 @@ module WorkflowMgr
       cycles=[]
       cyclenodes=@workflowdoc.find('/workflow/cycledef')
       cyclenodes.each { |cyclenode|
-        cyclefields=cyclenode.content.strip
+        cyclenode.output_escaping=false
+        cyclefields=unescape(cyclenode.content.strip)
         nfields=cyclefields.split.size
         group=cyclenode.attributes['group']
         if nfields==3
@@ -273,11 +289,12 @@ module WorkflowMgr
       tasknodes=@workflowdoc.find('/workflow/task')
       tasknodes.each_with_index do |tasknode,seq|
 
+        natives=[]
+        rewinders=[]
         taskattrs={}
         taskenvars={}
         taskdep=nil
         taskhangdep=nil
-
         # Get task attributes insde the <task> tag
         tasknode.attributes.each do |attr|
           attrkey=attr.name.to_sym
@@ -307,6 +324,16 @@ module WorkflowMgr
                 end
               end
               taskenvars[envar_name] = envar_value
+            when /^rewind$/
+              e.each_element do |element|
+                if element.name=='rb'
+                  rewinders.push(get_rubydep(element))
+                elsif element.name=='sh'
+                  rewinders.push(get_shelldep(element))
+                else
+                  raise "Invalid tag <#{element.name}> inside <rewind> tag: #{element.node_type_name}"
+                end
+              end
             when /^dependency$/
               e.each_element do |element| 
                 raise "ERROR: <dependency> tag contains too many elements" unless taskdep.nil?
@@ -321,9 +348,11 @@ module WorkflowMgr
               attrkey=e.name.to_sym
               case attrkey
                 when :cores                      # <task> elements with integer values go here
-                  attrval=e.content.to_i
+                  e.output_escaping=false
+                  attrval=unescape(e.content).to_i
                 when :nodes
-                  attrval=e.content
+                  e.output_escaping=false
+                  attrval=unescape(e.content)
                   taskattrs[:cores]=0
                   attrval.split("+").each { |nodespec|
                     resources=nodespec.split(":")
@@ -344,12 +373,32 @@ module WorkflowMgr
                 else                             # <task> elements with compoundtimestring values
                   attrval=get_compound_time_string(e)
               end
-              taskattrs[attrkey]=attrval
+              if (attrkey.to_s=='native')
+                natives.push(attrval)
+              else
+                taskattrs[attrkey]=attrval
+              end
           end
         end
 
         task = Task.new(seq,taskattrs,taskenvars,taskdep,taskhangdep)
         tasks[task.attributes[:name]]=task
+        rewinders.each do |rewinder|
+          task.add_rewind_action(rewinder)
+        end
+        inv=0
+        natives.each do |native|
+          task.add_native(native)
+          inv+=1
+        end
+
+        knnv=0
+        task.each_native do |native|
+          knnv+=1
+        end
+        if knnv!=inv
+          raise "ERROR: Ruby did not add all objects to the internal list: #{knnv}!=#{inv}"
+        end
 
       end
 
@@ -367,6 +416,11 @@ module WorkflowMgr
 
       offsets=[]
       taskdepnodes=@workflowdoc.find('//taskdep')
+      taskdepnodes.each do |taskdepnode|
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
+      end
+
+      taskdepnodes=@workflowdoc.find('//cycleexistdep')
       taskdepnodes.each do |taskdepnode|
         offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
       end
@@ -391,13 +445,16 @@ module WorkflowMgr
 
        strarray=[] 
        element.each do |e|
+         e.output_escaping=false
          if e.node_type==LibXML::XML::Node::TEXT_NODE
-           strarray << e.content
+           strarray << unescape(e.content)
+         elsif e.node_type==LibXML::XML::Node::COMMENT_NODE
+           # Ignore comments
          else
            offset_sec=WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
            case e.name
              when "cyclestr"
-               formatstr=e.content
+               formatstr=unescape(e.content)
                formatstr.gsub!(/%/,'%%')
                formatstr.gsub!(/@(\^?[^@\s])/,'%\1')
                formatstr.gsub!(/@@/,'@')
@@ -440,6 +497,14 @@ module WorkflowMgr
            return Dependency_SOME_Operator.new(children.collect { |child|  get_dependency_node(child) }, element.attributes["threshold"].to_f)
          when "taskdep"
            return get_taskdep(element)
+         when "streq","strneq","true","false"
+           return get_constdep(element)
+         when "rb"
+           return get_rubydep(element)
+         when "sh"
+           return get_shelldep(element)
+         when "cycleexistdep"
+           return get_cycleexistdep(element)
          when "datadep"
            return get_datadep(element)
          when "timedep"
@@ -448,6 +513,48 @@ module WorkflowMgr
 
      end
 
+     #####################################################
+     #
+     # get_constdep
+     #
+     #####################################################
+     def get_constdep(element)
+       case element.name
+       when 'true'
+         return ConstDependency.new(true,'true')
+       when 'false'
+         return ConstDependency.new(false,'false')
+       when 'streq','strneq'
+         left=get_compound_time_string(element.find('left').first)
+         right=get_compound_time_string(element.find('right').first)
+         if element.name=='streq'
+           name=name_stringdep(left,right,'==')
+           compare='=='
+         else
+           name=name_stringdep(left,right,"!=")
+           compare='!='
+         end
+         return StringDependency.new(left,right,name,compare)
+       else
+         raise "Invalid constant dependency #{element.name}"
+       end
+     end
+
+    #####################################################
+    #
+    # name_stringdep
+    #
+    #####################################################
+    
+     def name_stringdep(a,b,cmp)
+       ia=a.to_s
+       ib=b.to_s
+       cmp=cmp.to_s
+       ia=ia[0..26]+'...' if(ia.size>30)
+       ib=ib[0..26]+'...' if(ib.size>30)
+       cmp=cmp[0..26]+'...' if(cmp.size>30)
+       return "'#{ia}'#{cmp}'#{ib}'"
+     end
 
      #####################################################
      #
@@ -467,6 +574,58 @@ module WorkflowMgr
  
        return TaskDependency.new(task,state,cycle_offset)
 
+     end
+
+
+     #####################################################
+     #
+     # get_cycleexistdep
+     #
+     #####################################################
+     def get_cycleexistdep(element)
+ 
+       # Get the cycle offset, if there is one
+       cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"])
+ 
+       return CycleExistDependency.new(cycle_offset)
+     end
+
+
+     #####################################################
+     #
+     # get_rubydep
+     #
+     #####################################################
+     def get_rubydep(element)
+ 
+       # Get the cycle offset, if there is one
+       text=''
+       name=element.attributes["name"]
+       text=get_compound_time_string(element)
+       return RubyDependency.new(text,name)
+     end
+
+
+     #####################################################
+     #
+     # get_shelldep
+     #
+     #####################################################
+     def get_shelldep(element)
+ 
+       # Get the cycle offset, if there is one
+       text=''
+       name=element.attributes["name"]
+       shell=element.attributes["shell"]
+       runopt=element.attributes["runopt"]
+       if shell.nil?
+         shell='/bin/sh'  # POSIX requires this location for the POSIX sh
+       end
+       if runopt.nil?
+         runopt='-c' # sh -c (command)   -- need the -c
+       end
+       text=get_compound_time_string(element)
+       return ShellDependency.new(shell,runopt,text,name)
      end
 
 
@@ -493,6 +652,12 @@ module WorkflowMgr
            minsize=$1.to_i * 1024 * 1024
          when /^(\d+)[G|g]$/
            minsize=$1.to_i * 1024 * 1024 * 1024
+         when /^(\d+)[T|t]$/
+           minsize=$1.to_i * 1024 * 1024 * 1024 * 1024
+         when /^(\d+)[P|p]$/
+           minsize=$1.to_i * 1024 * 1024 * 1024 * 1024 * 1024
+         when /^(\d+)[E|e]$/
+           minsize=$1.to_i * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
        end
 
        return DataDependency.new(get_compound_time_string(element),age_sec,minsize)
@@ -730,6 +895,7 @@ module WorkflowMgr
     def traverse(node, id_table, index)
     
       if node.node_type_name == "text"
+        node.output_escaping=false
         cont = node.content
         id_table.each{|id, value|
           next while cont.sub!("#"+id+"#", id_table[id][index])
@@ -797,7 +963,8 @@ module WorkflowMgr
       # Build a table of var tags and their values for this metatask
       metatask.children.each {|e|
         if e.name == "var"  
-          var_values = e.content.split
+          e.output_escaping=false
+          var_values = unescape(e.content).split
           var_length = var_values.length if var_length == -1
           raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
           id_table[e.attributes["name"]] = var_values

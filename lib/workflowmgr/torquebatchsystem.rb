@@ -16,6 +16,7 @@ module WorkflowMgr
     require 'parsedate'
     require 'libxml'
     require 'workflowmgr/utilities'
+    require 'tempfile'
 
     #####################################################
     #
@@ -71,80 +72,90 @@ module WorkflowMgr
     #
     #####################################################
     def submit(task)
-
       # Initialize the submit command
       cmd="qsub"
+      input="#! /bin/sh\n"
 
       # Add Torque batch system options translated from the generic options specification
       task.attributes.each do |option,value|
         case option
           when :account
-            cmd += " -A #{value}"
+            input += "#PBS -A #{value}\n"
           when :queue            
-            cmd += " -q #{value}"
+            input += "#PBS -q #{value}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
-            cmd += " -l procs=#{value}"
+            input += "#PBS -l procs=#{value}\n"
           when :nodes
             # Remove any occurrences of :tpp=N
-            cmd += " -l nodes=#{value.gsub(/:tpp=\d+/,"")}"
+            input += "#PBS -l nodes=#{value.gsub(/:tpp=\d+/,"")}\n"
           when :walltime
-            cmd += " -l walltime=#{value}"
+            input += "#PBS -l walltime=#{value}\n"
           when :memory
-            cmd += " -l vmem=#{value}"
+            input += "#PBS -l vmem=#{value}\n"
           when :stdout
-            cmd += " -o #{value}"
+            input += "#PBS -o #{value}\n"
           when :stderr
-            cmd += " -e #{value}"
+            input += "#PBS -e #{value}\n"
           when :join
-            cmd += " -j oe -o #{value}"           
+            input += "#PBS -j oe -o #{value}\n"           
           when :jobname
-            cmd += " -N #{value}"
-          when :native
-            cmd += " #{value}"
+            input += "#PBS -N #{value}\n"
         end
+      end
+
+      task.each_native do |native_line|
+        input += "#PBS #{native_line}\n"
       end
 
       # Build the -v string to pass environment to the job
       save_env={}
       unless task.envars.empty?
-        vars = "-v " 
+        varinput=''
         task.envars.each { |name,env|
-          if env=~/[\s,-]+/ || vars.length > 2048
-            vars="-V"
+          varinput += "export #{name}='#{env}'\n"
+          if env=~/[\n\r\']/ || varinput.length > 2048
+            varinput="-V"
             break
           end
-          vars += "," unless vars=="-v "
-          vars += "#{name}"
-          vars += "=\"#{env}\"" unless env.nil?
         }
-
         # Choose -v or -V depending on how long -v is
-        if vars=="-V"
+        if varinput=="-V"
           # Save a copy of the current environment so we can restore it later
-          save_env.merge(ENV) 
+          ENV.each do |name,env|
+            save_env[name]=env
+          end
 
           # Set all envars in the current environment so they get passed with -V
           task.envars.each { |name,env|
             ENV[name]=env
           }
+          input += "#PBS -V\n"
+        else
+          input += varinput
         end          
-        cmd += " #{vars}"
       end
+      input+="set -x\n"
 
       # Build the -F string to pass job script arguments to batch script
-      cmdargs=task.attributes[:command].split[1..-1].join(" ")
-      unless cmdargs.empty?
-        cmd += " -F \"#{cmdargs}\""
-      end
-
+      #cmdargs=task.attributes[:command].split[1..-1].join("' '")
+      #unless cmdargs.empty?
+      #  cmdinput += "\'#{cmdargs}\'\n"
+      #end
+      #input += "env\n";
       # Add the command to submit
-      cmd += " #{task.attributes[:command].split.first}"
-      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using '#{cmd}'",4)
+      #input += "'#{task.attributes[:command].split.first}' '#{cmdinput}'"
+      input += task.attributes[:command]
+
+      tf=Tempfile.new('qsub.in')
+      tf.write(input)
+      tf.flush()
+
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input {{#{input}}}",4)
 
       # Run the submit command
-      output=`#{cmd} 2>&1`.chomp
+      output=`#{cmd} < #{tf.path} 2>&1`.chomp()
 
       # Restore the environment if necessary
       unless save_env.empty?

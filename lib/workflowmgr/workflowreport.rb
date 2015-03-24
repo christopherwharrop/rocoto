@@ -818,7 +818,7 @@ module WorkflowMgr
 
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
-            next unless task.dependency.resolved?(cycle,@active_jobs,@workflowIOServer)
+            next unless task.dependency.resolved?(cycle,@active_jobs,@workflowIOServer,@cycledefs)
           end
 
           # Reject this task if retries has been exceeded
