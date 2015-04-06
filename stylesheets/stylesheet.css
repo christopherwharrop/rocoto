@@ -91,7 +91,7 @@ header h2 {
 
 .inner {
   min-width: 620px;
-  margin: 20px;
+  margin: 50px;
 }
 
 #container .inner img {
@@ -194,6 +194,7 @@ pre code {
 
 ul, ol, dl {
   margin-bottom: 20px;
+  margin-left: 50px;
 }
 
 
