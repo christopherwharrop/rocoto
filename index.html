@@ -87,12 +87,9 @@ Avoid combining serial and parallel processing in the same workflow task unless 
 <li>Read the last known state of the workflow from the database file specified by the -d flag</li>
 <li>Query the batch system to acquire the current state of the workflow</li>
 <li>Take actions based on new state information. This includes things such as
-
 <ol>
 <li>Resubmit jobs that crashed</li>
-<li>Submit jobs for tasks whose dependencies have just become satisfied</li>
-</ol>
-</li>
+<li>Submit jobs for tasks whose dependencies have just become satisfied</li></ol></li>
 <li>Save the current state of the workflow to the file specified by the -d flag</li>
 <li>Quit</li>
 </ol>
