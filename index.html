@@ -19,7 +19,7 @@
 
         <header>
           <h1>Rocoto</h1>
-          <h2>Rocoto Workflow Management System</h2>
+          <h2>Workflow Management System</h2>
         </header>
 
         <section id="downloads" class="clearfix">
@@ -189,7 +189,7 @@ Avoid combining serial and parallel processing in the same workflow task unless 
 <h2>
 <a id="the-workflow-tag" class="anchor" href="#the-workflow-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;workflow&gt; tag</h2>
 
-<p>This is the main tag for defining workflows. Everything except for the header described above must be contained within the <code>&lt;workflow&gt;</code> tag. It has attributes for specifying the scheduler and throttling parameters.</p>
+<p>This is the main tag for defining workflows. Everything except for the header described above must be contained within the &lt;workflow&gt; tag. It has attributes for specifying the scheduler and throttling parameters.</p>
 
 <h3>
 <a id="the-realtime-attribute" class="anchor" href="#the-realtime-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The realtime attribute</h3>
@@ -274,9 +274,9 @@ Avoid combining serial and parallel processing in the same workflow task unless 
 </code></pre>
 
 <h2>
-<a id="the-log-tag" class="anchor" href="#the-log-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;log&gt;</code> tag</h2>
+<a id="the-log-tag" class="anchor" href="#the-log-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;log&gt; tag</h2>
 
-<p>The <code>&lt;log&gt;</code> tag defines the path and name of Rocoto log(s). It can be anything, but usually it is best to define the name of the log to be dynamically dependent on the cycle being processed. This will put everything for a particular cycle in its own log file.</p>
+<p>The &lt;log&gt; tag defines the path and name of Rocoto log(s). It can be anything, but usually it is best to define the name of the log to be dynamically dependent on the cycle being processed. This will put everything for a particular cycle in its own log file.</p>
 
 <pre><code>  &lt;workflow realtime="T" scheduler="moabtorque" cyclelifespan="0:01:00:00" cyclethrottle="5" corethrottle="3"&gt;
 
@@ -287,12 +287,12 @@ Avoid combining serial and parallel processing in the same workflow task unless 
   &lt;/workflow&gt;
 </code></pre>
 
-<p>In the above example, the workflow log is defined to be named /lfs0/projects/wrf/arw/13km/log/workflow_yyyymmddhh.log where yyyymmddhh represents the cycle time. Note the use of the LOG ENTITY to represent the path of the log file. The <code>&lt;cyclestr&gt;</code> tag is special and is described below.</p>
+<p>In the above example, the workflow log is defined to be named /lfs0/projects/wrf/arw/13km/log/workflow_yyyymmddhh.log where yyyymmddhh represents the cycle time. Note the use of the LOG ENTITY to represent the path of the log file. The &lt;cyclestr&gt; tag is special and is described below.</p>
 
 <h2>
-<a id="the-cyclestr-tag" class="anchor" href="#the-cyclestr-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;cyclestr&gt;</code> tag</h2>
+<a id="the-cyclestr-tag" class="anchor" href="#the-cyclestr-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;cyclestr&gt; tag</h2>
 
-<p>It is often necessary to refer to the various components of the current cycle time when defining various aspects of the workflow. For example, when defining the name of the workflow log as in the previous example above, we need to specify the year, month, day, and hour of the cycle. Since the cycle is a dynamic quantity, we can't just put the value in there, we need a special tag to represent it. The cyclestr tag accomplishes this. The <code>&lt;cyclestr&gt;</code> tag uses flags to represent the various time components of the current cycle:</p>
+<p>It is often necessary to refer to the various components of the current cycle time when defining various aspects of the workflow. For example, when defining the name of the workflow log as in the previous example above, we need to specify the year, month, day, and hour of the cycle. Since the cycle is a dynamic quantity, we can't just put the value in there, we need a special tag to represent it. The cyclestr tag accomplishes this. The &lt;cyclestr&gt; tag uses flags to represent the various time components of the current cycle:</p>
 
 <pre><code>   @a The abbreviated weekday name ("Sun")
    @A The full weekday name ("Sunday")
@@ -319,17 +319,17 @@ Avoid combining serial and parallel processing in the same workflow task unless 
    @Z Time zone name
 </code></pre>
 
-<p>Rocoto may be processing multiple cycles at once. Any time one of the above flags appears inside a <code>&lt;cyclestr&gt;</code> ... <code>&lt;/cyclestr&gt;</code> block, those flags will be replaced with the appropriate date/time component of the current cycle being processed. These flags can be used in any combination to represent any date/time string desired. For example,</p>
+<p>Rocoto may be processing multiple cycles at once. Any time one of the above flags appears inside a &lt;cyclestr&gt; ... &lt;/cyclestr&gt; block, those flags will be replaced with the appropriate date/time component of the current cycle being processed. These flags can be used in any combination to represent any date/time string desired. For example,</p>
 
 <pre><code>  &lt;cyclestr&gt;@Y@m@d@H&lt;/cyclestr&gt;
 </code></pre>
 
-<p>One very nice feature is that other text can appear within a <code>&lt;cyclestr&gt;</code> tag. For example,</p>
+<p>One very nice feature is that other text can appear within a &lt;cyclestr&gt; tag. For example,</p>
 
 <pre><code>  &lt;log&gt;&lt;cyclestr&gt;/my/path/to/the/log/file/workflowlog_@Y@m@d@H&lt;/cyclestr&gt;&lt;/log&gt;
 </code></pre>
 
-<p>The line above shows how the <code>&lt;cyclestr&gt;</code> tag might be used inside a <code>&lt;log&gt;</code> tag to specify the names of Rocoto log files.</p>
+<p>The line above shows how the &lt;cyclestr&gt; tag might be used inside a &lt;log&gt; tag to specify the names of Rocoto log files.</p>
 
 <h3>
 <a id="the-offset-attribute" class="anchor" href="#the-offset-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The offset attribute</h3>
@@ -355,9 +355,9 @@ Avoid combining serial and parallel processing in the same workflow task unless 
 <p>Both of the above specify the hour that is 9 hours previous to the current cycle, but most people don't know off the top of their heads that there are 32400 seconds in 9 hours, so the first form is more readable.</p>
 
 <h2>
-<a id="the-cycledef-tag" class="anchor" href="#the-cycledef-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;cycledef&gt;</code> tag</h2>
+<a id="the-cycledef-tag" class="anchor" href="#the-cycledef-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;cycledef&gt; tag</h2>
 
-<p>The <code>&lt;cycledef&gt;</code> tag defines the set of cycles the workflow is to be run on. You can have as many <code>&lt;cycledef&gt;</code> tags as you want. In some cases, it may be necessary to use multiple <code>&lt;cycle&gt;</code> tags to represent the set of cycles desired. Rocoto uses the union of all sets of cycles specified by the <code>&lt;cycledef&gt;</code> tags to create the overall cycle pool. If there is overlap between definitions, it will not cause cycles to be run twice. There are two ways to specifies cycles. You may mix and match the two different ways to specify cycles as needed.</p>
+<p>The &lt;cycledef&gt; tag defines the set of cycles the workflow is to be run on. You can have as many &lt;cycledef&gt; tags as you want. In some cases, it may be necessary to use multiple &lt;cycle&gt; tags to represent the set of cycles desired. Rocoto uses the union of all sets of cycles specified by the &lt;cycledef&gt; tags to create the overall cycle pool. If there is overlap between definitions, it will not cause cycles to be run twice. There are two ways to specifies cycles. You may mix and match the two different ways to specify cycles as needed.</p>
 
 <h3>
 <a id="the-start-stop-step-method" class="anchor" href="#the-start-stop-step-method" aria-hidden="true"><span class="octicon octicon-link"></span></a>The start, stop, step method</h3>
@@ -375,7 +375,7 @@ Avoid combining serial and parallel processing in the same workflow task unless 
   &lt;/workflow&gt;
 </code></pre>
 
-<p>The <code>&lt;cycledef&gt;</code> tag in the example above specifies all 00Z, 06Z, 12Z, and 18Z cycles beginning with January 1, 2011 00:00:00 and ending with December 31, 2011 18:00:00.</p>
+<p>The &lt;cycledef&gt; tag in the example above specifies all 00Z, 06Z, 12Z, and 18Z cycles beginning with January 1, 2011 00:00:00 and ending with December 31, 2011 18:00:00.</p>
 
 <h3>
 <a id="the-crontab-like-method" class="anchor" href="#the-crontab-like-method" aria-hidden="true"><span class="octicon octicon-link"></span></a>The crontab-like method</h3>
@@ -397,17 +397,17 @@ Avoid combining serial and parallel processing in the same workflow task unless 
   &lt;/workflow&gt;
 </code></pre>
 
-<p>The above example shows four <code>&lt;cycledef&gt;</code> tags. Each of these defines a list of minutes, hours, days, months, years, and weekdays. A * is shorthand for all values of that field. So, the * in the second field means all hours. And the * in the third field means all days. In the example above, the first <code>&lt;cycledef&gt;</code> defines a set of cycles consisting of every 15 minutes of every hour for every day and every month of the years 2006-2010. The second <code>&lt;cycledef&gt;</code> tag defines a set of cycles consisting of minute 0 of every hour of every day for the years 2006 thru 2010.</p>
+<p>The above example shows four &lt;cycledef&gt; tags. Each of these defines a list of minutes, hours, days, months, years, and weekdays. A * is shorthand for all values of that field. So, the * in the second field means all hours. And the * in the third field means all days. In the example above, the first &lt;cycledef&gt; defines a set of cycles consisting of every 15 minutes of every hour for every day and every month of the years 2006-2010. The second &lt;cycledef&gt; tag defines a set of cycles consisting of minute 0 of every hour of every day for the years 2006 thru 2010.</p>
 
 <h3>
 <a id="the-group-attribute" class="anchor" href="#the-group-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The group attribute</h3>
 
-<p>Sometimes it is necessary to define distinct sets of cycles because some tasks should only be run for certain subsets of cycles. The group attribute of the <code>&lt;cycledef&gt;</code> tag allows you to assign a set of cycles to a group that can later be used to control which tasks are run for which cycles. Multiple <code>&lt;cycledef&gt;</code> tags may be assigned to the same group, but a <code>&lt;cycledef&gt;</code> tag may not be assigned to more than one group.</p>
+<p>Sometimes it is necessary to define distinct sets of cycles because some tasks should only be run for certain subsets of cycles. The group attribute of the &lt;cycledef&gt; tag allows you to assign a set of cycles to a group that can later be used to control which tasks are run for which cycles. Multiple &lt;cycledef&gt; tags may be assigned to the same group, but a &lt;cycledef&gt; tag may not be assigned to more than one group.</p>
 
 <h2>
-<a id="the-task-tag" class="anchor" href="#the-task-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;task&gt;</code> tag</h2>
+<a id="the-task-tag" class="anchor" href="#the-task-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;task&gt; tag</h2>
 
-<p>The <code>&lt;task&gt;</code> tag is the bread and butter of the workflow. It defines the computations that you want to run. The example below shows the basic form of the <code>&lt;task&gt;</code> tag. The contents of the <code>&lt;task&gt;</code> tag have been left out for now for clarity.</p>
+<p>The &lt;task&gt; tag is the bread and butter of the workflow. It defines the computations that you want to run. The example below shows the basic form of the &lt;task&gt; tag. The contents of the &lt;task&gt; tag have been left out for now for clarity.</p>
 
 <pre><code>  &lt;workflow realtime="T"&gt;
 
@@ -436,7 +436,7 @@ The name attribute</p>
 <h3>
 <a id="the-cycledefs-attribute" class="anchor" href="#the-cycledefs-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The cycledefs attribute</h3>
 
-<p>The cycledefs attribute is optional. If set, its value must be a comma separated list of <code>&lt;cycledef&gt;</code> tag group names. If it is not set, the task will be run for every cycle in the general pool of cycles. The general pool of cycles is the union of all sets of cycles, both with, and without group ids, specified in the <code>&lt;cycledef&gt;</code> tags. If the cycledefs attribute is set, the task will only be run for cycles that are defined by the <code>&lt;cycledef&gt;</code> tags having the group ids listed.</p>
+<p>The cycledefs attribute is optional. If set, its value must be a comma separated list of &lt;cycledef&gt; tag group names. If it is not set, the task will be run for every cycle in the general pool of cycles. The general pool of cycles is the union of all sets of cycles, both with, and without group ids, specified in the &lt;cycledef&gt; tags. If the cycledefs attribute is set, the task will only be run for cycles that are defined by the &lt;cycledef&gt; tags having the group ids listed.</p>
 
 <h3>
 <a id="the-maxtries-attribute" class="anchor" href="#the-maxtries-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The maxtries attribute</h3>
@@ -450,12 +450,12 @@ The name attribute</p>
 
 <p>The throttle attribute is optional. If set, its value must be a positive integer. The throttle limits the number of instances of the task which may be queued or running at any one time. There is one instance of the task per cycle. Therefore, the task throttle limits the number of cycles for which the task may be active at any one time.</p>
 
-<p>HINT: The <code>&lt;task&gt;</code> throttle attribute should be avoided. In most situations, the various <code>&lt;workflow&gt;</code> throttles and/or the <code>&lt;metatask&gt;</code> throttle provide far better throttling control and should always be preferred. Do not use the <code>&lt;task&gt;</code> throttle unless the other throttling methods cannot meet the throttling requirements of the workflow</p>
+<p>HINT: The &lt;task&gt; throttle attribute should be avoided. In most situations, the various &lt;workflow&gt; throttles and/or the &lt;metatask&gt; throttle provide far better throttling control and should always be preferred. Do not use the &lt;task&gt; throttle unless the other throttling methods cannot meet the throttling requirements of the workflow</p>
 
 <h2>
-<a id="the-command-tag" class="anchor" href="#the-command-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;command&gt;</code> tag</h2>
+<a id="the-command-tag" class="anchor" href="#the-command-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;command&gt; tag</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag must contain a <code>&lt;command&gt;</code> tag. This is the command that carries out the task's work and is the command that Rocoto will submit to the batch system for execution. Command arguments are permitted.</p>
+<p>Every &lt;task&gt; tag must contain a &lt;command&gt; tag. This is the command that carries out the task's work and is the command that Rocoto will submit to the batch system for execution. Command arguments are permitted.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -467,7 +467,7 @@ The name attribute</p>
 <h2>
 <a id="the--tag" class="anchor" href="#the--tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The  tag</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag should contain a <code>&lt;account&gt;</code> tag. However, it is optional to allow for situations where a default may be used. This defines the batch system account/project that Rocoto will use when submitting the task to the batch system for execution. This is usually not the same thing as the user's login name.</p>
+<p>Every &lt;task&gt; tag should contain a &lt;account&gt; tag. However, it is optional to allow for situations where a default may be used. This defines the batch system account/project that Rocoto will use when submitting the task to the batch system for execution. This is usually not the same thing as the user's login name.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -479,9 +479,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-queue-tag" class="anchor" href="#the-queue-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;queue&gt;</code> tag</h2>
+<a id="the-queue-tag" class="anchor" href="#the-queue-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;queue&gt; tag</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag should contain a <code>&lt;queue&gt;</code> tag. However, it is optional to allow for situations where a default may be used. This defines the batch system queue that Rocoto will submit the task to for execution. The queue name is inherently machine specific.</p>
+<p>Every &lt;task&gt; tag should contain a &lt;queue&gt; tag. However, it is optional to allow for situations where a default may be used. This defines the batch system queue that Rocoto will submit the task to for execution. The queue name is inherently machine specific.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -495,9 +495,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-cores-tag" class="anchor" href="#the-cores-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;cores&gt;</code> tag</h2>
+<a id="the-cores-tag" class="anchor" href="#the-cores-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;cores&gt; tag</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag must contain either one <code>&lt;cores&gt;</code> tag or one <code>&lt;nodes&gt;</code> (see below) tag. The <code>&lt;cores&gt;</code> tag defines the number of cores that Rocoto will request when submitting the task for execution.</p>
+<p>Every &lt;task&gt; tag must contain either one &lt;cores&gt; tag or one &lt;nodes&gt; (see below) tag. The &lt;cores&gt; tag defines the number of cores that Rocoto will request when submitting the task for execution.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -513,11 +513,11 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-nodes-tag-version-11-and-higher" class="anchor" href="#the-nodes-tag-version-11-and-higher" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;nodes&gt;</code> tag (version 1.1 and higher)</h2>
+<a id="the-nodes-tag-version-11-and-higher" class="anchor" href="#the-nodes-tag-version-11-and-higher" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;nodes&gt; tag (version 1.1 and higher)</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag must contain either one <code>&lt;nodes&gt;</code> tag or one <code>&lt;cores&gt;</code> (see above) tag. The <code>&lt;nodes&gt;</code> tag defines the task geometry (a list of node counts and cores per node) that Rocoto will request when submitting the task for execution. The <code>&lt;cores&gt;</code> tag should always be preferred. The <code>&lt;nodes&gt;</code> tag should only be used if the task has a requirement to use less than all of the available cores on at least one of its nodes. The <code>&lt;nodes&gt;</code> tag is primarily intended to support OpenMP/MPI hybrid codes, MPMD codes that consist of multiple components that must not share nodes, and parallel codes that require some ranks to be on their own nodes for memory consumption reasons.</p>
+<p>Every &lt;task&gt; tag must contain either one &lt;nodes&gt; tag or one &lt;cores&gt; (see above) tag. The &lt;nodes&gt; tag defines the task geometry (a list of node counts and cores per node) that Rocoto will request when submitting the task for execution. The &lt;cores&gt; tag should always be preferred. The &lt;nodes&gt; tag should only be used if the task has a requirement to use less than all of the available cores on at least one of its nodes. The &lt;nodes&gt; tag is primarily intended to support OpenMP/MPI hybrid codes, MPMD codes that consist of multiple components that must not share nodes, and parallel codes that require some ranks to be on their own nodes for memory consumption reasons.</p>
 
-<p>The format of the contents of the <code>&lt;nodes&gt;</code> tag is very similar to the syntax of the Moab/Torque "-l nodes=..." option. The differences are that the "ppn" (processes per node) is always required, and there is an optional "tpp" (threads per process) that should be used for OpenMP/MPI hybrid tasks. The format of <code>&lt;nodes&gt;</code> is easiest to illustrate with examples.</p>
+<p>The format of the contents of the &lt;nodes&gt; tag is very similar to the syntax of the Moab/Torque "-l nodes=..." option. The differences are that the "ppn" (processes per node) is always required, and there is an optional "tpp" (threads per process) that should be used for OpenMP/MPI hybrid tasks. The format of &lt;nodes&gt; is easiest to illustrate with examples.</p>
 
 <p>For single threaded codes (i.e. processes do not spawn threads):</p>
 
@@ -537,7 +537,7 @@ The name attribute</p>
   &lt;nodes&gt;1:ppn=1+2:ppn=4:tpp=4+3:ppn=8:tpp=2&lt;/nodes&gt;  &lt;!-- request 1 core on the first 1 nodes, 4 cores and 4 threads per process on each of the next 2 nodes, and 8 cores and 2 threads per process on each of the last 3 nodes --&gt;
 </code></pre>
 
-<p>Finally, the following shows a simple example in context of the <code>&lt;task&gt;</code> tag.</p>
+<p>Finally, the following shows a simple example in context of the &lt;task&gt; tag.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -553,9 +553,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-walltime-tag" class="anchor" href="#the-walltime-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;walltime&gt;</code> tag</h2>
+<a id="the-walltime-tag" class="anchor" href="#the-walltime-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;walltime&gt; tag</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag must contain a <code>&lt;walltime&gt;</code> tag. This defines the amount of wallclock time that Rocoto will request when submitting the task to for execution. The requested walltime is automatically reduced so as not to exceed the amount of time remaining before the task expires.</p>
+<p>Every &lt;task&gt; tag must contain a &lt;walltime&gt; tag. This defines the amount of wallclock time that Rocoto will request when submitting the task to for execution. The requested walltime is automatically reduced so as not to exceed the amount of time remaining before the task expires.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -573,9 +573,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-memory-tag" class="anchor" href="#the-memory-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;memory&gt;</code> tag</h2>
+<a id="the-memory-tag" class="anchor" href="#the-memory-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;memory&gt; tag</h2>
 
-<p>The <code>&lt;memory&gt;</code> tag is usually only needed for serial tasks. This defines the amount of memory that Rocoto will request when submitting the task to for execution.</p>
+<p>The &lt;memory&gt; tag is usually only needed for serial tasks. This defines the amount of memory that Rocoto will request when submitting the task to for execution.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -595,9 +595,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-jobname-tag" class="anchor" href="#the-jobname-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;jobname&gt;</code> tag</h2>
+<a id="the-jobname-tag" class="anchor" href="#the-jobname-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;jobname&gt; tag</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag should contain a <code>&lt;jobname&gt;</code> tag because it helps in visual tracking of jobs in queue status outputs. However, it is optional to allow for situations where a default may be used. This defines the name that will be assigned to the job when submitting the task for execution.</p>
+<p>Every &lt;task&gt; tag should contain a &lt;jobname&gt; tag because it helps in visual tracking of jobs in queue status outputs. However, it is optional to allow for situations where a default may be used. This defines the name that will be assigned to the job when submitting the task for execution.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -619,9 +619,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-deadline-tag" class="anchor" href="#the-deadline-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;deadline&gt;</code> tag</h2>
+<a id="the-deadline-tag" class="anchor" href="#the-deadline-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;deadline&gt; tag</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag may contain a <code>&lt;deadline&gt;</code> tag to specify a time by which the task must complete successfully. This time should be in YYYYMMDDHHMM format, which means that its contents should usually be a <code>&lt;cyclestr&gt;</code> tag with a positive offset. Wall clock time requests specified in <code>&lt;walltime&gt;</code> tags are automatically capped at job submission such that they will not exceed the deadline.</p>
+<p>Every &lt;task&gt; tag may contain a &lt;deadline&gt; tag to specify a time by which the task must complete successfully. This time should be in YYYYMMDDHHMM format, which means that its contents should usually be a &lt;cyclestr&gt; tag with a positive offset. Wall clock time requests specified in &lt;walltime&gt; tags are automatically capped at job submission such that they will not exceed the deadline.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -645,9 +645,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-stdout-stderr-and-join-tags" class="anchor" href="#the-stdout-stderr-and-join-tags" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;stdout&gt;</code>, <code>&lt;stderr&gt;</code>, and <code>&lt;join&gt;</code> tags</h2>
+<a id="the-stdout-stderr-and-join-tags" class="anchor" href="#the-stdout-stderr-and-join-tags" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;stdout&gt;, &lt;stderr&gt;, and &lt;join&gt; tags</h2>
 
-<p>Every <code>&lt;task&gt;</code> tag should contain either both <code>&lt;stdout&gt;</code> and <code>&lt;stderr&gt;</code> tags, or a <code>&lt;join&gt;</code> because it helps in tracking and finding the output of your jobs. However, they are optional to allow for situations where defaults may be used. These tags define the location of the stdout and stderr output of the job that executes the task. If either or both <code>&lt;stdout&gt;</code> and <code>&lt;stderr&gt;</code> are used, <code>&lt;join&gt;</code> may not be used. If <code>&lt;join&gt;</code> is used, neither <code>&lt;stdout&gt;</code> or <code>&lt;stderr&gt;</code> may be used. The <code>&lt;join&gt;</code> tag is used when you want both stdout and stderr to go to the same place. DO NOT set the value of <code>&lt;stdout&gt;</code> and <code>&lt;stderr&gt;</code> to the same thing; use <code>&lt;join&gt;</code> to do that.</p>
+<p>Every &lt;task&gt; tag should contain either both &lt;stdout&gt; and &lt;stderr&gt; tags, or a &lt;join&gt; because it helps in tracking and finding the output of your jobs. However, they are optional to allow for situations where defaults may be used. These tags define the location of the stdout and stderr output of the job that executes the task. If either or both &lt;stdout&gt; and &lt;stderr&gt; are used, &lt;join&gt; may not be used. If &lt;join&gt; is used, neither &lt;stdout&gt; or &lt;stderr&gt; may be used. The &lt;join&gt; tag is used when you want both stdout and stderr to go to the same place. DO NOT set the value of &lt;stdout&gt; and &lt;stderr&gt; to the same thing; use &lt;join&gt; to do that.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -696,9 +696,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-native-tag" class="anchor" href="#the-native-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;native&gt;</code> tag</h2>
+<a id="the-native-tag" class="anchor" href="#the-native-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;native&gt; tag</h2>
 
-<p>This tag may be used to define raw batch system options that Rocoto will use when submitting jobs for this <code>&lt;task&gt;</code>. This is useful in cases where an option is required but is not (yet) implemented as a generic tag. For example, this can be used when requesting advanced reservations or partitions). Multiple instances of <code>&lt;native&gt;</code> are not allowed. If more than one native option is required, all of them must be specified within a single <code>&lt;native&gt;</code> tag.</p>
+<p>This tag may be used to define raw batch system options that Rocoto will use when submitting jobs for this &lt;task&gt;. This is useful in cases where an option is required but is not (yet) implemented as a generic tag. For example, this can be used when requesting advanced reservations or partitions). Multiple instances of &lt;native&gt; are not allowed. If more than one native option is required, all of them must be specified within a single &lt;native&gt; tag.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -724,9 +724,9 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the-envar-tag" class="anchor" href="#the-envar-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;envar&gt;</code> tag</h2>
+<a id="the-envar-tag" class="anchor" href="#the-envar-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;envar&gt; tag</h2>
 
-<p>The <code>&lt;envar&gt;</code> tag is used inside <code>&lt;task&gt;</code> tags to define environment variables that must be passed to the task when it is executed. It consists of (name,value) pairs. All <code>&lt;envar&gt;</code> tags must contain a <code>&lt;name&gt;</code> tag. However, <code>&lt;value&gt;</code> tags can be absent in cases where a variable needs to be set, but does not need to be assigned a value.</p>
+<p>The &lt;envar&gt; tag is used inside &lt;task&gt; tags to define environment variables that must be passed to the task when it is executed. It consists of (name,value) pairs. All &lt;envar&gt; tags must contain a &lt;name&gt; tag. However, &lt;value&gt; tags can be absent in cases where a variable needs to be set, but does not need to be assigned a value.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -763,9 +763,9 @@ The name attribute</p>
 <p>In the above example, the ANALYSIS_TIME and WRF_HOME environment variables will be set to the values given (note the use of the cyclestr tags and ENTITIES) and passed to the task when it executes. This is an alternative method for passing parameters to the scripts when tasks are run</p>
 
 <h2>
-<a id="the-dependency-tag" class="anchor" href="#the-dependency-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;dependency&gt;</code> tag</h2>
+<a id="the-dependency-tag" class="anchor" href="#the-dependency-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;dependency&gt; tag</h2>
 
-<p><code>&lt;dependency&gt;</code> tags are fundamental to every workflow. They are used inside <code>&lt;task&gt;</code> tags, and are used to describe the inter-dependencies of the tasks. It is this tag that is used to define things like "task B can't run until task A is complete", or "Task A can't run until this file shows up". Dependencies are defined as boolean expressions, which means that you have quite a lot of control over when tasks are eligible to run. There are three types of dependencies:</p>
+<p>&lt;dependency&gt; tags are fundamental to every workflow. They are used inside &lt;task&gt; tags, and are used to describe the inter-dependencies of the tasks. It is this tag that is used to define things like "task B can't run until task A is complete", or "Task A can't run until this file shows up". Dependencies are defined as boolean expressions, which means that you have quite a lot of control over when tasks are eligible to run. There are three types of dependencies:</p>
 
 <p>Task Dependencies
 Data Dependencies
@@ -779,7 +779,7 @@ These dependencies can be combined in any combination in a boolean expression to
    &lt;/dependency&gt;
 </code></pre>
 
-<p>The above example shows the basic format of the <code>&lt;dependency&gt;</code> tag. Inside the <code>&lt;dependency&gt;</code> tag there must be exactly one tag. The one tag inside the <code>&lt;dependency&gt;</code> tag must be one of the following tags:</p>
+<p>The above example shows the basic format of the &lt;dependency&gt; tag. Inside the &lt;dependency&gt; tag there must be exactly one tag. The one tag inside the &lt;dependency&gt; tag must be one of the following tags:</p>
 
 <pre><code>  &lt;taskdep&gt;
   &lt;datadep&gt;
@@ -794,9 +794,9 @@ These dependencies can be combined in any combination in a boolean expression to
 </code></pre>
 
 <h2>
-<a id="the-taskdep-tag" class="anchor" href="#the-taskdep-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;taskdep&gt;</code> tag</h2>
+<a id="the-taskdep-tag" class="anchor" href="#the-taskdep-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;taskdep&gt; tag</h2>
 
-<p>Task dependencies are defined inside <code>&lt;dependency&gt;</code> tags with the <code>&lt;taskdep&gt;</code> tag as in the following example:</p>
+<p>Task dependencies are defined inside &lt;dependency&gt; tags with the &lt;taskdep&gt; tag as in the following example:</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -809,7 +809,7 @@ These dependencies can be combined in any combination in a boolean expression to
   &lt;/task&gt;
 </code></pre>
 
-<p>The task attribute of the <code>&lt;taskdep&gt;</code> tag must be set to the name of the task which must complete in order for the dependency to be satisfied. The task attribute must refer to a task that has already been defined above in the XML document. That requirement ensures there are no circular dependencies.</p>
+<p>The task attribute of the &lt;taskdep&gt; tag must be set to the name of the task which must complete in order for the dependency to be satisfied. The task attribute must refer to a task that has already been defined above in the XML document. That requirement ensures there are no circular dependencies.</p>
 
 <h3>
 <a id="the-cycle_offset-attribute" class="anchor" href="#the-cycle_offset-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The cycle_offset attribute</h3>
@@ -841,9 +841,9 @@ These dependencies can be combined in any combination in a boolean expression to
 </code></pre>
 
 <h2>
-<a id="the-metataskdep-tag-version-11-and-higher" class="anchor" href="#the-metataskdep-tag-version-11-and-higher" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;metataskdep&gt;</code> tag (version 1.1 and higher)</h2>
+<a id="the-metataskdep-tag-version-11-and-higher" class="anchor" href="#the-metataskdep-tag-version-11-and-higher" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;metataskdep&gt; tag (version 1.1 and higher)</h2>
 
-<p>Metatask dependencies are defined inside <code>&lt;dependency&gt;</code> tags with the <code>&lt;metataskdep&gt;</code> tag as in the following example:</p>
+<p>Metatask dependencies are defined inside &lt;dependency&gt; tags with the &lt;metataskdep&gt; tag as in the following example:</p>
 
 <pre><code>  &lt;task name="plots" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -856,27 +856,7 @@ These dependencies can be combined in any combination in a boolean expression to
   &lt;/task&gt;
 </code></pre>
 
-<p>The metatask attribute of the <code>&lt;metataskdep&gt;</code> tag must be set to the name of the metatask whose contents must complete in order for the dependency to be satisfied. The metatask attribute must refer to a task that has already been defined above in the XML document. That requirement ensures there are no circular dependencies.</p>
-
-<h3>
-<a id="the-cycle_offset-attribute-1" class="anchor" href="#the-cycle_offset-attribute-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>The cycle_offset attribute</h3>
-
-<p>See description in <code>&lt;taskdep&gt;</code> section above. Applies to entire contents of the referenced metatask.</p>
-
-<h3>
-<a id="the-state-attribute-1" class="anchor" href="#the-state-attribute-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>The state attribute</h3>
-
-<p>See description in <code>&lt;taskdep&gt;</code> section above. Applies to entire contents of the referenced metatask.</p>
-
-<h3>
-<a id="the-threshold-attribute" class="anchor" href="#the-threshold-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The threshold attribute</h3>
-
-<p>The optional threshold attribute specifies the fraction of metatask contents which must complete in order for the metatask dependency to be satisfied. The fraction is a number greater than 0 and less than or equal to 1. A value of 1 means that 100% of the metatask contents must finish. A value of 0.5 means that at least 50% of the metatask contents must satisfy the dependency requirement. The default is 1. See the section on the SOME dependency operator for more information.</p>
-
-<h2>
-<a id="the-datadep-tag" class="anchor" href="#the-datadep-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;datadep&gt;</code> tag</h2>
-
-<p>Data dependencies are defined inside <code>&lt;dependency&gt;</code> tags with the <code>&lt;datadep&gt;</code> tag. The full path to the file goes between the <code>&lt;datadep&gt;</code> and <code>&lt;/datadep&gt;</code> as in the following example:</p>
+<p>The metatask attribute of the &lt;metataskdep&gt; tag must be set to the name of the metatask whose contents must complete in order for the dependency to be satisfied. The metatask attribute must refer to a task that has already been defined above in the XML document. in the following example:</p>
 
 <pre><code>  &lt;datadep age="120"&gt;&lt;cyclestr&gt;&amp;WRF_HOME;/wrfprd/wrfout_d01_@Y-@m-@d_@H:@M:@S&lt;/cyclestr&gt;&lt;/datadep&gt;
 </code></pre>
@@ -886,12 +866,12 @@ These dependencies can be combined in any combination in a boolean expression to
 <h3>
 <a id="the-age-attribute" class="anchor" href="#the-age-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The age attribute</h3>
 
-<p>The age attribute of the <code>&lt;datadep&gt;</code> tag is optional. It contains the time (in dd:hh:mm:ss format) that the file must not be modified before the file is considered to be available. This is useful for preventing partially written files from erroneously triggering the submission of a task. As with the offset attributes of the <code>&lt;cyclestr&gt;</code> and cycle component tags, leading 0's can be left off. The default for this attribute is 0. For examples, see below.</p>
+<p>The age attribute of the &lt;datadep&gt; tag is optional. It contains the time (in dd:hh:mm:ss format) that the file must not be modified before the file is considered to be available. This is useful for preventing partially written files from erroneously triggering the submission of a task. As with the offset attributes of the &lt;cyclestr&gt; and cycle component tags, leading 0's can be left off. The default for this attribute is 0. For examples, see below.</p>
 
 <h3>
 <a id="the-minsize-attribute" class="anchor" href="#the-minsize-attribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>The minsize attribute</h3>
 
-<p>The minsize attribute of the <code>&lt;datadep&gt;</code> tag is optional. It contains the minimum size for the file before it is considered to be available. This is useful for preventing partially filled files from erroneously triggering the submission of a task. The default value for this attribute is 0. The units of the minsize attribute may optionally be specified by setting the last character of the value to one of</p>
+<p>The minsize attribute of the &lt;datadep&gt; tag is optional. It contains the minimum size for the file before it is considered to be available. This is useful for preventing partially filled files from erroneously triggering the submission of a task. The default value for this attribute is 0. The units of the minsize attribute may optionally be specified by setting the last character of the value to one of</p>
 
 <p>B or b: Size in bytes
 K or k: Size in kilobytes
@@ -911,9 +891,9 @@ If no units are specified, the units are bytes.</p>
 <p>All the lines above are equivalent</p>
 
 <h2>
-<a id="the-timedep-tag" class="anchor" href="#the-timedep-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;timedep&gt;</code> tag</h2>
+<a id="the-timedep-tag" class="anchor" href="#the-timedep-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;timedep&gt; tag</h2>
 
-<p>Time dependencies are defined with the <code>&lt;timedep&gt;</code> tag. The value between the start and end of the <code>&lt;timedep&gt;</code> tag is a time in yyyymmddhhmmss format. Time dependencies are satisfied with the wall clock time is equal to or greater than the time specified. All times are calculated in GMT.</p>
+<p>Time dependencies are defined with the &lt;timedep&gt; tag. The value between the start and end of the &lt;timedep&gt; tag is a time in yyyymmddhhmmss format. Time dependencies are satisfied with the wall clock time is equal to or greater than the time specified. All times are calculated in GMT.</p>
 
 <pre><code>  &lt;timedep&gt;&lt;cyclestr offset="&amp;DEADLINE;"&gt;@Y@m@d@H@M@S&lt;/cyclestr&gt;&lt;/timedep&gt;
 </code></pre>
@@ -921,7 +901,7 @@ If no units are specified, the units are bytes.</p>
 <h2>
 <a id="the-boolean-operator-tags" class="anchor" href="#the-boolean-operator-tags" aria-hidden="true"><span class="octicon octicon-link"></span></a>The boolean operator tags</h2>
 
-<p>There are several boolean operators that may be used to compose boolean expressions of dependencies. The operators and the operands (<code>&lt;taskdep&gt;</code>, <code>&lt;datadep&gt;</code>, <code>&lt;timedep&gt;</code>) can be combined without limit. The following lists the functions of the operators:</p>
+<p>There are several boolean operators that may be used to compose boolean expressions of dependencies. The operators and the operands (&lt;taskdep&gt;, &lt;datadep&gt;, &lt;timedep&gt;) can be combined without limit. The following lists the functions of the operators:</p>
 
 <p> Satisfied if all enclosed dependencies are satisfied
   Satisfied if at least one of the enclosed dependencies is satisfied
@@ -955,16 +935,16 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-hangdependency-tag" class="anchor" href="#the-hangdependency-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;hangdependency&gt;</code> tag</h2>
+<a id="the-hangdependency-tag" class="anchor" href="#the-hangdependency-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;hangdependency&gt; tag</h2>
 
-<p>The <code>&lt;hangdependency&gt;</code> tag is used to specify a condition which indicates a task has hung. This is useful for situations where a system or programming error has caused a job to hang. This tag tells Rocoto how to distinguish between a job that is running normally, and one that is hung. The <code>&lt;hangdependency&gt;</code> works the same way the <code>&lt;dependency&gt;</code> tag does. However, when a <code>&lt;hangdependency&gt;</code> is satisfied, the job associated with the task is killed. The task will be retried if the maximum retry count has not been exceeded. A common way to use this is to use a <code>&lt;datadep&gt;</code> with a relatively long age attribute on an output file with the idea of detecting when a job stops writing output.</p>
+<p>The &lt;hangdependency&gt; tag is used to specify a condition which indicates a task has hung. This is useful for situations where a system or programming error has caused a job to hang. This tag tells Rocoto how to distinguish between a job that is running normally, and one that is hung. The &lt;hangdependency&gt; works the same way the &lt;dependency&gt; tag does. However, when a &lt;hangdependency&gt; is satisfied, the job associated with the task is killed. The task will be retried if the maximum retry count has not been exceeded. A common way to use this is to use a &lt;datadep&gt; with a relatively long age attribute on an output file with the idea of detecting when a job stops writing output.</p>
 
 <h2>
-<a id="the-metatask-tag" class="anchor" href="#the-metatask-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The <code>&lt;metatask&gt;</code> tag</h2>
+<a id="the-metatask-tag" class="anchor" href="#the-metatask-tag" aria-hidden="true"><span class="octicon octicon-link"></span></a>The &lt;metatask&gt; tag</h2>
 
-<p><code>&lt;Metatask&gt;</code> tags are used to define large groups of tasks that are very similar to each other. For example, it is often the case that the post-processing portion of a workflow contains many tasks which are nearly identical. In some cases, the only difference between these tasks is the name of the model output file that they process. Another example is ensembles. For an ensemble, the only difference between some tasks might be an environment variable that contains the ensemble member ID. Long lists of tasks that are nearly identical are difficult to maintain. The <code>&lt;metatask&gt;</code> tag allows one to create a template for a set of tasks. This template specifies the things that change, and the list of values for each of the items that vary. When Rocoto parses the XML, it expands the metatask, duplicating the task template for each value in the lists of items that change. This allows for a compact representation of a large number of nearly identical tasks, and facilitates maintenance of the workflow definition. A <code>&lt;metatask&gt;</code> tag can be used inside <code>&lt;workflow&gt;</code> tags or inside other <code>&lt;metatask&gt;</code> tags (yes, they can be nested).</p>
+<p>&lt;Metatask&gt; tags are used to define large groups of tasks that are very similar to each other. For example, it is often the case that the post-processing portion of a workflow contains many tasks which are nearly identical. In some cases, the only difference between these tasks is the name of the model output file that they process. Another example is ensembles. For an ensemble, the only difference between some tasks might be an environment variable that contains the ensemble member ID. Long lists of tasks that are nearly identical are difficult to maintain. The &lt;metatask&gt; tag allows one to create a template for a set of tasks. This template specifies the things that change, and the list of values for each of the items that vary. When Rocoto parses the XML, it expands the metatask, duplicating the task template for each value in the lists of items that change. This allows for a compact representation of a large number of nearly identical tasks, and facilitates maintenance of the workflow definition. A &lt;metatask&gt; tag can be used inside &lt;workflow&gt; tags or inside other &lt;metatask&gt; tags (yes, they can be nested).</p>
 
-<p>The best way to explain <code>&lt;metatask&gt;</code> tags is to show an example (many details have been removed for clarity):</p>
+<p>The best way to explain &lt;metatask&gt; tags is to show an example (many details have been removed for clarity):</p>
 
 <pre><code>  &lt;workflow&gt;
 
@@ -987,7 +967,7 @@ If no units are specified, the units are bytes.</p>
   &lt;/workflow&gt;
 </code></pre>
 
-<p>The lines above define a <code>&lt;metatask&gt;</code> that contains two metatask <code>&lt;var&gt;</code> tags and one <code>&lt;task&gt;</code> tag. Every <code>&lt;metatask&gt;</code> must contain at least one <code>&lt;var&gt;</code> tag. The <code>&lt;var&gt;</code> tags are used to define variables that can be referenced in the rest of the <code>&lt;metatask&gt;</code> using the #varname# syntax. In the example above, two metatask variables, var1 and var2, are defined. Each <code>&lt;var&gt;</code> tag contains a list of values, separated by spaces. All the <code>&lt;var&gt;</code> tags of a given <code>&lt;metatask&gt;</code> must contain the same number of values. The number of values in the <code>&lt;var&gt;</code> tags determines how many tasks are represented by the <code>&lt;metatask&gt;</code>. When Rocoto parses the XML, it expands <code>&lt;metatask&gt;</code> tags into the full set of tasks which they represent. This is done by iterating over the list of values specified in the <code>&lt;var&gt;</code> tags and creating one instance of the contents of the <code>&lt;metatask&gt;</code> for each value. For example, the <code>&lt;metatask&gt;</code> above will automatically be expanded to the following XML:</p>
+<p>The lines above define a &lt;metatask&gt; that contains two metatask &lt;var&gt; tags and one &lt;task&gt; tag. Every &lt;metatask&gt; must contain at least one &lt;var&gt; tag. The &lt;var&gt; tags are used to define variables that can be referenced in the rest of the &lt;metatask&gt; using the #varname# syntax. In the example above, two metatask variables, var1 and var2, are defined. Each &lt;var&gt; tag contains a list of values, separated by spaces. All the &lt;var&gt; tags of a given &lt;metatask&gt; must contain the same number of values. The number of values in the &lt;var&gt; tags determines how many tasks are represented by the &lt;metatask&gt;. When Rocoto parses the XML, it expands &lt;metatask&gt; tags into the full set of tasks which they represent. This is done by iterating over the list of values specified in the &lt;var&gt; tags and creating one instance of the contents of the &lt;metatask&gt; for each value. For example, the &lt;metatask&gt; above will automatically be expanded to the following XML:</p>
 
 <pre><code>  &lt;workflow&gt;
 
@@ -1021,7 +1001,7 @@ If no units are specified, the units are bytes.</p>
   &lt;/workflow&gt;
 </code></pre>
 
-<p>Since a <code>&lt;metatask&gt;</code> can contain other <code>&lt;metatask&gt;</code> tags, you can represent a set of tasks that vary along multiple dimensions. For example, if you wanted to represent the post-processing tasks for a 10 member ensemble, where there is one post task for each model output file, you could use something like this:</p>
+<p>Since a &lt;metatask&gt; can contain other &lt;metatask&gt; tags, you can represent a set of tasks that vary along multiple dimensions. For example, if you wanted to represent the post-processing tasks for a 10 member ensemble, where there is one post task for each model output file, you could use something like this:</p>
 
 <pre><code>  &lt;metatask&gt;
 
@@ -1050,16 +1030,16 @@ If no units are specified, the units are bytes.</p>
   &lt;/metatask&gt;
 </code></pre>
 
-<p>The above would create tasks for each possible pair of values in the member and forecast <code>&lt;var&gt;</code> tags. The above represents 170 tasks with only one block of XML!</p>
+<p>The above would create tasks for each possible pair of values in the member and forecast &lt;var&gt; tags. The above represents 170 tasks with only one block of XML!</p>
 
 <p>The name attribute (version 1.1 and higher)</p>
 
-<p>The name attribute is optional and can be used to assign a name to a <code>&lt;metatask&gt;</code>. The name can then be referenced in <code>&lt;metataskdep&gt;</code> tags to declare dependencies on the entire contents of a <code>&lt;metatask&gt;</code>. All <code>&lt;metatask&gt;</code> name attributes must be unique.</p>
+<p>The name attribute is optional and can be used to assign a name to a &lt;metatask&gt;. The name can then be referenced in &lt;metataskdep&gt; tags to declare dependencies on the entire contents of a &lt;metatask&gt;. All &lt;metatask&gt; name attributes must be unique.</p>
 
 <h3>
 <a id="the-mode-attribute-version-11-and-higher" class="anchor" href="#the-mode-attribute-version-11-and-higher" aria-hidden="true"><span class="octicon octicon-link"></span></a>The mode attribute (version 1.1 and higher)</h3>
 
-<p>The mode attribute is optional and is used to tell Rocoto if the contents of the <code>&lt;metatask&gt;</code> tag are to be run in parallel or in sequential order. The mode may either be "serial" or "parallel". The default mode is "parallel". If the mode is "serial" the <code>&lt;metatask&gt;</code> tag's immediate children will be run in sequential order. The task dependencies required to accomplish execution in sequential order will be inserted automatically. If a <code>&lt;metatask&gt;</code> contains another <code>&lt;metatask&gt;</code>, the contents of the enclosed <code>&lt;metatask&gt;</code> will not be serialized unless its mode attribute is also set to "serial".</p>
+<p>The mode attribute is optional and is used to tell Rocoto if the contents of the &lt;metatask&gt; tag are to be run in parallel or in sequential order. The mode may either be "serial" or "parallel". The default mode is "parallel". If the mode is "serial" the &lt;metatask&gt; tag's immediate children will be run in sequential order. The task dependencies required to accomplish execution in sequential order will be inserted automatically. If a &lt;metatask&gt; contains another &lt;metatask&gt;, the contents of the enclosed &lt;metatask&gt; will not be serialized unless its mode attribute is also set to "serial".</p>
 
 <p>Consider the following example, which is a slight variation of the example above, that illustrates the use of the name and mode attributes</p>
 
@@ -1100,7 +1080,7 @@ If no units are specified, the units are bytes.</p>
   &lt;/task&gt;
 </code></pre>
 
-<p>The above shows a <code>&lt;metatask&gt;</code> named "posts" which contains all the post-processing tasks for all members of an ensemble. Inside "posts" is an unnamed <code>&lt;metatask&gt;</code> that contains the post tasks for each forecast lead time for a given ensemble member. The "mode" of the inner <code>&lt;metatask&gt;</code> is set to "serial", meaning that its contents must be run sequentially instead of in parallel. The "mode" of the "posts" metatask was not specified, so its contents can run in parallel. What the above means is that, for a given ensemble member, the post tasks can not run at the same time and must run one after the other, in order of forecast lead time. However, since there is no dependency between the post tasks of different ensemble members, the sequence of post tasks for a given member can run in parallel with the sequence of post tasks of any other member. Finally, at the bottom is a task with a <code>&lt;metataskdep&gt;</code> dependency. The <code>&lt;metataskdep&gt;</code> tag declares that the hurricane_track_plots task can not run until all tasks contained in the "posts" <code>&lt;metatask&gt;</code> are completed successfully (i.e. all posts for all forecast lead time for all ensemble members are done successfully).</p>
+<p>The above shows a &lt;metatask&gt; named "posts" which contains all the post-processing tasks for all members of an ensemble. Inside "posts" is an unnamed &lt;metatask&gt; that contains the post tasks for each forecast lead time for a given ensemble member. The "mode" of the inner &lt;metatask&gt; is set to "serial", meaning that its contents must be run sequentially instead of in parallel. The "mode" of the "posts" metatask was not specified, so its contents can run in parallel. What the above means is that, for a given ensemble member, the post tasks can not run at the same time and must run one after the other, in order of forecast lead time. However, since there is no dependency between the post tasks of different ensemble members, the sequence of post tasks for a given member can run in parallel with the sequence of post tasks of any other member. Finally, at the bottom is a task with a &lt;metataskdep&gt; dependency. The &lt;metataskdep&gt; tag declares that the hurricane_track_plots task can not run until all tasks contained in the "posts" &lt;metatask&gt; are completed successfully (i.e. all posts for all forecast lead time for all ensemble members are done successfully).</p>
         </section>
 
         <footer>
