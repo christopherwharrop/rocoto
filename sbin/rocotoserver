@@ -33,7 +33,7 @@ Process.setsid
 exit if fork
 STDIN.reopen "/dev/null"
 STDOUT.reopen "/dev/null", "a" 
-#  STDERR.reopen "/dev/null", "a"  # We need STDERR to report errors
+STDERR.reopen "/dev/null", "a"
 
 # Start a Drb Server that will serve the workflow server object
 DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
