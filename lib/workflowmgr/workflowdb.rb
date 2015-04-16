@@ -215,14 +215,14 @@ module WorkflowMgr
         dbcycledefs=[]
 
         # Retrieve the cycle definitions from the database
-        dbcycledefs=@database.execute("SELECT groupname,cycledef,dirty FROM cycledef;")
+        dbcycledefs=@database.execute("SELECT groupname,activation_offset,cycledef,dirty FROM cycledef;")
 
         # Return the array of cycledefs
         dbcycledefs.collect! do |cycledef| 
-          if cycledef[2].nil?
-            {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>nil} 
+          if cycledef[3].nil?
+            {:group=>cycledef[0], :activation_offset=>cycledef[1], :cycledef=>cycledef[2], :position=>nil} 
           else
-            {:group=>cycledef[0], :cycledef=>cycledef[1], :position=>Time.at(cycledef[2]).getgm} 
+            {:group=>cycledef[0], :activation_offset=>cycledef[1], :cycledef=>cycledef[2], :position=>Time.at(cycledef[3]).getgm} 
           end
         end  # 
 
@@ -251,14 +251,14 @@ module WorkflowMgr
           # Delete all current cycledefs from the database
           dbspecs=db.execute("DELETE FROM cycledef;")
 
-          @database.prepare("INSERT INTO cycledef VALUES (NULL,?,?,?)") do |stmt|
+          @database.prepare("INSERT INTO cycledef VALUES (NULL,?,?,?,?)") do |stmt|
  
             # Add new cycledefs to the database
             cycledefs.each do |cycledef|
               if cycledef[:position].nil?
-                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}")
+                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}","NULL",cycledef[:activation_offset])
               else
-                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}",cycledef[:position].to_i)
+                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}",cycledef[:position].to_i,cycledef[:activation_offset])
               end
             end
 
@@ -879,6 +879,14 @@ module WorkflowMgr
       # Parse the cycle command to see if the draining column is not there
       unless cyclescrt=~/draining DATETIME/
         db.execute("ALTER TABLE cycles ADD COLUMN draining DATETIME;")
+      end
+
+      # Get the command used to create the cycle table
+      cycledefscrt = db.execute("SELECT sql FROM sqlite_master WHERE tbl_name='cycledef' AND type='table';").to_s
+
+      # Parse the cycle command to see if the draining column is not there
+      unless cycledefscrt=~/activation_offset INTEGER/
+        db.execute("ALTER TABLE cycledef ADD COLUMN activation_offset INTEGER;")
       end
 
     end  # update_tables

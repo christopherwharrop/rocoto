@@ -264,10 +264,15 @@ module WorkflowMgr
         cyclefields=unescape(cyclenode.content.strip)
         nfields=cyclefields.split.size
         group=cyclenode.attributes['group']
+        if self.realtime? 
+          activation_offset=WorkflowMgr.ddhhmmss_to_seconds(cyclenode.attributes['activation_offset'])
+        else
+          activation_offset=0
+        end
         if nfields==3
-          cycles << CycleInterval.new(cyclefields,group)
+          cycles << CycleInterval.new(cyclefields,group,activation_offset)
         elsif nfields==6
-          cycles << CycleCron.new(cyclefields,group)
+          cycles << CycleCron.new(cyclefields,group,activation_offset)
         else
 	  raise "ERROR: Unsupported <cycle> type!"
         end

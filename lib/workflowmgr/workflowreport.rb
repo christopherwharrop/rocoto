@@ -259,9 +259,9 @@ module WorkflowMgr
       dbcycledefs=@dbServer.get_cycledefs.collect do |dbcycledef|
         case dbcycledef[:cycledef].split.size
           when 6
-            CycleCron.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:position])
+            CycleCron.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:activation_offset],dbcycledef[:position])
           when 3
-            CycleInterval.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:position])
+            CycleInterval.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:activation_offset],dbcycledef[:position])
         end
       end
         

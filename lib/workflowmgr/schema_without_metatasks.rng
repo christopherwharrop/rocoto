@@ -91,6 +91,11 @@
                 <data type="string"/>
               </attribute>
             </optional>
+            <optional>
+              <attribute name="activation_offset">
+                <ref name="time"/>
+	      </attribute>
+            </optional>
             <choice>
               <list>
                 <ref name="cronField"/>

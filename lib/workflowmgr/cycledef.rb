@@ -15,6 +15,7 @@ module WorkflowMgr
     attr_reader :group
     attr_reader :cycledef
     attr_reader :position
+    attr_reader :activation_offset
 
     ##########################################
     #
@@ -35,7 +36,7 @@ module WorkflowMgr
     ##########################################
     def first
 
-      self.next(Time.gm(1900,1,1,0,0))
+      self.next(Time.gm(1900,1,1,0,0))[0]
 
     end  # first
 
@@ -47,7 +48,7 @@ module WorkflowMgr
     ##########################################
     def last
 
-      self.previous(Time.gm(9999,12,31,59,59))
+      self.previous(Time.gm(9999,12,31,59,59))[0]
 
     end  # first
 
@@ -68,10 +69,11 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(cycledef,group,position=nil)
+    def initialize(cycledef,group,activation_offset,position=nil)
 
       @cycledef=cycledef
       @group=group
+      @activation_offset=activation_offset
 
       @fields={}
       [:minute,:hour,:day,:month,:year,:weekday].each_with_index { |field,i|
@@ -88,7 +90,10 @@ module WorkflowMgr
     # next
     #
     ##########################################
-    def next(reftime)
+    def next(rawreftime)
+
+      # Take the activation offset into account
+      reftime = rawreftime - @activation_offset
 
       # Get date/time components for the reference time
       nextmin=reftime.min
@@ -237,7 +242,7 @@ module WorkflowMgr
             end
           end
         end
-        return Time.gm(nextyear,nextmonth,nextday,nexthr,nextmin) if done
+        return Time.gm(nextyear,nextmonth,nextday,nexthr,nextmin),@activation_offset if done
         nextwday=Time.gm(nextyear,nextmonth,nextday).wday
 
       end  #  while true
@@ -250,7 +255,10 @@ module WorkflowMgr
     # previous
     #
     ##########################################
-    def previous(reftime)
+    def previous(rawreftime)
+
+      # Take the activation offset into account
+      reftime = rawreftime - @activation_offset
 
       # Get date/time components for the reference time
       prevmin=reftime.min
@@ -401,7 +409,7 @@ module WorkflowMgr
           end
         end
 
-        return Time.gm(prevyear,prevmonth,prevday,prevhr,prevmin) if done
+        return Time.gm(prevyear,prevmonth,prevday,prevhr,prevmin),@activation_offset if done
         prevwday=Time.gm(prevyear,prevmonth,prevday).wday
 
       end  #  while true
@@ -534,10 +542,11 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(cycledef,group,position=nil)
+    def initialize(cycledef,group,activation_offset,position=nil)
 
       @cycledef=cycledef
       @group=group
+      @activation_offset=activation_offset
 
       fields=@cycledef.split
       @start=Time.gm(fields[0][0..3],
@@ -571,12 +580,15 @@ module WorkflowMgr
     # next
     #
     ##########################################
-    def next(reftime)
+    def next(rawreftime)
+
+      # Take the activation offset into account
+      reftime = rawreftime - @activation_offset
 
       if reftime > @finish
         return nil
       elsif reftime <= @start
-        return @start.getgm
+        return @start.getgm,@activation_offset
       else
         offset=(reftime.to_i - @start.to_i) % @interval
         if offset==0
@@ -584,7 +596,7 @@ module WorkflowMgr
         else
           localnext=Time.at(reftime - offset + @interval)
         end
-        return localnext.getgm
+        return localnext.getgm,@activation_offset
       end
 
     end  # next
@@ -594,16 +606,19 @@ module WorkflowMgr
     # previous
     #
     ##########################################
-    def previous(reftime)
+    def previous(rawreftime)
+
+      # Take the activation offset into account
+      reftime = rawreftime - @activation_offset
 
       if reftime < @start
         return nil
       elsif reftime >= @finish
-        return @finish
+        return @finish,@activation_offset
       else
         offset=(reftime.to_i - @start.to_i) % @interval
         localprev=Time.at(reftime - offset)
-        return localprev.getgm
+        return localprev.getgm,@activation_offset
       end
     end
 

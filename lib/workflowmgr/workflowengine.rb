@@ -591,20 +591,25 @@ module WorkflowMgr
 
       # Get the most recent cycle time <= now from cycle specs
       now=Time.now.getgm
-      latest_cycle_time=@cycledefs.collect { |c| c.previous(now) }.max
+      latest_cycle_time = nil
+      latest_activation_time = nil
+      latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now) }.compact
+      unless latest_cycle_candidates.empty?
+        latest_cycle_time,latest_activation_time = latest_cycle_candidates.sort { |c1,c2| c1[0] + c1[1] <=> c2[0] + c2[1] }.last
+      end
 
       # Create a new cycle if a cycle <= now is defined in cycle specs
       if latest_cycle_time.nil?
         return []
       else
-        latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated=>latest_cycle_time.getgm } )
+        latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated=>latest_cycle_time.getgm + latest_activation_time} )
       end
 
-      # Get the latest cycle from the database or initialize it to a very long time ago
-      latest_db_cycle=@dbServer.get_last_cycle || Cycle.new(Time.gm(1900,1,1,0,0,0))
+      # Look for the lastest cycle in the database
+      db_cycle=@dbServer.get_cycle(latest_cycle_time)[0]
 
       # Return the new cycle if it hasn't already been activated
-      if latest_cycle > latest_db_cycle
+      if db_cycle.nil?
         return [latest_cycle]
       else
         return []
@@ -628,9 +633,9 @@ module WorkflowMgr
       dbcycledefs=@dbServer.get_cycledefs.collect do |dbcycledef|
         case dbcycledef[:cycledef].split.size
           when 6
-            CycleCron.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:position])
+            CycleCron.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:activation_offset],dbcycledef[:position])
           when 3
-            CycleInterval.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:position])
+            CycleInterval.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:activation_offset],dbcycledef[:position])
         end
       end
         
@@ -666,7 +671,7 @@ module WorkflowMgr
           while !next_cycle.nil? do
             match=cycleset.find { |c| c.cycle==next_cycle }
             break if match.nil?
-            next_cycle=cycledef.next(next_cycle + 60)
+            next_cycle=cycledef.next(next_cycle + 60)[0]
           end
 
           # If we found a new cycle, add it to the new cycle pool
