@@ -244,8 +244,13 @@ module WorkflowMgr
         inl+=1
       end
 
+      # Add the command to submit
+      cmd += " #{rocotodir}/sbin/lsfwrapper.sh #{task.attributes[:command]}"
+
       # LSF does not have an option to pass environment vars
       # Instead, the vars must be set in the environment before submission
+      # and then unset after submission
+      oenv=ENV.to_hash
       task.envars.each { |name,env|
         if env.nil?
           ENV[name]=""
@@ -254,12 +259,13 @@ module WorkflowMgr
         end
       }
 
-      # Add the command to submit
-      cmd += " #{rocotodir}/sbin/lsfwrapper.sh #{task.attributes[:command]}"
-      #WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",4)
-
       # Run the submit command
-      output=`#{cmd} 2>&1`.chomp
+      begin
+        output=`#{cmd} 2>&1`.chomp
+      ensure
+        ENV.clear
+        ENV.update(oenv)
+      end
 
       WorkflowMgr.log("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}")
       WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}",4)

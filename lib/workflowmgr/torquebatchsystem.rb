@@ -109,34 +109,16 @@ module WorkflowMgr
         input += "#PBS #{native_line}\n"
       end
 
-      # Build the -v string to pass environment to the job
-      save_env={}
+      # Add export commands to pass environment vars to the job
       unless task.envars.empty?
         varinput=''
         task.envars.each { |name,env|
           varinput += "export #{name}='#{env}'\n"
-          if env=~/[\n\r\']/ || varinput.length > 2048
-            varinput="-V"
-            break
-          end
         }
-        # Choose -v or -V depending on how long -v is
-        if varinput=="-V"
-          # Save a copy of the current environment so we can restore it later
-          ENV.each do |name,env|
-            save_env[name]=env
-          end
-
-          # Set all envars in the current environment so they get passed with -V
-          task.envars.each { |name,env|
-            ENV[name]=env
-          }
-          input += "#PBS -V\n"
-        else
-          input += varinput
-        end          
+        input += varinput
       end
       input+="set -x\n"
+
 
       # Build the -F string to pass job script arguments to batch script
       #cmdargs=task.attributes[:command].split[1..-1].join("' '")
@@ -156,12 +138,6 @@ module WorkflowMgr
 
       # Run the submit command
       output=`#{cmd} < #{tf.path} 2>&1`.chomp()
-
-      # Restore the environment if necessary
-      unless save_env.empty?
-        ENV.clear
-        save_env.each { |k,v| ENV[k]=v }
-      end
 
       # Parse the output of the submit command
       if output=~/^(\d+)(\.[a-zA-Z0-9-]+)*$/
