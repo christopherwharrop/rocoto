@@ -149,6 +149,9 @@ module WFMStat
         cycletime=@options.cycles.first
         taskname=@options.tasks.first
 
+        # Get the cycledefs
+        cycledefs=@workflowdoc.cycledefs
+
         # Get the cycle
         cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
 
@@ -190,7 +193,7 @@ module WFMStat
         end
 
         # Print the cycle information
-        print_cycleinfo(cycle)
+        print_cycleinfo(cycle,cycledefs,task)
 
         # Print the job information
         print_jobinfo(job)
@@ -437,10 +440,27 @@ module WFMStat
     # print_cycleinfo
     #
     ##########################################
-    def print_cycleinfo(cycle)
+    def print_cycleinfo(cycle,cycledefs,task)
+
+
+      # Make sure the cycle is valid for this task
+      cycle_is_valid=true
+      unless task.attributes[:cycledefs].nil?
+        taskcycledefs=cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+        # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
+        unless taskcycledefs.any? { |cycledef| cycledef.member?(cycle.cycle) }
+          cycle_is_valid=false
+        end
+      end  # unless
+      
 
       puts
       puts "Cycle: #{cycle.cycle.strftime("%Y%m%d%H%M")}"
+      if cycle_is_valid
+        puts "  Valid for this task: YES"
+      else
+        puts "  Valid for this task: NO"
+      end
       puts "  State: #{cycle.state}"
       puts "  Activated: #{cycle.activated != Time.at(0) ? cycle.activated : "-"}"
       puts "  Completed: #{cycle.done? ? cycle.done : "-"}"
