@@ -277,9 +277,6 @@ module WorkflowMgr
     def boot
 
       with_locked_db {
-        # Get task name and cycle time
-        boot_task_name=@options.tasks.first
-        boot_cycle_time=@options.cycles.first
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -303,115 +300,183 @@ module WorkflowMgr
         # Submit new tasks where possible
         submit_new_jobs
 
-        # Get the boot task from the workflow definition
-        task=@tasks[boot_task_name]
+        # Initialize a task cycledef hash
+        taskcycledefs={}
 
-        # Reject this request if the task is not defined 
-        if task.nil?
-          raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task is not defined in the workflow definition"
+        # Get the list of boot cycles
+        boot_cycles=[]
+        if @options.cycles.is_a?(Range)
+
+          # Find every cycle in the range that is a member of a cycledef
+          reftime=@cycledefs.collect { |cdef| cdef.next(@options.cycles.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
+          while true do
+            break if reftime.nil?
+            break if reftime > @options.cycles.last
+            boot_cycles << reftime
+            reftime=@cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
+          end
+
+        else
+          boot_cycles=@options.cycles
         end
+        boot_cycles.uniq!
+        boot_cycles.sort!
+        nboot_cycles = boot_cycles.length
 
-        # Find the requested cycle
-        boot_cycle=find_cycle(boot_cycle_time)
+        # Collect the names of tasks to boot
+        boot_tasks=@options.tasks || []
+        @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
+          boot_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
+        } unless @options.metatasks.nil?
+        boot_tasks.uniq!
+        boot_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
+        nboot_tasks = boot_tasks.length
 
-        # Activate a new cycle if necessary and add it to the database
-        if boot_cycle.nil?
-          printf "Booting task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
-          printf "This may trigger submission of other tasks for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{boot_task_name}'\n"
-          printf "Are you sure you want to boot '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
+        # Ask user for confirmation if boot tasks/cycles list is very large
+        if (nboot_cycles > 10 || nboot_tasks > 10)
+          printf "Preparing to boot #{nboot_tasks} tasks for #{nboot_cycles} cycles.  A total of #{nboot_tasks * nboot_cycles} tasks will be booted.\n"
+          printf "Are you sure you want to proceed? (y/n) "
           reply=STDIN.gets
-          if reply=~/^[Yy]/
-            boot_cycle=Cycle.new(boot_cycle_time)
-            boot_cycle.activate!
-            @dbServer.add_cycles([boot_cycle])
-            boot_job=nil
-          else
-            puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted"
+          unless reply=~/^[Yy]/
             Process.exit(0)
           end
-        else
+        end
 
-          # Reactivate the cycle if it is done (but not expired)
-          if boot_cycle.done?
-            boot_cycle.reactivate!
-            @dbServer.update_cycles([boot_cycle])
-          end
+        # Iterate over boot cycles
+        boot_cycles.each { |boot_cycle_time|
 
-          # Retrieve the boot job from the database
-          if boot_cycle.active?
-            if @active_jobs[boot_task_name].nil?
-              boot_job=nil
-            else
-              boot_job=@active_jobs[boot_task_name][boot_cycle_time]
+          # Boot each task for this boot cycle
+          boot_tasks.each { |boot_task_name|
+
+            # Get the boot task from the workflow definition
+            task=@tasks[boot_task_name]
+
+            # Reject this request if the task is not defined in the XML
+            if task.nil?
+              puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task is not defined in the workflow definition"
+              next
             end
-          else
-            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is #{boot_cycle.state}"
-          end
 
-        end
+            # Make sure the cycle is valid for this task
+            unless task.attributes[:cycledefs].nil?
+              # Get the cycledefs associated with this task
+              if taskcycledefs[boot_task_name].nil?
+                taskcycledefs[boot_task_name]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              end
+              # Reject this task if the cycle is not a member of the tasks cycle list
+              unless taskcycledefs[boot_task_name].any? { |cycledef| cycledef.member?(boot_cycle_time) }
+                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is not defined for that task"
+                next
+              end
+            end  # unless
 
-        # Check for existing jobs that are not done or expired
-        unless boot_job.nil?
-          if !boot_job.done? && !boot_job.expired?
-            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because a job for it already exists in state #{boot_job.state}"
-          end
-          if boot_job.expired?
-            raise "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task has expired"
-          end
-        end
+            # Find the requested cycle
+            boot_cycle=find_cycle(boot_cycle_time)
 
-        # Initialize jobid of the new job
-        if @config.BatchQueueServer
-          newjobid=@bqServer.__drburi
-        else
-          newjobid=0
-        end
+            # Activate a new cycle if necessary and add it to the database
+            if boot_cycle.nil?
+              printf "Booting task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
+              printf "This may trigger submission of other tasks for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{boot_task_name}'\n"
+              printf "Are you sure you want to boot '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
+              reply=STDIN.gets
+              if reply=~/^[Yy]/
+                boot_cycle=Cycle.new(boot_cycle_time)
+                boot_cycle.activate!
+                @dbServer.add_cycles([boot_cycle])
+                boot_job=nil
+              else
+                puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted"
+                next  # boot next task
+              end
+            else
 
-        # Create the job
-        job = Job.new(newjobid,                            # jobid
-                      boot_task_name,                      # taskname
-                      boot_cycle_time,                     # cycle
-                      task.attributes[:cores],             # cores
-                      "SUBMITTING",                        # state
-                      "SUBMITTING",                        # native state
-                      0,                                   # exit_status
-                      boot_job.nil? ? 0 : boot_job.tries+1,# tries
-                      0,                                   # nunknowns
-                      0.0                                  # duration
-                     )
+              # Reactivate the cycle if it is done (but not expired)
+              if boot_cycle.done?
+                boot_cycle.reactivate!
+                @dbServer.update_cycles([boot_cycle])
+              end
 
-        # Add the new job to the database
-	@dbServer.add_jobs([job])
+              # Retrieve the boot job from the database
+              if boot_cycle.active?
+                if @active_jobs[boot_task_name].nil?
+                  boot_job=nil
+                else
+                  boot_job=@active_jobs[boot_task_name][boot_cycle_time]
+                end
+              else
+                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is #{boot_cycle.state}"
+                next
+              end
+ 
+            end
 
-        # Submit the task
-	@bqServer.submit(task.localize(boot_cycle_time),boot_cycle_time)
-        @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
+            # Check for existing jobs that are not done or expired
+            unless boot_job.nil?
+              if !boot_job.done? && !boot_job.expired?
+                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because a job for it already exists in state #{boot_job.state}"
+                next
+              end
+              if boot_job.expired?
+                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task has expired"
+                next
+              end
+            end
 
-        # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
-        Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+            # Initialize jobid of the new job
+            if @config.BatchQueueServer
+              newjobid=@bqServer.__drburi
+            else
+              newjobid=0
+            end
 
-        # Harvest job ids for submitted tasks
-        uri=job.id
-        jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
-        if output.nil?
-          @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
-        else
-          if jobid.nil?
-            # Delete the job from the database since it failed to submit.  It will be retried next time around.
-            @dbServer.delete_jobs([job])
-            WorkflowMgr.stderr(output,1)
-            @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
-          else
-            job.id=jobid
-            job.state="QUEUED"
-            job.native_state="queued"
-            @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
-            # Update the jobid for the job in the database
-            @dbServer.update_jobs([job])
-          end
-        end
+            # Create the job
+            job = Job.new(newjobid,                            # jobid
+                          boot_task_name,                      # taskname
+                          boot_cycle_time,                     # cycle
+                          task.attributes[:cores],             # cores
+                          "SUBMITTING",                        # state
+                          "SUBMITTING",                        # native state
+                          0,                                   # exit_status
+                          boot_job.nil? ? 0 : boot_job.tries+1,# tries
+                          0,                                   # nunknowns
+                          0.0                                  # duration
+                         )
 
-        puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
+            # Add the new job to the database
+            @dbServer.add_jobs([job])
+
+            # Submit the task
+            @bqServer.submit(task.localize(boot_cycle_time),boot_cycle_time)
+            @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
+
+            # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
+            Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+
+            # Harvest job ids for submitted tasks
+            uri=job.id
+            jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
+            if output.nil?
+              @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+            else
+              if jobid.nil?
+                # Delete the job from the database since it failed to submit.  It will be retried next time around.
+                @dbServer.delete_jobs([job])
+                WorkflowMgr.stderr(output,1)
+                @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
+              else
+                job.id=jobid
+                job.state="QUEUED"
+                job.native_state="queued"
+                @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
+                # Update the jobid for the job in the database
+                @dbServer.update_jobs([job])
+              end
+            end
+
+            puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
+
+          } # boot_tasks.each
+        } # boot_cycles.each
       } # with_locked_db
 
     end # boot
@@ -593,16 +658,16 @@ module WorkflowMgr
       now=Time.now.getgm
       latest_cycle_time = nil
       latest_activation_time = nil
-      latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now) }.compact
+      latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now,by_activation_time=true) }.compact
       unless latest_cycle_candidates.empty?
-        latest_cycle_time,latest_activation_time = latest_cycle_candidates.sort { |c1,c2| c1[0] + c1[1] <=> c2[0] + c2[1] }.last
+        latest_cycle_time,latest_activation_time = latest_cycle_candidates.sort { |c1,c2| c1[1] <=> c2[1] }.last
       end
 
       # Create a new cycle if a cycle <= now is defined in cycle specs
       if latest_cycle_time.nil?
         return []
       else
-        latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated=>latest_cycle_time.getgm + latest_activation_time} )
+        latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated => latest_activation_time} )
       end
 
       # Look for the lastest cycle in the database
@@ -671,7 +736,7 @@ module WorkflowMgr
           while !next_cycle.nil? do
             match=cycleset.find { |c| c.cycle==next_cycle }
             break if match.nil?
-            next_cycle=cycledef.next(next_cycle + 60)[0]
+            next_cycle,activation_time=cycledef.next(next_cycle + 60,by_activation_time=false)
           end
 
           # If we found a new cycle, add it to the new cycle pool
@@ -707,7 +772,7 @@ module WorkflowMgr
 
       return newcycles
 
-    end  # activate_new_cycles
+    end  # get_new_retro_cycles
 
 
     ##########################################

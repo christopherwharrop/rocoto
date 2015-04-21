@@ -267,12 +267,12 @@ module WFMStat
 
         # Find every cycle in the range
         xml_cycle_times = []
-        reftime=cycledefs.collect { |cdef| cdef.next(@options.cycles.first) }.compact.min
+        reftime=cycledefs.collect { |cdef| cdef.next(@options.cycles.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
         while true do
           break if reftime.nil?
           break if reftime > @options.cycles.last
           xml_cycle_times << reftime
-          reftime=cycledefs.collect { |cdef| cdef.next(reftime+60) }.compact.min
+          reftime=cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
         end
 
         # Add the cycles that are in the XML but not in the DB

@@ -12,7 +12,7 @@ $:.unshift("#{__WFMDIR__}/lib/open4/lib")
 
 # Load workflow status library
 require 'workflowmgr/workflowengine'
-require 'wfmstat/checktaskoption'
+require 'workflowmgr/workflowbootoption.rb'
 require 'libxml'
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
@@ -20,6 +20,6 @@ require 'libxml'
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
-workflowEngine=WorkflowMgr::WorkflowEngine.new(WFMStat::CheckTaskOption.new(ARGV))
+workflowEngine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowBootOption.new(ARGV))
 workflowEngine.boot
 

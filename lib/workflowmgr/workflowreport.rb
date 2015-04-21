@@ -216,27 +216,37 @@ module WorkflowMgr
 
     end
 
-
     ##########################################
     #
     # get_new_realtime_cycle
     #
-    ##########################################
+    ########################################## 
     def get_new_realtime_cycle
 
-      # For realtime workflows, find the most recent cycle less than or equal to 
+      # For realtime workflows, find the most recent cycle less than or equal to
       # the current time and activate it if it has not already been activated
-
-      # Get the most recent cycle <= now from cycle specs
+      # Get the most recent cycle time <= now from cycle specs
       now=Time.now.getgm
-      new_cycle=@cycledefs.collect { |c| c.previous(now) }.max
+      latest_cycle_time = nil
+      latest_activation_time = nil
+      latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now,by_activation_time=true) }.compact
+      unless latest_cycle_candidates.empty?
+        latest_cycle_time,latest_activation_time = latest_cycle_candidates.sort { |c1,c2| c1[1] <=> c2[1] }.last
+      end
 
-      # Get the latest cycle from the database or initialize it to a very long time ago
-      latest_cycle=@dbServer.get_last_cycle || { :cycle=>Time.gm(1900,1,1,0,0,0) }
+      # Create a new cycle if a cycle <= now is defined in cycle specs
+      if latest_cycle_time.nil?
+        return []
+      else
+        latest_cycle=Cycle.new(latest_cycle_time.getgm, { :activated => latest_activation_time} )
+      end
+
+      # Look for the lastest cycle in the database
+      db_cycle=@dbServer.get_cycle(latest_cycle_time)[0]
 
       # Return the new cycle if it hasn't already been activated
-      if new_cycle > latest_cycle[:cycle]
-        return [new_cycle]
+      if db_cycle.nil?
+        return [latest_cycle]
       else
         return []
       end
@@ -297,7 +307,7 @@ module WorkflowMgr
           while !next_cycle.nil? do
             match=cycleset.find { |c| c[:cycle]==next_cycle }
             break if match.nil?
-            next_cycle=cycledef.next(next_cycle + 60)
+            next_cycle,activation_time=cycledef.next(next_cycle + 60,by_activation_time=false)
           end
 
           # If we found a new cycle, add it to the new cycle pool
@@ -333,7 +343,7 @@ module WorkflowMgr
 
       return newcycles
 
-    end  # activate_new_cycles
+    end  # get_new_retro_cycles
 
 
     ##########################################
