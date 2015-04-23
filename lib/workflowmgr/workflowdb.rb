@@ -256,7 +256,7 @@ module WorkflowMgr
             # Add new cycledefs to the database
             cycledefs.each do |cycledef|
               if cycledef[:position].nil?
-                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}","NULL",cycledef[:activation_offset])
+                stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}",nil,cycledef[:activation_offset])
               else
                 stmt.execute("#{cycledef[:group]}","#{cycledef[:cycledef]}",cycledef[:position].to_i,cycledef[:activation_offset])
               end

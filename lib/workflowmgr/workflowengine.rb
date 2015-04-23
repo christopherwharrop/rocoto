@@ -768,7 +768,7 @@ module WorkflowMgr
       end  # .times do
 
       # Save the workflowdoc cycledefs with their updated positions to the database
-      @dbServer.set_cycledefs(@cycledefs.collect { |cycledef| { :group=>cycledef.group, :cycledef=>cycledef.cycledef, :position=>cycledef.position } } )
+      @dbServer.set_cycledefs(@cycledefs.collect { |cycledef| { :group=>cycledef.group, :cycledef=>cycledef.cycledef, :activation_offset=>cycledef.activation_offset, :position=>cycledef.position } } )
 
       return newcycles
 
