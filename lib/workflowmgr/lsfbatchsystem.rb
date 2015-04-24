@@ -322,7 +322,7 @@ private
 
       rescue Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",3)
+        WorkflowMgr.stderr("error running bjobs: #{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -354,6 +354,7 @@ private
               record[:state]="RUNNING"
             else
               record[:state]="UNKNOWN"   
+              next
           end          
           record[:queue]=jobattributes[3]
           record[:jobname]=jobattributes[6]
@@ -426,8 +427,10 @@ private
         exit_status=0
         timeout=nacctfiles==1 ? 30 : 90
         if(bjobs) then
+          WorkflowMgr.stderr("bjobs -l -a ",10)
           completed_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -l -a",timeout)
         else
+          WorkflowMgr.stderr("bhist -n #{nacctfiles} -l -d -w ",10)
           completed_jobs,errors,exit_status=WorkflowMgr.run4("bhist -n #{nacctfiles} -l -d -w",timeout)
         end
 
@@ -444,8 +447,8 @@ private
         end
 
       rescue Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",3)
+        WorkflowMgr.log("Error running bhist or bjobs: #{$!}")
+        WorkflowMgr.stderr("Error running bhist or bjobs: #{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
       # Build job records from output of bhist
@@ -458,7 +461,7 @@ private
         recordstring.gsub!(/\n\s{3,}/,'')
         recordstring.split(/\n+/).each { |event|
           case event.strip
-            when /^Job <(\d+)>,( Job Name <([^>]+)>,)* User <([^>]+)>,/
+            when /^Job <(\d+)>, *(Job Name <([^>]+)>,)? *User <([^>]+)>,/
               record[:jobid]=$1
               record[:jobname]=$3
               record[:user]=$4
@@ -565,7 +568,9 @@ private
         }
 
         if !jobacct.has_key?(record[:jobid])
-          jobacct[record[:jobid]]=record
+          if record.has_key?(:state) and record[:state]!='UNKNOWN'
+            jobacct[record[:jobid]]=record
+          end
         end
 
       }        
