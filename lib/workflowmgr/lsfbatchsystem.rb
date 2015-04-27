@@ -103,8 +103,15 @@ module WorkflowMgr
       # Get the Rocoto installation directory
       rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
-      # Save the current environment so it can be restored after job submission
-      oenv=ENV.to_hash
+      # Build up the string of environment settings
+      envstr=""
+      task.envars.each { |name,env|
+        if env.nil?
+          envstr += "#{name}='' "
+        else
+          envstr += "#{name}='#{env}' "
+        end
+      }
 
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
@@ -161,7 +168,7 @@ module WorkflowMgr
               end
               cmd += " -R span[ptile=#{span}]"
               cmd += " -n #{nval}"
-              ENV["ROCOTO_TASK_GEO"]=task_geometry
+              envstr += "#{ROCOTO_TASK_GEO}='#{task_geometry}' "
             end
           when :nodes
             # Get largest ppn*tpp to calculate ptile
@@ -204,7 +211,7 @@ module WorkflowMgr
             cmd += " -n #{nnodes*ptile}"
  
             # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
-            ENV["ROCOTO_TASK_GEO"]=task_geometry
+            envstr += "#{ROCOTO_TASK_GEO}='#{task_geometry}' "
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
@@ -246,24 +253,11 @@ module WorkflowMgr
       # Add the command to submit
       cmd += " #{rocotodir}/sbin/lsfwrapper.sh #{task.attributes[:command]}"
 
-      # LSF does not have an option to pass environment vars
-      # Instead, the vars must be set in the environment before submission
-      # and then unset after submission
-      task.envars.each { |name,env|
-        if env.nil?
-          ENV[name]=""
-        else
-          ENV[name]=env
-        end
-      }
+      # Prepend the environment settings
+      cmd = "/bin/env " + envstr + cmd
 
       # Run the submit command
-      begin
-        output=`#{cmd} 2>&1`.chomp
-      ensure
-        ENV.clear
-        ENV.update(oenv)
-      end
+      output=`#{cmd} 2>&1`.chomp
 
       WorkflowMgr.log("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}")
       WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}",4)
