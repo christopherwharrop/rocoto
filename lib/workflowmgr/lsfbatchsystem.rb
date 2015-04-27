@@ -103,10 +103,6 @@ module WorkflowMgr
       # Get the Rocoto installation directory
       rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
-      if ENV.has_key?('ROCOTO_TASK_GEO')
-        ENV.delete('ROCOTO_TASK_GEO')
-      end
-
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
