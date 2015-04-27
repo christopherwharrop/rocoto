@@ -103,6 +103,9 @@ module WorkflowMgr
       # Get the Rocoto installation directory
       rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
+      # Save the current environment so it can be restored after job submission
+      oenv=ENV.to_hash
+
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
@@ -246,7 +249,6 @@ module WorkflowMgr
       # LSF does not have an option to pass environment vars
       # Instead, the vars must be set in the environment before submission
       # and then unset after submission
-      oenv=ENV.to_hash
       task.envars.each { |name,env|
         if env.nil?
           ENV[name]=""
