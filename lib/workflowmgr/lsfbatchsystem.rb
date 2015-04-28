@@ -110,7 +110,7 @@ module WorkflowMgr
         if env.nil?
           envstr += "export #{name}\n"
         else
-          envstr += "export #{name}=#{env}\n"
+          envstr += "export #{name}='#{env}'\n"
         end
       }
 
@@ -169,7 +169,7 @@ module WorkflowMgr
               end
               cmd += " -R span[ptile=#{span}]"
               cmd += " -n #{nval}"
-              envstr += "export #{ROCOTO_TASK_GEO}=#{task_geometry}\n"
+              envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
             end
           when :nodes
             # Get largest ppn*tpp to calculate ptile
@@ -212,7 +212,8 @@ module WorkflowMgr
             cmd += " -n #{nnodes*ptile}"
  
             # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
-            envstr += "export #{ROCOTO_TASK_GEO}=#{task_geometry}\n"
+            envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
+
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
