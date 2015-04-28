@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'workflowmgr/utilities'
     require 'fileutils'
     require 'etc'
+    require 'tempfile'
 
     @@qstat_refresh_rate=30
     @@max_history=3600*1
@@ -104,12 +105,12 @@ module WorkflowMgr
       rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 
       # Build up the string of environment settings
-      envstr=""
+      envstr="#!/bin/sh\n"
       task.envars.each { |name,env|
         if env.nil?
-          envstr += "#{name}='' "
+          envstr += "export #{name}\n"
         else
-          envstr += "#{name}='#{env}' "
+          envstr += "export #{name}=#{env}\n"
         end
       }
 
@@ -168,7 +169,7 @@ module WorkflowMgr
               end
               cmd += " -R span[ptile=#{span}]"
               cmd += " -n #{nval}"
-              envstr += "#{ROCOTO_TASK_GEO}='#{task_geometry}' "
+              envstr += "export #{ROCOTO_TASK_GEO}=#{task_geometry}\n"
             end
           when :nodes
             # Get largest ppn*tpp to calculate ptile
@@ -211,7 +212,7 @@ module WorkflowMgr
             cmd += " -n #{nnodes*ptile}"
  
             # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
-            envstr += "#{ROCOTO_TASK_GEO}='#{task_geometry}' "
+            envstr += "export #{ROCOTO_TASK_GEO}=#{task_geometry}\n"
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
@@ -253,14 +254,16 @@ module WorkflowMgr
       # Add the command to submit
       cmd += " #{rocotodir}/sbin/lsfwrapper.sh #{task.attributes[:command]}"
 
-      # Prepend the environment settings
-      cmd = "/bin/env " + envstr + cmd
+      # Build a script to set env vars and then call bsub to submit the job
+      tf=Tempfile.new('bsub.wrapper')
+      tf.write(envstr + cmd)
+      tf.flush()
 
-      # Run the submit command
-      output=`#{cmd} 2>&1`.chomp
+      # Run the submit command script
+      output=`/bin/sh #{tf.path} 2>&1`.chomp
 
-      WorkflowMgr.log("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}")
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using #{cmd} 2>&1 ==> #{output}",4)
+      WorkflowMgr.log("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
+      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}",4)
 
       # Parse the output of the submit command
       if output=~/Job <(\d+)> is submitted to (default )*queue/
