@@ -220,9 +220,9 @@ module WorkflowMgr
         # Return the array of cycledefs
         dbcycledefs.collect! do |cycledef| 
           if cycledef[3].nil?
-            {:group=>cycledef[0], :activation_offset=>cycledef[1], :cycledef=>cycledef[2], :position=>nil} 
+            {:group=>cycledef[0], :activation_offset=>(cycledef[1] || 0), :cycledef=>cycledef[2], :position=>nil} 
           else
-            {:group=>cycledef[0], :activation_offset=>cycledef[1], :cycledef=>cycledef[2], :position=>Time.at(cycledef[3]).getgm} 
+            {:group=>cycledef[0], :activation_offset=>(cycledef[1] || 0), :cycledef=>cycledef[2], :position=>Time.at(cycledef[3]).getgm} 
           end
         end  # 
 
