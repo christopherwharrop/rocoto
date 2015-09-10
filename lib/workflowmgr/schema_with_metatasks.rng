@@ -31,6 +31,7 @@
           <value>torque</value>
           <value>pbs</value>
           <value>slurm</value>
+          <value>cobalt</value>
         </choice>
       </attribute>
 

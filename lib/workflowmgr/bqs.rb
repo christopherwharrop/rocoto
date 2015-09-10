@@ -20,6 +20,7 @@ module WorkflowMgr
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'
     require 'workflowmgr/slurmbatchsystem'
+    require 'workflowmgr/cobaltbatchsystem'
     require 'workflowmgr/task'
   
     ##########################################
