@@ -844,6 +844,8 @@ module WorkflowMgr
 
                 # Insert a task dep for each dependent task
                 tasks.each do |t|
+                  # Reject tasks that aren't a member of metatask m
+                  next if t.attributes["metatasks"].split(",").find_index(m).nil?
                   taskdepnode=LibXML::XML::Node.new("taskdep")
                   LibXML::XML::Attr.new( taskdepnode, "task", t.attributes["name"] )
                   andnode << taskdepnode
