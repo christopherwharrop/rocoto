@@ -71,70 +71,6 @@ module WorkflowMgr
     end
 
 
-#[harrop@cetuslac1 test]$ qsub --help
-#Usage: qsub.py --help
-#Usage: qsub.py [options] <executable> [<excutable options>]
-#
-#Refer to man pages for JOBID EXPANSION and SCRIPT JOB DIRECTIVES.
-#
-#
-#Options:
-#  --version             show program's version number and exit
-#  --help                show this help message and exit
-#  -d, --debug           turn on communication debugging
-#  -v, --verbose         not used
-#  -h, --held            hold this job once submitted
-#  --preemptable         make this job preemptable
-#  --run_project         set run project flag for this job
-#  --disable_preboot     disable script preboot
-#  -I, --interactive     run qsub in interactive mode
-#  -n NODES, --nodecount=NODES
-#                        set job node count
-#  --proccount=PROCS     set job proc count
-#  -A PROJECT, --project=PROJECT
-#                        set project name
-#  --cwd=CWD             set current working directory
-#  -q QUEUE, --queue=QUEUE
-#                        set queue name
-#  -M NOTIFY, --notify=NOTIFY
-#                        set notification email address
-#  --env=ENVS            Set env variables. Refer to man pages for more detail
-#                        information.
-#  -t WALLTIME, --time=WALLTIME
-#                        set walltime (minutes or HH:MM:SS). For max walltime
-#                        enter 0.
-#  -u UMASK, --umask=UMASK
-#                        set umask: octal number default(022)
-#  -O OUTPUTPREFIX, --outputprefix=OUTPUTPREFIX
-#                        output prefix for error,output or debuglog files
-#  -e ERRORPATH, --error=ERRORPATH
-#                        set error file path
-#  -o OUTPUTPATH, --output=OUTPUTPATH
-#                        set output file path
-#  -i INPUTFILE, --inputfile=INPUTFILE
-#                        set input file
-#  --debuglog=COBALT_LOG_FILE
-#                        set debug log path file
-#  --dependencies=ALL_DEPENDENCIES
-#                        set job dependencies (jobid1:jobid2:...:jobidN)
-#  --attrs=ATTRS         set attributes (attr1=val1:attr2=val2:...:attrN=valN)
-#  --user_list=USER_LIST, --run_users=USER_LIST
-#                        set user list (user1:user2:...:userN)
-#  --jobname=JOBNAME     Sets Jobname. If this option is not provided then
-#                        Jobname will be set to whatever -o option specified.
-#  --kernel=KERNEL       set a compute node kernel profile
-#  -K KERNELOPTIONS, --kerneloptions=KERNELOPTIONS
-#                        set compute node kernel options
-#  --ion_kernel=ION_KERNEL
-#                        set an IO node kernel profile
-#  --ion_kerneloptions=ION_KERNELOPTIONS
-#                        set IO node kernel options
-#  --mode=MODE           select system mode
-#  --geometry=GEOMETRY   set geometry (AxBxCxDxE)
-#[harrop@cetuslac1 test]$ 
-
-
-
     #####################################################
     #
     # submit
@@ -155,15 +91,18 @@ module WorkflowMgr
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
-#            input += "#COBALT --proccount=#{value}\n"
-            input += "#COBALT -n #{(value.to_f / 16.0).ceil}\n"
+            WorkflowMgr.stderr("WARNING: Cobalt does not support the <cores> used by task #{task.attributes[:name]}.  Use <nodes> instead.")
           when :nodes
-            # Remove any occurrences of :tpp=N
-            input += "#COBALT -n #{value.gsub(/:tpp=\d+/,"")}\n"
+            # Can't support complex geometry in qsub (only in runjob)
+            # Compute number of nodes to request
+            numnodes = value.split("+").collect { |n| n.split(":ppn=")[0] }.inject { |sum,i| sum.to_i + i.to_i }
+            input += "#COBALT -n #{numnodes}\n"
           when :walltime
-            input += "#COBALT -t #{value}\n"
+            minutes = (WorkflowMgr.ddhhmmss_to_seconds(value) / 60.0).ceil
+            input += "#COBALT -t #{minutes}\n"
           when :memory
-#            input += "#PBS -l vmem=#{value}\n"
+            # Cobalt does not support any way to specify this option
+            WorkflowMgr.stderr("WARNING: Cobalt does not support the option <memory> used by task #{task.attributes[:name]}.  It will be ignored.")
           when :stdout
             input += "#COBALT -o #{value}\n"
           when :stderr
@@ -176,8 +115,8 @@ module WorkflowMgr
         end
       end
 
-      task.each_native do |native_line|
-next if native_line.empty?
+      task.each_native do |native_line|        
+        next if native_line.empty?
         input += "#COBALT #{native_line}\n"
       end
 
@@ -189,27 +128,18 @@ next if native_line.empty?
         }
         input += varinput
       end
-#      input+="set -x\n"
 
-
-      # Build the -F string to pass job script arguments to batch script
-      #cmdargs=task.attributes[:command].split[1..-1].join("' '")
-      #unless cmdargs.empty?
-      #  cmdinput += "\'#{cmdargs}\'\n"
-      #end
-      #input += "env\n";
-      # Add the command to submit
-      #input += "'#{task.attributes[:command].split.first}' '#{cmdinput}'"
+      # Add the command to the job
       input += task.attributes[:command]
 
-      # Get a temporary file name
+      # Get a temporary file name to use as a wrapper and write job spec into it
       tfname=Tempfile.new('qsub.in').path.split("/").last
       tf=File.new("#{ENV['HOME']}/.rocoto/tmp/#{tfname}","w")
       tf.write(input)
       tf.flush()
       tf.chmod(0700)
       tf.close
-      
+          
       WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} --mode script #{tf.path} with input {{#{input}}}",4)
 
       # Run the submit command
@@ -263,10 +193,7 @@ private
         # Return if the showq output is empty
         return if queued_jobs.empty?
 
-        # Parse the XML output of showq, building job status records for each job
-#        queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs, :options => LibXML::XML::Parser::Options::HUGE).parse
-
-      rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
+      rescue Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
@@ -284,11 +211,21 @@ private
             case record[:native_state]
               when /running/,/starting/,/exiting/
                 record[:state] = "RUNNING"
-              when /queued/
+              when /queued/,/hold/
                 record[:state] = "QUEUED"
             end
           when /JobName\s+:\s+(\S+)/
             record[:jobname] = $1
+          when /User\s+:\s+(\S+)/
+            record[:user] = $1
+          when /Procs\s+:\s+(\d+)/
+            record[:cores] = $1.to_i
+          when /Queue\s+:\s+(\S+)/
+            record[:queue] = $1
+          when /SubmitTime\s+:\s+(\S+.*)/
+            record[:submit_time] = Time.gm(*ParseDate.parsedate($1))
+          when /StartTime\s+:\s+(\S+.*)/
+            record[:start_time] = Time.gm(*ParseDate.parsedate($1)) unless $1 == "N/A"
           when /(\S+)\s+:\s+(\S+)/
             record[$1] = $2
         end
@@ -300,35 +237,6 @@ private
 #	job.each_element { |jobstat| 
         
 #          case jobstat.name
-#            when /Job_Id/
-#              record[:jobid]=jobstat.content.split(".").first
-#            when /job_state/
-#              case jobstat.content
-#                when /^Q$/,/^H$/,/^W$/,/^S$/,/^T$/
-#    	          record[:state]="QUEUED"
-#                when /^R$/,/^E$/
-#    	          record[:state]="RUNNING"
-#                else
-#                  record[:state]="UNKNOWN"
-#              end
-#              record[:native_state]=jobstat.content
-#            when /Job_Name/
-#	      record[:jobname]=jobstat.content
-#	    when /Job_Owner/
-#	      record[:user]=jobstat.content
-#           when /Resource_List/       
-#              jobstat.each_element { |e|
-#                if e.name=='procs'
-#                  record[:cores]=e.content.to_i
-#                  break
-#                end
-#            }
-#  	    when /queue/
-#	      record[:queue]=jobstat.content
-#	    when /qtime/
-#	      record[:submit_time]=Time.at(jobstat.content.to_i).getgm
-#  	    when /start_time/
-#              record[:start_time]=Time.at(jobstat.content.to_i).getgm
 #	    when /comp_time/
 #              record[:end_time]=Time.at(jobstat.content.to_i).getgm
 # 	    when /Priority/
@@ -356,6 +264,8 @@ private
 
       }  #  queued_jobs.find
 
+WorkflowMgr.stderr(@jobqueue.inspect)
+
       queued_jobs=nil
       GC.start
 
@@ -372,9 +282,6 @@ private
       # Get the username of this process
       username=Etc.getpwuid(Process.uid).name
 
-      # Initialize an empty hash of job records
-#      @jobacct={}
-
       begin
 
         joblog = IO.readlines("#{ENV['HOME']}/.rocoto/tmp/#{jobid}.log")
@@ -382,7 +289,7 @@ private
         # Return if the joblog output is empty
         return if joblog.empty?
 
-      rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
+      rescue WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown        
@@ -407,9 +314,7 @@ private
             record[:exit_status] = $1.to_i
         end
 
-#        record[:jobid]=job.attributes['JobID'].split(".").last
-#        record[:jobid]=job.attributes['JobID']
-#        record[:native_state]=job.attributes['State']
+
 #        record[:jobname]=job.attributes['JobName']
 #        record[:user]=job.attributes['User']
 #        record[:cores]=job.attributes['ReqProcs'].to_i
@@ -427,10 +332,17 @@ private
 
       }
 
-      if record[:exit_status]==0
+      if record[:exit_status].nil?
+        record[:state]="UNKNOWN"
+      elsif record[:exit_status]==0
         record[:state]="SUCCEEDED"
       else
         record[:state]="FAILED"
+      end
+      if record[:state]=="UNKNOWN"
+        record[:native_state]="unknown"
+      else
+        record[:native_state]="completed"
       end
 
       # Add the record if it hasn't already been added
