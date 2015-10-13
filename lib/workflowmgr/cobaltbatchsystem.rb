@@ -289,6 +289,8 @@ private
           when /task completed normally with an exit code of (\d+);/
             record[:end_time]=Time.gm(*ParseDate.parsedate(line))
             record[:exit_status] = $1.to_i
+          when /Command: '(\S+)'/
+            record[:command] = $1            
         end
 
       }
@@ -312,10 +314,15 @@ private
       end
 
       # Add the record if it hasn't already been added
-      @jobacct[record[:jobid]]=record unless @jobacct.has_key?(record[:jobid])
+#      @jobacct[record[:jobid]]=record unless @jobacct.has_key?(record[:jobid])
+      unless @jobacct.has_key?(record[:jobid])
+        @jobacct[record[:jobid]]=record
+        # Remove the temporary submit script
+        FileUtils.rm(record[:command])
+        # Remove the temporary cobaltlog
+        FileUtils.rm("#{ENV['HOME']}/.rocoto/tmp/#{jobid}.log")        
+      end
 
-      GC.start
-    
     end
 
   end  # class
