@@ -230,24 +230,6 @@ private
             record[$1] = $2
         end
 
-
-#WorkflowMgr.stderr(record.inspect)
-
-  	# Look at all the attributes for this job and build the record
-#	job.each_element { |jobstat| 
-        
-#          case jobstat.name
-#	    when /comp_time/
-#              record[:end_time]=Time.at(jobstat.content.to_i).getgm
-# 	    when /Priority/
-#	      record[:priority]=jobstat.content.to_i            
-#            when /exit_status/
-#              record[:exit_status]=jobstat.content.to_i
-#	    else
-#              record[jobstat.name]=jobstat.content
-#          end  # case jobstat
-#  	}  # job.children
-
         # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
         if record[:state]=="UNKNOWN" && !record[:exit_status].nil?
           if record[:exit_status]==0
@@ -264,7 +246,6 @@ private
 
       }  #  queued_jobs.find
 
-WorkflowMgr.stderr(@jobqueue.inspect)
 
       queued_jobs=nil
       GC.start
@@ -299,41 +280,26 @@ WorkflowMgr.stderr(@jobqueue.inspect)
       record={:jobid => jobid}
       joblog.each { |line|
 
-
-#Thu Sep 10 17:35:17 2015 +0000 (UTC) submitted with cwd set to: /gpfs/mira-home/harrop/rocoto/test
-#Thu Sep 10 17:35:58 2015 +0000 (UTC) harrop/603816: Initiating boot at location CET-20400-31731-128.
-#Thu Sep 10 17:36:56 2015 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal
-
         case line
           when /submitted with cwd set to:/
             record[:submit_time]=Time.gm(*ParseDate.parsedate(line))
-          when /Initiating boot at location/
+          when /(\S+)\/\d+:\s+Initiating boot at location/
+            record[:user]=$1
             record[:start_time]=Time.gm(*ParseDate.parsedate(line))
           when /task completed normally with an exit code of (\d+);/
             record[:end_time]=Time.gm(*ParseDate.parsedate(line))
             record[:exit_status] = $1.to_i
         end
 
-
-#        record[:jobname]=job.attributes['JobName']
-#        record[:user]=job.attributes['User']
-#        record[:cores]=job.attributes['ReqProcs'].to_i
-#        record[:queue]=job.attributes['Class']
-#        record[:submit_time]=Time.at(job.attributes['SubmissionTime'].to_i).getgm
-#        record[:start_time]=Time.at(job.attributes['StartTime'].to_i).getgm
-#        record[:end_time]=Time.at(job.attributes['CompletionTime'].to_i).getgm
-#        record[:duration]=job.attributes['AWDuration'].to_i
-#        record[:priority]=job.attributes['StartPriority'].to_i
-#        if job.attributes['State']=~/^Removed/ || job.attributes['CompletionCode']=~/^CNCLD/
-#          record[:exit_status]=255
-#          else
-#          record[:exit_status]=job.attributes['CompletionCode'].to_i
-#        end
-
       }
+
+      unless record[:start_time].nil? || record[:end_time].nil?
+        record[:duration] = record[:end_time] - record[:start_time]
+      end
 
       if record[:exit_status].nil?
         record[:state]="UNKNOWN"
+        record[:exit_status]=255
       elsif record[:exit_status]==0
         record[:state]="SUCCEEDED"
       else
