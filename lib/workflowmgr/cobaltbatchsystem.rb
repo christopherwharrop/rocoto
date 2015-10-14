@@ -297,6 +297,10 @@ private
           when /Info: user delete requested/
             record[:exit_status] = 255
             record[:native_state] = "deleted"           
+          when /initiating job termination/
+            record[:exit_status] = 255
+            record[:end_time]=Time.gm(*ParseDate.parsedate(line))
+            record[:native_state]="killed"                        
         end
 
       }
@@ -316,12 +320,15 @@ private
       if record[:state]=="UNKNOWN"
         record[:native_state]="unknown"
       else
-        if record[:native_state]=="deleted"
-          record[:start_time] = Time.at(0)
-          record[:end_time] = Time.at(0)
-          record[:duration] = 0
-        else
-          record[:native_state]="completed"
+        case record[:native_state]
+          when "deleted"
+            record[:start_time] = Time.at(0)
+            record[:end_time] = Time.at(0)
+            record[:duration] = 0
+          when "killed"
+            # Do nothing
+          else
+            record[:native_state]="completed"
         end
       end
 
