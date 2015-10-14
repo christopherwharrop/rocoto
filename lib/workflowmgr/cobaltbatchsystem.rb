@@ -209,7 +209,7 @@ private
           when /State\s+:\s+(\S+)/
             record[:native_state]=$1
             case record[:native_state]
-              when /running/,/starting/,/exiting/
+              when /running/,/starting/,/exiting/,/killing/
                 record[:state] = "RUNNING"
               when /queued/,/hold/
                 record[:state] = "QUEUED"
@@ -265,7 +265,10 @@ private
 
       begin
 
-        joblog = IO.readlines("#{ENV['HOME']}/.rocoto/tmp/#{jobid}.log")
+        joblogfile = "#{ENV['HOME']}/.rocoto/tmp/#{jobid}.log"
+        return unless  File.exists?(joblogfile)
+        joblog = IO.readlines(joblogfile)
+        
 
         # Return if the joblog output is empty
         return if joblog.empty?
@@ -289,8 +292,11 @@ private
           when /task completed normally with an exit code of (\d+);/
             record[:end_time]=Time.gm(*ParseDate.parsedate(line))
             record[:exit_status] = $1.to_i
-          when /Command: '(\S+)'/
-            record[:command] = $1            
+          when /^qsub.* (\S+)$/
+            record[:command] = $1
+          when /Info: user delete requested/
+            record[:exit_status] = 255
+            record[:native_state] = "deleted"           
         end
 
       }
@@ -310,17 +316,22 @@ private
       if record[:state]=="UNKNOWN"
         record[:native_state]="unknown"
       else
-        record[:native_state]="completed"
+        if record[:native_state]=="deleted"
+          record[:start_time] = Time.at(0)
+          record[:end_time] = Time.at(0)
+          record[:duration] = 0
+        else
+          record[:native_state]="completed"
+        end
       end
 
       # Add the record if it hasn't already been added
-#      @jobacct[record[:jobid]]=record unless @jobacct.has_key?(record[:jobid])
       unless @jobacct.has_key?(record[:jobid])
         @jobacct[record[:jobid]]=record
         # Remove the temporary submit script
         FileUtils.rm(record[:command])
         # Remove the temporary cobaltlog
-        FileUtils.rm("#{ENV['HOME']}/.rocoto/tmp/#{jobid}.log")        
+        FileUtils.rm(joblogfile)        
       end
 
     end
