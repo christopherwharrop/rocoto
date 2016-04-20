@@ -899,7 +899,30 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-streq-tag" class="anchor" href="#the-streq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;streq&gt; tag</h2>
+<a id="the-streq-tag" class="anchor" href="#the-streq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;streq&gt; tag</h2>(Version 1.2.2+)
+
+<p>The string comparison tags can be used to create dependency switches in your XML that allow you to manually (but easily) turn parts of a workflow on/off.  This can be useful in cases where there are multiple possible workflow configurations that are very similar to each other.  Rather than creating and maintaining separate workflows for each mostly identical configuration, these switches can be used to define a single workflow that can then be configured for various scenarios. For example, you could turn the "GSI" component of your workflow on/off with a &lt;streq&gt; dependency:</p>
+
+<pre><code> &lt;streq&gt;&lt;left&gt;&RUN_GSI;&lt;/left&gt;&lt;right&gt;YES&lt;/right&gt;&lt;/streq&gt;
+</code></pre>
+
+<p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the GSI component is included in the workflow configuration.</p>
+
+<h2>
+<a id="the-strneq-tag" class="anchor" href="#the-strneq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;strneq&gt; tag</h2>(Version 1.2.2+)
+
+<p>The string comparison tags can be used to create dependency switches in your XML that allow you to manually (but easily) turn parts of a workflow on/off.  This can be useful in cases where there are multiple possible workflow configurations that are very similar to each other.  Rather than creating and maintaining separate workflows for each mostly identical configuration, these switches can be used to define a single workflow that can then be configured for various scenarios. For example, you could turn the "GSI" component of your workflow on/off with a &lt;strneq&gt; dependency:</p>
+
+<pre><code> &lt;strneq&gt;&lt;left&gt;&RUN_GSI;&lt;/left&gt;&lt;right&gt;YES&lt;/right&gt;&lt;/strneq&gt;
+</code></pre>
+
+<p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the GSI component is included in the workflow configuration.</p>
+
+<pre><code> 
+</code></pre>
+
+<h2>
+<a id="the-true-tag" class="anchor" href="#the-true-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;true&gt; tag</h2>(Version 1.2.2+)
 
 <p> </p>
 
@@ -907,7 +930,7 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-strneq-tag" class="anchor" href="#the-strneq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;strneq&gt; tag</h2>
+<a id="the-false-tag" class="anchor" href="#the-false-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;false&gt; tag</h2>(Version 1.2.2+)
 
 <p> </p>
 
@@ -915,7 +938,7 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-true-tag" class="anchor" href="#the-true-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;true&gt; tag</h2>
+<a id="the-sh-tag" class="anchor" href="#the-sh-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;sh&gt; tag</h2>(Version 1.2.2+)
 
 <p> </p>
 
@@ -923,7 +946,7 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-false-tag" class="anchor" href="#the-false-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;false&gt; tag</h2>
+<a id="the-rb-tag" class="anchor" href="#the-rb-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;rb&gt; tag</h2>(Version 1.2.2+)
 
 <p> </p>
 
@@ -931,23 +954,7 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-sh-tag" class="anchor" href="#the-sh-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;sh&gt; tag</h2>
-
-<p> </p>
-
-<pre><code> 
-</code></pre>
-
-<h2>
-<a id="the-rb-tag" class="anchor" href="#the-rb-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;rb&gt; tag</h2>
-
-<p> </p>
-
-<pre><code> 
-</code></pre>
-
-<h2>
-<a id="the-cycleexistdep-tag" class="anchor" href="#the-cycleexistdep-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;cycleexistdep&gt; tag</h2>
+<a id="the-cycleexistdep-tag" class="anchor" href="#the-cycleexistdep-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;cycleexistdep&gt; tag</h2>(Version 1.2.2+)
 
 <p> </p>
 
