@@ -903,8 +903,18 @@ If no units are specified, the units are bytes.</p>
 
 <p>The string comparison tags can be used to create dependency switches in your XML that allow you to manually (but easily) turn parts of a workflow on/off.  This can be useful in cases where there are multiple possible workflow configurations that are very similar to each other.  Rather than creating and maintaining separate workflows for each mostly identical configuration, these switches can be used to define a single workflow that can then be configured for various scenarios. For example, you could turn the "GSI" task of your workflow on/off with a &lt;streq&gt; dependency defined in each task that runs only when the GSI is turned "on":</p>
 
-<pre><code> &lt;streq&gt;&lt;left&gt;&RUN_GSI;&lt;/left&gt;&lt;right&gt;YES&lt;/right&gt;&lt;/streq&gt;
-</code></pre>
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE workflow
+[
+ ...
+  &lt;!ENTITY RUN_GSI "&lt;false&gt;"&gt;
+]&gt;
+
+...
+
+&lt;dependency&gt;
+  &lt;streq&gt;&lt;left&gt;&RUN_GSI;&lt;/left&gt;&lt;right&gt;YES&lt;/right&gt;&lt;/streq&gt;
+&lt;/dependency&gt;</code></pre>
 
 <p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the GSI component is included in the workflow configuration.</p>
 
@@ -913,7 +923,18 @@ If no units are specified, the units are bytes.</p>
 
 <p>The string comparison tags can be used to create dependency switches in your XML that allow you to manually (but easily) turn parts of a workflow on/off.  This can be useful in cases where there are multiple possible workflow configurations that are very similar to each other.  Rather than creating and maintaining separate workflows for each mostly identical configuration, these switches can be used to define a single workflow that can then be configured for various scenarios. For example, you could use a &lt;strneq&gt; dependency to turn on the tasks that run only when the GSI is NOT turned "on":</p>
 
-<pre><code> &lt;strneq&gt;&lt;left&gt;&RUN_GSI;&lt;/left&gt;&lt;right&gt;YES&lt;/right&gt;&lt;/strneq&gt;
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE workflow
+[
+ ...
+  &lt;!ENTITY RUN_GSI "&lt;false&gt;"&gt;
+]&gt;
+
+...
+
+&lt;dependency&gt;
+   &lt;strneq&gt;&lt;left&gt;&RUN_GSI;&lt;/left&gt;&lt;right&gt;YES&lt;/right&gt;&lt;/strneq&gt;
+&lt;/dependency&gt;
 </code></pre>
 
 <p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the non-GSI-only components are included in the workflow configuration.</p>
@@ -936,7 +957,7 @@ If no units are specified, the units are bytes.</p>
   &RUN_GSI;
 &lt;/dependency&gt;</code></pre>
 
-<p>The above illustrates how you could use an ENTITY assigned to &lt;true&gt; in a task dependency to turn a task on</p>
+<p>The above illustrates how you could use an ENTITY assigned to &lt;true&gt; in a task dependency to turn a task on.</p>
 <h2>
 <a id="the-false-tag" class="anchor" href="#the-false-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;false&gt; tag (version 1.2.2+)</h2>
 
@@ -956,7 +977,7 @@ If no units are specified, the units are bytes.</p>
 &lt;/dependency&gt;
 </code></pre>
 
-<p>The above illustrates how you could use an ENTITY assigned to &lt;false&gt; in a task dependency to turn a task off</p>
+<p>The above illustrates how you could use an ENTITY assigned to &lt;false&gt; in a task dependency to turn a task off.</p>
 
 <h2>
 <a id="the-sh-tag" class="anchor" href="#the-sh-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;sh&gt; tag (version 1.2.2+)</h2>
