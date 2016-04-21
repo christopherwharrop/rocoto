@@ -907,14 +907,15 @@ If no units are specified, the units are bytes.</p>
 &lt;!DOCTYPE workflow
 [
  ...
-  &lt;!ENTITY RUN_GSI "&lt;false&gt;"&gt;
+  &lt;!ENTITY RUN_GSI "YES"&gt;
 ]&gt;
 
 ...
 
 &lt;dependency&gt;
   &lt;streq&gt;&lt;left&gt;&RUN_GSI;&lt;/left&gt;&lt;right&gt;YES&lt;/right&gt;&lt;/streq&gt;
-&lt;/dependency&gt;</code></pre>
+&lt;/dependency&gt;
+</code></pre>
 
 <p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the GSI component is included in the workflow configuration.</p>
 
@@ -927,7 +928,7 @@ If no units are specified, the units are bytes.</p>
 &lt;!DOCTYPE workflow
 [
  ...
-  &lt;!ENTITY RUN_GSI "&lt;false&gt;"&gt;
+  &lt;!ENTITY RUN_GSI "YES"&gt;
 ]&gt;
 
 ...
@@ -955,7 +956,8 @@ If no units are specified, the units are bytes.</p>
 
 &lt;dependency&gt;
   &RUN_GSI;
-&lt;/dependency&gt;</code></pre>
+&lt;/dependency&gt;
+</code></pre>
 
 <p>The above illustrates how you could use an ENTITY assigned to &lt;true&gt; in a task dependency to turn a task on.</p>
 <h2>
