@@ -941,7 +941,7 @@ If no units are specified, the units are bytes.</p>
 <p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the non-GSI-only components are included in the workflow configuration.</p>
 
 <h2>
-<a id="the-true-tag" class="anchor" href="#the-true-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;true&gt; tag (version 1.2.2+)</h2>
+<a id="the-true-tag" class="anchor" href="#the-true-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;/true&gt; tag (version 1.2.2+)</h2>
 
 <p>The boolean constant tags function similarly to the string comparison flags.  Their intended purpose is to act as switches that allow you to configure a workflow definition by turning portions of the workflow on/off using an ENTITY</p>
 
@@ -949,7 +949,7 @@ If no units are specified, the units are bytes.</p>
 &lt;!DOCTYPE workflow
 [
  ...
-  &lt;!ENTITY RUN_GSI "&lt;true&gt;"&gt;
+  &lt;!ENTITY RUN_GSI "&lt;/true&gt;"&gt;
 ]&gt;
 
 ...
@@ -959,9 +959,9 @@ If no units are specified, the units are bytes.</p>
 &lt;/dependency&gt;
 </code></pre>
 
-<p>The above illustrates how you could use an ENTITY assigned to &lt;true&gt; in a task dependency to turn a task on.</p>
+<p>The above illustrates how you could use an ENTITY assigned to &lt;/true&gt; in a task dependency to turn a task on.</p>
 <h2>
-<a id="the-false-tag" class="anchor" href="#the-false-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;false&gt; tag (version 1.2.2+)</h2>
+<a id="the-false-tag" class="anchor" href="#the-false-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;/false&gt; tag (version 1.2.2+)</h2>
 
 <p>The boolean constant tags function similarly to the string comparison flags.  Their intended purpose is to act as switches that allow you to configure a workflow definition by turning portions of the workflow on/off using an ENTITY</p>
 
@@ -969,7 +969,7 @@ If no units are specified, the units are bytes.</p>
 &lt;!DOCTYPE workflow
 [
  ...
-  &lt;!ENTITY RUN_GSI "&lt;false&gt;"&gt;
+  &lt;!ENTITY RUN_GSI "&lt;/false&gt;"&gt;
 ]&gt;
 
 ...
@@ -979,12 +979,12 @@ If no units are specified, the units are bytes.</p>
 &lt;/dependency&gt;
 </code></pre>
 
-<p>The above illustrates how you could use an ENTITY assigned to &lt;false&gt; in a task dependency to turn a task off.</p>
+<p>The above illustrates how you could use an ENTITY assigned to &lt;/false&gt; in a task dependency to turn a task off.</p>
 
 <h2>
 <a id="the-sh-tag" class="anchor" href="#the-sh-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;sh&gt; tag (version 1.2.2+)</h2>
 
-<p>The &lt;sh&gt; tag allows you to create a dependency whose value is determined by the exit status of a UNIX shell command.  If the exit status of the command is 0, the dependency evaluates to true.  Otherwise, the dependency evaluates to false.  This can simplify workflow dependencies for complex situations where a task's completion status may not convey enough information to decide whether or not to trigger downstream tasks.  A common workaround was to augment the task such that it creates "flag" files that are then used in downstream dependencies.  The &lt;sh&gt; tag is a simpler alternative.</p>
+<p>The &lt;sh&gt; tag allows you to create a dependency whose value is determined by the exit status of a UNIX shell command.  If the exit status of the command is 0, the dependency evaluates to true.  Otherwise, the dependency evaluates to false.  This can simplify workflow dependencies for complex situations where a task's completion status may not convey enough information to decide whether or not to trigger downstream tasks.  A common workaround was to augment the task such that it creates "flag" files that are then used in downstream &lt;datadep&gt; dependencies.  The &lt;sh&gt; tag is a simpler alternative.</p>
 
 <pre><code> 
 </code></pre>
