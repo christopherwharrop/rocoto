@@ -135,6 +135,16 @@ Avoid combining serial and parallel processing in the same workflow task unless 
 
 <p>The -w and -d options identify which workflow run you want to query. The -c option identifies the cycle to query. The -t option identifies the task to query. All options are required. The -c and -t options can not be a list.</p>
 
+<h2>
+<a id="rerunning-tasks" class="anchor" href="#rerunning-tasks" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rerunning tasks (version 1.2.2 and higher)</h2>
+
+<p>Rocoto provides a tool, rocotorewind, that can be used to "undo" the execution of tasks.  It allows the user to undo the execution of portions of a workflow in the event an error was found, for example.  The workflow can then be resumed, and the tasks rerun, after the error is corrected.  Although users should always ensure their tasks are idempotent, it is sometimes necessary to perform cleanup when a task is rewound.  See the section on the &lt;rewind&gt; tag below for a description of how to define rewind actions for tasks that need to perform cleanup when they are rewound.
+
+<pre><code>rocotorewind -w /path/to/workflow/xml/file -d /path/to/workflow/database/file -c YYYYMMDDHHMM -t taskname
+</code></pre>
+
+<p>The -w and -d options identify which workflow run you want to rewind. The -c option identifies the cycle for the task(s) to be rewound. The -t option identifies the task(s) to rewind. All options are required. The -c and -t options can not be a list, but you can specify multiple -c and -t options, each with different arguments.</p>
+
 <h1>
 <a id="rocoto-xml-language" class="anchor" href="#rocoto-xml-language" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rocoto XML Language</h1>
 
