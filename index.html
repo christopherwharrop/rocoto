@@ -935,7 +935,7 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-streq-tag" class="anchor" href="#the-streq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;streq&gt; tag (version 1.2.2+)</h2>
+<a id="the-streq-tag" class="anchor" href="#the-streq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;streq&gt; tag (version 1.2.2 and higher)</h2>
 
 <p>The string comparison tags can be used to create dependency switches in your XML that allow you to manually (but easily) turn parts of a workflow on/off.  This can be useful in cases where there are multiple possible workflow configurations that are very similar to each other.  Rather than creating and maintaining separate workflows for each mostly identical configuration, these switches can be used to define a single workflow that can then be configured for various scenarios. For example, you could turn the "GSI" task of your workflow on/off with a &lt;streq&gt; dependency defined in each task that runs only when the GSI is turned "on":</p>
 
@@ -956,7 +956,7 @@ If no units are specified, the units are bytes.</p>
 <p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the GSI component is included in the workflow configuration.</p>
 
 <h2>
-<a id="the-strneq-tag" class="anchor" href="#the-strneq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;strneq&gt; tag (version 1.2.2+)</h2>
+<a id="the-strneq-tag" class="anchor" href="#the-strneq-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;strneq&gt; tag (version 1.2.2 and higher)</h2>
 
 <p>The string comparison tags can be used to create dependency switches in your XML that allow you to manually (but easily) turn parts of a workflow on/off.  This can be useful in cases where there are multiple possible workflow configurations that are very similar to each other.  Rather than creating and maintaining separate workflows for each mostly identical configuration, these switches can be used to define a single workflow that can then be configured for various scenarios. For example, you could use a &lt;strneq&gt; dependency to turn on the tasks that run only when the GSI is NOT turned "on":</p>
 
@@ -977,7 +977,7 @@ If no units are specified, the units are bytes.</p>
 <p>The &amp;RUN_GSI; ENTITY would be declared in the XML header and it acts as the switch; modifying its value controls whether the non-GSI-only components are included in the workflow configuration.</p>
 
 <h2>
-<a id="the-true-tag" class="anchor" href="#the-true-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;/true&gt; tag (version 1.2.2+)</h2>
+<a id="the-true-tag" class="anchor" href="#the-true-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;/true&gt; tag (version 1.2.2 and higher)</h2>
 
 <p>The boolean constant tags function similarly to the string comparison flags.  Their intended purpose is to act as switches that allow you to configure a workflow definition by turning portions of the workflow on/off using an ENTITY</p>
 
@@ -997,7 +997,7 @@ If no units are specified, the units are bytes.</p>
 
 <p>The above illustrates how you could use an ENTITY assigned to &lt;/true&gt; in a task dependency to turn a task on.</p>
 <h2>
-<a id="the-false-tag" class="anchor" href="#the-false-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;/false&gt; tag (version 1.2.2+)</h2>
+<a id="the-false-tag" class="anchor" href="#the-false-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;/false&gt; tag (version 1.2.2 and higher)</h2>
 
 <p>The boolean constant tags function similarly to the string comparison flags.  Their intended purpose is to act as switches that allow you to configure a workflow definition by turning portions of the workflow on/off using an ENTITY</p>
 
@@ -1018,7 +1018,7 @@ If no units are specified, the units are bytes.</p>
 <p>The above illustrates how you could use an ENTITY assigned to &lt;/false&gt; in a task dependency to turn a task off.</p>
 
 <h2>
-<a id="the-sh-tag" class="anchor" href="#the-sh-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;sh&gt; tag (version 1.2.2+)</h2>
+<a id="the-sh-tag" class="anchor" href="#the-sh-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;sh&gt; tag (version 1.2.2 and higher)</h2>
 
 <p>The &lt;sh&gt; tag allows you to create a dependency whose value is determined by the exit status of a UNIX shell command.  If the exit status of the command is 0, the dependency evaluates to true.  Otherwise, the dependency evaluates to false.  This can simplify workflow dependencies for complex situations where a task's completion status may not convey enough information to decide whether or not to trigger downstream tasks.  A common workaround was to augment the task such that it creates "flag" files that are then used in downstream &lt;datadep&gt; dependencies.  The &lt;sh&gt; tag is a simpler alternative.  By default, the contents of the &lt;sh&gt; tag are executed by a "/bin/sh -c" command. </p>
 
@@ -1050,7 +1050,7 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-rb-tag" class="anchor" href="#the-rb-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;rb&gt; tag (version 1.2.2+)</h2>
+<a id="the-rb-tag" class="anchor" href="#the-rb-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;rb&gt; tag (version 1.2.2 and higher)</h2>
 
 <p>Waiting for use case and example from developer</p>
 
@@ -1058,7 +1058,7 @@ If no units are specified, the units are bytes.</p>
 </code></pre>
 
 <h2>
-<a id="the-cycleexistdep-tag" class="anchor" href="#the-cycleexistdep-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;cycleexistdep&gt; tag (version 1.2.2+)</h2>
+<a id="the-cycleexistdep-tag" class="anchor" href="#the-cycleexistdep-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;cycleexistdep&gt; tag (version 1.2.2 and higher)</h2>
 
 <p>The &lt;cycleexistdep/&gt; tag allows you to trigger tasks based on whether or not a particular cycle is defined (with &lt;cycledef&gt;) for the workflow.  A common use for this dependency is to solve the problem of bootstrapping a series of cycled runs where each run depends on output from tasks of a previous cycle.  For cycled runs, the first cycle will have dependencies on tasks from a cycle that doesn't exist.  In previous versions of Rocoto, the only way to start such a cycled run was to use rocotoboot to manually force the first cycle to start.  Now, the &lt;cycleexistdep&gt; tag allows Rocoto to start the runs automatically without manual intervention.  The cycle_offset attribute, described below, is required.
 
