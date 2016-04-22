@@ -1031,7 +1031,7 @@ If no units are specified, the units are bytes.</p>
 <h2>
 <a id="the-cycleexistdep-tag" class="anchor" href="#the-cycleexistdep-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;cycleexistdep&gt; tag (version 1.2.2+)</h2>
 
-<p>The &lt;cycleexistdep&gt; tag allows you to trigger tasks based on whether or not a particular cycle is defined (with &lt;cycledef&gt;) for the workflow.  A common use for this dependency is to solve the problem of bootstrapping a series of cycled runs where each run depends on output from tasks of a previous cycle.  For cycled runs, the first cycle will have dependencies on tasks from a cycle that doesn't exist.  In previous versions of Rocoto, the only way to start such a cycled run was to use rocotoboot to manually force the first cycle to start.  Now, the &lt;cycleexistdep&gt; tag allows Rocoto to start the runs automatically without manual intervention.  The cycle_offset attribute, described below, is required.1
+<p>The &lt;cycleexistdep/&gt; tag allows you to trigger tasks based on whether or not a particular cycle is defined (with &lt;cycledef&gt;) for the workflow.  A common use for this dependency is to solve the problem of bootstrapping a series of cycled runs where each run depends on output from tasks of a previous cycle.  For cycled runs, the first cycle will have dependencies on tasks from a cycle that doesn't exist.  In previous versions of Rocoto, the only way to start such a cycled run was to use rocotoboot to manually force the first cycle to start.  Now, the &lt;cycleexistdep&gt; tag allows Rocoto to start the runs automatically without manual intervention.  The cycle_offset attribute, described below, is required.
 
 <pre><code>&lt;dependency&gt;
   &lt;not&gt;
@@ -1040,12 +1040,12 @@ If no units are specified, the units are bytes.</p>
 &lt;/dependency&gt;
 </code></pre>
 
-<p>The example above shows how you can use &lt;cycleexistdep&gt; to trigger a task when the cycle 6 hours prior to the current one doesn't exist.</p>
+<p>The example above shows how you can use &lt;cycleexistdep/&gt; to trigger a task when the cycle six hours prior to the current one doesn't exist.</p>
 
 <h3>
 <a id="the-cycle_offset-attribute" class="anchor" href="#the-cycle_offset-attribute" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The cycle_offset attribute</h3>
 
-<p>The cycle_offset attribute of the &lt;cycleexistdep&gt; tag is mandatory. It specifies a time offset from the current cycle in DD:HH:MM:SS format.  The offset can be positive or negative.</p>
+<p>The cycle_offset attribute of the &lt;cycleexistdep/&gt; tag is mandatory. It specifies a time offset from the current cycle in DD:HH:MM:SS format.  The offset can be positive or negative.</p>
 
 <h2>
 <a id="the-boolean-operator-tags" class="anchor" href="#the-boolean-operator-tags" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The boolean operator tags</h2>
