@@ -784,6 +784,13 @@ These dependencies can be combined in any combination in a boolean expression to
 <pre><code>  &lt;taskdep&gt;
   &lt;datadep&gt;
   &lt;timedep&gt;
+  &lt;streq&gt;
+  &lt;strneq&gt;
+  &lt;/true&gt;
+  &lt;/false&gt;
+  &lt;sh&gt;
+  &lt;ruby&gt;
+  &lt;cycleexistdep&gt;  
   &lt;and&gt;
   &lt;or&gt;
   &lt;not&gt;
@@ -986,9 +993,12 @@ If no units are specified, the units are bytes.</p>
 
 <p>The &lt;sh&gt; tag allows you to create a dependency whose value is determined by the exit status of a UNIX shell command.  If the exit status of the command is 0, the dependency evaluates to true.  Otherwise, the dependency evaluates to false.  This can simplify workflow dependencies for complex situations where a task's completion status may not convey enough information to decide whether or not to trigger downstream tasks.  A common workaround was to augment the task such that it creates "flag" files that are then used in downstream &lt;datadep&gt; dependencies.  The &lt;sh&gt; tag is a simpler alternative.</p>
 
-<pre><code> 
+<pre><code>&lt;dependency&gt;
+  &lt;sh&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;&lt;/sh&gt;
+&lt;/dependency&gt;
 </code></pre>
 
+<p>The above is an example about how you might use a &lt;sh&gt; tag in a dependency to trigger parts of a workflow that depend on different workflow scenarios that are determined at runtime.</p>
 <h2>
 <a id="the-rb-tag" class="anchor" href="#the-rb-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;rb&gt; tag (version 1.2.2+)</h2>
 
