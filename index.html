@@ -1003,20 +1003,20 @@ If no units are specified, the units are bytes.</p>
 <h3>
 <a id="the-shell-attribute" class="anchor" href="#the-shell-attribute" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The shell attribute</h3>
 
-<p>The shell attribute of the &lt;sh&gt; tag is optional. It contains the shell that is to be used to execute the command.  For example, "/bin/sh", "/bin/csh", "/bin/ksh", etc.  The default value is "/bin/sh".</p>
+<p>The shell attribute of the &lt;sh&gt; tag is optional. It specifies the shell that is to be used to execute the command.  For example, "/bin/sh", "/bin/csh", "/bin/ksh", etc.  The default value is "/bin/sh".</p>
 
 <pre><code>&lt;dependency&gt;
-  &lt;sh shell="bin/bash"&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;/sh&gt;
+  &lt;sh shell="/bin/bash"&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;/sh&gt;
 &lt;/dependency&gt;
 </code></pre>
 
 <h3>
 <a id="the-runopt-attribute" class="anchor" href="#the-runopt-attribute" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The runopt attribute</h3>
 
-<p>The runopt attribute of the &lt;sh&gt; tag is optional. It contains the options to be used for the shell command (given by the shell attribute) when executing the shell code.  For example, "-c", "-l", etc.  The default value is "-c".</p>
+<p>The runopt attribute of the &lt;sh&gt; tag is optional. It specifies the options to be used for the shell command (given by the shell attribute) when executing the shell code.  For example, "-c", "-l", etc.  The default value, which should rarely be overridden, is "-c".</p>
 
 <pre><code>&lt;dependency&gt;
-  &lt;sh shell="bin/bash" runopt="-l"&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;/sh&gt;
+  &lt;sh shell="/bin/bash" runopt="-l"&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;/sh&gt;
 &lt;/dependency&gt;
 </code></pre>
 
