@@ -462,6 +462,11 @@ The name attribute</p>
 
 <p>HINT: The &lt;task&gt; throttle attribute should be avoided. In most situations, the various &lt;workflow&gt; throttles and/or the &lt;metatask&gt; throttle provide far better throttling control and should always be preferred. Do not use the &lt;task&gt; throttle unless the other throttling methods cannot meet the throttling requirements of the workflow</p>
 
+<h3>
+<a id="the-final-attribute-version-12-and-higher" class="anchor" href="#the-final-attribute-version-12-and-higher" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The final attribute (version 1.2 and higher)</h3>
+
+<p>The final attribute is optional. If set, its value must be either "true" or "false". The final attribute allows you to designate one or more tasks as "final" tasks.  A final task is a task that will, upon successful completion, cause the entire cycle to be considered complete and deactivated.  This can be useful for preventing stale cycles from accumulating in cases where not every task will execute for all cycles.  This scenario can happen in situations where runtime conditions dictate which tasks get executed.  Multiple tasks may be designated as "final" tasks, but the first one to complete successfully will cause the cycle to be deactivated.  Once a cycle is deactivated due to a "final" task completing successfully, any running tasks will continue to be tracked until they complete, but no tasks will be retried and no other tasks will be started.</p>
+
 <h2>
 <a id="the-command-tag" class="anchor" href="#the-command-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;command&gt; tag</h2>
 
