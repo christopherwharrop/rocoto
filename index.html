@@ -991,14 +991,35 @@ If no units are specified, the units are bytes.</p>
 <h2>
 <a id="the-sh-tag" class="anchor" href="#the-sh-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;sh&gt; tag (version 1.2.2+)</h2>
 
-<p>The &lt;sh&gt; tag allows you to create a dependency whose value is determined by the exit status of a UNIX shell command.  If the exit status of the command is 0, the dependency evaluates to true.  Otherwise, the dependency evaluates to false.  This can simplify workflow dependencies for complex situations where a task's completion status may not convey enough information to decide whether or not to trigger downstream tasks.  A common workaround was to augment the task such that it creates "flag" files that are then used in downstream &lt;datadep&gt; dependencies.  The &lt;sh&gt; tag is a simpler alternative.</p>
+<p>The &lt;sh&gt; tag allows you to create a dependency whose value is determined by the exit status of a UNIX shell command.  If the exit status of the command is 0, the dependency evaluates to true.  Otherwise, the dependency evaluates to false.  This can simplify workflow dependencies for complex situations where a task's completion status may not convey enough information to decide whether or not to trigger downstream tasks.  A common workaround was to augment the task such that it creates "flag" files that are then used in downstream &lt;datadep&gt; dependencies.  The &lt;sh&gt; tag is a simpler alternative.  By default, the contents of the &lt;sh&gt; tag are executed by a "/bin/sh -c" command. </p>
 
 <pre><code>&lt;dependency&gt;
-  &lt;sh&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;&lt;/sh&gt;
+  &lt;sh&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;/sh&gt;
 &lt;/dependency&gt;
 </code></pre>
 
-<p>The above is an example about how you might use a &lt;sh&gt; tag in a dependency to trigger parts of a workflow that depend on different workflow scenarios that are determined at runtime.</p>
+<p>The above is an example about how you might use a &lt;sh&gt; tag in a dependency to trigger parts of a workflow that depend on different workflow scenarios, such as whether or not to run a model in coupled mode, that are determined at runtime.</p>
+
+<h3>
+<a id="the-shell-attribute" class="anchor" href="#the-shell-attribute" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The shell attribute</h3>
+
+<p>The shell attribute of the &lt;sh&gt; tag is optional. It contains the shell that is to be used to execute the command.  For example, "/bin/sh", "/bin/csh", "/bin/ksh", etc.  The default value is "/bin/sh".</p>
+
+<pre><code>&lt;dependency&gt;
+  &lt;sh shell="bin/bash"&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;/sh&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<h3>
+<a id="the-runopt-attribute" class="anchor" href="#the-runopt-attribute" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The runopt attribute</h3>
+
+<p>The runopt attribute of the &lt;sh&gt; tag is optional. It contains the options to be used for the shell command (given by the shell attribute) when executing the shell code.  For example, "-c", "-l", etc.  The default value is "-c".</p>
+
+<pre><code>&lt;dependency&gt;
+  &lt;sh shell="bin/bash" runopt="-l"&gt;grep 'RUN_COUPLED=YES' /path/to/file/ocean_status&lt;/sh&gt;
+&lt;/dependency&gt;
+</code></pre>
+
 <h2>
 <a id="the-rb-tag" class="anchor" href="#the-rb-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;rb&gt; tag (version 1.2.2+)</h2>
 
