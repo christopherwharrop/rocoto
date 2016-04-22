@@ -414,6 +414,17 @@ Avoid combining serial and parallel processing in the same workflow task unless 
 
 <p>Sometimes it is necessary to define distinct sets of cycles because some tasks should only be run for certain subsets of cycles. The group attribute of the &lt;cycledef&gt; tag allows you to assign a set of cycles to a group that can later be used to control which tasks are run for which cycles. Multiple &lt;cycledef&gt; tags may be assigned to the same group, but a &lt;cycledef&gt; tag may not be assigned to more than one group.</p>
 
+<h3>
+<a id="the-activation-offset-attribute" class="anchor" href="#the-activation-offset-attribute" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The activation offset attribute (version 1.2 and higher)</h3>
+
+<p>Sometimes it is necessary, in realtime mode, for a cycle to be activated before or after the wall clock time reaches the cycle time.  In these cases the activation_offset attribute may be used to specify an offset from the cycle time that changes when cycles are activated.  Note that the cycle's life span starts when it is activated, not when the wall clock time is equal to the cycle time.  The cycle activation offset is in DD:HH:MM:SS format and can be either positive or negative.
+
+<pre><code>
+&lt;cycledef activation_offset="-01:00:00"&gt;*/6 * * * 2016 *&lt;/cycledef&gt;
+</code></pre>
+
+<p>In the above example, the 00Z, 06Z, 12Z, and 18Z cycles would be activated at 23Z, 05Z, 11Z, and 17Z respectively.</p>
+
 <h2>
 <a id="the-task-tag" class="anchor" href="#the-task-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;task&gt; tag</h2>
 
@@ -429,7 +440,7 @@ Avoid combining serial and parallel processing in the same workflow task unless 
      &lt;cycledef group="3hourly"&gt;0 */3 * * 2006-2010 *&lt;/cycledef&gt; 
      &lt;cycledef group="6hrlyJanFeb"&gt;0 */6 * 1,2 2006-2010 *&lt;/cycledef&gt; 
 
-     &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
+     &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3" final="false"&gt;
 
      &lt;/task&gt;
 
