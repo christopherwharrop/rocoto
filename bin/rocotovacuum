@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Source /etc/profile to set up environment for batch system access
+# We can't do '#!/bin/sh -l' or '#!/bin/sh --login' because those options are not portable
+# There does not appear to be a portable way to run a shell as a login shell
+. /etc/profile
+
+# Get the directory where the WFM is installed
+wfmdir=`dirname $0`
+
+# Run the WFM vacuum program
+exec ${wfmdir}/../sbin/rocotovacuum.rb $*
+
+exit $?

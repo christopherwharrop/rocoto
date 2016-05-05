@@ -481,6 +481,31 @@ module WorkflowMgr
 
     end # boot
 
+
+    ##########################################
+    #
+    # vacuum!
+    #
+    ##########################################
+    def vacuum!
+
+      printf "About to delete all jobs for cycles that completed or expired more than #{@options.age / 3600 / 24} days ago.\n\n"
+      printf "!!! MAKE ABSOLUTELY CERTAIN THAT NO OTHER ROCOTO PROCESS IS USING (OR ATTEMPTS TO USE) THIS DATABASE DURING THE VACUUM !!!\n"
+      printf "!!! TURN OFF CRON JOBS FOR THIS WORKFLOW BEFORE INITIATING A VACUUM !!!\n\n"
+      printf "This is irreversible.  Are you sure? (y/n) "
+      reply=STDIN.gets
+      unless reply=~/^[Yy]/
+        Process.exit(0)
+      end
+
+      with_locked_db {
+
+        @dbServer.vacuum(@options.age)
+
+      } # with_locked_db
+
+    end # vacuum!
+
   private
 
 
