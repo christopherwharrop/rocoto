@@ -169,7 +169,7 @@ class NoBatchSystem
 
       # If we are not on the server, invoke this method through an ssh tunnel to the server
       if server != host
-        cmd="ssh #{server} /usr/bin/ruby -r #{__FILE__} -e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").find_job(#{jid},#{max_age})'\\'"
+        cmd="ssh -o StrictHostKeyChecking=no #{server} /usr/bin/ruby -r #{__FILE__} -e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").find_job(#{jid},#{max_age})'\\'"
         output=Command.run(cmd)
         if output[1] != 0
           raise output[0]

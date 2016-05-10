@@ -79,10 +79,10 @@ module WorkflowMgr
                 if downpath[:path]==args[0][0,downpath[:path].length]
 
                   # Attempt to kill the process that previously hung
-                  system("ssh #{downpath[:host]} kill -9 #{downpath[:pid]} 2>&1 > /dev/null")                  
+                  system("ssh -o StrictHostKeyChecking=no #{downpath[:host]} kill -9 #{downpath[:pid]} 2>&1 > /dev/null")                  
 
                   # Check to see if the process that previously hung is still alive
-                  system("ssh #{downpath[:host]} kill -0 #{downpath[:pid]} 2>&1 > /dev/null")        
+                  system("ssh -o StrictHostKeyChecking=no #{downpath[:host]} kill -0 #{downpath[:pid]} 2>&1 > /dev/null")        
                   if $?.exitstatus==0
 
                     # The process is still hung, so don't try to access the path because it's still bad.  Raise exception.
@@ -153,7 +153,7 @@ module WorkflowMgr
                 # Send a kill signal to process associated with the known down path from the database
                 # The kill may not work immediately, but hopefully it will remain pending and will be 
                 # processed once the filesystem comes back to life
-                system("ssh #{downpathmatch[:host]} kill -9 #{downpathmatch[:pid]} 2>&1 > /dev/null")               
+                system("ssh -o StrictHostKeyChecking=no #{downpathmatch[:host]} kill -9 #{downpathmatch[:pid]} 2>&1 > /dev/null")               
 
                 # Add the common portion of the paths to the database
                 newdownpath={:path=>commonpath.join("/"), :downtime=>downtime, :host=>@workflowIOHost, :pid=>@workflowIOPID }
