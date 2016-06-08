@@ -72,6 +72,7 @@ module WorkflowMgr
     #
     #####################################################
     def submit(task)
+
       # Initialize the submit command
       cmd="qsub"
       input="#! /bin/sh\n"
@@ -119,17 +120,10 @@ module WorkflowMgr
       end
       input+="set -x\n"
 
-
-      # Build the -F string to pass job script arguments to batch script
-      #cmdargs=task.attributes[:command].split[1..-1].join("' '")
-      #unless cmdargs.empty?
-      #  cmdinput += "\'#{cmdargs}\'\n"
-      #end
-      #input += "env\n";
-      # Add the command to submit
-      #input += "'#{task.attributes[:command].split.first}' '#{cmdinput}'"
+      # Add the command to execute
       input += task.attributes[:command]
 
+      # Generate the execution script that will be submitted
       tf=Tempfile.new('qsub.in')
       tf.write(input)
       tf.flush()

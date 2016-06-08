@@ -86,85 +86,64 @@ module WorkflowMgr
 
       # Initialize the submit command
       cmd="msub"
+      input="#! /bin/sh\n"
 
       # Add Torque batch system options translated from the generic options specification
       task.attributes.each do |option,value|
         case option
           when :account
-            cmd += " -A #{value}"
+            input += "#PBS -A #{value}\n"
           when :queue            
-            cmd += " -q #{value}"
+            input += "#PBS -q #{value}\n"
           when :cores
-            cmd += " -l size=#{value}"
+            input += "#PBS -l size=#{value}\n"
           when :walltime
-            cmd += " -l walltime=#{value}"
+            input += "#PBS -l walltime=#{value}\n"
           when :memory
-            cmd += " -l vmem=#{value}"
+            input += "#PBS -l vmem=#{value}\n"
           when :stdout
-            cmd += " -o #{value}"
+            input += "#PBS -o #{value}\n"
           when :stderr
-            cmd += " -e #{value}"
+            input += "#PBS -e #{value}\n"
           when :join
-            cmd += " -j oe -o #{value}"           
+            input += "#PBS -j oe -o #{value}\n"           
           when :jobname
-            cmd += " -N #{value}"
+            input += "#PBS -N #{value}\n"
         end
       end
 
       task.each_native do |native_line|
-        cmd += " #{native_line}"
+        input += "#PBS #{native_line}\n"
       end
 
-      # Add environment vars
-      save_env={}.merge(ENV)
-      vars = "" 
+      # Add export commands to pass environment vars to the job
       unless task.envars.empty?
+        varinput=''
         task.envars.each { |name,env|
-          if vars.empty?
-            vars += " -v #{name}"
-          else
-            vars += ",#{name}"
-          end
-          vars += "=\"#{env}\"" unless env.nil?
+          varinput += "export #{name}='#{env}'\n"
         }
-        if "#{cmd}#{vars}".length > 2048
-          task.envars.each { |name,env|
-            ENV[name]=env
-          }
-          cmd += " -V"          
-        else
-          cmd += "#{vars}"
-        end
+        input += varinput
       end
+      input+="set -x\n"
 
-      # Add the command arguments
-#      cmdargs=task.attributes[:command].split[1..-1].join(" ")
-#      unless cmdargs.empty?
-#        cmd += " -F \"#{cmdargs}\""
-#      end
+      # Add the command to execute
+      input += task.attributes[:command]
 
-      # Add the command to submit
-      cmd += " #{task.attributes[:command]}"
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '#{cmd}'",4)
+      # Generate the execution script that will be submitted
+      tf=Tempfile.new('qsub.in')
+      tf.write(input)
+      tf.flush()
+
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input {{#{input}}}",4)
 
       # Run the submit command
-      output=`#{cmd} 2>&1`.chomp
-
-      # Restore the environment if necessary
-      if "#{cmd}#{vars}".length > 2048
-        ENV.clear
-        save_env.each { |k,v| ENV[k]=v }
-      end
+      output=`#{cmd} < #{tf.path} 2>&1`.chomp()
 
       # Parse the output of the submit command
-#      if output=~/^(\d+)(\.\w+)*$/
-#      if output=~/^(\w+\.)*(\d+)$/
       if output=~/^((\w+\.)*\d+)$/
-#WorkflowMgr.stderr($1.strip)
-#WorkflowMgr.stderr(output.strip)
         return $1,output
       else
- 	return nil,output
+        return nil,output
       end
 
     end
