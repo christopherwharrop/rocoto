@@ -1,0 +1,11 @@
+# Ignore directories where external libraries get built and installed.
+build/
+lib/SystemTimer/
+lib/libxml-ruby/
+lib/libxml2/
+lib/open4/
+lib/sqlite3-ruby/
+lib/sqlite3/
+
+# Ignore emacs backup files
+*~
