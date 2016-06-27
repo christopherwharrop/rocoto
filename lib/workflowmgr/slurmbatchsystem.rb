@@ -135,7 +135,24 @@ module WorkflowMgr
             # Make sure format is dd-hh:mm:ss if days are included
             cmd += " -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}"
           when :memory
-            cmd += " --mem #{value}"
+            m=/^([\.\d]+)([\D]*)$/.match(value)
+            amount=m[1].to_f
+            units=m[2]
+            case units
+              when /^B|b/
+                amount=(amount / 1024.0 / 1024.0).ceil
+              when /^K|k/
+              amount=(amount / 1024.0).ceil
+              when /^M|m/
+                amount=amount.ceil
+              when /^G|g/
+                amount=(amount * 1024.0).ceil
+              when nil
+              amount=(amount / 1024.0 / 1024.0).ceil
+            end
+            if amount > 0
+              cmd += " --mem #{amount}"
+            end
           when :stdout
             cmd += " -o #{value}"
           when :stderr
