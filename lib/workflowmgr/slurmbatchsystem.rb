@@ -79,18 +79,19 @@ module WorkflowMgr
 
       # Initialize the submit command
       cmd="sbatch"
+      input="#! /bin/sh\n"
 
       # Add Slurm batch system options translated from the generic options specification
       task.attributes.each do |option,value|
         case option
           when :account
-            cmd += " --account #{value}"
+            input += "#SBATCH --account #{value}\n"
           when :queue            
-            cmd += " -p #{value}"
+            input += "#SBATCH -p #{value}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
-            cmd += " --ntasks=#{value}"
+            input += "#SBATCH --ntasks=#{value}\n"
           when :nodes
             # Arbitrary processor geometry is not support by sbatch (it is supported by srun)
             # Request number of nodes and tasks per node large enough to accommodate nodespec
@@ -114,13 +115,13 @@ module WorkflowMgr
             }
 
             # Request total number of nodes
-            cmd += " --nodes=#{nnodes}-#{nnodes}"
+            input += "#SBATCH --nodes=#{nnodes}-#{nnodes}\n"
 
             # Request max tasks per node
-            cmd += " --tasks-per-node=#{maxppn}"
+            input += "#SBATCH --tasks-per-node=#{maxppn}\n"
 
             # Make sure exclusive access to nodes is enforced
-            cmd += " --exclusive"
+            input += "#SBATCH --exclusive\n"
 
             # Print a warning if multiple nodespecs are specified
             if nodespecs.size > 1
@@ -133,7 +134,7 @@ module WorkflowMgr
 
            when :walltime
             # Make sure format is dd-hh:mm:ss if days are included
-            cmd += " -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}"
+            input += "#SBATCH -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}\n"
           when :memory
             m=/^([\.\d]+)([\D]*)$/.match(value)
             amount=m[1].to_f
@@ -151,62 +152,45 @@ module WorkflowMgr
               amount=(amount / 1024.0 / 1024.0).ceil
             end
             if amount > 0
-              cmd += " --mem #{amount}"
+              input += "#SBATCH --mem=#{amount}\n"
             end
           when :stdout
-            cmd += " -o #{value}"
+            input += "#SBATCH -o #{value}\n"
           when :stderr
-            cmd += " -e #{value}"
+            input += "#SBATCH -e #{value}\n"
           when :join
-            cmd += " -o #{value}"           
+            input += "#SBATCH -o #{value}\n"           
           when :jobname
-            cmd += " --job-name #{value}"
+            input += "#SBATCH --job-name #{value}\n"
         end
       end
 
       task.each_native do |value|
-        cmd += " #{value}"
+        input += "#SBATCH #{value}\n"
       end
 
-      # Build the -v string to pass environment to the job
-      save_env={}
+      # Add export commands to pass environment vars to the job
       unless task.envars.empty?
-        vars = "--export=" 
+        varinput=''
         task.envars.each { |name,env|
-          if env=~/[\s,-]+/ || vars.length > 2048
-            vars="--export=ALL"
-            break
-          end
-          vars += "," unless vars=="--export="
-          vars += "#{name}"
-          vars += "=\"#{env}\"" unless env.nil?
+          varinput += "export #{name}='#{env}'\n"
         }
-
-        # Choose -v or -V depending on how long -v is
-        if vars=="--export=ALL"
-          # Save a copy of the current environment so we can restore it later
-          save_env.merge(ENV) 
-
-          # Set all envars in the current environment so they get passed with -V
-          task.envars.each { |name,env|
-            ENV[name]=env
-          }
-        end          
-        cmd += " #{vars}"
+        input += varinput
       end
+      input+="set -x\n"
 
-      # Add the command to submit
-      cmd += " #{task.attributes[:command]}"
-      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using '#{cmd}'",4)
+      # Add the command to execute
+      input += task.attributes[:command]
+
+      # Generate the execution script that will be submitted
+      tf=Tempfile.new('sbatch.in')
+      tf.write(input)
+      tf.flush()
+
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input {{#{input}}}",4)
 
       # Run the submit command
-      output=`#{cmd} 2>&1`.chomp
-
-      # Restore the environment if necessary
-      unless save_env.empty?
-        ENV.clear
-        save_env.each { |k,v| ENV[k]=v }
-      end
+      output=`#{cmd} < #{tf.path} 2>&1`.chomp()
 
       # Parse the output of the submit command
       if output=~/^Submitted batch job (\d+)$/
