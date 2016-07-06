@@ -22,7 +22,8 @@ module WorkflowMgr
                     :DatabaseServer => true,
                     :BatchQueueServer => true,
                     :WorkflowIOServer => true,
-                    :MaxUnknowns => 3
+                    :MaxUnknowns => 3,
+                    :MaxLogDays => 7
                    }
 
     ##########################################  

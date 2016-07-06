@@ -7,5 +7,10 @@ lib/open4/
 lib/sqlite3-ruby/
 lib/sqlite3/
 
+# Ignore test files
+test/log
+test/test.db
+
 # Ignore emacs backup files
 *~
+**/#*#
