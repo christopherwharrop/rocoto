@@ -745,6 +745,65 @@ module WorkflowMgr
 
     ##########################################
     #
+    # get_vacuum_time
+    #
+    ##########################################
+    def get_vacuum_time
+
+      begin
+
+        # Start a transaction so that the database will be locked
+        @database.transaction do |db|
+
+          # Access the vacuum table
+          vacuum=db.execute("SELECT * FROM vacuum;")
+
+          # If no vacuum time is present, we have never vacuumed
+          if vacuum.empty?
+            return Time.at(0).getgm
+          else
+          # Return the last vacuum time
+            return Time.at(vacuum[0][0]).getgm
+          end
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException
+        msg="ERROR: WorkflowSQLite3DB.get_vacuum_time: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
+        raise WorkflowMgr::WorkflowDBLockedException,msg
+      end  # begin
+
+    end
+
+
+    ##########################################
+    #
+    # set_vacuum_time
+    #
+    ##########################################
+    def set_vacuum_time(vacuum_time)
+
+      begin
+
+        # Start a transaction so that the database will be locked
+        @database.transaction do |db|
+
+          # Remove the old vacuum time
+          db.execute("DELETE FROM vacuum;")
+          db.execute("INSERT INTO vacuum VALUES (#{vacuum_time.to_i});")
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException
+        msg="ERROR: WorkflowSQLite3DB.set_vacuum_time: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
+        raise WorkflowMgr::WorkflowDBLockedException,msg
+      end  # begin
+
+    end
+
+
+    ##########################################
+    #
     # vacuum
     #
     ##########################################
@@ -754,23 +813,37 @@ module WorkflowMgr
 
       begin
 
+        # Count the number of jobs removed
+        njobs_removed = 0
+
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
 
           # Remove jobs from all old expired cycles
           db.execute("DELETE from jobs where jobs.id in (SELECT jobs.id from jobs INNER JOIN cycles ON jobs.cycle = cycles.cycle where (cycles.expired < #{vacuum_date} and cycles.expired > 0));")
+
+          # Get the number of jobs removed from expired cycles
+          njobs_removed += db.changes
+
           # Remove jobs from all old completed cycles
           db.execute("DELETE from jobs where jobs.id in (SELECT jobs.id from jobs INNER JOIN cycles ON jobs.cycle = cycles.cycle where (cycles.done < #{vacuum_date} and cycles.done > 0));")
+
+          # Get the number of jobs removed from completed cycles
+          njobs_removed += db.changes
 
         end  # database transaction
 
         # Recover the empty space
         @database.execute("VACUUM;")
 
+        WorkflowMgr.stderr("Vacuumed database. Removed #{njobs_removed} jobs",3)
+        WorkflowMgr.log("Vacuumed database. Removed #{njobs_removed} jobs")
+
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.vacuum: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
-      end  # begin                                                                                                                                                                                                                                                         
+      end  # begin
+
     end
 
 
@@ -944,6 +1017,11 @@ module WorkflowMgr
       # Create the downpaths table
       unless tables.member?("downpaths")
         db.execute("CREATE TABLE downpaths (id INTEGER PRIMARY KEY, path VARCHAR(1024), downdate DATETIME, host VARCHAR[64], pid INTEGER);")
+      end
+
+      # Create the vacuum table
+      unless tables.member?("vacuum")
+        db.execute("CREATE TABLE vacuum (last_vacuum DATETIME);")
       end
 
     end  # create_tables

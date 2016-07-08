@@ -19,7 +19,17 @@ require 'libxml'
 # We want to control what output goes where and when                                     
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
-# Create workflow status and run it
-workflowEngine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowVacuumOption.new(ARGV))
-workflowEngine.vacuum!
+# Get vacuum options
+opt=WorkflowMgr::WorkflowVacuumOption.new(ARGV)
 
+# Are you sure?
+printf "About to delete all jobs for cycles that completed or expired more than #{opt.age / 3600 / 24} days ago.\n\n"
+printf "This is irreversible.  Are you sure? (y/n) "
+reply=STDIN.gets
+unless reply=~/^[Yy]/
+  Process.exit(0)
+end
+
+# Create workflow engine and vacuum
+workflowEngine=WorkflowMgr::WorkflowEngine.new(opt)
+workflowEngine.vacuum!(opt.age)
