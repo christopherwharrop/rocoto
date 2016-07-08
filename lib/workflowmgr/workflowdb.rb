@@ -44,8 +44,16 @@ module WorkflowMgr
     ##########################################
     def initialize(database_file)
 
+      # Set name of database file
       @database_file=database_file
-      
+
+      # Calculate the name of the corresponding workflow lock database
+      @database_lock_file = if @database_file =~ /^(\S+)(\.[^\.]+)$/
+        "#{$1}_lock#{$2}"
+      else
+        "#{@database_file}_lock"
+      end
+
     end
 
 
@@ -56,36 +64,8 @@ module WorkflowMgr
     ##########################################
     def dbopen
 
-      begin
-
-        # Get a handle to the database
-        @database = SQLite3::Database.new(@database_file)
-
-        # Set the retry limit (milliseconds) for locked resources
-        @database.busy_timeout=10000
-
-        # Return results as arrays
-        @database.results_as_hash=false
-
-        # Start a transaction so that the database will be locked
-        @database.transaction do |db|
-
-          # Get a listing of the database tables
-          tables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-
-          # Create all tables that are missing from the database 
-          create_tables(db,tables.flatten)
-
-          # Update the tables if needed
-          update_tables(db)
-
-        end  # database transaction
-
-      rescue SQLite3::BusyException
-        msg="WorkflowSQLite3DB.dbopen: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
-        raise WorkflowMgr::WorkflowDBLockedException,msg
-
-      end  # begin
+      # Open the lock database
+      open_lock_db()
 
     end  # dbopen
 
@@ -100,7 +80,7 @@ module WorkflowMgr
       begin
 
         # Start a transaction and immediately acquire an exclusive lock
-        @database.transaction(mode=:exclusive) do |db|
+        @database_lock.transaction(mode=:exclusive) do |db|
 
           # Access the workflow lock maintained by the workflow manager
           lock=db.execute("SELECT * FROM lock;")      
@@ -154,6 +134,9 @@ module WorkflowMgr
         end  # database transaction
 
         # If an exception wasn't thrown, we got the lock
+        # So, open the workflow database and, if that 
+        # doesn't throw an exception, return true
+        open_workflow_db()
         return true
 
       rescue WorkflowMgr::WorkflowLockedException
@@ -161,7 +144,7 @@ module WorkflowMgr
         WorkflowMgr.log("#{$!}")
         return false
       rescue SQLite3::BusyException
-        msg="WARNING: WorkflowSQLite3DB.lock_workflow: Could not open workflow database file '#{@database_file}' because it is locked by SQLite."
+        msg="WARNING: WorkflowSQLite3DB.lock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite."
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin
 
@@ -178,7 +161,7 @@ module WorkflowMgr
       begin
 
         # Start a transaction so that the database will be locked
-        @database.transaction do |db|
+        @database_lock.transaction do |db|
 
           lock=db.execute("SELECT * FROM lock;")      
 
@@ -196,7 +179,7 @@ module WorkflowMgr
         WorkflowMgr.log("#{$!}")
         Process.exit(1)
       rescue SQLite3::BusyException
-        msg="ERROR: WorkflowSQLite3DB.unlock_workflow: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
+        msg="ERROR: WorkflowSQLite3DB.unlock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException,msg
       end  # begin
 
@@ -846,6 +829,89 @@ module WorkflowMgr
 
   private
 
+
+    ##########################################
+    #
+    # open_lock_db
+    #
+    ##########################################
+    def open_lock_db
+
+      begin
+
+        # Get a handle to the lock  database
+        @database_lock = SQLite3::Database.new(@database_lock_file)
+
+        # Set the retry limit (milliseconds) for locked resources
+        @database_lock.busy_timeout=10000
+
+        # Return results as arrays
+        @database_lock.results_as_hash=false
+
+        # Start a transaction so that the database will be locked
+        @database_lock.transaction do |db|
+
+          # Get a listing of the database tables
+          tables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+
+          # Create the lock table if it doesn't exist
+          unless tables.flatten.member?("lock")
+            db.execute("CREATE TABLE lock (pid INTEGER, host VARCHAR(64), time DATETIME);")
+          end
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException
+        msg="WorkflowSQLite3DB.open_lock_db: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite"
+        raise WorkflowMgr::WorkflowDBLockedException,msg
+
+      end  # begin
+
+
+    end
+
+
+    ##########################################
+    #
+    # open_workflow_db
+    #
+    ##########################################
+    def open_workflow_db
+
+      begin
+
+        # Get a handle to the database
+        @database = SQLite3::Database.new(@database_file)
+
+        # Set the retry limit (milliseconds) for locked resources
+        @database.busy_timeout=10000
+
+        # Return results as arrays
+        @database.results_as_hash=false
+
+        # Start a transaction so that the database will be locked
+        @database.transaction do |db|
+
+          # Get a listing of the database tables
+          tables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+
+          # Create all tables that are missing from the database 
+          create_tables(db,tables.flatten)
+
+          # Update the tables if needed
+          update_tables(db)
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException
+        msg="WorkflowSQLite3DB.dbopen: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
+        raise WorkflowMgr::WorkflowDBLockedException,msg
+
+      end  # begin
+
+    end
+
+
     ##########################################
     #
     # create_tables
@@ -854,11 +920,6 @@ module WorkflowMgr
     def create_tables(db,tables)
 
       raise "WorkflowSQLite3DB::create_tables must be called inside a transaction" unless db.transaction_active?
-
-      # Create the lock table
-      unless tables.member?("lock")
-        db.execute("CREATE TABLE lock (pid INTEGER, host VARCHAR(64), time DATETIME);")
-      end
 
       # Create the cycledef table
       unless tables.member?("cycledef")
