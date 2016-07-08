@@ -57,7 +57,8 @@ module WorkflowMgr
             if config.is_a?(Hash)
               # Merge default config into rocotorc config if there are unspecified config options
               if config.keys.collect {|c| c.to_s}.sort != DEFAULT_CONFIG.keys.collect {|c| c.to_s}.sort
-                config=DEFAULT_CONFIG.merge(config)
+                config=DEFAULT_CONFIG.merge(config).delete_if { |k,v| !DEFAULT_CONFIG.has_key?(k) }
+
                 File.open(@config_file,"w") { |f| YAML.dump(config,f) }
               end  
               config
