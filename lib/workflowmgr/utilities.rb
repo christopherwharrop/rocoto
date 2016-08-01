@@ -263,8 +263,6 @@ module WorkflowMgr
     [output,error,exit_status]
 
   ensure
-    # Make sure we turn garbage collection back on!
-    GC.enable
 
   end
 

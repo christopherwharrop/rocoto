@@ -353,7 +353,6 @@ module WorkflowMgr
       }  #  queued_jobs.find
 
       queued_jobs=nil
-      GC.start
 
     end
 

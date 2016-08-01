@@ -82,7 +82,7 @@ for file in `ls sbin | grep -v '\.sh'`; do
 done
 
 # Package versions
-LIBXML2_VERSION="2.9.3"
+LIBXML2_VERSION="2.9.4"
 LIBXML_RUBY_VERSION="2.8.0"
 SYSTEMTIMER_VERSION="1.2.3"
 SQLITE3_VERSION="autoconf-3120200"

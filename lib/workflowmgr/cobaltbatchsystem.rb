@@ -248,7 +248,6 @@ private
 
 
       queued_jobs=nil
-      GC.start
 
     end  # job_queue
 

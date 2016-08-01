@@ -23,6 +23,13 @@
  <!ENTITY SCHED "moabtorque">
 
 <!--
+ <!ENTITY TEST_HOME "/autofs/mnt/ncrc-svm1_home1/Christopher.W.Harrop/opt/rocoto/master/test">
+ <!ENTITY DATA_HOME "/lustre/f1/Christopher.W.Harrop">
+ <!ENTITY PROJECT "esrl_bmcs">
+ <!ENTITY QUEUE "batch">
+ <!ENTITY SCHED "moab">
+-->
+<!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
