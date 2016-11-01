@@ -330,6 +330,12 @@ module WFMStat
       # Get the list of tasks from the workflow definition
       definedTasks=@workflowdoc.tasks
 
+      # Get the cycle defs
+      cycledefs=@workflowdoc.cycledefs
+
+      # Initialize empty hash of task cycledefs
+      taskcycledefs={}
+
       # Print the job status info
       if @options.taskfirst
 
@@ -348,11 +354,20 @@ module WFMStat
 
         tasklist.each do |task|
 
-          printf "==================================================================================================================\n"
+          printf "================================================================================================================================\n"
 
           # Print status of all jobs for this task
           cyclelist=(dbcycles | xmlcycles).collect { |c| c.cycle }.sort
           cyclelist.each do |cycle|
+
+            # Only print info if the cycle is defined for this task
+            unless definedTasks[task].attributes[:cycledefs].nil?
+              # Get the cycledefs associated with this task
+              taskcycledefs[task]=cycledefs.find_all { |cycledef| definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              # Reject this task if the cycle is not a member of the tasks cycle list
+              next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
+            end
+
             if jobs[task].nil?
               jobdata=["-","-","-","-","-"]
             elsif jobs[task][cycle].nil?
@@ -381,7 +396,7 @@ module WFMStat
         cyclelist=(dbcycles | xmlcycles).collect { |c| c.cycle }.sort
         cyclelist.each do |cycle|
 
-          printf "==================================================================================================================\n"
+          printf "================================================================================================================================\n"
 
           # Sort the task list in sequence order 
           tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
@@ -390,6 +405,15 @@ module WFMStat
           end
           tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
           tasklist.each do |task|
+
+            # Only print info if the task is defined for this cycle
+            unless definedTasks[task].attributes[:cycledefs].nil?
+              # Get the cycledefs associated with this task
+              taskcycledefs[task]=cycledefs.find_all { |cycledef| definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              # Reject this task if the cycle is not a member of the tasks cycle list
+              next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
+            end
+
             if jobs[task].nil?
               jobdata=["-","-","-","-","-"]
             elsif jobs[task][cycle].nil?
