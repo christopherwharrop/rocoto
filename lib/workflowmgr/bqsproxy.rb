@@ -14,7 +14,6 @@ module WorkflowMgr
 
     require 'workflowmgr/utilities'
     require 'workflowmgr/bqs'
-    require 'system_timer'
     require 'drb'
     require 'workflowmgr/workflowoption'
     require 'workflowmgr/workflowconfig'
@@ -38,7 +37,7 @@ module WorkflowMgr
       (class << self; self; end).instance_eval do
         define_method :stop! do |*args|
           begin
-            SystemTimer.timeout(30) do
+            WorkflowMgr.timeout(30) do
               @bqServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
@@ -59,7 +58,7 @@ module WorkflowMgr
           define_method m do |*args|
             retries=0
             begin
-              SystemTimer.timeout(45) do
+              WorkflowMgr.timeout(45) do
                 @bqServer.send(m,*args)
               end
             rescue DRb::DRbConnError

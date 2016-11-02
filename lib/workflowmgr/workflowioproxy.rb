@@ -14,7 +14,6 @@ module WorkflowMgr
 
     require 'workflowmgr/workflowio'
     require 'workflowmgr/utilities'
-    require 'system_timer'
     require 'drb'
 
     ##########################################
@@ -42,7 +41,7 @@ module WorkflowMgr
       (class << self; self; end).instance_eval do
         define_method :stop! do |*args|
           begin
-            SystemTimer.timeout(30) do
+            WorkflowMgr.timeout(30) do
               @workflowIOServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
@@ -108,7 +107,7 @@ module WorkflowMgr
 
             retries=0
             begin
-              SystemTimer.timeout(45) do
+              WorkflowMgr.timeout(45) do
                 @workflowIOServer.send(m,*args)
               end
             rescue DRb::DRbConnError

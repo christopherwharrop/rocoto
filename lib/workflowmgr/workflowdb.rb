@@ -30,7 +30,6 @@ module WorkflowMgr
 
     require "sqlite3"
     require "socket"
-    require "system_timer"
     require "workflowmgr/cycle"
     require "workflowmgr/job"
     require "workflowmgr/workflowoption"
@@ -126,7 +125,7 @@ module WorkflowMgr
             else
               if Time.now - Time.at(lock[0][2]) > 300
                 begin
-                  SystemTimer.timeout(10) do
+                  WorkflowMgr.timeout(10) do
                     system("ssh -o StrictHostKeyChecking=no #{lock[0][1]} kill -0 #{lock[0][0]} 2>&1 > /dev/null")
                     stale=$?.exitstatus!=0
                   end

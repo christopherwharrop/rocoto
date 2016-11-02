@@ -13,7 +13,6 @@ module WorkflowMgr
   class WorkflowServer
 
     require 'drb'
-    require 'system_timer'
 
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/workflowdb'
@@ -91,7 +90,7 @@ module WorkflowMgr
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
 
       begin
-        SystemTimer.timeout(40) do
+        WorkflowMgr.timeout(40) do
           return @server.send(name,*args,&block)
         end
       rescue Timeout::Error
