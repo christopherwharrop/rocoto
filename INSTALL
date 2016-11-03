@@ -106,23 +106,27 @@ fi
 # Create the build directory
 mkdir -p ${BUILD_DIR}
 
-# Install rubysl-date
-echo "==========================================="
-echo "= INSTALLING rubysl-date"
-echo "==========================================="
-cd ${LIB_DIR}
-gunzip -c ${TAR_DIR}/rubysl-date-${RUBYSL_DATE_VERSION}.tar.gz | tar -xvf -
-rm -rf rubysl-date
-mv rubysl-date-${RUBYSL_DATE_VERSION} rubysl-date
+if [ "$new_ruby" == "true" ]; then
 
-# Install rubysl-parsedate
-echo "==========================================="
-echo "= INSTALLING rubysl-parsedate"
-echo "==========================================="
-cd ${LIB_DIR}
-gunzip -c ${TAR_DIR}/rubysl-parsedate-${RUBYSL_PARSEDATE_VERSION}.tar.gz | tar -xvf -
-rm -rf rubysl-parsedate
-mv rubysl-parsedate-${RUBYSL_PARSEDATE_VERSION} rubysl-parsedate
+  # Install rubysl-date
+  echo "==========================================="
+  echo "= INSTALLING rubysl-date"
+  echo "==========================================="
+  cd ${LIB_DIR}
+  gunzip -c ${TAR_DIR}/rubysl-date-${RUBYSL_DATE_VERSION}.tar.gz | tar -xvf -
+  rm -rf rubysl-date
+  mv rubysl-date-${RUBYSL_DATE_VERSION} rubysl-date
+
+  # Install rubysl-parsedate
+  echo "==========================================="
+  echo "= INSTALLING rubysl-parsedate"
+  echo "==========================================="
+  cd ${LIB_DIR}
+  gunzip -c ${TAR_DIR}/rubysl-parsedate-${RUBYSL_PARSEDATE_VERSION}.tar.gz | tar -xvf -
+  rm -rf rubysl-parsedate
+  mv rubysl-parsedate-${RUBYSL_PARSEDATE_VERSION} rubysl-parsedate
+
+fi
 
 # Install Open4
 echo "==========================================="
