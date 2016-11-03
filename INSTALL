@@ -91,6 +91,7 @@ SYSTEMTIMER_VERSION="1.2.3"
 SQLITE3_VERSION="autoconf-3120200"
 SQLITE3_RUBY_VERSION="1.3.11"
 OPEN4_VERSION="1.3.4"
+RUBYSL_DATE_VERSION="2.0.9"
 RUBYSL_PARSEDATE_VERSION="1.0.1"
 
 # Set AIX_CFLAGS and AIX_LDFLAGS
@@ -104,6 +105,15 @@ fi
 
 # Create the build directory
 mkdir -p ${BUILD_DIR}
+
+# Install rubysl-date
+echo "==========================================="
+echo "= INSTALLING rubysl-date"
+echo "==========================================="
+cd ${LIB_DIR}
+gunzip -c ${TAR_DIR}/rubysl-date-${RUBYSL_DATE_VERSION}.tar.gz | tar -xvf -
+rm -rf rubysl-date
+mv rubysl-date-${RUBYSL_DATE_VERSION} rubysl-date
 
 # Install rubysl-parsedate
 echo "==========================================="

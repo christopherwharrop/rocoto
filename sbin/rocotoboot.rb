@@ -5,6 +5,7 @@ __WFMDIR__=File.expand_path("../../",__FILE__)
 
 # Add include paths for WFM and libxml-ruby libraries
 $:.unshift("#{__WFMDIR__}/lib")
+$:.unshift("#{__WFMDIR__}/lib/rubysl-date/lib")
 $:.unshift("#{__WFMDIR__}/lib/rubysl-parsedate/lib")
 $:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
 $:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")

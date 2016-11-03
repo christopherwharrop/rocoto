@@ -6,7 +6,7 @@
  <!ENTITY HJET "-l partition=hjet">
  <!ENTITY RESERVATION_ID "fimens">
  <!ENTITY RESERVATION "<cyclestr>-l flags=ADVRES:&RESERVATION_ID;-@Hz</cyclestr>">
- <!ENTITY CUSTOM "<native>&HJET;</native>">
+ <!ENTITY CUSTOM "<native></native>">
 
 <!--
  <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/rocoto-devel/test">
@@ -15,13 +15,13 @@
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "moabtorque">
 -->
-
+<!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-1.1/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
  <!ENTITY PROJECT "jetmgmt">
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "moabtorque">
-
+-->
 <!--
  <!ENTITY TEST_HOME "/autofs/mnt/ncrc-svm1_home1/Christopher.W.Harrop/opt/rocoto/master/test">
  <!ENTITY DATA_HOME "/lustre/f1/Christopher.W.Harrop">
@@ -29,6 +29,14 @@
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "moab">
 -->
+<!--
+ <!ENTITY TEST_HOME "/gpfs/tp1/u/Christopher.W.Harrop/rocoto_issue_1/test">
+ <!ENTITY DATA_HOME "/gpfs/tp1/u/Christopher.W.Harrop/rocoto_issue_1/test">
+ <!ENTITY PROJECT "HWRF-T2O">
+ <!ENTITY QUEUE "dev">
+ <!ENTITY SCHED "lsf">
+-->
+
 <!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-devel/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
