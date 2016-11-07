@@ -20,7 +20,7 @@ module WorkflowMgr
   ##########################################
   def WorkflowMgr.forkit(timelimit,&fblock)
 
-    require 'system_timer'
+    require 'workflowmgr/utilities'
 
     # Create a pair of pipe endpoints
     pread,pwrite=IO.pipe
@@ -58,7 +58,7 @@ module WorkflowMgr
     begin
  
       # Timeout after timelimit seconds
-      SystemTimer.timeout(timelimit) do
+      WorkflowMgr.timeout(timelimit) do
 
         # Close the write end of the pipe
         pwrite.close

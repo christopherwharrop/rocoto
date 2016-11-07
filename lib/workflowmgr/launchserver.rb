@@ -6,7 +6,6 @@
 module WorkflowMgr
 
   require 'drb'
-  require 'SystemTimer/system_timer'
   require 'socket'
   require 'tmpdir'
   require 'workflowmgr/utilities'
@@ -34,7 +33,12 @@ module WorkflowMgr
       # This is the child process, so exec the server command
       # Pass the server the pid of the process that is launching it, the verbosity level, 
       # and the file descriptor to use for sending the URI back to the parent
-      exec("#{server} #{parent_pid} #{WorkflowMgr::VERBOSE} #{wr.fileno}")
+      if RUBY_VERSION < "1.9.0"
+        exec("#{server} #{parent_pid} #{WorkflowMgr::VERBOSE} #{wr.fileno}")
+      else
+        # Make sure wr file descriptor is inherited by child processes
+        exec("#{server} #{parent_pid} #{WorkflowMgr::VERBOSE} #{wr.fileno}", {wr=>wr})
+      end
 
     end
 
@@ -53,9 +57,10 @@ module WorkflowMgr
     begin
 
       # Read the URI and pid of the server from the read end of the pipe we just created
-      SystemTimer.timeout(10) do
+      WorkflowMgr.timeout(10) do
         uri=rd.gets
-        server_pid=rd.gets.chomp
+        server_pid=rd.gets
+        server_pid.chomp! unless server_pid.nil?
         rd.close
       end
 

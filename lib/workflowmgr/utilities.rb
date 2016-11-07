@@ -5,7 +5,11 @@
 ##########################################
 module WorkflowMgr
 
-  require 'system_timer'
+  if RUBY_VERSION < "1.9.0"
+    require 'system_timer'
+  else
+    require 'timeout'
+  end
   require 'open4'
 
   ##########################################
@@ -39,6 +43,26 @@ module WorkflowMgr
 
 
   ##########################################  
+  #
+  # WorkflowMgr.timeout
+  #
+  ##########################################
+  def WorkflowMgr.timeout(s)
+
+    if RUBY_VERSION < "1.9.0"
+      SystemTimer.timeout(s) do
+        yield
+      end
+    else
+      Timeout::timeout(s) do
+        yield
+      end
+    end
+
+  end
+
+
+  ##########################################
   #
   # WorkflowMgr.ddhhmmss_to_seconds
   #
@@ -239,7 +263,7 @@ module WorkflowMgr
     output = ""
     exit_status=0
     begin
-      SystemTimer.timeout(timeout) do
+      WorkflowMgr.timeout(timeout) do
         while (!stdout.eof?)  do
           output += stdout.gets(nil)
         end

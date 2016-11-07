@@ -13,7 +13,7 @@ module WorkflowMgr
   class DBProxy
 
     require 'workflowmgr/workflowdb'
-    require 'system_timer'
+    require 'workflowmgr/utilities'
     require 'drb'
 
     ##########################################
@@ -34,7 +34,7 @@ module WorkflowMgr
       (class << self; self; end).instance_eval do
         define_method :stop! do |*args|
           begin
-            SystemTimer.timeout(60) do
+            WorkflowMgr.timeout(60) do
               @dbServer.send(:stop!,*args)
             end
           rescue DRb::DRbConnError
@@ -56,7 +56,7 @@ module WorkflowMgr
             retries=0
             busy_retries=0.0
             begin
-              SystemTimer.timeout(45) do
+              WorkflowMgr.timeout(45) do
                 @dbServer.send(m,*args)
               end
             rescue DRb::DRbConnError
