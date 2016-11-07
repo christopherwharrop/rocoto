@@ -5,12 +5,14 @@
 ##########################################
 module WorkflowMgr
 
+  require 'workflowmgr/batchsystem'
+
   ##########################################
   #
   # Class SLURMBatchSystem
   #
   ##########################################
-  class SLURMBatchSystem
+  class SLURMBatchSystem < BatchSystem
 
     require 'etc'
     require 'parsedate'

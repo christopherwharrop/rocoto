@@ -5,12 +5,14 @@
 ##########################################
 module WorkflowMgr
 
+  require 'workflowmgr/batchsystem'
+
   ##########################################  
   #
   # Class SGEBatchSystem 
   #
   ##########################################
-  class SGEBatchSystem
+  class SGEBatchSystem < BatchSystem
 
     ###############################################################################
     #

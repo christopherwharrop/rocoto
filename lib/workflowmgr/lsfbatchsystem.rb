@@ -5,12 +5,14 @@
 ##########################################
 module WorkflowMgr
 
+  require 'workflowmgr/batchsystem'
+
   ##########################################
   #
   # Class LSFBatchSystem 
   #
   ##########################################
-  class LSFBatchSystem
+  class LSFBatchSystem < BatchSystem
 
     require 'workflowmgr/utilities'
     require 'fileutils'

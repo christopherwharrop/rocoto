@@ -648,6 +648,9 @@ module WorkflowMgr
       # Get the taskdep cycle offsets
       @taskdep_cycle_offsets=workflowdoc.taskdep_cycle_offsets
 
+      # Warn use if any unsupported features are used:
+      workflowdoc.features_supported?
+
     end
 
 

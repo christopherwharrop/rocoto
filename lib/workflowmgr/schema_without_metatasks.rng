@@ -391,20 +391,20 @@
         </attribute>
       </optional>
 
-      <!-- Optional shared or exclusive tag -->
-      <optional>
-        <choice>
-          <element name="shared">
-	    <data type="string"/>
-	  </element>
-          <element name="exclusive">
-	    <data type="string"/>
-	  </element>
-	</choice>
-      </optional>
-
       <!-- Order of task property tags does not matter -->
       <interleave>
+
+	<!-- Optional shared or exclusive tag -->
+	<optional>
+          <choice>
+            <element name="shared">
+	      <data type="string"/>
+	    </element>
+            <element name="exclusive">
+	      <data type="string"/>
+	    </element>
+	  </choice>
+	</optional>
 
         <!-- Rewind tag is optional -->
         <optional>

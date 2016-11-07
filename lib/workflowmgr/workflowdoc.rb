@@ -26,6 +26,11 @@ module WorkflowMgr
     require 'workflowmgr/lsfbatchsystem'    
     require 'workflowmgr/lsfcraybatchsystem'    
     require 'workflowmgr/task'
+
+    @@messages={
+      :exclusive => "The <exclusive> tag is unsupported on this platform.",
+      :shared => "The <shared> tag is unsupported on this platform."
+    }
     
     def unescape(s)
       # This is a workaround for a LibXML bug: it is impossible to
@@ -47,6 +52,10 @@ module WorkflowMgr
 
       # Set the workflowIOServer
       @workflowIOServer=workflowIOServer
+
+      # Track features used in the document that are only supported by
+      # some platforms:
+      @featuresUsed={}
 
       # Get the text from the xml file and put it into a string.
       # We have to do the full parsing in @workflowIOServer 
@@ -235,6 +244,33 @@ module WorkflowMgr
 
     ##########################################
     #
+    # features_supported?
+    # 
+    ##########################################
+    def features_supported?
+      supported=false
+      if @workflowdoc.root.attributes?
+        sched=@workflowdoc.root["scheduler"]
+        if not sched.nil?
+          clazz=WorkflowMgr::const_get("#{sched.upcase}BatchSystem")
+          supported=true
+          @featuresUsed.each do |feature,ignore|
+            next if clazz.feature?(feature)
+            supported=false
+            if @@messages[feature]
+              WorkflowMgr.stderr(@@messages[feature])
+            else
+              WorkflowMgr.stderr("Feature '#{feature}' is unsupported on this platform.")
+            end
+          end
+        end
+      end
+      return supported
+    end
+
+
+    ##########################################
+    #
     # log
     # 
     ##########################################
@@ -318,13 +354,12 @@ module WorkflowMgr
         # Get task attributes, envars, and dependencies declared as elements inside <task> element
         tasknode.each_element do |e|          
           case e.name
-            when /^shared$/
-              if !(unescape(e.content).to_s =~ /^t|true$/).nil?
-                taskattrs[:shared]=true
-              end
-            when /^exclusive$/
-              if !(unescape(e.content).to_s =~ /^t|true$/).nil?
-                taskattrs[:exclusive]=true
+            when /shared/
+              taskattrs[:shared]=true
+              @featuresUsed[:shared]=true
+            when /exclusive/
+              taskattrs[:exclusive]=true
+              @featuresUsed[:exclusive]=true
             when /^envar$/
               envar_name=nil
               envar_value=nil

@@ -5,12 +5,14 @@
 ##########################################
 module WorkflowMgr
 
+  require 'workflowmgr/batchsystem'
+
   ##########################################
   #
   # Class MOABTORQUEBatchSystem
   #
   ##########################################
-  class MOABTORQUEBatchSystem
+  class MOABTORQUEBatchSystem < BatchSystem
 
     require 'etc'
     require 'parsedate'

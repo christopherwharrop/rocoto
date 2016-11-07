@@ -5,12 +5,14 @@
 ##########################################
 module WorkflowMgr
 
+  require 'workflowmgr/batchsystem'
+
   ##########################################
   #
   # Class COBALTBatchSystem
   #
   ##########################################
-  class COBALTBatchSystem
+  class COBALTBatchSystem < BatchSystem
 
     require 'etc'
     require 'parsedate'

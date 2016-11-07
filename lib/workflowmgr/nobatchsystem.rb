@@ -12,12 +12,14 @@ class NoBatchSystem
 
   @@qstat_refresh_rate=30
 
+  require 'workflowmgr/batchsystem'
+
   #####################################################
   #
   # initialize
   #
   #####################################################
-  def initialize(qstat_refresh_rate=@@qstat_refresh_rate)
+  def initialize(qstat_refresh_rate=@@qstat_refresh_rate) < BatchSystem
 
     begin
 

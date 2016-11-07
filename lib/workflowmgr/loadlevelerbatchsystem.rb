@@ -1,11 +1,13 @@
 unless defined? $__loadlevelerbatchsystem__
 
+require 'workflowmgr/batchsystem'
+
 ##########################################
 #
 # Class LoadLevelerBatchSystem
 #
 ##########################################
-class LoadLevelerBatchSystem
+class LoadLevelerBatchSystem < BatchSystem
 
   require 'etc'
   require 'parsedate'

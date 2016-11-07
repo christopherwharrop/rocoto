@@ -95,6 +95,8 @@ module WFMStat
         # Open the workflow document
         @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
 
+        @workflowdoc.features_supported?
+
         # Print a cycle summary report if requested
         if @options.summary
           print_summary
