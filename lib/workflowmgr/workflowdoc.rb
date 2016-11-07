@@ -24,6 +24,7 @@ module WorkflowMgr
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'    
+    require 'workflowmgr/lsfcraybatchsystem'    
     require 'workflowmgr/task'
     
     def unescape(s)
@@ -317,6 +318,13 @@ module WorkflowMgr
         # Get task attributes, envars, and dependencies declared as elements inside <task> element
         tasknode.each_element do |e|          
           case e.name
+            when /^shared$/
+              if !(unescape(e.content).to_s =~ /^t|true$/).nil?
+                taskattrs[:shared]=true
+              end
+            when /^exclusive$/
+              if !(unescape(e.content).to_s =~ /^t|true$/).nil?
+                taskattrs[:exclusive]=true
             when /^envar$/
               envar_name=nil
               envar_value=nil

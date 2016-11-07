@@ -25,6 +25,7 @@
         <choice>
           <value>sge</value>
           <value>lsf</value>
+          <value>lsfcray</value>
           <value>ll</value>
           <value>moab</value>
           <value>moabtorque</value>
@@ -406,6 +407,18 @@
             <value>TRUE</value>
  	  </choice>
         </attribute>
+      </optional>
+
+      <!-- Optional shared or exclusive tag -->
+      <optional>
+        <choice>
+          <element name="shared">
+	    <data type="string"/>
+	  </element>
+          <element name="exclusive">
+	    <data type="string"/>
+	  </element>
+	</choice>
       </optional>
 
       <!-- Order of task property tags does not matter -->

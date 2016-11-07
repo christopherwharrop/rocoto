@@ -17,6 +17,8 @@ module WorkflowMgr
     require 'etc'
     require 'tempfile'
 
+    attr_accessor :unhold_jobs
+
     @@qstat_refresh_rate=30
     @@max_history=3600*1
 
@@ -25,7 +27,7 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize
+    def initialize(unhold_jobs_default=false,should_vanquish_undead=false)
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -42,6 +44,12 @@ module WorkflowMgr
       # Similar to the jobacct, but from bjobs
       @bjobs={}
 
+      # Should we try to unhold PSUSP status jobs?  Normally we
+      # shouldn't, but on WCOSS Cray, the broken combination of LSF
+      # and ALPS sometimes places jobs randomly in PSUSP status.
+      @should_unhold_jobs=unhold_jobs_default
+
+      @should_vanquish_undead=should_vanquish_undead
     end
 
 
@@ -55,29 +63,33 @@ module WorkflowMgr
       begin
 
         raise WorkflowMgr::SchedulerDown unless @schedup
-        # Populate the jobs status table if it is empty
-        refresh_jobqueue if @jobqueue.empty?
 
-        # Return the jobqueue record if there is one
-        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+        if not @should_unhold_jobs
+          # Populate the jobs status table if it is empty
+          refresh_jobqueue if @jobqueue.empty?
 
-        # If we didn't find the job in the jobqueue, look for it in the accounting records
+          # Return the jobqueue record if there is one
+          return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
-
+          # If we didn't find the job in the jobqueue, look for it in the accounting records
+        end
+        
         refresh_bjobs if @bjobs.empty?
-        return @bjobs[jobid] if @bjobs.has_key?(jobid)
-
+        vanquish_undead(@bjobs,jobid) if @should_vanquish_undead
+        return unhold_job(@bjobs,jobid) if @bjobs.has_key?(jobid)
 
         # Populate the job accounting log table if it is empty
         refresh_jobacct if @bhist.empty?
 
         # Return the jobacct record if there is one
-        return @bhist[jobid] if @bhist.has_key?(jobid)
+        vanquish_undead(@bhist,jobid) if @should_vanquish_undead
+        return unhold_job(@bhist,jobid) if @bhist.has_key?(jobid)
 
         # If we still didn't find the job, look at all accounting files if we haven't already
         if @nacctfiles != 25
           refresh_jobacct(25)
-          return @bhist[jobid] if @bhist.has_key?(jobid)
+          vanquish_undead(@bhist,jobid) if @should_vanquish_undead
+          return unhold_job(@bhist,jobid) if @bhist.has_key?(jobid)
         end
 
         # We didn't find the job, so return an uknown status record
@@ -278,6 +290,39 @@ module WorkflowMgr
 
     #####################################################
     #
+    # vanquish_undead - if a job is falsely reported as
+    #   running, but has actually hung, kill it and list
+    #   it as failed.  This is a workaround for WCOSS.
+    #   Only called if @should_vanquish_undead=true
+    #
+    #####################################################
+    def vanquish_undead(bjobs,jobid)
+      return unless @should_vanquish_undead
+      job=bjobs[jobid]
+      return nil if job.nil?
+
+
+
+      if not job[:reservation_time].nil? and not job[:lsf_runlimit].nil?
+        now=Time.now
+        reservation_age=now-job[:reservation_time]
+        runlimit=job[:lsf_runlimit]
+        past=reservation_age/60.0-runlimit
+        if past > 10
+          WorkflowMgr.stderr("#{job[:jobid]}: Is a zombie, falsely reported as running.  Will bkill job and list as failed with exit status 1000.  Info: now=#{now} res age=#{reservation_age} runlimit=#{runlimit} past=#{past}.",1)
+          job[:state]='FAILED'
+          job[:native_state]='ZOMBIE_RUNNING'
+          job[:exit_status]=100
+          job[:end_time]=now
+        else
+          WorkflowMgr.stderr("#{job[:jobid]}: Running for #{(reservation_age/60).floor} of #{runlimit} reservation (past=#{past}).",1)
+        end
+      end
+      return nil
+    end
+
+    #####################################################
+    #
     # delete
     #
     #####################################################
@@ -379,6 +424,54 @@ private
 
     #####################################################
     #
+    # final_update_record: given a record from within
+    #    run_bhist_bjobs, makes additional changes to the
+    #    record based on derived information.  This is
+    #    intended for subclasses' use.
+    #
+    #####################################################
+    def final_update_record(record,jobacct)
+      # do nothing
+    end
+    
+    #####################################################
+    #
+    # unhold_job: a workaround on WCOSS Cray.  This
+    #    calls bresume to release the user hold on any
+    #    held jobs.  It also modifies the queue :state
+    #    from USERHOLD to QUEUED.  Does nothing if
+    #    @should_unhold_jobs is false.
+    #
+    #####################################################
+    def unhold_job(joblist,jobid)
+      job=joblist[jobid]
+      
+      return job unless @should_unhold_jobs
+
+      # Nothing to do unless job state is userhold
+      return job if job[:state] != 'USERHOLD'
+      
+      cmd = "bresume -u #{ENV['USER']} #{job[:jobid]}"
+      
+      # When jobs are held, resume them:
+      queued_jobs,errors,exit_status=WorkflowMgr.run4(cmd,30)
+      
+      if exit_status==0
+        # If bresume works, assume the jobs are running now:
+        WorkflowMgr.stderr("Job #{job[:jobid]} #{job[:jobname]} resumed.")
+        job[:state]='QUEUED'
+        job[:native_state]='QUEUED'
+      else
+        # If bresume fails, the job status is now unknown:
+        WorkflowMgr.stderr("Exit status #{exit_status} from #{cmd}.  Job #{job[:jobid]} status now unknown.")
+        job[:state]='UNKNOWN'
+        job[:native_state]='UNKNOWN'
+      end
+      return job
+    end
+    
+    #####################################################
+    #
     # refresh_bjobs - runs bjobs, updates @bjobs
     #
     #####################################################
@@ -454,6 +547,10 @@ private
 
         # Try to format the record such that it is easier to parse
         recordstring=s.strip
+        # This one is not in a time record, so we handle it separately:
+        if /^\s*([0-9.]+) min of/.match(s):
+            record[:lsf_runlimit]=$1.to_f
+        end
         recordstring.gsub!(/\n\s{3,}/,'')
         recordstring.split(/\n+/).each { |event|
           case event.strip
@@ -461,6 +558,9 @@ private
               record[:jobid]=$1
               record[:jobname]=$3
               record[:user]=$4
+              if(event.strip=~/Extsched <([^>]*)>/)
+                record[:extsched]=$1
+              end
               if(event.strip=~/Queue <([^>]*)>/)
                 record[:queue]=$1
               end
@@ -474,6 +574,8 @@ private
                   record[:state]='QUEUED'
                 when 'DONE'
                   record[:native_state]='DONE'
+                when 'PSUSP'
+                  record[:state]='USERHOLD'
                 else
                   record[:state]='UNKNOWN'
                 end
@@ -481,87 +583,36 @@ private
                 record[:native_state]="DONE"
               end
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, to Queue <([^>]+)>,/
-              timestamp=ParseDate.parsedate($1,true)
-              if timestamp[0].nil?
-                now=Time.now
-                timestamp[0]=now.year
-                if Time.local(*timestamp) > now
-                  timestamp[0]=now.year-1
-                end
-              end
-              record[:submit_time]=Time.local(*timestamp).getgm
+              record[:submit_time]=lsf_time($1)
               record[:queue]=$2        
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, CWD/
-              timestamp=ParseDate.parsedate($1,true)
-              if timestamp[0].nil?
-                now=Time.now
-                timestamp[0]=now.year
-                if Time.local(*timestamp) > now
-                  timestamp[0]=now.year-1
-                end
-              end
-              record[:submit_time]=Time.local(*timestamp).getgm
-            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: (Dispatched to|Started on) /
-              timestamp=ParseDate.parsedate($1,true)
-              if timestamp[0].nil?
-                now=Time.now
-                timestamp[0]=now.year
-                if Time.local(*timestamp) > now
-                  timestamp[0]=now.year-1
-                end
-              end
-              record[:start_time]=Time.local(*timestamp).getgm
+              record[:submit_time]=lsf_time($1)
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: (Dispatched to|Started) /
+              record[:start_time]=lsf_time($1)
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: reservation_id *= *([0-9A-Za-z_.]+) *;/
+              record[:reservation_id]=$3
+              record[:reservation_time]=lsf_time($1)
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Done successfully. /
-              timestamp=ParseDate.parsedate($1,true)
-              if timestamp[0].nil?
-                now=Time.now
-                timestamp[0]=now.year
-                if Time.local(*timestamp) > now
-                  timestamp[0]=now.year-1
-                end
-              end
-              record[:end_time]=Time.local(*timestamp).getgm
+              record[:end_time]=lsf_time($1)
               record[:exit_status]=0             
               record[:state]="SUCCEEDED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited with exit code (\d+)/,/(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by signal (\d+)/
-              timestamp=ParseDate.parsedate($1,true)
-              if timestamp[0].nil?
-                now=Time.now
-                timestamp[0]=now.year
-                if Time.local(*timestamp) > now
-                  timestamp[0]=now.year-1
-                end
-              end
-              record[:end_time]=Time.local(*timestamp).getgm
+              record[:end_time]=lsf_time($1)
               record[:exit_status]=$3.to_i             
               record[:state]="FAILED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited; job has been forced to exit with exit code (\d+)/
-              timestamp=ParseDate.parsedate($1,true)
-              if timestamp[0].nil?
-                now=Time.now
-                timestamp[0]=now.year
-                if Time.local(*timestamp) > now
-                  timestamp[0]=now.year-1
-                end
-              end
-              record[:end_time]=Time.local(*timestamp).getgm
+              record[:end_time]=lsf_time($1)
               record[:exit_status]=$3.to_i             
               record[:state]="FAILED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited\./
-              timestamp=ParseDate.parsedate($1,true)
-              if timestamp[0].nil?
-                now=Time.now
-                timestamp[0]=now.year
-                if Time.local(*timestamp) > now
-                  timestamp[0]=now.year-1
-                end
-              end
-              record[:end_time]=Time.local(*timestamp).getgm
+              record[:end_time]=lsf_time($1)
               record[:exit_status]=255
               record[:state]="FAILED"
             else
           end
         }
+
+        final_update_record(record,jobacct)
 
         if !jobacct.has_key?(record[:jobid])
           if record.has_key?(:state) and record[:state]!='UNKNOWN'
@@ -574,6 +625,18 @@ private
       return jobacct
     end
 
+    def lsf_time(str,now=nil)
+      timestamp=ParseDate.parsedate(str,true)
+      if timestamp[0].nil?
+        now=Time.now if now.nil?
+        timestamp[0]=now.year
+        if Time.local(*timestamp) > now
+          timestamp[0]=now.year-1
+        end
+      end
+      return Time.local(*timestamp).getgm
+    end
+    
   end
 
 end

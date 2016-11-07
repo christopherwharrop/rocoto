@@ -1060,6 +1060,8 @@ module WorkflowMgr
             job.exit_status=status[:exit_status]
             if !status[:duration].nil?
               job.duration=status[:duration]
+            elsif status[:start_time].nil?
+              job.duration=0
             elsif status[:start_time]==Time.at(0).getgm
               job.duration=0
             else

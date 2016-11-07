@@ -23,6 +23,7 @@ module WorkflowMgr
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/lsfbatchsystem'
+    require 'workflowmgr/lsfcraybatchsystem'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/dependency'
     require 'workflowmgr/utilities'
