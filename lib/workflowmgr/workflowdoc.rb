@@ -28,8 +28,8 @@ module WorkflowMgr
     require 'workflowmgr/task'
 
     @@messages={
-      :exclusive => "The <exclusive> tag is unsupported on this platform.",
-      :shared => "The <shared> tag is unsupported on this platform."
+      :exclusive => "Ignoring <exclusive>; this platform does not support it.",
+      :shared => "Ignoring <shared>; this platform does not support it."
     }
     
     def unescape(s)
