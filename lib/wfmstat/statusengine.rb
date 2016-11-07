@@ -83,7 +83,11 @@ module WFMStat
       begin
 
         # Open/Create the database
-        Process.exit(0) unless @dbServer.dbopen
+        @dbServer.dbopen
+
+        # Acquire a lock on the workflow in the database
+        @locked=@dbServer.lock_workflow
+        Process.exit(0) unless @locked
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
@@ -137,7 +141,11 @@ module WFMStat
       begin
 
         # Open/Create the database
-        Process.exit(0) unless @dbServer.dbopen
+        @dbServer.dbopen
+
+        # Acquire a lock on the workflow in the database
+        @locked=@dbServer.lock_workflow
+        Process.exit(0) unless @locked
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
