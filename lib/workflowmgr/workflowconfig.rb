@@ -23,7 +23,9 @@ module WorkflowMgr
                     :BatchQueueServer => true,
                     :WorkflowIOServer => true,
                     :MaxUnknowns => 3,
-                    :MaxLogDays => 7
+                    :MaxLogDays => 7,
+                    :AutoVacuum => true,
+                    :VacuumPurgeDays => 30
                    }
 
     ##########################################  

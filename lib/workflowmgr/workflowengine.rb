@@ -226,6 +226,7 @@ module WorkflowMgr
     ##########################################
     def run
       with_locked_db {
+
         # Build the workflow objects from the contents of the workflow document
         build_workflow
 
@@ -250,6 +251,10 @@ module WorkflowMgr
 
         # Submit new tasks where possible
         submit_new_jobs
+
+        # Auto vacuum if necessary, but only for realtime mode
+        auto_vacuum if @config.AutoVacuum && @realtime
+
       }
     end  # run
 
@@ -490,20 +495,11 @@ module WorkflowMgr
     # vacuum!
     #
     ##########################################
-    def vacuum!
-
-      printf "About to delete all jobs for cycles that completed or expired more than #{@options.age / 3600 / 24} days ago.\n\n"
-      printf "!!! MAKE ABSOLUTELY CERTAIN THAT NO OTHER ROCOTO PROCESS IS USING (OR ATTEMPTS TO USE) THIS DATABASE DURING THE VACUUM !!!\n"
-      printf "!!! TURN OFF CRON JOBS FOR THIS WORKFLOW BEFORE INITIATING A VACUUM !!!\n\n"
-      printf "This is irreversible.  Are you sure? (y/n) "
-      reply=STDIN.gets
-      unless reply=~/^[Yy]/
-        Process.exit(0)
-      end
+    def vacuum!(seconds)
 
       with_locked_db {
 
-        @dbServer.vacuum(@options.age)
+        @dbServer.vacuum(seconds)
 
       } # with_locked_db
 
@@ -577,7 +573,34 @@ module WorkflowMgr
 
       end
  
-    end  # run
+    end  # with_locked_db
+
+
+    ##########################################
+    #
+    # auto_vacuum
+    #
+    ##########################################
+    def auto_vacuum
+
+      # Never vacuum unless the workflow is locked!
+      unless @locked
+        WorkflowMgr.stderr("ERROR: auto_vacuum cannot be called unless the workflow is locked!  Exiting...",0)
+        WorkflowMgr.log("ERROR: auto_vacuum cannot be called unless the workflow is locked! Exiting...")
+        Process.exit(1)
+      end
+
+      # Get the previous vacuum time
+      last_vacuum = @dbServer.get_vacuum_time
+
+      # Vacuum if we haven't done so in the last 24 hours
+      if (Time.now - last_vacuum) > 24*3600
+        @dbServer.vacuum(@config.VacuumPurgeDays * 24 * 3600)
+        @dbServer.set_vacuum_time(Time.now)
+      end
+
+    end
+
 
     ##########################################
     #
