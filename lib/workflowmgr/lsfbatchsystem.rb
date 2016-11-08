@@ -550,7 +550,7 @@ private
         # Try to format the record such that it is easier to parse
         recordstring=s.strip
         # This one is not in a time record, so we handle it separately:
-        if /^\s*([0-9.]+) min of/.match(s):
+        if /^\s*([0-9.]+) min of/.match(s)
             record[:lsf_runlimit]=$1.to_f
         end
         recordstring.gsub!(/\n\s{3,}/,'')
