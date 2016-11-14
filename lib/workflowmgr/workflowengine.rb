@@ -1566,6 +1566,8 @@ module WorkflowMgr
                     outdir=value
                   else
                     outdir=value.split("/")[0..-2].join("/")
+                    # Roll the log file (if it already exists)
+                    @workflowIOServer.roll_log(value)
                   end
                   @workflowIOServer.mkdir_p(outdir)
               end
