@@ -125,7 +125,7 @@ module WorkflowMgr
               WorkflowMgr.stderr(msg,3)
               WorkflowMgr.log(msg)
             else
-              msg="ERROR: Workflow is locked by pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]}) since #{Time.at(lock[0][2])}."
+              msg="WARNING: Workflow is locked by pid #{lock[0][0]} on host #{lockhostinfo[2]} (#{lockhostinfo[3]}) since #{Time.at(lock[0][2])}."
               raise WorkflowMgr::WorkflowLockedException, msg
             end
           end
