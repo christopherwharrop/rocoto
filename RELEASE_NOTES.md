@@ -24,4 +24,5 @@
 * Add automatic database trimming for realtime workflows to enhance performance
   * Can be turned off in ~/.rocoto/rocotorc with AutoVacuum set to false
   * Keep time for old records is configurable in ~/.rocoto/rocotorc with VacuumPurgeDays
+* Add rocotovacuum utility for manual trimming of the database
 * Replace appending of task stderr/stdout output files with automated rolling of output files.
