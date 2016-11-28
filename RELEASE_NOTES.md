@@ -16,8 +16,8 @@
 * Add basic support for the Cobalt batch system used on ACLF's BlueGene systems
 * Add support for lsfcray batch system for use on Cray systems using LSF
 * Add support for shared and exclusive use of nodes for LSF
-  * <shared>
-  * <exclusive>
+  * &lt;shared&gt;
+  * &lt;exclusive&gt;
 * Decouple workflow locking from the workflow database
 * Add automatic daily Rocoto log rotation and purging
   * Log keep time is configurable in ~/.rocoto/rocotorc with MaxLogDays
