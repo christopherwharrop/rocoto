@@ -84,6 +84,17 @@ module WorkflowMgr
 
     end  # initialize
 
+    ##########################################
+    #
+    # rewind!
+    #
+    ##########################################
+    def disallow_readonly
+      if @dbServer.readonly?
+        WorkflowMgr.stderr('ERROR: cannot run this command on a read-only workflow.  Check database permissions and ownership.')
+        Process.exit(1)
+      end
+    end
 
     ##########################################
     #
@@ -91,6 +102,8 @@ module WorkflowMgr
     #
     ##########################################
     def rewind!
+      disallow_readonly
+
       with_locked_db {
         # Get task name and cycle time:
         rewind_task_name=@options.tasks.first
@@ -225,6 +238,8 @@ module WorkflowMgr
     #
     ##########################################
     def run
+      disallow_readonly
+
       with_locked_db {
 
         # Build the workflow objects from the contents of the workflow document
@@ -283,6 +298,8 @@ module WorkflowMgr
     #
     ##########################################
     def boot
+
+      disallow_readonly
 
       with_locked_db {
 
@@ -496,6 +513,8 @@ module WorkflowMgr
     #
     ##########################################
     def vacuum!(seconds)
+
+      disallow_readonly
 
       with_locked_db {
 
