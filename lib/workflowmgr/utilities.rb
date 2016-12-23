@@ -179,25 +179,29 @@ module WorkflowMgr
     return if message.nil?
     return if message.empty?
 
-    # Rotate log if necessary
-    log_mod_time = File.mtime("#{ENV['HOME']}/.rocoto/log")
-    if log_mod_time.day != Time.now.day
-      FileUtils.mv("#{ENV['HOME']}/.rocoto/log","#{ENV['HOME']}/.rocoto/log.#{log_mod_time.strftime('%Y%m%d')}")
+    rocotolog="#{ENV['HOME']}/.rocoto/log"
+
+    if File.exists?(rocotolog)
+      # Rotate log if necessary
+      log_mod_time = File.mtime(rocotolog)
+      if log_mod_time.day != Time.now.day
+        FileUtils.mv(rocotolog,rocotolog+"#{log_mod_time.strftime('%Y%m%d')}")
+      end
+      
+      # Get the max age (in days) of the log file from the configuration
+      # NOTE: This is a hack due to poor design preventing proper access to the configuration object
+      maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/rocotorc")[:MaxLogDays]
+      
+      # Remove files last modified more than MaxAge days ago
+      Dir[rocotolog+".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each { |logfile| 
+        if (Time.now - File.mtime(logfile)) > (maxAge * 24 * 3600)
+          FileUtils.rm_f(logfile)
+        end
+      }
     end
 
-    # Get the max age (in days) of the log file from the configuration
-    # NOTE: This is a hack due to poor design preventing proper access to the configuration object
-    maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/rocotorc")[:MaxLogDays]
-
-    # Remove files last modified more than MaxAge days ago
-    Dir["#{ENV['HOME']}/.rocoto/log.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each { |logfile| 
-      if (Time.now - File.mtime(logfile)) > (maxAge * 24 * 3600)
-        FileUtils.rm_f(logfile)
-      end
-    }
-
     # Log the message
-    File.open("#{ENV['HOME']}/.rocoto/log","a") { |f|
+    File.open(rocotolog,"a") { |f|
       f.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
     }
 
