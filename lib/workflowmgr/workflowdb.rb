@@ -53,8 +53,18 @@ module WorkflowMgr
         "#{@database_file}_lock"
       end
 
+      writable = ( not File.exist?(@database_file)             \
+                   or File.writable?(@database_file) ) and     \
+                 ( not File.exist?(@database_lock_file)        \
+                   or File.writable?(@database_lock_file) )
+      @readonly=!writable
+
     end
 
+
+    def readonly?
+      return @readonly
+    end
 
     ##########################################
     #
@@ -75,6 +85,11 @@ module WorkflowMgr
     #
     ##########################################
     def lock_workflow
+
+      if readonly?
+        open_workflow_db()
+        return true
+      end
 
       begin
 
@@ -156,6 +171,8 @@ module WorkflowMgr
     #
     ##########################################
     def unlock_workflow
+
+      return true if readonly?
 
       begin
 
@@ -909,10 +926,16 @@ module WorkflowMgr
     ##########################################
     def open_lock_db
 
-      begin
+      # Cannot use the lock database in read-only mode.
+      return true if readonly?
 
+      begin
         # Get a handle to the lock  database
-        @database_lock = SQLite3::Database.new(@database_lock_file)
+        if readonly?
+          @database_lock = SQLite3::Database.new(@database_lock_file,{:readonly=>true})
+        else
+          @database_lock = SQLite3::Database.new(@database_lock_file)
+        end
 
         # Set the retry limit (milliseconds) for locked resources
         @database_lock.busy_timeout=10000
@@ -951,9 +974,15 @@ module WorkflowMgr
     def open_workflow_db
 
       begin
-
         # Get a handle to the database
-        @database = SQLite3::Database.new(@database_file)
+        if readonly?
+          WorkflowMgr.stderr('Opening database in read-only mode.',-9e9)
+          @database = SQLite3::Database.new(@database_file,{:readonly=>true})
+        else
+          @database = SQLite3::Database.new(@database_file)
+        end
+
+        puts "database = #{@database}"
 
         # Set the retry limit (milliseconds) for locked resources
         @database.busy_timeout=10000
@@ -990,6 +1019,8 @@ module WorkflowMgr
     #
     ##########################################
     def create_tables(db,tables)
+
+      return true if readonly?
 
       raise "WorkflowSQLite3DB::create_tables must be called inside a transaction" unless db.transaction_active?
 
