@@ -86,7 +86,7 @@ module WorkflowMgr
 
     ##########################################
     #
-    # rewind!
+    # disallow_readonly
     #
     ##########################################
     def disallow_readonly
