@@ -23,6 +23,14 @@ module WorkflowMgr
 
   ##########################################
   #
+  # Class WorkflowDBAccessException
+  #
+  ##########################################
+  class WorkflowDBAccessException < RuntimeError
+  end
+
+  ##########################################
+  #
   # Class WorkflowSQLite3DB
   #
   ##########################################
@@ -61,10 +69,21 @@ module WorkflowMgr
     # dbopen
     #
     ##########################################
-    def dbopen
+    def dbopen(mode={:readonly=>false})
 
-      # Open the lock database
-      open_lock_db()
+      # Set the database access mode
+      @mode=mode
+
+      # Verify permissions
+      verify_permissions()
+
+      if (mode[:readonly])
+        # Open the workflow database
+        open_workflow_db()
+      else
+        # Open the lock database
+        open_lock_db()
+      end
 
     end  # dbopen
 
@@ -77,6 +96,9 @@ module WorkflowMgr
     def lock_workflow
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Start a transaction and immediately acquire an exclusive lock
         @database_lock.transaction(mode=:exclusive) do |db|
@@ -159,6 +181,9 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Start a transaction so that the database will be locked
         @database_lock.transaction do |db|
 
@@ -226,6 +251,9 @@ module WorkflowMgr
     def set_cycledefs(cycledefs)
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
@@ -376,6 +404,9 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
 
@@ -401,6 +432,9 @@ module WorkflowMgr
     def add_cycles(cycles)
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
@@ -489,6 +523,9 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
 
@@ -516,6 +553,9 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
 
@@ -541,6 +581,9 @@ module WorkflowMgr
     def update_jobids(jobs)
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
@@ -568,6 +611,9 @@ module WorkflowMgr
     def delete_jobs(jobs)
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
@@ -620,6 +666,9 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
 
@@ -645,6 +694,9 @@ module WorkflowMgr
     def delete_bqservers(bqservers)
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
@@ -699,6 +751,9 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
 
@@ -724,6 +779,9 @@ module WorkflowMgr
     def delete_downpaths(downpaths)
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
@@ -784,6 +842,9 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
 
@@ -811,6 +872,9 @@ module WorkflowMgr
       vacuum_date = Time.now.to_i - age
 
       begin
+
+        # Make sure write access is enabled
+        verify_access_mode()
 
         # Count the number of jobs removed
         njobs_removed = 0
@@ -904,6 +968,55 @@ module WorkflowMgr
 
     ##########################################
     #
+    # verify_permissions
+    #
+    ##########################################
+    def verify_permissions
+
+      if @mode[:readonly]
+
+        # Make sure the database file exists and that we can read it
+        if File.exists?(@database_file)
+          if !File.readable?(@database_file)
+            raise WorkflowDBAccessException, "ERROR: You do not have permission to read #{@database_file}"
+          end
+        else
+          raise WorkflowDBAccessException, "ERROR: Can not open #{@database_file} read-only because it does not exist"
+        end
+
+      else
+
+        # Make sure the database and database lock files are writable
+        [@database_file, @database_lock_file].each do |dbfile|
+          if File.exists?(dbfile)
+            if !File.writable?(dbfile)
+              raise WorkflowDBAccessException, "ERROR: You do not have permission to modify #{dbfile}"
+            end
+          else
+            if !File.writable?(File.dirname(dbfile))
+              raise WorkflowDBAccessException, "ERROR: You do not have permission to create #{dbfile}"
+            end
+          end
+        end
+      end
+
+    end
+
+
+    ##########################################
+    #
+    # verify_access_mode
+    #
+    ##########################################
+    def verify_access_mode
+
+      raise WorkflowDBAccessException, "ERROR: Can not lock or modify a database opened in read-only mode" if @mode[:readonly]
+
+    end
+
+
+    ##########################################
+    #
     # open_lock_db
     #
     ##########################################
@@ -911,8 +1024,11 @@ module WorkflowMgr
 
       begin
 
+        # Make sure write access is enabled
+        verify_access_mode()
+
         # Get a handle to the lock  database
-        @database_lock = SQLite3::Database.new(@database_lock_file)
+        @database_lock = SQLite3::Database.new(@database_lock_file, @mode)
 
         # Set the retry limit (milliseconds) for locked resources
         @database_lock.busy_timeout=10000
@@ -953,13 +1069,16 @@ module WorkflowMgr
       begin
 
         # Get a handle to the database
-        @database = SQLite3::Database.new(@database_file)
+        @database = SQLite3::Database.new(@database_file, @mode)
 
         # Set the retry limit (milliseconds) for locked resources
         @database.busy_timeout=10000
 
         # Return results as arrays
         @database.results_as_hash=false
+
+        # Don't try to update the db if in readonly mode
+        return if @mode[:readonly]
 
         # Start a transaction so that the database will be locked
         @database.transaction do |db|
@@ -990,6 +1109,9 @@ module WorkflowMgr
     #
     ##########################################
     def create_tables(db,tables)
+
+      # Make sure write access is enabled
+      verify_access_mode()
 
       raise "WorkflowSQLite3DB::create_tables must be called inside a transaction" unless db.transaction_active?
 
@@ -1031,6 +1153,9 @@ module WorkflowMgr
     #
     ##########################################
     def update_tables(db)
+
+      # Make sure write access is enabled
+      verify_access_mode()
 
       raise "WorkflowSQLite3DB::update_tables must be called inside a transaction" unless db.transaction_active?
 

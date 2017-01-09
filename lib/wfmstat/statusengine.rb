@@ -86,11 +86,7 @@ module WFMStat
       begin
 
         # Open/Create the database
-        @dbServer.dbopen
-
-        # Acquire a lock on the workflow in the database
-        @locked=@dbServer.lock_workflow
-        Process.exit(0) unless @locked
+        @dbServer.dbopen({:readonly=>true})
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
@@ -122,7 +118,6 @@ module WFMStat
   
         # Make sure we release the workflow lock in the database and shutdown the dbserver
         unless @dbServer.nil?
-          @dbServer.unlock_workflow if @locked
           @dbServer.stop! if @config.DatabaseServer
         end
   
@@ -146,11 +141,7 @@ module WFMStat
       begin
 
         # Open/Create the database
-        @dbServer.dbopen
-
-        # Acquire a lock on the workflow in the database
-        @locked=@dbServer.lock_workflow
-        Process.exit(0) unless @locked
+        @dbServer.dbopen({:readonly=>true})
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
@@ -216,16 +207,19 @@ module WFMStat
 
       rescue => crash
         WorkflowMgr.stderr(crash.message,1)
-        WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
         WorkflowMgr.log(crash.message)
-        WorkflowMgr.log(crash.backtrace.join("\n"))
+        case
+          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
+            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
+            WorkflowMgr.log(crash.backtrace.join("\n"))
+          else
+        end
         Process.exit(1)
 
       ensure
   
         # Make sure we release the workflow lock in the database and shutdown the dbserver
         unless @dbServer.nil?
-          @dbServer.unlock_workflow if @locked
           @dbServer.stop! if @config.DatabaseServer
         end
   
