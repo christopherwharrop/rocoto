@@ -40,7 +40,7 @@ module WorkflowMgr
       t=s.gsub(/&quot;/,'"').gsub(/&lt;/,'<').gsub(/&gt;/,'>')
       
       # The &amp; must be last:
-      return t.gsub(/&amp/,'&')
+      return t.gsub(/&amp;/,'&')
     end
 
     ##########################################
@@ -938,7 +938,7 @@ module WorkflowMgr
     
       if node.node_type_name == "text"
         node.output_escaping=false
-        cont = node.content
+        cont = unescape(node.content)
         id_table.each{|id, value|
           next while cont.sub!("#"+id+"#", id_table[id][index])
         }
