@@ -30,7 +30,7 @@
           <value>moab</value>
           <value>moabtorque</value>
           <value>torque</value>
-          <value>pbs</value>
+          <value>pbspro</value>
           <value>slurm</value>
           <value>cobalt</value>
         </choice>

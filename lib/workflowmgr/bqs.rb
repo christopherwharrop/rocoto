@@ -18,6 +18,7 @@ module WorkflowMgr
     require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
+    require 'workflowmgr/pbsprobatchsystem'
     require 'workflowmgr/lsfbatchsystem'
     require 'workflowmgr/slurmbatchsystem'
     require 'workflowmgr/cobaltbatchsystem'

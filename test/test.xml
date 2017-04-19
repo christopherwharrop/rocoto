@@ -72,10 +72,17 @@
  <!ENTITY QUEUE "regular">
  <!ENTITY SCHED "lsf">
 -->
+ <!ENTITY TEST_HOME "/glade/u/home/harrop/rocoto-trunk/test">
+ <!ENTITY DATA_HOME "/glade/scratch/harrop">
+ <!ENTITY PROJECT "P48500053">
+ <!ENTITY QUEUE "regular">
+ <!ENTITY SCHED "pbspro">
+
+
 
 ]>
 
-<workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="5" corethrottle="10" taskthrottle="10">
+<workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="5" corethrottle="100" taskthrottle="10">
 
   <log verbosity="10">&TEST_HOME;/log/workflow/<cyclestr>workflow_@Y@m@d@H@M.log</cyclestr></log>
 <!--
@@ -98,12 +105,12 @@
       <account>&PROJECT;</account>
 
       <queue>&QUEUE;</queue>
-
-      <cores>1</cores>
-
 <!--
-      <nodes> 1:ppn=1+1:ppn=4:tpp=2 </nodes>
+      <cores>1</cores>
 -->
+
+      <nodes>1:ppn=1+2:ppn=4:tpp=2 </nodes>
+
       <walltime> 01:10 </walltime>
 
       <join>&TEST_HOME;/log/test/test_#foo#.join</join>
