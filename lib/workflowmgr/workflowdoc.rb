@@ -419,6 +419,9 @@ module WorkflowMgr
                     raise "ERROR: <node> tag must contain a :ppn setting for each nodespec" if ppn==0
                     taskattrs[:cores]+=nodes * ppn * tpp
                   }
+                when :nodesize
+                  e.output_escaping=false
+                  attrval=unescape(e.content).to_i
                 else                             # <task> elements with compoundtimestring values
                   attrval=get_compound_time_string(e)
               end

@@ -41,6 +41,7 @@ module WorkflowMgr
       # If a user does not specify one, it will be determined from pbsnodes
       @default_node_size=nil
 
+      # Try to get a default node size from pbsnodes -a
       begin
         pbsnodes,errors,exit_status=WorkflowMgr.run4("pbsnodes -a | grep resources_available.ncpus | sort | uniq -c",30)
       
@@ -55,7 +56,7 @@ module WorkflowMgr
       end
 
       if pbsnodes =~ /\s*\d+\s+resources_available.ncpus = (\d+)/
-        @default_node_size = $1
+        @default_node_size = $1.to_i
       end
 
     end
@@ -101,15 +102,17 @@ module WorkflowMgr
       input="#! /bin/sh\n"
 
       # Get the node size
-      nodesize = task.attributes[:nodesize]
-      if nodesize.nil?
-        nodesize = @default_node_size
+      nodesize = @default_node_size
+      if task.attributes[:nodesize].nil?
         WorkflowMgr.stderr("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.",1)
         WorkflowMgr.log("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.")
+      else
+        nodesize = task.attributes[:nodesize]
       end
 
       # Add Pbspro batch system options translated from the generic options specification
       task.attributes.each do |option,value|
+
         case option
           when :account
             input += "#PBS -A #{value}\n"
@@ -127,10 +130,10 @@ module WorkflowMgr
 
             # Add selection of memory if requested
             input += ":mem=#{task.attributes[:memory]}" unless task.attributes[:memory].nil?
-            
+
             # Add a chunk for non-full node if needed
             leftovers = value % nodesize
-            input += "+1:ncpus=#{leftovers}:mpiprocs=#{leftovers}" if lefovers > 0
+            input += "+1:ncpus=#{leftovers}:mpiprocs=#{leftovers}" if leftovers > 0
 
             # Add selection of memory if requested
             input += ":mem=#{task.attributes[:memory]}" unless task.attributes[:memory].nil?
@@ -170,6 +173,7 @@ module WorkflowMgr
           when :jobname
             input += "#PBS -N #{value}\n"
         end
+
       end
 
       task.each_native do |native_line|
