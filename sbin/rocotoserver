@@ -77,7 +77,7 @@ Thread.new do
       break
     end
 
-    sleep 5
+    sleep 30
 
   end
 
@@ -104,7 +104,7 @@ Thread.new do
       begin
         # Test if the rocoto process that launched this server process is still alive
         Process.getpgid(ARGV[0].to_i)
-        sleep 1
+        sleep 30
       rescue Errno::ESRCH
         # If the process that launched this server is dead, shutdown this process
         WorkflowMgr.log("Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown.")
