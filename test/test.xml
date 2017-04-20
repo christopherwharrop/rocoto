@@ -105,12 +105,13 @@
       <account>&PROJECT;</account>
 
       <queue>&QUEUE;</queue>
+
+      <cores>48</cores>
+
+      <nodesize>36</nodesize>
 <!--
-      <cores>1</cores>
--->
-
       <nodes>1:ppn=1+2:ppn=4:tpp=2 </nodes>
-
+-->
       <walltime> 01:10 </walltime>
 
       <join>&TEST_HOME;/log/test/test_#foo#.join</join>
