@@ -54,26 +54,31 @@ module WorkflowMgr
           FileUtils.mv("#{ENV['HOME']}/.wfmrc",@config_file) if File.exists?("#{ENV['HOME']}/.wfmrc")
 
           # Load the rocotorc config if one exists
-          if File.exists?(@config_file)
+          if File.exists?(@config_file) && !File.zero?(@config_file)
             config=YAML.load_file(@config_file)
             if config.is_a?(Hash)
               # Merge default config into rocotorc config if there are unspecified config options
               if config.keys.collect {|c| c.to_s}.sort != DEFAULT_CONFIG.keys.collect {|c| c.to_s}.sort
                 config=DEFAULT_CONFIG.merge(config).delete_if { |k,v| !DEFAULT_CONFIG.has_key?(k) }
-
-                File.open(@config_file,"w") { |f| YAML.dump(config,f) }
+                File.open("#{@config_file}.#{Process.ppid}","w") { |f| YAML.dump(config,f) }
               end  
               config
             else
-              raise "Invalid configuration in #{@config_file}"
+              WorkflowMgr.log("WARNING! Reverted corrupted configuration in #{@config_file} to default.")
+              WorkflowMgr.stderr("WARNING! Reverted corrupted configuration in #{@config_file} to default.")
+              File.open("#{@config_file}.#{Process.ppid}","w") { |f| YAML.dump(DEFAULT_CONFIG,f) }
+              DEFAULT_CONFIG
             end
           else
             # Create a rocotorc file with default settings if it does not exist
-            File.open(@config_file,"w") { |f| YAML.dump(DEFAULT_CONFIG,f) }
+            File.open("#{@config_file}.#{Process.ppid}","w") { |f| YAML.dump(DEFAULT_CONFIG,f) }
 	    DEFAULT_CONFIG
           end
 
         end  # @config do
+
+        # Update the config file in a quasi-atomic way.
+        FileUtils.mv("#{@config_file}.#{Process.ppid}", @config_file) if File.exists?("#{@config_file}.#{Process.ppid}")
 
       rescue WorkflowMgr::ForkitTimeoutException
         msg="ERROR: An I/O operation timed out while reading, writing, or testing for the existence of '#{@config_file}'"
