@@ -1,14 +1,18 @@
 #!/bin/sh
 
+rocoto__args__="$*"
+
 # Source /etc/profile to set up environment for batch system access
 # We can't do '#!/bin/sh -l' or '#!/bin/sh --login' because those options are not portable
 # There does not appear to be a portable way to run a shell as a login shell
-. /etc/profile
+if ( ! eval module help > /dev/null 2>&1 ) ; then
+    . /etc/profile
+fi
 
 # Get the directory where the WFM is installed
 wfmdir=`dirname $0`
 
 # Run the WFM status program
-exec ${wfmdir}/../sbin/rocotostat.rb $*
+exec ${wfmdir}/../sbin/rocotostat.rb $rocoto__args__
 
 exit $?
