@@ -8,13 +8,13 @@
  <!ENTITY RESERVATION "<cyclestr>-l flags=ADVRES:&RESERVATION_ID;-@Hz</cyclestr>">
  <!ENTITY CUSTOM "<native></native>">
 
-<!--
- <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/opt/rocoto-devel/test">
- <!ENTITY DATA_HOME "/scratch1/portfolios/BMC/nesccmgmt/Christopher.W.Harrop/test">
- <!ENTITY PROJECT "nesccmgmt">
+
+ <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/rocoto-master/test">
+ <!ENTITY DATA_HOME "/scratch4/BMC/gsd-hpcs/Christopher.W.Harrop/test">
+ <!ENTITY PROJECT "gsd-hpcs">
  <!ENTITY QUEUE "batch">
  <!ENTITY SCHED "moabtorque">
--->
+
 <!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-1.1/test">
  <!ENTITY DATA_HOME "/lfs1/jetmgmt/harrop/test">
@@ -72,12 +72,13 @@
  <!ENTITY QUEUE "regular">
  <!ENTITY SCHED "lsf">
 -->
+<!--
  <!ENTITY TEST_HOME "/glade/u/home/harrop/rocoto-trunk/test">
  <!ENTITY DATA_HOME "/glade/scratch/harrop">
  <!ENTITY PROJECT "P48500053">
  <!ENTITY QUEUE "regular">
  <!ENTITY SCHED "pbspro">
-
+-->
 
 
 ]>
