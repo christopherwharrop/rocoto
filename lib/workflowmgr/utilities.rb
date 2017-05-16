@@ -185,7 +185,7 @@ module WorkflowMgr
       # Rotate log if necessary
       log_mod_time = File.mtime(rocotolog)
       if log_mod_time.day != Time.now.day
-        FileUtils.mv(rocotolog,rocotolog+"#{log_mod_time.strftime('%Y%m%d')}")
+        FileUtils.mv(rocotolog,rocotolog+".#{log_mod_time.strftime('%Y%m%d')}")
       end
       
       # Get the max age (in days) of the log file from the configuration

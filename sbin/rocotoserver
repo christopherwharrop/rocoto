@@ -61,10 +61,17 @@ Thread.new do
     begin
 
       # Test if the rocoto process that launched this server process has become a zombie
-      system("ps -eo pid,stat | grep Z | grep #{ARGV[0].to_i} 2>&1 > /dev/null")
+      isZombie = false
+      if RUBY_PLATFORM=~/linux/
+        state=IO.readlines("/proc/#{ARGV[0]}/status",nil)[0].match(/^State:\s+(\w)/)[1]
+        isZombie = state=="Z"
+      else
+        system("ps -eo pid,stat | grep Z | grep #{ARGV[0].to_i} 2>&1 > /dev/null")
+        isZombie = $?.exitstatus == 0
+      end
 
       # If our parent has become a zombie, it's time to close STDERR so that the zombie parent can go away
-      if $?.exitstatus==0
+      if isZombie
         STDERR.reopen "/dev/null", "a"
         break
       end
