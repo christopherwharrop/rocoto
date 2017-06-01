@@ -125,7 +125,7 @@ module WorkflowMgr
 
       # Tasks of interest
       opts.on("-t","--task TASK",String,"Task") do |taskstr|
-        @tasks.push(taskstr.split(','))
+        @tasks = @tasks + taskstr.split(',')
       end
 
       # Rewind all tasks for the specified cycles instead of a list of tasks:
