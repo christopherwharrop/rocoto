@@ -56,8 +56,8 @@ module WorkflowMgr
         # Return the jobqueue record if there is one
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
-        # Populate the job accounting log table if it is empty
-        refresh_jobacct(jobid) if @jobacct.empty?
+        # Populate the job accounting log table
+        refresh_jobacct(jobid)
 
         # Return the jobacct record if there is one
         return @jobacct[jobid] if @jobacct.has_key?(jobid)
@@ -203,7 +203,7 @@ private
       
       # For each job, find the various attributes and create a job record
       record = {}
-      queued_jobs.each { |job|
+      queued_jobs.split(/\n/).each { |job|
 
         case job
           when /JobID: (\d+)/
@@ -268,8 +268,7 @@ private
 
         joblogfile = "#{ENV['HOME']}/.rocoto/tmp/#{jobid}.log"
         return unless  File.exists?(joblogfile)
-        joblog = IO.readlines(joblogfile)
-        
+        joblog = IO.readlines(joblogfile,nil)[0]
 
         # Return if the joblog output is empty
         return if joblog.empty?
@@ -282,7 +281,7 @@ private
 
       # For each job, find the various attributes and create a job record
       record={:jobid => jobid}
-      joblog.each { |line|
+      joblog.split(/\n/).each { |line|
 
         case line
           when /submitted with cwd set to:/
