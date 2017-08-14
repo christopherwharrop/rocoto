@@ -475,7 +475,7 @@ module WorkflowMgr
 
             rescue WorkflowIOHang
               msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"            
-              @logServer.log(cycletime,msg)
+              @logServer.log(boot_cycle_time,msg)
               WorkflowMgr.stderr(msg,2)
               WorkflowMgr.log(msg)
             end
