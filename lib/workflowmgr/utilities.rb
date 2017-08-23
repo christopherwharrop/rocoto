@@ -164,7 +164,7 @@ module WorkflowMgr
     return if message.empty?
 
     if VERBOSE >= level
-     STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
+      STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{WORKFLOW_ID} :: #{message}"
     end
 
   end
@@ -179,31 +179,71 @@ module WorkflowMgr
     return if message.nil?
     return if message.empty?
 
+    # Name of the current log file
     rocotolog="#{ENV['HOME']}/.rocoto/log"
 
-    if File.exists?(rocotolog)
-      # Rotate log if necessary
-      log_mod_time = File.mtime(rocotolog)
-      if log_mod_time.day != Time.now.day
-        FileUtils.mv(rocotolog,rocotolog+".#{log_mod_time.strftime('%Y%m%d')}")
-      end
-      
-      # Get the max age (in days) of the log file from the configuration
-      # NOTE: This is a hack due to poor design preventing proper access to the configuration object
-      maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/rocotorc")[:MaxLogDays]
-      
-      # Remove files last modified more than MaxAge days ago
-      Dir[rocotolog+".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each { |logfile| 
-        if (Time.now - File.mtime(logfile)) > (maxAge * 24 * 3600)
-          FileUtils.rm_f(logfile)
-        end
-      }
-    end
+    # Logging requires exclusive access to the logs
+    # Open the log lock file
+    File.open("#{rocotolog}.lock","w") do |lockfile|
 
-    # Log the message
-    File.open(rocotolog,"a") { |f|
-      f.puts "#{Time.now.strftime("%x %X %Z")} :: #{message}"
-    }
+      # Try up to three times to acquire an exclusive write lock for the lock file
+      got_lock = false
+      5.times do
+        got_lock = lockfile.flock(File::LOCK_EX | File::LOCK_NB)
+        if got_lock
+          break
+        end
+        sleep rand()
+      end
+
+      # If we get the lock, proceed with logging and rotation if needed
+      if got_lock
+
+        begin
+
+          # Only rotate logs if they exist
+          if File.exists?(rocotolog)
+
+            # Determine if it is time to rotate the logs
+            log_mod_time = File.mtime(rocotolog)
+            rotate = log_mod_time.day != Time.now.day
+
+            if rotate
+
+              # Rotate log
+              FileUtils.mv(rocotolog,rocotolog+".#{log_mod_time.strftime('%Y%m%d')}")
+
+              # Get the max age (in days) of the log file from the configuration
+              # NOTE: This is a hack due to poor design preventing proper access to the configuration object
+              maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/rocotorc")[:MaxLogDays]
+
+              # Remove files last modified more than MaxAge days ago
+              Dir[rocotolog+".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each { |logfile| 
+                if (Time.now - File.mtime(logfile)) > (maxAge * 24 * 3600)
+                  FileUtils.rm_f(logfile)
+                end
+              }
+
+            end  # if rotate?
+
+          end  # if File.exists?
+
+          # Log the message
+          File.open(rocotolog,"a") { |f|
+            f.puts "#{Time.now.strftime("%x %X %Z")} :: #{WorkflowMgr::WORKFLOW_ID} :: #{message}"
+          }
+
+        ensure
+          # Make sure the lock is released
+          lockfile.flock(File::LOCK_UN)
+        end
+
+      else
+        STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{WorkflowMgr::WORKFLOW_ID} :: WARNING! Could not acquire lock to write log the following message"
+        STDERR.puts "#{Time.now.strftime("%x %X %Z")} :: #{WorkflowMgr::WORKFLOW_ID} ::          #{message}"
+      end  # if got_lock
+
+    end  # open
 
   end
 

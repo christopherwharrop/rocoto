@@ -95,6 +95,8 @@ module WorkflowMgr
     ##########################################
     def lock_workflow
 
+      tries=0
+
       begin
 
         # Make sure write access is enabled
@@ -165,8 +167,14 @@ module WorkflowMgr
         WorkflowMgr.log("#{$!}")
         return false
       rescue SQLite3::BusyException
-        msg="WARNING: WorkflowSQLite3DB.lock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite."
-        raise WorkflowMgr::WorkflowDBLockedException,msg
+        if tries < 3
+          tries +=1
+          sleep rand()
+          retry
+        else
+          msg="WARNING: WorkflowSQLite3DB.lock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite."
+          raise WorkflowMgr::WorkflowDBLockedException,msg
+        end
       end  # begin
 
     end
@@ -178,6 +186,8 @@ module WorkflowMgr
     #
     ##########################################
     def unlock_workflow
+
+      tries=0
 
       begin
 
@@ -203,8 +213,14 @@ module WorkflowMgr
         WorkflowMgr.log("#{$!}")
         Process.exit(1)
       rescue SQLite3::BusyException
-        msg="ERROR: WorkflowSQLite3DB.unlock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite"
-        raise WorkflowMgr::WorkflowDBLockedException,msg
+        if tries < 3
+          tries +=1
+          sleep rand()
+          retry
+        else
+          msg="ERROR: WorkflowSQLite3DB.unlock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite"
+          raise WorkflowMgr::WorkflowDBLockedException,msg
+        end
       end  # begin
 
     end

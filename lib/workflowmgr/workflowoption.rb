@@ -127,6 +127,9 @@ module WorkflowMgr
           # Set verbosity level
           WorkflowMgr.const_set("VERBOSE",@verbose)
 
+          # Set workflow id
+          WorkflowMgr.const_set("WORKFLOW_ID",File.basename(@workflowdoc))
+
           # Print usage information if unknown options were passed
           validate_opts(opts,args)
 

@@ -128,6 +128,9 @@ module WFMStat
           # Set verbosity level
           WorkflowMgr.const_set("VERBOSE",@verbose)
 
+          # Set workflow id
+          WorkflowMgr.const_set("WORKFLOW_ID",File.basename(@workflowdoc))
+
           # Print usage information if unknown options were passed
           raise OptionParser::ParseError,"Unrecognized options" unless args.empty?
 

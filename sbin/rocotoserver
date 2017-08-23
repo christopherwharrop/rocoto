@@ -24,6 +24,9 @@ require 'fileutils'
 # Set the verbosity for the server process
 WorkflowMgr.const_set("VERBOSE",ARGV[1].to_i)
 
+# Set the workflow id for the server process
+WorkflowMgr.const_set("WORKFLOW_ID",ARGV[2])
+
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
 # We want to control what output goes where and when                                     
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
@@ -42,7 +45,7 @@ DRb.start_service(nil,WorkflowMgr::WorkflowServer.new)
 
 # Write the URI and our pid to the pipe inherited from our parent
 begin
-  uri_io=IO.new(ARGV[2].to_i)  # Open file desriptor passed to us as ARGV[2]
+  uri_io=IO.new(ARGV[3].to_i)  # Open file desriptor passed to us as ARGV[3]
   uri_io.puts DRb.uri          # Write our URI
   uri_io.puts Process.pid      # Write our pid
   uri_io.close                 # Close the write end of the pipe, the read end has already been closed
