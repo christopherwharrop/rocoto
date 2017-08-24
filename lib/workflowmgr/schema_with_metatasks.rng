@@ -581,23 +581,30 @@
         </attribute>
       </optional>
 
-      <!-- Metatasks must have at least one var tag -->
-      <oneOrMore>
-        <element name="var">
-          <!-- Each var tag must have the id attribute set -->
-          <attribute name="name">
-            <data type="string"/>
-          </attribute>
-          <text/>
-        </element>
-      </oneOrMore>
-      <!-- Each metatask must contain at least one metatask or task -->
-      <oneOrMore>
-        <choice>
-          <ref name="metatask"/>
-          <ref name="task"/>
-        </choice>
-      </oneOrMore>
+      <!-- Order of metatask contents does not matter -->
+      <interleave>
+
+	<!-- Metatasks must have at least one var tag -->
+	<oneOrMore>
+	  <element name="var">
+	    <!-- Each var tag must have the id attribute set -->
+	    <attribute name="name">
+	      <data type="string"/>
+	    </attribute>
+	    <text/>
+	  </element>
+	</oneOrMore>
+
+	<!-- Each metatask must contain at least one metatask or task -->
+	<oneOrMore>
+	  <choice>
+	    <ref name="metatask"/>
+	    <ref name="task"/>
+	  </choice>
+	</oneOrMore>
+
+      </interleave>
+
     </element>
   </define>
 
