@@ -78,7 +78,7 @@ Thread.new do
         STDERR.reopen "/dev/null", "a"
         break
       end
-
+    rescue Errno::ENOENT
     rescue
       WorkflowMgr.log("#{$!}")
       WorkflowMgr.stderr("#{$!}",1)
