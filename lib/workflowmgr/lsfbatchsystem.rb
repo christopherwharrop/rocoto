@@ -556,7 +556,8 @@ private
         recordstring.gsub!(/\n\s{3,}/,'')
         recordstring.split(/\n+/).each { |event|
           case event.strip
-            when /^Job <(\d+)>, *(Job Name <([^>]+)>,)? *User <([^>]+)>,/
+#Job <216811>, Job Name <rt_test_gsm_t126_mom5_cice5_2015040100_2day_cold>, User<emc.nemspara>, Project <GFS-T2O>,
+            when /^Job *<(\d+)>, *(Job Name *<([^>]+)>,)? *User *<([^>]+)>,/
               record[:jobid]=$1
               record[:jobname]=$3
               record[:user]=$4
