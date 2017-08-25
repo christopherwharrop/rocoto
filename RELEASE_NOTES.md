@@ -1,28 +1,21 @@
 # Release Notes
 
-##New for Version 1.2.3
+##New for Version 1.2.4
 
-* Add RELEASE_NOTES document
-* Numerous minor bug fixes
-* Update version of external libraries
-  * libxml2 
-  * libxml-ruby
-  * open4
-  * sqlite3
-  * sqlite3-ruby
-* Add support for Ruby versions > 1.8
-* Fix passing of environment variables for Moab and SLURM batch systems
-* Fix rocotostat to report only tasks that are valid for the given cycle
-* Add basic support for the Cobalt batch system used on ACLF's BlueGene systems
-* Add support for lsfcray batch system for use on Cray systems using LSF
-* Add support for shared and exclusive use of nodes for LSF
-  * &lt;shared&gt;
-  * &lt;exclusive&gt;
-* Decouple workflow locking from the workflow database
-* Add automatic daily Rocoto log rotation and purging
-  * Log keep time is configurable in ~/.rocoto/rocotorc with MaxLogDays
-* Add automatic database trimming for realtime workflows to enhance performance
-  * Can be turned off in ~/.rocoto/rocotorc with AutoVacuum set to false
-  * Keep time for old records is configurable in ~/.rocoto/rocotorc with VacuumPurgeDays
-* Add rocotovacuum utility for manual trimming of the database
-* Replace appending of task stderr/stdout output files with automated rolling of output files.
+* Fix bugs relating to ~/.rocoto/log rotation
+* Fix race condition bug relating to ~/.rocoto/rocotorc configuration file
+* Increase reliability and performance of database and workflow locking
+* Fix bug in Rocoto commands related to sourcing of shell init script
+* Improve performance and reduce system load when monitoring for orphaned Rocoto processes
+* Fix bug in XML validation that erroneously enforced ordering of metatask contents
+* Fix bug in processing of XML special characters
+* Fix task list update bug in rocotorewind
+* Fix bug in rotocoboot that prevent task output files from being rotated
+* Fix bugs in Cobalt batch system interface that were exposed in Ruby > 1.8.7
+* Fix bug in LSF batch system interface related to long job names
+* Add support for PBSPro batch system (e.g. for use on Cheyenne)
+* Update libxml-ruby to version 3.0.0 to mitigate memory management bugs
+* Add new cyclstring flags
+  * @n = Number of days in the month
+  * @o = All lower case abbreviated month name
+  * @O = All lower case full month name
