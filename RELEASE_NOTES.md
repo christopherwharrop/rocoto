@@ -1,6 +1,6 @@
 # Release Notes
 
-##New for Version 1.2.4
+## New for Version 1.2.4
 
 * Fix bugs relating to ~/.rocoto/log rotation
 * Fix race condition bug relating to ~/.rocoto/rocotorc configuration file
