@@ -15,7 +15,7 @@
 * Fix bug in LSF batch system interface related to long job names
 * Add support for PBSPro batch system (e.g. for use on Cheyenne)
 * Update libxml-ruby to version 3.0.0 to mitigate memory management bugs
-* Add new cyclstring flags
+* Add new cyclestring flags
   * @n = Number of days in the month
   * @o = All lower case abbreviated month name
   * @O = All lower case full month name
