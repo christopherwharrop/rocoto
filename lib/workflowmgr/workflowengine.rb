@@ -190,7 +190,7 @@ module WorkflowMgr
               puts "#{strcyc}: #{task_name}: No entry in @tasks.  Task does not exist.  INTERNAL ERROR."
               fail
             end
-            wstate=WorkflowState.new(cycle,@active_jobs,@workflowIOServer,@cycledefs,task_name,task)
+            wstate=WorkflowState.new(cycle,@active_jobs,@workflowIOServer,@cycledefs,task_name,task,tasks=@tasks)
             task.rewind!(wstate)
 
             puts "#{strcyc}: #{task_name}: deleting all records of this job."
@@ -1127,7 +1127,7 @@ module WorkflowMgr
             # Check for job hang
             unless @tasks[job.task].hangdependency.nil?
               if job.state=="RUNNING"
-                wstate=WorkflowState.new(job.cycle,@active_jobs,@workflowIOServer,@cycledefs,job.task,@tasks[job.task])
+                wstate=WorkflowState.new(job.cycle,@active_jobs,@workflowIOServer,@cycledefs,job.task,@tasks[job.task],tasks=@tasks)
                 if @tasks[job.task].hangdependency.resolved?(wstate)
                   job.state="FAILED"
                   runmsg=".  A job hang has been detected.  The job will be killed.  It will be resubmitted if the retry count has not been exceeded."
@@ -1477,7 +1477,7 @@ module WorkflowMgr
           
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
-            wstate=WorkflowState.new(cycletime,@active_jobs,@workflowIOServer,@cycledefs,task.attributes[:name],task)
+            wstate=WorkflowState.new(cycletime,@active_jobs,@workflowIOServer,@cycledefs,task.attributes[:name],task,tasks=@tasks)
             next unless task.dependency.resolved?(wstate)
           end
 

@@ -253,6 +253,11 @@
         </attribute>
         <empty/>
       </element>
+      <element name="taskvalid">
+        <attribute name="task">
+          <data type="string"/>
+        </attribute>
+      </element>
       <element name="true">
         <empty/>
       </element>

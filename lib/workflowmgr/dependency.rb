@@ -789,6 +789,83 @@ module WorkflowMgr
 
   end
 
+  ##########################################
+  #
+  # Class TaskValidDependency 
+  #
+  ##########################################
+  class TaskValidDependency
+
+    #####################################################
+    #
+    # initialize
+    #
+    #####################################################
+    def initialize(task)
+      @task=task
+    end
+
+    #####################################################
+    #
+    # Resolved?
+    #
+    #####################################################
+    def resolved?(d)
+
+       # Get the jobs for this cycle 
+       return false if d.jobList.nil?
+       return false if d.tasks[@task].nil?
+
+       checkjob=d.tasks[@task]
+       checkjob=checkjob.localize(d.cycle) unless checkjob.nil?
+
+       # Get the mandatory task attribute
+       cycle_is_valid=true
+       unless checkjob.attributes[:cycledefs].nil?
+         taskcycledefs=d.cycledefs.find_all { |cycledef| checkjob.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+         # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
+         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
+           cycle_is_valid=false
+         end
+       end  # unless
+
+      return cycle_is_valid
+    end
+
+    #####################################################
+    #
+    # Query
+    #
+    #####################################################
+    def query(d)
+
+       
+       # Set the job to check
+
+       # Get the jobs for this cycle 
+       return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] if d.jobList.nil?
+       return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] if d.tasks[@task].nil?
+
+       checkjob=d.tasks[@task]
+       checkjob=checkjob.localize(d.cycle) unless checkjob.nil?
+
+       cycle_is_valid=true
+       unless checkjob.attributes[:cycledefs].nil?
+         taskcycledefs=d.cycledefs.find_all { |cycledef| checkjob.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+         # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
+         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
+           cycle_is_valid=false
+         end
+       end  # unless
+
+      if cycle_is_valid
+        return [{:dep=>"#{@task}", :msg=>"is valid", :resolved=>true }]
+      else
+        return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] 
+      end
+    end
+
+  end
 
   ##########################################
   #
