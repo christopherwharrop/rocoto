@@ -813,11 +813,9 @@ module WorkflowMgr
     def resolved?(d)
 
        # Get the jobs for this cycle 
-       return false if d.jobList.nil?
        return false if d.tasks[@task].nil?
 
        checkjob=d.tasks[@task]
-       checkjob=checkjob.localize(d.cycle) unless checkjob.nil?
 
        # Get the mandatory task attribute
        cycle_is_valid=true
@@ -843,11 +841,9 @@ module WorkflowMgr
        # Set the job to check
 
        # Get the jobs for this cycle 
-       return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] if d.jobList.nil?
        return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] if d.tasks[@task].nil?
 
        checkjob=d.tasks[@task]
-       checkjob=checkjob.localize(d.cycle) unless checkjob.nil?
 
        cycle_is_valid=true
        unless checkjob.attributes[:cycledefs].nil?
