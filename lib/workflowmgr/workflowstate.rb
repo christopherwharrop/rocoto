@@ -19,7 +19,7 @@ module WorkflowMgr
     #
     ##########################################
     attr_reader :cycle, :jobList, :workflowIOServer, :cycledefs
-    attr_reader :taskname, :task
+    attr_reader :taskname, :task, :tasks
     def taskName ; return @taskname ; end
 
     ##########################################
@@ -27,7 +27,7 @@ module WorkflowMgr
     # Initialize
     #
     ##########################################
-    def initialize(cycle,jobList,workflowIOServer,cycledefs,taskname,task,doc=nil)
+    def initialize(cycle,jobList,workflowIOServer,cycledefs,taskname,task,tasks=nil,doc=nil)
       if taskname.nil?
         raise 'In WorkflowState.new, taskname cannot be nil.'
       end
@@ -37,6 +37,7 @@ module WorkflowMgr
       @cycledefs=cycledefs
       @taskname=taskname
       @task=task
+      @tasks=tasks
       @doc=nil
       @se=nil
     end

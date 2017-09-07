@@ -183,13 +183,13 @@ module WFMStat
         hangdependencies=nil
         unless task.nil?
           unless task.dependency.nil?
-            wstate=WorkflowMgr::WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task)
+            wstate=WorkflowMgr::WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
             dependencies=task.dependency.query(wstate)
             printf "%2s%s\n", "","dependencies"
             print_deps(dependencies,0)
           end
           unless task.hangdependency.nil?
-            wstate=WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task)
+            wstate=WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
             hangdependencies=task.hangdependency.query(wstate)
             printf "%2s%s\n", "","hang dependencies"
             print_deps(hangdependencies,0)

@@ -1147,7 +1147,7 @@ module WorkflowMgr
 
       # Create the jobs table
       unless tables.member?("jobs")
-        db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR[64], native_state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER, duration REAL);")
+        db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, jobid VARCHAR(64), taskname VARCHAR(64), cycle DATETIME, cores INTEGER, state VARCHAR(64), native_state VARCHAR[64], exit_status INTEGER, tries INTEGER, nunknowns INTEGER, duration REAL);")
       end
       
       # Create the bqservers table
@@ -1157,7 +1157,7 @@ module WorkflowMgr
       
       # Create the downpaths table
       unless tables.member?("downpaths")
-        db.execute("CREATE TABLE downpaths (id INTEGER PRIMARY KEY, path VARCHAR(1024), downdate DATETIME, host VARCHAR[64], pid INTEGER);")
+        db.execute("CREATE TABLE downpaths (id INTEGER PRIMARY KEY, path VARCHAR(1024), downdate DATETIME, host VARCHAR(64), pid INTEGER);")
       end
 
       # Create the vacuum table

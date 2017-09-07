@@ -557,6 +557,8 @@ module WorkflowMgr
            return get_shelldep(element)
          when "cycleexistdep"
            return get_cycleexistdep(element)
+         when "taskvalid"
+           return get_taskvaliddep(element)
          when "datadep"
            return get_datadep(element)
          when "timedep"
@@ -641,6 +643,22 @@ module WorkflowMgr
  
        return CycleExistDependency.new(cycle_offset)
      end
+
+     
+     #####################################################
+     #
+     # get_taskvaliddep
+     #
+     #####################################################
+     def get_taskvaliddep(element)
+ 
+       task=element.attributes["task"] 
+
+       return TaskValidDependency.new(task)
+     end
+
+
+
 
 
      #####################################################
