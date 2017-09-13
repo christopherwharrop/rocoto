@@ -19,3 +19,4 @@
   * @n = Number of days in the month
   * @o = All lower case abbreviated month name
   * @O = All lower case full month name
+* Add new <taskvalid> dependency to trigger tasks based on whether or not a particular task is valid for the current cycle time
