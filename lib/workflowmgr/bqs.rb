@@ -31,6 +31,8 @@ module WorkflowMgr
     ##########################################
     def initialize(batchSystem,dbFile,config)
 
+      Thread::Pool.abort_on_exception = true
+
       # Set the batch system
       @batchsystem=batchSystem
 
