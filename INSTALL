@@ -93,6 +93,7 @@ SQLITE3_RUBY_VERSION="1.3.11"
 OPEN4_VERSION="1.3.4"
 RUBYSL_DATE_VERSION="2.0.9"
 RUBYSL_PARSEDATE_VERSION="1.0.1"
+THREAD_VERSION="0.2.2"
 
 # Set AIX_CFLAGS and AIX_LDFLAGS
 if [ "$OS" == "AIX" ]; then
@@ -230,3 +231,11 @@ cp -r ${BUILD_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}/lib/* ${LIB_DIR}/sqlite3
 cp sqlite3_native.so ${LIB_DIR}/sqlite3-ruby/sqlite3
 unset LDFLAGS
 
+# Insteall thread
+echo "==========================================="
+echo "= INSTALLING Thread"
+echo "==========================================="
+cd ${LIB_DIR}
+gunzip -c ${TAR_DIR}/thread-${THREAD_VERSION}.tar.gz | tar -xvf -
+rm -rf thread
+mv thread-${THREAD_VERSION} thread

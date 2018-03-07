@@ -25,7 +25,8 @@ module WorkflowMgr
                     :MaxUnknowns => 3,
                     :MaxLogDays => 7,
                     :AutoVacuum => true,
-                    :VacuumPurgeDays => 30
+                    :VacuumPurgeDays => 30,
+                    :SubmitThreads => 8
                    }
 
     ##########################################  

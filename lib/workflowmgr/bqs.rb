@@ -12,7 +12,7 @@ module WorkflowMgr
   ##########################################
   class BQS
 
-    require 'thread'
+    require 'thread/pool'
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/moabbatchsystem'
@@ -34,11 +34,9 @@ module WorkflowMgr
       # Set the batch system
       @batchsystem=batchSystem
 
-      # Open the database 
-#      @database=WorkflowMgr::const_get("Workflow#{config.DatabaseType}DB").new(dbFile)
-#      @database.dbopen
-
-      # Initialize hashes used to keep track of multithreaded job submission
+      # We can't create a thread pool yet because the DRb server hasn't been started yet
+      @poolSize=config.SubmitThreads
+      @pool=nil
 
       # Initialize hash of job submit output
       @status=Hash.new
@@ -48,9 +46,6 @@ module WorkflowMgr
 
       # Initialize hash to keep track of which submit outputs we've retrieved
       @harvested=Hash.new
-
-      # Initialize a mutex for synchronizing threaded access to the database
-#      @mutex=Mutex.new
 
     end
 
@@ -62,28 +57,28 @@ module WorkflowMgr
     ##########################################
     def submit(task,cycle)
 
+      # Initialize a thread pool for multithreaded job submission if we don't have one yet
+      @pool = Thread.pool(8) if @pool.nil?
+
       # Initialize submission status to NOT harvested
       @harvested[task.attributes[:name]]=Hash.new if @harvested[task.attributes[:name]].nil?
       @harvested[task.attributes[:name]][cycle.to_i]=false
 
-      # Create a thread to submit the task
-      @threads[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?      
-      @threads[task.attributes[:name]][cycle.to_i]=Thread.new {
+      # Spawn a thread to submit the job
+      @pool.process do
+
+        # Mark this job submission in progress
+        @threads[task.attributes[:name]] = Hash.new if @status[task.attributes[:name]].nil?
+        @threads[task.attributes[:name]][cycle.to_i] = true
+
+        # Submit the job
         @status[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?
         @status[task.attributes[:name]][cycle.to_i]=@batchsystem.submit(task)
-        jobid=@status[task.attributes[:name]][cycle.to_i].first
 
-        # If the job submission succeeded, write the jobid in the database         
-#        unless jobid.nil?
-#          @mutex.synchronize do
-#            @database.update_jobids([{:jobid=>jobid, :taskname=>task.attributes[:name], :cycle=>cycle}])
-#          end
-#
-#          # Mark this status as harvested
-#          @harvested[task.attributes[:name]][cycle.to_i]=true
-#
-#        end
-      }
+        # Mark this job submission as done
+        @threads[task.attributes[:name]][cycle.to_i] = false
+
+      end
 
     end
 
@@ -100,7 +95,7 @@ module WorkflowMgr
       return nil,nil if @threads[taskid][cycle.to_i].nil?
 
       # Return nil for jobid and output	if the submit thread is still running
-      if @threads[taskid][cycle.to_i].alive?
+      if @threads[taskid][cycle.to_i]
         return nil,nil 
       # Otherwise, get the jobid and output and return it
       else
@@ -126,7 +121,7 @@ module WorkflowMgr
       # Check to see if any threads are still running
       @threads.keys.each do |taskid|
         @threads[taskid].keys.each do |cycle|
-          return true if @threads[taskid][cycle.to_i].alive?
+          return true if @threads[taskid][cycle.to_i]
         end
       end
 
