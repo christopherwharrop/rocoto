@@ -78,7 +78,7 @@ module WorkflowMgr
         end  # @config do
 
         # Update the config file in a quasi-atomic way.
-        FileUtils.mv("#{@config_file}.#{Process.ppid}", @config_file) if File.exists?("#{@config_file}.#{Process.ppid}")
+        FileUtils.mv("#{@config_file}.#{Process.pid}", @config_file) if File.exists?("#{@config_file}.#{Process.pid}")
 
       rescue WorkflowMgr::ForkitTimeoutException
         msg="ERROR: An I/O operation timed out while reading, writing, or testing for the existence of '#{@config_file}'"
