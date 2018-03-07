@@ -139,19 +139,34 @@ module WorkflowMgr
             # Calculate the number of full nodes required
             nchunks = value / nodesize
 
-            # Set the selection for full nodes
-            input += "#PBS -l select=#{nchunks}:ncpus=#{nodesize}:mpiprocs=#{nodesize}"
+            if nchunks > 0
 
-            # Add selection of memory if requested
-            input += ":mem=#{task.attributes[:memory]}" unless task.attributes[:memory].nil?
+              # Set the selection for full nodes
+              input += "#PBS -l select=#{nchunks}:ncpus=#{nodesize}:mpiprocs=#{nodesize}"
+
+              # Add selection of memory if requested
+              input += ":mem=#{task.attributes[:memory]}" unless task.attributes[:memory].nil?
+
+            end
 
             # Add a chunk for non-full node if needed
             leftovers = value % nodesize
-            input += "+1:ncpus=#{leftovers}:mpiprocs=#{leftovers}" if leftovers > 0
 
-            # Add selection of memory if requested
-            input += ":mem=#{task.attributes[:memory]}" unless task.attributes[:memory].nil?
-            
+            if leftovers > 0
+
+              if nchunks > 0
+                input += "+"
+              else
+                input += "#PBS -l select="
+              end
+
+              input += "1:ncpus=#{leftovers}:mpiprocs=#{leftovers}"
+
+              # Add selection of memory if requested
+              input += ":mem=#{task.attributes[:memory]}" unless task.attributes[:memory].nil?
+
+            end
+
             input += "\n"
           when :nodes
              # Set up -l select option
