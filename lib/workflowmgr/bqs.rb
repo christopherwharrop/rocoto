@@ -58,7 +58,7 @@ module WorkflowMgr
     def submit(task,cycle)
 
       # Initialize a thread pool for multithreaded job submission if we don't have one yet
-      @pool = Thread.pool(8) if @pool.nil?
+      @pool = Thread.pool(@poolSize) if @pool.nil?
 
       # Initialize submission status to NOT harvested
       @harvested[task.attributes[:name]]=Hash.new if @harvested[task.attributes[:name]].nil?
