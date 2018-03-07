@@ -30,9 +30,11 @@ module WorkflowMgr
       # Initialize an empty hash for job queue records
       @jobqueue={}
 
-      # Currently there is no way to specify the amount of time to 
-      # look back at finished jobs. So set this to a big value
-      @hrsback=120
+      # Initialize an empty hash for job completion records
+      @jobacct={}
+
+      # Hours to look back for finished jobs.
+      @hrsback=1
 
       # Assume the scheduler is up
       @schedup=true
@@ -78,6 +80,18 @@ module WorkflowMgr
 
         # Return the jobqueue record if there is one
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+
+        # Populate the job accounting log table if it is empty
+        refresh_jobacct(nil) if @jobacct.empty?
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+        # Try to find the job individually
+        refresh_jobacct(jobid)
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
         # We didn't find the job, so return an uknown status record
         return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
@@ -224,7 +238,6 @@ module WorkflowMgr
 
     end
 
-
 private
 
     #####################################################
@@ -243,7 +256,108 @@ private
         qstat=""
         errors=""
         exit_status=0
-        qstat,errors,exit_status=WorkflowMgr.run4("qstat -f -x | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'",30)
+
+        # Get the list of jobs queued or running for this user
+        qstat,errors,exit_status=WorkflowMgr.run4("qstat -u #{username} -w",30)
+
+        # Raise SchedulerDown if the qstat failed
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+        # Return if the qstat output is empty
+        return if qstat.empty?
+
+      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",3)
+        raise WorkflowMgr::SchedulerDown
+      end
+
+      # Initialize an empty job record
+      record={}
+
+      # For each line, find the various attributes and create job records
+      qstat.each_line { |line|
+
+        # Remove leading and trailing white space
+        line.strip!
+
+        # Skip lines that don't start with a jobid number
+        next unless line=~/^\d+/
+
+        # Split the line into fields
+        fields = line.split(/\s+/)
+
+        # Extract the jobid
+        if fields[0] =~ /^(\d+)\..*/
+          record[:jobid] = $1
+        end
+
+        # Extract the user
+        record[:user] = username
+
+        # Extract the native state
+        record[:native_state] = fields[9]
+
+        # Compute the state
+        case record[:native_state]
+          when /^Q$/,/^H$/,/^W$/,/^S$/,/^T$/,/^M$/
+            record[:state] = "QUEUED"
+          when /^B$/,/^R$/,/^E$/
+            record[:state]="RUNNING"
+          else
+            record[:state]="UNKNOWN"
+        end
+
+        # Extract jobname
+        record[:jobname] = fields[3]
+
+        # Extract queue
+        record[:queue] = fields[2]
+
+        record[:cores] = fields[6]
+
+        @jobqueue[record[:jobid]] = record
+
+      }  #  qstat.each
+
+    end  # refresh_job_queue
+
+    #####################################################
+    #
+    # refresh_jobqueue
+    #
+    #####################################################
+    def refresh_jobacct(jobid)
+
+      begin
+
+        # Get the username of this process
+        username=Etc.getpwuid(Process.uid).name
+
+        # Run qstat to obtain the current status of queued jobs
+        joblist=""
+        qstat=""
+        errors=""
+        exit_status=0
+
+        if jobid.nil?
+
+          # Get the list of jobs that have completed within the last hour for this user
+          joblist,errors,exit_status=WorkflowMgr.run4("qselect -H -u $USER -te.gt.#{(Time.now - 3600).strftime("%Y%m%d%H%M")}")
+
+          # Raise SchedulerDown if the qselect failed
+          raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+          joblist = joblist.split.join(" ")
+
+        else
+          joblist = jobid
+        end
+
+        # Return if the joblist is empty
+        return if joblist.empty?
+
+        # Get the status of jobs in the job list
+        qstat,errors,exit_status=WorkflowMgr.run4("qstat -x -f #{joblist} | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'", 30)
 
         # Raise SchedulerDown if the qstat failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -278,7 +392,8 @@ private
             end
           end
 
-          @jobqueue[record[:jobid]]=record if record[:user] =~ /^#{username}/
+          @jobacct.merge!({ record[:jobid] => record }) if record[:user] =~ /^#{username}/
+
           record={}
           next
         elsif line =~ /^Job Id: (\d+)/
@@ -330,7 +445,6 @@ private
 #              record[key] = value
           end
         end
-
 
       }  #  qstat.each
 
