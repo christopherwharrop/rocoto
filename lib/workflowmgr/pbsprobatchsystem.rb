@@ -106,6 +106,44 @@ module WorkflowMgr
 
     #####################################################
     #
+    # statuses
+    #
+    #####################################################
+    def statuses(jobids)
+
+      begin
+
+        # Initialize statuses to UNAVAILABLE
+        jobStatuses={}
+        jobids.each do |jobid|
+          jobStatuses[jobid] = { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+        end
+
+        raise WorkflowMgr::SchedulerDown unless @schedup
+
+        # Populate the job accounting log table if it is empty
+        refresh_jobacct(jobids) if @jobacct.empty?
+
+        # Collect the statuses of the jobs
+        jobids.each do |jobid|
+          if @jobacct.has_key?(jobid)
+            jobStatuses[jobid] = @jobacct[jobid]
+          else
+            jobStatuses[jobid] = { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+          end
+        end
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+      ensure
+        return jobStatuses
+      end
+
+    end
+
+
+    #####################################################
+    #
     # submit
     #
     #####################################################
@@ -339,10 +377,10 @@ private
 
     #####################################################
     #
-    # refresh_jobqueue
+    # refresh_jobacct
     #
     #####################################################
-    def refresh_jobacct(jobid)
+    def refresh_jobacct(jobids)
 
       begin
 
@@ -355,7 +393,7 @@ private
         errors=""
         exit_status=0
 
-        if jobid.nil?
+        if jobids.nil?
 
           # Get the list of jobs that have completed within the last hour for this user
           joblist,errors,exit_status=WorkflowMgr.run4("qselect -H -u $USER -te.gt.#{(Time.now - 3600).strftime("%Y%m%d%H%M")}")
@@ -365,14 +403,14 @@ private
           joblist = joblist.split.join(" ")
 
         else
-          joblist = jobid
+          joblist = jobids.join(" ")
         end
 
         # Return if the joblist is empty
         return if joblist.empty?
 
         # Get the status of jobs in the job list
-        qstat,errors,exit_status=WorkflowMgr.run4("qstat -x -f #{joblist} | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'", 30)
+        qstat,errors,exit_status=WorkflowMgr.run4("qstat -x -f #{joblist} | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'", 60)
 
         # Raise SchedulerDown if the qstat failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0

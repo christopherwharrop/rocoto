@@ -1047,15 +1047,17 @@ module WorkflowMgr
         @active_task_instance_count={}
         @active_metatask_instance_count={}
 
-        # Loop over all active jobs and retrieve and update their current status
-        @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].nil? ? 999999999 : @tasks[job.task].seq] }.each do |job|
+        # Get a sorted list of active jobs
+        active_jobs_sorted = @active_jobs.values.collect { |cyclehash| cyclehash.values }.flatten.sort_by { |job| [job.cycle, @tasks[job.task].nil? ? 999999999 : @tasks[job.task].seq] }
 
-          # No need to query or update the status of jobs that we already know are done successfully or that remain failed
-          # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
-          next if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED" || job.state=="LOST"
+        # Reject jobs whose state is "SUCCEEDED", "FAILED", "EXPIRED", or "LOST" or are awaiting submit status results
+        # No need to query or update the status of jobs that we already know are done successfully or that remain failed
+        # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
+        # No point in trying to update the status of jobs with pending submission status
+        active_jobs_sorted.reject! { |job| job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED" || job.state=="LOST" || job.pending_submit? }
 
-          # No point in trying to update the status of jobs with pending submission status
-          next if job.pending_submit?
+        # Check if DEAD jobs need to be resurrected
+        active_jobs_sorted.each do |job|
 
           # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts, but only if the task is still defined and has not expired
           if job.state=="DEAD"
@@ -1080,24 +1082,33 @@ module WorkflowMgr
 
           end
 
-          # Get the status of the job from the batch system
-          status=@bqServer.status(job.id)
+        end # active_jobs_sorted
+
+        # Reject jobs whose state was just changed from "DEAD" to "FAILED" because they were resurrected, they don't require further updating here
+        # Reject all "DEAD" jobs that were not resurrected
+        active_jobs_sorted.reject! { |job| job.state=="FAILED" || job.state=="DEAD" }
+
+        # Get the status of ALL active jobs from the batch system
+        statuses=@bqServer.statuses(active_jobs_sorted.collect { |job| job.id } )
+
+        # Loop over all active jobs and retrieve and update their current status
+        active_jobs_sorted.each do |job|
 
           # Update the state of the job with its current state
-          job.state=status[:state]
-          job.native_state=status[:native_state]            
-          if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
-            job.exit_status=status[:exit_status]
-            if !status[:duration].nil?
-              job.duration=status[:duration]
-            elsif status[:start_time].nil?
+          job.state=statuses[job.id][:state]
+          job.native_state=statuses[job.id][:native_state]
+          if statuses[job.id][:state]=="SUCCEEDED" || statuses[job.id][:state]=="FAILED"
+            job.exit_status=statuses[job.id][:exit_status]
+            if !statuses[job.id][:duration].nil?
+              job.duration=statuses[job.id][:duration]
+            elsif statuses[job.id][:start_time].nil?
               job.duration=0
-            elsif status[:start_time]==Time.at(0).getgm
+            elsif statuses[job.id][:start_time]==Time.at(0).getgm
               job.duration=0
             else
-              job.duration=status[:end_time] - status[:start_time]
+              job.duration=statuses[job.id][:end_time] - statuses[job.id][:start_time]
             end
-            runmsg=", ran for #{job.duration} seconds, exit status=#{status[:exit_status]}"
+            runmsg=", ran for #{job.duration} seconds, exit status=#{statuses[job.id][:exit_status]}"
           else
             runmsg=""
           end
