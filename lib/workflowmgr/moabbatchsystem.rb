@@ -98,7 +98,20 @@ module WorkflowMgr
           when :queue            
             input += "#PBS -q #{value}\n"
           when :cores
-            input += "#PBS -l size=#{value}\n"
+            # Ignore this attribute if the "nodes" attribute is present
+            next unless task.attributes[:nodes].nil?
+            input += "#PBS -l procs=#{value}\n"
+          when :nodes
+            # Replace -l nodes=a:b+c:d+... with a single -l nodes=
+            nodes=0
+            value.split('+').each { |nodespec|
+              resources=nodespec.split(':ppn=')
+              nodes=nodes+resources.shift.to_i
+            }
+            if nodes<1
+              nodes=1
+            end
+            input += "#PBS -l nodes=#{nodes}\n"
           when :walltime
             input += "#PBS -l walltime=#{value}\n"
           when :memory
