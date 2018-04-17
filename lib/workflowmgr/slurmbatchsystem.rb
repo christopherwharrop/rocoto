@@ -40,6 +40,36 @@ module WorkflowMgr
 
     #####################################################
     #
+    # statuses
+    #
+    #####################################################
+    def statuses(jobids)
+
+      begin
+
+        raise WorkflowMgr::SchedulerDown unless @schedup
+
+        # Initialize statuses to UNAVAILABLE
+        jobStatuses={}
+        jobids.each do |jobid|
+          jobStatuses[jobid] = { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+        end
+
+        jobids.each do |jobid|
+          jobStatuses[jobid] = self.status(jobid)
+        end
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+      ensure
+        return jobStatuses
+      end
+
+    end
+
+
+    #####################################################
+    #
     # status
     #
     #####################################################
