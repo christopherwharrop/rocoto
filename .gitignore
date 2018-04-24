@@ -6,6 +6,9 @@ lib/libxml2/
 lib/open4/
 lib/sqlite3-ruby/
 lib/sqlite3/
+lib/rubysl-date/
+lib/rubysl-parsedate/
+lib/thread/
 
 # Ignore test files
 test/log
