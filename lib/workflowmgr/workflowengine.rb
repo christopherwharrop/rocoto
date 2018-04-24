@@ -553,7 +553,7 @@ module WorkflowMgr
 
         # Acquire a lock on the workflow in the database
         @locked=@dbServer.lock_workflow
-        Process.exit(0) unless @locked
+        Process.exit(1) unless @locked
 
         # Set up an object to serve file stat info
         @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)        
