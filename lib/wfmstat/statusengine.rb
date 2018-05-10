@@ -414,7 +414,7 @@ module WFMStat
           tasklist.each do |task|
 
             # Only print info if the task is defined for this cycle
-            unless definedTasks[task].attributes[:cycledefs].nil?
+            unless definedTasks[task].nil? or definedTasks[task].attributes[:cycledefs].nil?
               # Get the cycledefs associated with this task
               taskcycledefs[task]=cycledefs.find_all { |cycledef| definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
               # Reject this task if the cycle is not a member of the tasks cycle list
