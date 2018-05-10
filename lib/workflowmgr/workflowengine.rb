@@ -305,9 +305,6 @@ module WorkflowMgr
         # Expire active cycles that have exceeded the cycle life span
         expire_cycles
 
-        # Submit new tasks where possible
-        submit_new_jobs
-
         # Initialize a task cycledef hash
         taskcycledefs={}
 
@@ -515,6 +512,188 @@ module WorkflowMgr
       } # with_locked_db
 
     end # boot
+
+    ##########################################
+    #
+    # force_complete
+    #
+    ##########################################
+    def force_complete!
+
+      with_locked_db {
+
+        # Build the workflow objects from the contents of the workflow document
+        build_workflow
+
+        # Get the active cycles
+        get_active_cycles
+
+        # Get the active jobs, which may include jobs from cycles that have just expired
+        # as well as jobs needed for evaluating inter cycle dependencies
+        get_active_jobs
+
+        # Update the status of all active jobs
+        #update_active_jobs
+
+
+        # Initialize a task cycledef hash
+        taskcycledefs={}
+
+        # Get the list of complete cycles
+        complete_cycles=[]
+        if @options.cycles.is_a?(Range)
+
+          # Find every cycle in the range that is a member of a cycledef
+          reftime=@cycledefs.collect { |cdef| cdef.next(@options.cycles.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
+          while true do
+            break if reftime.nil?
+            break if reftime > @options.cycles.last
+            complete_cycles << reftime
+            reftime=@cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
+          end
+
+        else
+          complete_cycles=@options.cycles
+        end
+        complete_cycles.uniq!
+        complete_cycles.sort!
+        ncomplete_cycles = complete_cycles.length
+
+        # Collect the names of tasks to complete
+        complete_tasks=@options.tasks || []
+        @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
+          complete_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
+        } unless @options.metatasks.nil?
+        complete_tasks.uniq!
+        complete_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
+        ncomplete_tasks = complete_tasks.length
+
+        # Ask user for confirmation if complete tasks/cycles list is very large
+        if (ncomplete_cycles > 10 || ncomplete_tasks > 10)
+          printf "Preparing to complete #{ncomplete_tasks} tasks for #{ncomplete_cycles} cycles.  A total of #{ncomplete_tasks * ncomplete_cycles} tasks will be completeed.\n"
+          printf "Are you sure you want to proceed? (y/n) "
+          reply=STDIN.gets
+          unless reply=~/^[Yy]/
+            Process.exit(0)
+          end
+        end
+
+        # Iterate over cycles
+        complete_cycles.each { |complete_cycle_time|
+
+          # Complete each requested task for this cycle
+          complete_tasks.each { |complete_task_name|
+
+            # Get the complete task from the workflow definition
+            task=@tasks[complete_task_name]
+
+            # Reject this request if the task is not defined in the XML
+            if task.nil?
+              puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because the task is not defined in the workflow definition"
+              next
+            end
+
+            # Make sure the cycle is valid for this task
+            unless task.attributes[:cycledefs].nil?
+              # Get the cycledefs associated with this task
+              if taskcycledefs[complete_task_name].nil?
+                taskcycledefs[complete_task_name]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              end
+              # Reject this task if the cycle is not a member of the tasks cycle list
+              unless taskcycledefs[complete_task_name].any? { |cycledef| cycledef.member?(complete_cycle_time) }
+                puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is not defined for that task"
+                next
+              end
+            end  # unless
+
+            # Find the requested cycle
+            complete_cycle=find_cycle(complete_cycle_time)
+
+            # Activate a new cycle if necessary and add it to the database
+            if complete_cycle.nil?
+              printf "Completing task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
+              printf "This may trigger submission of other tasks for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{complete_task_name}'\n"
+              printf "Are you sure you want to complete '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
+              reply=STDIN.gets
+              if reply=~/^[Yy]/
+                complete_cycle=Cycle.new(complete_cycle_time)
+                complete_cycle.activate!
+                @dbServer.add_cycles([complete_cycle])
+                complete_job=nil
+              else
+                puts "task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will not be completeed"
+                next  # complete next task
+              end
+            else
+
+              # Reactivate the cycle if it is done (but not expired)
+              if complete_cycle.done?
+                complete_cycle.reactivate!
+                @dbServer.update_cycles([complete_cycle])
+              end
+
+              # Retrieve the complete job from the database
+              if complete_cycle.active?
+                if @active_jobs[complete_task_name].nil?
+                  complete_job=nil
+                else
+                  complete_job=@active_jobs[complete_task_name][complete_cycle_time]
+                end
+              else
+                puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is #{complete_cycle.state}"
+                next
+              end
+ 
+            end
+
+            # Check for existing jobs that are not done or expired
+            unless complete_job.nil?
+              if !complete_job.done? && !complete_job.expired?
+                puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because a job for it already exists in state #{complete_job.state}"
+                next
+              end
+              if complete_job.expired?
+                puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because the task has expired"
+                next
+              end
+            end
+
+            # Create the job if we don't have one:
+            if complete_job.nil?
+              job = Job.new(-1,                                  # jobid
+                            complete_task_name,                  # taskname
+                            complete_cycle_time,                 # cycle
+                            task.attributes[:cores],             # cores
+                            "SUCCEEDED",                         # state
+                            "FORCED",                            # native state
+                            0,                                   # exit_status
+                            1,                                   # tries
+                            0,                                   # nunknowns
+                            0.0                                  # duration
+                           )
+              @dbServer.add_jobs([job])
+            else
+              job=complete_job
+              job.state='SUCCEEDED'
+              job.native_state='FORCED'
+              @dbServer.update_jobs([job])
+            end
+
+            # Add the new job to the database
+
+            puts "task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' has been completeed"
+
+          } # complete_tasks.each
+        } # complete_cycles.each
+      } # with_locked_db
+
+              # Deactivate completed cycles
+        deactivate_done_cycles
+
+        # Expire active cycles that have exceeded the cycle life span
+        expire_cycles
+
+    end # complete
 
 
     ##########################################
