@@ -285,7 +285,7 @@ private
   	record={}
 
   	# Look at all the attributes for this job and build the record
-	jobfields=Hash[job.split.collect {|f| f.split("=") }]
+        jobfields=Hash[job.split.collect {|f| f.split("=")}.collect{|f| f.length == 2 ? f : [f[0], '']}]
 
         # Skip records for other users
         next unless jobfields["UserId"] =~/^#{username}\(/
