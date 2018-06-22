@@ -409,8 +409,15 @@ module WorkflowMgr
                   boot_job=@active_jobs[boot_task_name][boot_cycle_time]
                 end
               else
-                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is #{boot_cycle.state}"
-                next
+                puts "WARNING: Cycle #{boot_cycle_time.strftime("%Y%m%d%H%M")} state is #{boot_cycle.state}.  I can boot task #{boot_task_name}, but this cycle might not complete again unless you boot the final task.  Proceed anyway (y/n)?"
+                reply=STDIN.gets
+                if reply=~/^[Yy]/
+                  puts "Okay, but don't say I didn't warn you."
+                  boot_job=nil
+                else
+                  puts "Wheew.  I really dodged a bullet there.  Task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted!"
+                  next  # boot next task
+                end
               end
  
             end
@@ -640,8 +647,15 @@ module WorkflowMgr
                   complete_job=@active_jobs[complete_task_name][complete_cycle_time]
                 end
               else
-                puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because the cycle is #{complete_cycle.state}"
-                next
+                puts "WARNING: Cycle #{boot_cycle_time.strftime("%Y%m%d%H%M")} state is #{boot_cycle.state}.  Proceed anyway (y/n)?"
+                reply=STDIN.gets
+                if reply=~/^[Yy]/
+                  puts "Okay, but don't say I didn't warn you."
+                  complete_job=nil
+                else
+                  puts "Wheew.  I really dodged a bullet there.  Task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted!"
+                  next  # complete next task
+                end
               end
  
             end
