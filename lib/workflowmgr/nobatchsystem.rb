@@ -1,637 +1,318 @@
-unless defined? $__nobatchsystem__
-
-##########################################
+###########################################
 #
-# Class NoBatchSystem
+# Module WorkflowMgr
 #
 ##########################################
-class NoBatchSystem
-
-  require 'command.rb'
-  require 'exceptions.rb'
-
-  @@qstat_refresh_rate=30
+module WorkflowMgr
 
   require 'workflowmgr/batchsystem'
 
-  #####################################################
+  ##########################################
   #
-  # initialize
+  # Class TORQUEBatchSystem
   #
-  #####################################################
-  def initialize(qstat_refresh_rate=@@qstat_refresh_rate) < BatchSystem
+  ##########################################
+  class NOBatchSystem < BatchSystem
 
-    begin
+    BATCH_HELPER= <<-'EOT'
+       signal() { echo "FAIL 1 $$" >> "$rocoto_pid_dir"/"$rocoto_jobid" ; exit 1 }
+       exitN() { n=$? ; if [[ "$n" == 0 ]] ; then 
+         'echo PID 
+       'echo PID $$ > "$rocoto_pid_dir"/"$rocoto_jobid"
+       
+    EOT
 
-      # Initialize hashes to store qstat output and exit records
-      @qstat=Hash.new
-      @exit_records=Hash.new
+    require 'etc'
+    require 'parsedate'
+    require 'libxml'
+    require 'workflowmgr/utilities'
+    require 'tempfile'
 
-      # Set the qstat refresh rate and availability flag
-      @qstat_refresh_rate=qstat_refresh_rate
-      @qstat_available=true
+    #####################################################
+    #
+    # initialize
+    #
+    #####################################################
+    def initialize(torque_root=nil)
 
-      # Initialize the qstat table with current data
-      self.refresh_qstat
+      # Initialize an empty hash for job queue records
+      @jobqueue={}
 
-    rescue
-      raise "NoBatchSystem object could not be initialized\n\n#{$!}"
     end
-    
-  end
 
 
-  #####################################################
-  #
-  # refresh_qstat
-  #
-  #####################################################
-  def refresh_qstat
+    #####################################################
+    #
+    # statuses
+    #
+    #####################################################
+    def statuses(jobids)
 
-    begin
+      begin
 
-      # Clear the previous qstat data
-      @qstat.clear
+        # Initialize statuses to UNAVAILABLE
+        jobStatuses={}
+        jobids.each do |jobid|
+          jobStatuses[jobid] = { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+        end
 
-      # Reset qstat availability flag
-      @qstat_available=true
+        jobids.each do |jobid|
+          jobStatuses[jobid] = self.status(jobid)
+        end
 
-      # Get the username of this process
-      username=Etc.getpwuid(Process.uid).name
-
-      # run qstat to obtain the current status of queued jobs
-      output=Command.run("ps -u #{username} -f %id %st")
-      if output[1] != 0
-        raise output[0]
-      else
-        @qstat_update_time=Time.now
-        output[0].each { |s|
-          jobdata=s.strip.split(/\s+/)
-          next unless jobdata[0]=~/^(\w+\.\d+)\.0$/
-          @qstat[$1]=jobdata[1]
-        }        
+      ensure
+        return jobStatuses
       end
 
-    rescue 
-      @qstat_available=false
-      puts $!
-      return
     end
 
-  end
 
-  #####################################################
-  #
-  # get_job_state
-  #
-  #####################################################
-  def get_job_state(jid)
+    #####################################################
+    #
+    # status
+    #
+    #####################################################
+    def status(jobid)
 
-    begin
+      # Populate the jobs status table if it is empty
+      refresh_jobqueue if @jobqueue.empty?
+      
+      # Return the jobqueue record if there is one
+      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+      
+      # We didn't find the job, so return an uknown status record
+      return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
 
-      # run qstat to obtain the job's state
-      output=Command.run("ps | grep #{jid}")
-      if output[1] != 0
-        raise output[0]
-      else
-        state="done"
-        output[0].each { |s|
-          if s=~/^\s*#{jid}\s+.*$/   
-            state="r"
-            break
-          end
+    end
+
+    #####################################################
+    #
+    # make_rocoto_jobid
+    #
+    #####################################################
+    def make_rocoto_jobid()
+      # We need a unique jobid.  We'll use a nice, long, string based
+      # on the current time in microseconds and some random numbers.
+      # This will be a base64 string up to 22 characters in length.
+      now_in_usec=Time.now.tv_sec*1e6 + Time.now.tv_usec
+      big_hex_number='%015x'%(rand(2**64) ^ now_in_usec)
+      return Base64.encode64(big_hex_number).strip().gsub('=','')
+    end
+
+    #####################################################
+    #
+    # submit
+    #
+    #####################################################
+    def submit(task)
+
+      # Initialize the submit command
+      cmd=['nohup','setsid','/usr/bin/env']
+      rocoto_jobid=make_rocoto_jobid
+      cmd += ["rocoto_jobid=#{rocoto_jobid}",
+              "rocoto_pid_dir=#{rocoto_pid_dir}",
+              'sh', '-c', BATCH_HELPER, "rocoto_bh_#{rocoto_jobid}" ]
+
+
+      # Default values for shell execution bits: no stdout, stdin,
+      # stderr, nor any special env vars.
+      stdout_file='/dev/null'
+      stdin_file='/dev/null'
+      stderr_file='/dev/null'
+      set_these_vars={}
+      job_name="{rocoto_job_#{rocoto_jobid}"
+
+      # Add Torque batch system options translated from the generic options specification
+      task.attributes.each do |option,value|
+        case option
+          when :stdout
+            stdout_file=value
+          when :stderr
+            stderr_file=value
+          when :join
+            stdout_file=value
+            stderr_file=value
+          when :jobname
+            job_name=value
+        end
+      end
+
+      # Add export commands to pass environment vars to the job
+      unless task.envars.empty?
+        task.envars.each { |name,env|
+          cmd << "#{name}=#{env}"
         }
       end
-      return state
 
-    rescue 
-      puts "ERROR: The state of job '#{jid}' could not be determined"
-      puts $!
-      return "unknown"
-    end
+      cmd << "rocoto_jobid=#{rocoto_jobid}"
 
-  end
+      # <native> are arguments to sh
+      task.each_native do |native_line|
+        cmd << native_line
+      end
 
-
-
-
-  #####################################################
-  #
-  # get_job_exit_status
-  #
-  #####################################################
-  def get_job_exit_status(jid,max_age=86400)
-
-    begin
-
-      # Set the No_ROOT 
-      ENV['No_ROOT']=@sge_root
-
-      # Get the accounting record for the job
-      record=find_job(jid,max_age)
-      if record.nil?
-        exit_status=nil
+      # Stdin, stdout, and stderr are handled within sh:
+      if(stdout_file == stderr_file)
+        cmd << "\"$@\" < #{stdin_file} > #{stdout_file} 2>&1"
       else
-        exit_status=record.split(":")[12].to_i
-        if exit_status==0
-          exit_status=record.split(":")[11].to_i
-        end
+        cmd << "\"$@\" < #{stdin_file} 2> #{stderr_file} 1> {stdout_file}"
       end
-      return exit_status
 
-    rescue
-      puts "Exit status for job #{jid} could not be found\n\n#{$!}"
-      return nil
+      # Job name is the process name ($0)
+      cmd << job_name
+
+      # At the end we place the command to run
+      cmd << task.attributes[:command]
+
+      WorkflowMgr.stderr("Running #{cmd.join(' ')}",4)
+
+      result=system(cmd)
+
+      if result.nil? or not result:
+        return nil,''
+      else
+        return 
+      end        
+
     end
-  
-  end
 
 
-  #####################################################
-  #
-  # find_job
-  #
-  #####################################################
-  def find_job(jid,max_age=86400)
+    #####################################################
+    #
+    # delete
+    #
+    # The "jobid" is a process group id.
+    #
+    #####################################################
+    def delete(jobid)
 
-    begin
+      process.kill(-jobid)
 
-      # Set the SGE_ROOT 
-      ENV['SGE_ROOT']=@sge_root
+    end
 
-      # Get the current SGE server's hostname
-      output=Command.run("#{@sge_path}/qconf -sss")
-      if output[1] != 0
-        raise output[0]
-      end
-      server=output[0].split(".")[0].chomp
 
-      # Get our hostname
-      host=`hostname -s`.chomp
+private
 
-      # If we are not on the server, invoke this method through an ssh tunnel to the server
-      if server != host
-        cmd="ssh -o StrictHostKeyChecking=no #{server} /usr/bin/ruby -r #{__FILE__} -e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").find_job(#{jid},#{max_age})'\\'"
-        output=Command.run(cmd)
-        if output[1] != 0
-          raise output[0]
-        else
-          record=output[0].chomp
-          if record=="nil"
-            return nil
-          else
-            return record
-          end
-        end
+    #####################################################
+    #
+    # refresh_jobqueue
+    #
+    #####################################################
+    def refresh_jobqueue
+
+      begin
+
+        # Get the username of this process
+        username=Etc.getpwuid(Process.uid).name
+
+        # Run qstat to obtain the current status of queued jobs
+        queued_jobs=""
+        errors=""
+        exit_status=0
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("qstat -x",30)
+
+        # Raise SchedulerDown if the showq failed
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+        # Return if the showq output is empty
+        return if queued_jobs.empty?
+
+        # Parse the XML output of showq, building job status records for each job
+        queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs, :options => LibXML::XML::Parser::Options::HUGE).parse
+
+      rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}",3)
+        raise WorkflowMgr::SchedulerDown
       end
       
-      # Calculate the minimum end time we should look at
-      min_end_time=Time.now - max_age
+      # For each job, find the various attributes and create a job record
+      queued_jobs=queued_jobs_doc.root.find('//Job')
+      queued_jobs.each { |job|
 
-      # Look for the job record
-      record=nil
-      error=""
-      catch (:done) do
-        2.times do
+        # Initialize an empty job record
+  	record={}
 
-          # Get a list of accounting files sorted by modification time in reverse order
-          files=Dir["#{@acct_path}/accounting*"].sort! { |a,b|
-            File.stat(b).mtime <=> File.stat(a).mtime
-          }
-
-          # Loop over files reading each one backwards
-          count=0
-          files.each { |file|
-            if file=~/\.gz$/
-              fd=IO.popen("gunzip -c #{file} | tac 2>&1")
-            else
-              fd=IO.popen("tac #{file} 2>&1")
-            end
-            fd.each { |line|
-              error=line
-              fields=line.split(/:/)
-
-              # Quit if we've reached the minimum end_time
-              end_time=Time.at(fields[10].to_i)
-              if end_time > Time.at(0) && end_time < Time.at(min_end_time)
-                count=count+1
-              else
-                count=0
+  	# Look at all the attributes for this job and build the record
+	job.each_element { |jobstat| 
+        
+          case jobstat.name
+            when /Job_Id/
+              record[:jobid]=jobstat.content.split(".").first
+            when /job_state/
+              case jobstat.content
+                when /^Q$/,/^H$/,/^W$/,/^S$/,/^T$/
+    	          record[:state]="QUEUED"
+                when /^R$/,/^E$/
+    	          record[:state]="RUNNING"
+                else
+                  record[:state]="UNKNOWN"
               end
-              if count > 10
-                fd.close
-                throw :done
-              end
-
-              # If the jid field matches, return the record
-              if fields[5]=~/^#{jid}$/
-                record=line
-                fd.close
-                throw :done
-              end
-            }
-            fd.close unless fd.closed?
-            if $? != 0
-              if error=~/No such file or directory/
-                files=Dir["#{@acct_path}/accounting*"].sort! { |a,b|
-                  File.stat(b).mtime <=> File.stat(a).mtime
-                }
-                retry
-              else
-                raise error
-              end
-            end
-          }
-
-          sleep 1
-
-        end     # 2.times
-      end       # catch
-
-      return record    
-
-    rescue
-      puts "Accounting record for job #{jid} could not be found\n\n#{$!}"
-      return nil
-    end   
-
-  end
-
-  
-  #####################################################
-  #
-  # find_all_jobs
-  #
-  #####################################################
-  def find_all_jobs(stime,etime,accounts,users,job_pattern,*attrs)
-
-    # Get a list of accounting files sorted by modification time in reverse order
-    files=Dir["#{@acct_path}/accounting*"].sort! { |a,b|
-      File.stat(b).mtime <=> File.stat(a).mtime
-    }
-
-    # Get date strings for the times
-    start_str=stime.strftime("%Y%m%d")
-    end_str=etime.strftime("%Y%m%d")
-
-    # Get the index of the first file to check
-    sindex=files.length-1
-    1.upto(files.length-1) { |index|
-      if files[index].split(".")[1] < start_str
-        sindex=index
-        break
-      end
-    }
-
-    # Get the index of the last file to check
-    eindex=files.length-1
-    1.upto(files.length-1) { |index|
-      if files[index].split(".")[1] <= end_str
-        eindex=index
-        break
-      end
-    }
-    if eindex==1
-      eindex=0
-    end
-
-    jobs=Hash.new
-    sindex.downto(eindex) { |index|
-      file=files[index]
-      if file=~/\.gz$/
-        fd=IO.popen("gunzip -c #{file} | cat 2>&1")
-      else
-        fd=IO.popen("cat #{file} 2>&1")
-      end      
-
-      while !fd.eof? do
-        record=fd.gets
-        if record=~/^#/
-          next
-        end
-        fields=record.split(":")
-        if stime.nil? || fields[10].to_i >= stime.to_i
-          if etime.nil? || fields[10].to_i <= etime.to_i
-            if accounts.nil? || !accounts.index(fields[6]).nil?
-              if users.nil? || !users.index(fields[3]).nil?
-                if job_pattern.nil? || job_pattern.match(fields[4])
-                  job_key="#{fields[5]}_#{fields[8]}"
-                  if attrs.empty?
-                    jobs[job_key]=record
-                  else
-                    small_record=Array.new
-                    attrs.each { |attr|
-                      small_record.push(fields[attr.to_i])
-                    }
-                    jobs[job_key]=small_record
-                  end
+              record[:native_state]=jobstat.content
+            when /Job_Name/
+	      record[:jobname]=jobstat.content
+	    when /Job_Owner/
+	      record[:user]=jobstat.content
+            when /Resource_List/       
+              jobstat.each_element { |e|
+                if e.name=='procs'
+                  record[:cores]=e.content.to_i
+                  break
                 end
-              end
-            end
+            }
+  	    when /queue/
+	      record[:queue]=jobstat.content
+	    when /qtime/
+	      record[:submit_time]=Time.at(jobstat.content.to_i).getgm
+  	    when /start_time/
+              record[:start_time]=Time.at(jobstat.content.to_i).getgm
+	    when /comp_time/
+              record[:end_time]=Time.at(jobstat.content.to_i).getgm
+ 	    when /Priority/
+	      record[:priority]=jobstat.content.to_i            
+            when /exit_status/
+              record[:exit_status]=jobstat.content.to_i
+	    else
+              record[jobstat.name]=jobstat.content
+          end  # case jobstat
+  	}  # job.children
+
+        # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
+        if record[:state]=="UNKNOWN" && !record[:exit_status].nil?
+          if record[:exit_status]==0
+            record[:state]="SUCCEEDED"
+          else
+            record[:state]="FAILED"
           end
         end
-      end
-      fd.close
-    }
 
-    return jobs
+        # Put the job record in the jobqueue unless it's complete but doesn't have a start time, an end time, and an exit status
+        unless record[:state]=="UNKNOWN" || ((record[:state]=="SUCCEEDED" || record[:state]=="FAILED") && (record[:start_time].nil? || record[:end_time].nil?))
+          @jobqueue[record[:jobid]]=record
+        end
 
-  end
+      }  #  queued_jobs.find
 
+      queued_jobs=nil
 
-  #####################################################
-  #
-  # wait_job_start
-  #
-  #####################################################
-  def wait_job_start(jid,timeout,interval,verbose)
+    end  # job_queue
 
-    # Set the SGE_ROOT 
-    ENV['SGE_ROOT']=@sge_root
+    def process_monitor ( stdin_path, stdout_path, stderr_path, set_these_vars, execute_me )
+      # Fork a daemon process.
+      fork do
+        STDIN=IO.new(0)
+        STDOUT=IO.new(1)
+        STDERR=IO.new(2)
 
-    # Calculate the expiration time
-    expire_time=Time.now + timeout
+        STDIN.close
+        STDOUT.close
+        STDERR.close
 
-    # Poll the job's state until it starts or the timeout expires
-    state=get_job_state(jid)
-    if verbose 
-      puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
-    end
-    while (state != "r" && state != "done" && Time.now < expire_time)
-      if expire_time - Time.now > interval
-        sleep interval
-      else
-        sleep(expire_time - Time.now)
-      end
-      state=get_job_state(jid)
-      if verbose 
-        puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
+        
       end
     end
 
-    # Raise an exception if the timeout expired
-    if (state != "r" && state != "done")
-      if verbose 
-        puts "#{Time.now} :: Timeout expired!"
-      end
-      raise TimeoutExpired,"Job #{jid} did not start in time"
-    else
-      return 0
-    end
+  end  # class
 
-  end
+end  # module
 
-
-  #####################################################
-  #
-  # wait_job_finish
-  #
-  #####################################################
-  def wait_job_finish(jid,timeout,interval,verbose)
-
-    # Set the SGE_ROOT 
-    ENV['SGE_ROOT']=@sge_root
-
-    # Calculate the expiration time
-    expire_time=Time.now + timeout
-
-    # Poll the job's state until it is done or the timeout has expired
-    state=get_job_state(jid)
-    if verbose 
-      puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
-    end
-    while (state != "done" && Time.now < expire_time)
-      if expire_time - Time.now > interval
-        sleep interval
-      else
-        sleep(expire_time - Time.now)
-      end
-      state=get_job_state(jid)
-      if verbose 
-        puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
-      end
-    end
-
-    # If the timeout has expired, raise an exception
-    if (state != "done")
-      if verbose 
-        puts "#{Time.now} :: Timeout expired!"
-      end
-      raise TimeoutExpired,"Job #{jid} did not finish in time"
-    else
-      return 0
-    end
-
-  end
-
-
-  #####################################################
-  #
-  # submit
-  #
-  #####################################################
-  def submit(script,attributes)
-    
-    begin
-
-      # Issue the submit command
-      output=Command.run("& #{script} 2>&1 ")
-      if output[1] != 0
-        raise "#{output[0]}"
-      end
-
-      # Check for success
-      if (output[0]=~/[Yy]our job (\d+) .* has been submitted/)
-        return $1
-      else
-        raise "#{output[0]}"
-      end
-
-    rescue 
-      raise $!
-    end
-  
-  end
-
-
-  #####################################################
-  #
-  # qdel
-  #
-  #####################################################
-  def qdel(jid)
-
-    begin
-
-      # Set the SGE_ROOT 
-      ENV['SGE_ROOT']=@sge_root
-
-      # Run qdel to delete the job
-      output=Command.run("#{@sge_path}/qdel #{jid}")
-      if output[1] != 0
-        raise output[0]
-      end
-      return 0
-
-    rescue
-      puts "ERROR: #{@sge_path}/qdel #{jid} failed"
-      puts $!
-      return 1
-    end
-
-  end
-
-
-  #####################################################
-  #
-  # info
-  #
-  #####################################################
-  def info
-
-    begin
-
-      # Set the SGE_ROOT 
-      ENV['SGE_ROOT']=@sge_root
-
-      # Run qdel to delete the job
-      output=Command.run("/usr/local/fsl/bin/sgeinfo")
-      if output[1] != 0
-        raise output[0]
-      end
-      return output[0]
-
-    rescue
-      puts "ERROR: /usr/local/fsl/bin/sgeinfo failed"
-      puts $!
-      return nil
-    end
-
-  end
-
-
-  #####################################################
-  #
-  # qstat
-  #
-  #####################################################
-  def qstat
-
-    begin
-
-      # Set the SGE_ROOT
-      ENV['SGE_ROOT']=@sge_root
-
-      # Run qdel to delete the job
-      output=Command.run("/usr/local/fsl/bin/sgestat")
-      if output[1] != 0
-        raise output[0]
-      end
-      return output[0]
-
-    rescue
-      puts "ERROR: /usr/local/fsl/bin/sgestat failed"
-      puts $!
-      return nil
-    end
-
-  end
-
-
-  #####################################################
-  #
-  # rollover
-  #
-  #####################################################
-  def rollover
-
-    begin
-
-      # Set the SGE_ROOT
-      ENV['SGE_ROOT']=@sge_root
-
-      # Get the current SGE server's hostname
-      output=Command.run("#{@sge_path}/qconf -sss")
-      if output[1] != 0
-        raise output[0]
-      end
-      server=output[0].split(".")[0].chomp
-
-      # Get our hostname
-      host=`hostname -s`.chomp
-
-      # Don't rollover unless we are on the current server
-      return 1 unless host==server
-
-      # Get a list of accounting files sorted by modification time in reverse order
-      files=Dir["#{@acct_path}/accounting*"].sort! { |a,b|
-        File.stat(b).mtime <=> File.stat(a).mtime
-      }
-
-      # Get the date of the first record in the accounting file
-      end_time=-1
-      file=File.new(files[0])
-      file.each { |line|
-        next if line=~/^#/
-        end_time=Time.at(line.split(":")[10].to_i)
-        break
-      }
-      return 0 if end_time==-1
-
-      # Calculate the name of the new accounting file
-      date_str=end_time.strftime("%Y%m%d")
-      fname="#{@acct_path}/accounting.#{date_str}"
-
-      # If the file already exists roll it over
-      if File.exists?(fname)
-
-        # Find all files associated with that date sorted by modification date
-        oldfiles=files.find_all { |file|
-          file=~/^#{@acct_path}\/accounting\.#{date_str}/
-        }.sort! { |a,b|
-          File.stat(a).mtime <=> File.stat(b).mtime
-        }
-
-        # Roll them over in reverse order
-        oldfiles.each { |file|        
-          # Get the new extension for the file
-          if file=~/^#{@acct_path}\/accounting\.\d+\.(\d+)$/
-            ext=$1.to_i + 1
-          else
-            ext=0
-          end
-
-          # Move the file to its new name
-          `mv #{file} #{@acct_path}/accounting.#{date_str}.#{ext}`        
-        }
-
-      end
-
-      # Move the file to it's new name
-      `mv #{@acct_path}/accounting #{fname}`
-
-      # Touch a new accounting file
-      `touch #{@acct_path}/accounting`
-
-      # Gzip files older than 1 week
-      files.reject { |file|
-        file=~/\.gz$/ || (Time.now - File.stat(file).mtime < 60*60*24*7)
-      }.each { |file|
-        `/bin/gzip #{file}`
-      }
-
-      # Return success
-      return 0
-
-    rescue
-      puts "ERROR: Rollover failed"
-      puts $!
-      return 1
-    end
-  end
-
-
-end
-
-$__nobatchsystem__ == __FILE__
-end
