@@ -14,19 +14,10 @@ module WorkflowMgr
   ##########################################
   class NOBatchSystem < BatchSystem
 
-    BATCH_HELPER= <<-'EOT'
-       signal() { echo "FAIL 1 $$" >> "$rocoto_pid_dir"/"$rocoto_jobid" ; exit 1 }
-       exitN() { n=$? ; if [[ "$n" == 0 ]] ; then 
-         'echo PID 
-       'echo PID $$ > "$rocoto_pid_dir"/"$rocoto_jobid"
-       
-    EOT
-
     require 'etc'
-    require 'parsedate'
-    require 'libxml'
     require 'workflowmgr/utilities'
-    require 'tempfile'
+    require 'fileutils'
+    require 'base64'
 
     #####################################################
     #
@@ -37,7 +28,7 @@ module WorkflowMgr
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
-
+      @rocoto_pid_dir='/tmp'
     end
 
 
@@ -49,6 +40,11 @@ module WorkflowMgr
     def statuses(jobids)
 
       begin
+        WorkflowMgr.stderr("STATUSES?? #{jobids.inspect}",20)
+
+        if jobids.empty?
+          WorkflowMgr.stderr("Empty jobids",20)
+        end
 
         # Initialize statuses to UNAVAILABLE
         jobStatuses={}
@@ -60,6 +56,9 @@ module WorkflowMgr
           jobStatuses[jobid] = self.status(jobid)
         end
 
+      rescue => detail
+        WorkflowMgr.stderr("Exception in status: #{detail.to_s}:\nTRACEBACK:\n#{detail.backtrace.join("\n")}",20)
+        raise
       ensure
         return jobStatuses
       end
@@ -73,6 +72,9 @@ module WorkflowMgr
     #
     #####################################################
     def status(jobid)
+    begin
+
+      WorkflowMgr.stderr("STATUS #{jobid.inspect} ??",20)
 
       # Populate the jobs status table if it is empty
       refresh_jobqueue if @jobqueue.empty?
@@ -80,23 +82,52 @@ module WorkflowMgr
       # Return the jobqueue record if there is one
       return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
       
+      WorkflowMgr.stderr("STATUS #{jobid} UNKNOWN",20)
+
       # We didn't find the job, so return an uknown status record
       return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
 
+    rescue => detail
+      WorkflowMgr.stderr("Exception in status: #{detail.to_s}:\nTRACEBACK:\n#{detail.backtrace.join("\n")}",20)
+      raise
+    end  # big begin..rescue for refresh_jobqueue
     end
+
 
     #####################################################
     #
-    # make_rocoto_jobid
+    # reap
     #
     #####################################################
-    def make_rocoto_jobid()
-      # We need a unique jobid.  We'll use a nice, long, string based
-      # on the current time in microseconds and some random numbers.
-      # This will be a base64 string up to 22 characters in length.
-      now_in_usec=Time.now.tv_sec*1e6 + Time.now.tv_usec
-      big_hex_number='%015x'%(rand(2**64) ^ now_in_usec)
-      return Base64.encode64(big_hex_number).strip().gsub('=','')
+    def reap()
+      WorkflowMgr.stderr('in reap')
+      begin
+      terminal_statuses=['FAILED','SUCCEEDED']
+
+        WorkflowMgr.stderr("jobqueue is #{@jobqueue.inspect}")
+
+      @jobqueue.each do |jobid,job|
+        WorkflowMgr.stderr("Job #{job} state #{job[:state]} in #{terminal_statuses.inspect}?")
+        if terminal_statuses.include? job[:state]
+          job_file="#{@rocoto_pid_dir}/#{job[:jobid]}.job"
+          kill_file="#{@rocoto_pid_dir}/#{job[:jobid]}.kill"
+          [ job_file, kill_file ].each do |file|
+            begin
+              WorkflowMgr.stderr("delete #{file}")
+              File.unlink file
+            rescue IOError, SystemCallError
+              # Not an error.  We expect to get here frequently since
+              # the "kill" files usually won't exist, and the reaping
+              # may have been done already for some files.
+            end
+          end
+        end
+      end
+    rescue => detail
+      WorkflowMgr.stderr("Exception in reap: #{detail.to_s}:\nTRACEBACK:\n#{detail.backtrace.join("\n")}",20)
+      raise
+    end  # big begin..rescue for refresh_jobqueue
+
     end
 
     #####################################################
@@ -105,14 +136,36 @@ module WorkflowMgr
     #
     #####################################################
     def submit(task)
+    begin
 
       # Initialize the submit command
-      cmd=['nohup','setsid','/usr/bin/env']
-      rocoto_jobid=make_rocoto_jobid
-      cmd += ["rocoto_jobid=#{rocoto_jobid}",
-              "rocoto_pid_dir=#{rocoto_pid_dir}",
-              'sh', '-c', BATCH_HELPER, "rocoto_bh_#{rocoto_jobid}" ]
+      cmd=['/usr/bin/env']
+      #WorkflowMgr.stderr("(0) CMD SO FAR #{cmd.inspect}",20)
 
+      rocoto_jobid=make_rocoto_jobid
+      #WorkflowMgr.stderr("ROCOTO JOBID WILL BE #{rocoto_jobid}")
+      #WorkflowMgr.stderr("ROCOTO JOBDIR IS #{@rocoto_pid_dir}")
+
+
+      process_monitor=File::dirname(__FILE__)+'/../../sbin/rocoto_process_watcher.rb'
+      #WorkflowMgr.stderr("process monitor is at #{process_monitor}",20)
+
+      cmd += ["ROCOTO_JOBID=#{rocoto_jobid}",
+              "ROCOTO_JOBDIR=#{@rocoto_pid_dir}",
+              "ROCOTO_TICKTIME=15"]
+
+      #WorkflowMgr.stderr("(1) CMD SO FAR #{cmd.inspect}",20)
+
+      # Add export commands to pass environment vars to the job
+      unless task.envars.empty?
+        task.envars.each { |name,env|
+          cmd << "#{name}=#{env}"
+        }
+      end
+
+#      cmd << "rocoto_jobid=#{rocoto_jobid}"
+
+      #WorkflowMgr.stderr("(2) CMD SO FAR #{cmd.inspect}",20)
 
       # Default values for shell execution bits: no stdout, stdin,
       # stderr, nor any special env vars.
@@ -120,7 +173,6 @@ module WorkflowMgr
       stdin_file='/dev/null'
       stderr_file='/dev/null'
       set_these_vars={}
-      job_name="{rocoto_job_#{rocoto_jobid}"
 
       # Add Torque batch system options translated from the generic options specification
       task.attributes.each do |option,value|
@@ -132,66 +184,120 @@ module WorkflowMgr
           when :join
             stdout_file=value
             stderr_file=value
-          when :jobname
-            job_name=value
         end
       end
 
-      # Add export commands to pass environment vars to the job
-      unless task.envars.empty?
-        task.envars.each { |name,env|
-          cmd << "#{name}=#{env}"
-        }
-      end
-
-      cmd << "rocoto_jobid=#{rocoto_jobid}"
+      cmd << 'sh'
 
       # <native> are arguments to sh
       task.each_native do |native_line|
-        cmd << native_line
+          if not native_line.nil? and native_line[0..0]=='-'
+            cmd << native_line
+          end
       end
 
-      # Stdin, stdout, and stderr are handled within sh:
-      if(stdout_file == stderr_file)
-        cmd << "\"$@\" < #{stdin_file} > #{stdout_file} 2>&1"
-      else
-        cmd << "\"$@\" < #{stdin_file} 2> #{stderr_file} 1> {stdout_file}"
+      cmd << '-c'
+
+      #WorkflowMgr.stderr("(3) CMD SO FAR #{cmd.inspect}",20 )
+
+      [stderr_file, stdout_file].each do |std_file|
+        if not File.directory? File.dirname(std_file)
+          FileUtils.mkdir_p File.dirname(std_file)
+        end
       end
+
+      cmd << '"$@"'
+
+      # # Stdin, stdout, and stderr are handled within sh:
+      # if(stdout_file == stderr_file)
+      #   cmd << "\"$@\" < #{stdin_file} > #{stdout_file} 2>&1"
+      # else
+      #   cmd << "\"$@\" < #{stdin_file} 2> #{stderr_file} 1> {stdout_file}"
+      # end
+
+      #WorkflowMgr.stderr("(4) CMD SO FAR #{cmd.inspect}",20 )
 
       # Job name is the process name ($0)
-      cmd << job_name
+      cmd << "rocoto_bh_#{rocoto_jobid}"
+
+      #WorkflowMgr.stderr("(5) CMD SO FAR #{cmd.inspect}",20 )
+
+      cmd << process_monitor
 
       # At the end we place the command to run
       cmd << task.attributes[:command]
 
-      WorkflowMgr.stderr("Running #{cmd.join(' ')}",4)
+      WorkflowMgr.stderr("Spawning a daemon process to run #{cmd.inspect}",4)
 
-      result=system(cmd)
+      result=fork() {
+          Process.setsid
+          fork() {
+            begin
+              STDIN.reopen(stdin_file)
+              STDOUT.reopen(stdout_file)
+              #STDERR.reopen(stderr_file)
+              
+              WorkflowMgr.stderr("exec(*#{cmd.inspect})")
+              
+              exec(*cmd)
+
+              WorkflowMgr.stderr("exec failed")
+              exit(2)
+            rescue => detail
+              WorkflowMgr.stderr("Exception in submit: #{detail.to_s}:\nTRACEBACK:\n#{detail.backtrace.join("\n")}",20)
+              exit(2)
+            end
+          }
+        }
+
+      WorkflowMgr.stderr("Back from fork with result=#{result}",4)
 
       if result.nil? or not result:
+        WorkflowMgr.stderr("Submission failed: #{result.inspect}",4)
         return nil,''
       else
-        return 
-      end        
+        WorkflowMgr.stderr("Submission succeeded; return #{rocoto_jobid.inspect},#{rocoto_jobid.inspect}",4)
+        return rocoto_jobid,rocoto_jobid
+      end
 
-    end
-
+    rescue => detail
+      WorkflowMgr.stderr("Exception in submit: #{detail.to_s}:\nTRACEBACK:\n#{detail.backtrace.join("\n")}",20)
+      raise
+    end # big begin..rescue for submit
+    end # submit
 
     #####################################################
     #
     # delete
     #
-    # The "jobid" is a process group id.
-    #
     #####################################################
     def delete(jobid)
 
-      process.kill(-jobid)
+      # We ask the job to kill itself:
+
+      open("#{@rocoto_pid_dir}/#{jobid}.kill",a) do |f|
+        f.puts('@ #{Time.now.to_i} job #{jobid} : kill request from rocoto')
+      end
 
     end
 
-
 private
+
+    #####################################################
+    #
+    # make_rocoto_jobid
+    #
+    #####################################################
+    def make_rocoto_jobid()
+      # We need a unique jobid.  We'll use a nice, long, string based
+      # on the current time in microseconds and some random numbers.
+      # This will be a base64 string up to 22 characters in length.
+
+      now_in_usec=Time.now.tv_sec*1e6 + Time.now.tv_usec
+      big_hex_number='%015x'%(rand(2**64) ^ now_in_usec)
+      result=Base64.encode64(big_hex_number).strip().gsub('=','')
+      return result
+    end
 
     #####################################################
     #
@@ -199,118 +305,65 @@ private
     #
     #####################################################
     def refresh_jobqueue
+    WorkflowMgr.stderr("JQ",20)
+    begin
+      pid_dir=Dir.new(@rocoto_pid_dir)
 
-      begin
-
-        # Get the username of this process
-        username=Etc.getpwuid(Process.uid).name
-
-        # Run qstat to obtain the current status of queued jobs
-        queued_jobs=""
-        errors=""
-        exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("qstat -x",30)
-
-        # Raise SchedulerDown if the showq failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
-
-        # Return if the showq output is empty
-        return if queued_jobs.empty?
-
-        # Parse the XML output of showq, building job status records for each job
-        queued_jobs_doc=LibXML::XML::Parser.string(queued_jobs, :options => LibXML::XML::Parser::Options::HUGE).parse
-
-      rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",3)
-        raise WorkflowMgr::SchedulerDown
-      end
-      
-      # For each job, find the various attributes and create a job record
-      queued_jobs=queued_jobs_doc.root.find('//Job')
-      queued_jobs.each { |job|
-
-        # Initialize an empty job record
+      pid_dir.each do |filename|
+          WorkflowMgr.stderr("JQ file #{filename}",20)
+        if not filename =~ /^(\S+)\.job$/
+          WorkflowMgr.stderr("JQ not a job log file #{filename}",20)
+          next # not a job log file
+        end
   	record={}
 
-  	# Look at all the attributes for this job and build the record
-	job.each_element { |jobstat| 
-        
-          case jobstat.name
-            when /Job_Id/
-              record[:jobid]=jobstat.content.split(".").first
-            when /job_state/
-              case jobstat.content
-                when /^Q$/,/^H$/,/^W$/,/^S$/,/^T$/
-    	          record[:state]="QUEUED"
-                when /^R$/,/^E$/
-    	          record[:state]="RUNNING"
-                else
-                  record[:state]="UNKNOWN"
-              end
-              record[:native_state]=jobstat.content
-            when /Job_Name/
-	      record[:jobname]=jobstat.content
-	    when /Job_Owner/
-	      record[:user]=jobstat.content
-            when /Resource_List/       
-              jobstat.each_element { |e|
-                if e.name=='procs'
-                  record[:cores]=e.content.to_i
-                  break
-                end
-            }
-  	    when /queue/
-	      record[:queue]=jobstat.content
-	    when /qtime/
-	      record[:submit_time]=Time.at(jobstat.content.to_i).getgm
-  	    when /start_time/
-              record[:start_time]=Time.at(jobstat.content.to_i).getgm
-	    when /comp_time/
-              record[:end_time]=Time.at(jobstat.content.to_i).getgm
- 	    when /Priority/
-	      record[:priority]=jobstat.content.to_i            
-            when /exit_status/
-              record[:exit_status]=jobstat.content.to_i
-	    else
-              record[jobstat.name]=jobstat.content
-          end  # case jobstat
-  	}  # job.children
-
-        # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
-        if record[:state]=="UNKNOWN" && !record[:exit_status].nil?
-          if record[:exit_status]==0
-            record[:state]="SUCCEEDED"
+        record[:jobid]=$1
+          File.readlines("#{@rocoto_pid_dir}/#{filename}").reverse_each do |line|
+          if line=~/HANDLER COMPLETE$/
+            record[:native_state]='HANDLER_COMPLETE'
+            record[:state]='FAILED' # may be overridden by next step
+            next
+          elsif line=~/EXIT (\d+)$/
+            record[:native_state]='EXIT'
+            record[:exit_status]=$1.to_i
+            if record[:exit_status] == 0
+              record[:state]='SUCCEEDED'
+            else
+              record[:state]='FAILED'
+            end
+          elsif line=~/FAIL (.*)$/
+            record[:native_state]='CANNOT_START'
+            record[:state]='FAILED'
+            record[:exit_status]=-1
+          elsif line=~/KILL/
+            record[:native_state]='KILLING'
+            record[:exit_status]=-1
+            record[:state]='FAILED'
+          elsif line=~/SIGNAL/
+            record[:native_state]='SIGNALED'
+            record[:exit_status]=-1
+            record[:state]='FAILED'
+          elsif line=~/START/
+            record[:native_state]='STARTING'
+            record[:state]='RUNNING'
+          elsif line=~/RUNNING/
+            record[:native_state]='RUNNING'
+            record[:state]='RUNNING'
           else
-            record[:state]="FAILED"
+            WorkflowMgr.stderr("#{filename}: unrecognized line: #{line}",3)
+            next
           end
+          break
         end
 
-        # Put the job record in the jobqueue unless it's complete but doesn't have a start time, an end time, and an exit status
-        unless record[:state]=="UNKNOWN" || ((record[:state]=="SUCCEEDED" || record[:state]=="FAILED") && (record[:start_time].nil? || record[:end_time].nil?))
-          @jobqueue[record[:jobid]]=record
-        end
-
-      }  #  queued_jobs.find
-
-      queued_jobs=nil
-
-    end  # job_queue
-
-    def process_monitor ( stdin_path, stdout_path, stderr_path, set_these_vars, execute_me )
-      # Fork a daemon process.
-      fork do
-        STDIN=IO.new(0)
-        STDOUT=IO.new(1)
-        STDERR=IO.new(2)
-
-        STDIN.close
-        STDOUT.close
-        STDERR.close
-
-        
+          WorkflowMgr.stderr("JQ #{filename} is #{record.inspect}",20)
+        @jobqueue[record[:jobid]]=record
       end
-    end
+    rescue => detail
+      WorkflowMgr.stderr("Exception in refresh_jobqueue: #{detail.to_s}:\nTRACEBACK:\n#{detail.backtrace.join("\n")}",20)
+      raise
+    end  # big begin..rescue for refresh_jobqueue
+    end  # refresh_jobqueue
 
   end  # class
 

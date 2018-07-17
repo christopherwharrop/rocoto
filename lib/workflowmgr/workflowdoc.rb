@@ -27,6 +27,7 @@ module WorkflowMgr
     require 'workflowmgr/lsfbatchsystem'    
     require 'workflowmgr/lsfcraybatchsystem'    
     require 'workflowmgr/slurmbatchsystem'
+    require 'workflowmgr/nobatchsystem'
     require 'workflowmgr/task'
 
     @@messages={

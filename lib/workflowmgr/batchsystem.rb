@@ -18,5 +18,7 @@ module WorkflowMgr
     def self.feature?(flag)
       return false
     end
+    def reap()
+    end
   end
 end

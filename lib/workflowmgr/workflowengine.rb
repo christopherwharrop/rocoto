@@ -255,6 +255,11 @@ module WorkflowMgr
         # Auto vacuum if necessary, but only for realtime mode
         auto_vacuum if @config.AutoVacuum && @realtime
 
+        # Reap the job state, if relevant.  This is only needed for
+        # the NoBatchSystem, which stores state information in
+        # temporary files.
+        @bqServer.reap()
+
       }
     end  # run
 
@@ -1618,7 +1623,7 @@ module WorkflowMgr
     #
     ##########################################
     def submit_new_jobs
-
+      begin
       # Initialize an array of the new jobs that have been submitted
       newjobs=[]
 
@@ -1812,7 +1817,8 @@ module WorkflowMgr
           end
 
           # Submit the task
-          @bqServer.submit(localtask,cycletime)
+          result=@bqServer.submit(localtask,cycletime)
+            WorkflowMgr.stderr("From submit: #{result}")
           @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
 
         end
@@ -1823,7 +1829,9 @@ module WorkflowMgr
       Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
 
       # Harvest job ids for submitted tasks
+      WorkflowMgr.stderr("harvest jobs")
       newjobs.each do |job|
+          WorkflowMgr.stderr("harvest job #{job.inspect}")        
         uri=job.id
         jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
         if output.nil?
@@ -1845,7 +1853,11 @@ module WorkflowMgr
           end
         end
       end
+      rescue => detail
+        WorkflowMgr.stderr("Exception making job: #{detail.to_s}:\nTRACEBACK:\n#{detail.backtrace.join("\n")}",20)
+        raise
 
+end
     end
 
 

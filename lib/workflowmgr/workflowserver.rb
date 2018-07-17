@@ -25,6 +25,7 @@ module WorkflowMgr
     require 'workflowmgr/pbsprobatchsystem'
     require 'workflowmgr/lsfbatchsystem'
     require 'workflowmgr/lsfcraybatchsystem'
+    require 'workflowmgr/nobatchsystem'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/dependency'
     require 'workflowmgr/utilities'

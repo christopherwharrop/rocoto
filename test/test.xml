@@ -9,11 +9,17 @@
  <!ENTITY CUSTOM "<native></native>">
 
 
- <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/rocoto-master/test">
- <!ENTITY DATA_HOME "/scratch4/BMC/gsd-hpcs/Christopher.W.Harrop/test">
- <!ENTITY PROJECT "gsd-hpcs">
- <!ENTITY QUEUE "batch">
- <!ENTITY SCHED "moabtorque">
+<!ENTITY TEST_HOME "/lfs3/projects/hfv3gfs/Samuel.Trahan/rocoto/nobatchsystem/test">
+<!ENTITY DATA_HOME "/lfs3/projects/hfv3gfs/Samuel.Trahan/rocoto/nobatchsystem/test/data">
+<!ENTITY PROJECT "whatever">
+<!ENTITY QUEUE "whatever">
+<!ENTITY SCHED "no">
+
+ <!-- <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/rocoto-master/test"> -->
+ <!-- <!ENTITY DATA_HOME "/scratch4/BMC/gsd-hpcs/Christopher.W.Harrop/test"> -->
+ <!-- <!ENTITY PROJECT "gsd-hpcs"> -->
+ <!-- <!ENTITY QUEUE "batch"> -->
+ <!-- <!ENTITY SCHED "moabtorque"> -->
 
 <!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-1.1/test">
