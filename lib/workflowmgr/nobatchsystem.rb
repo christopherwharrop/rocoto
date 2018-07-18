@@ -203,12 +203,12 @@ module WorkflowMgr
 
       cmd << 'sh'
 
-      # <native> are arguments to sh
-      task.each_native do |native_line|
-          if not native_line.nil? and native_line[0..0]=='-'
-            cmd << native_line
-          end
-      end
+      # # <native> are arguments to sh
+      # task.each_native do |native_line|
+      #     if not native_line.nil? and native_line[0..0]=='-'
+      #       cmd << native_line
+      #     end
+      # end
 
       cmd << '-c'
 
@@ -266,7 +266,7 @@ module WorkflowMgr
 
       #WorkflowMgr.stderr("Back from fork with result=#{result}",4)
 
-      if result.nil? or not result:
+      if result.nil? or not result
         WorkflowMgr.stderr("Submission failed: #{result.inspect}",4)
         return nil,''
       else
@@ -308,8 +308,10 @@ private
       # on the current time in microseconds and some random numbers.
       # This will be a base64 string up to 22 characters in length.
 
-      now_in_usec=Time.now.tv_sec*1e6 + Time.now.tv_usec
-      big_hex_number='%015x'%(rand(2**64) ^ now_in_usec)
+      now_in_usec=(Time.now.tv_sec*1e6 + Time.now.tv_usec).to_i
+      big_number=rand(2**64).to_i
+      big_number=big_number ^ now_in_usec
+      big_hex_number='%015x'%big_number
       result=Base64.encode64(big_hex_number).strip().gsub('=','')
       return result
     end
