@@ -18,6 +18,11 @@ module WorkflowMgr
     def self.feature?(flag)
       return false
     end
+
+    def boot_warning
+      return nil # by default, allow rocotoboot
+    end
+
     def reap()
     end
   end

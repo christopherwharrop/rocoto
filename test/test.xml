@@ -92,6 +92,9 @@
 <workflow realtime="f" scheduler="&SCHED;" cyclelifespan="0:01:00:00" cyclethrottle="5" corethrottle="100" taskthrottle="10">
 
   <log verbosity="10">&TEST_HOME;/log/workflow/<cyclestr>workflow_@Y@m@d@H@M.log</cyclestr></log>
+
+  <job_id_dir>/tmp/jobids</job_id_dir>
+
 <!--
   <cycledef group="group1">201101010000 201201010000 1:00:00:00</cycledef>
   <cycledef group="group1">201201010000 201301010000 01:00:00</cycledef>

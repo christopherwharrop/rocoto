@@ -72,7 +72,7 @@
         </attribute>
       </optional>
 
-      <!-- Order of log, cycle, task, and metatask tags does not matter -->
+      <!-- Order of log, job_id_dir, cycle, task, and metatask tags does not matter -->
       <interleave>
 
         <!-- Must have exactly one log tag -->
@@ -84,6 +84,13 @@
           </optional>
           <ref name="compoundTimeString"/>
         </element>
+
+        <!-- Can have a job_id_dir -->
+        <optional>
+          <element name="job_id_dir">
+            <data type="string"/>
+          </element>
+        </optional>
 
         <!-- Must have at least one cycledef tag -->
         <oneOrMore>

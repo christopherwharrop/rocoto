@@ -24,11 +24,20 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(torque_root=nil)
+    def initialize(rocoto_pid_dir='/tmp')
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
-      @rocoto_pid_dir='/tmp'
+      @rocoto_pid_dir=rocoto_pid_dir
+    end
+
+    #####################################################
+    #
+    # statuses
+    #
+    #####################################################
+    def boot_warning
+      return 'Booting tasks will run them ON THIS MACHINE, not in the batch system.  You probably do not want to do this.  Do you really want to boot tasks and run them ON THIS MACHINE?'
     end
 
 
@@ -40,10 +49,10 @@ module WorkflowMgr
     def statuses(jobids)
 
       begin
-        WorkflowMgr.stderr("STATUSES?? #{jobids.inspect}",20)
+        #WorkflowMgr.stderr("STATUSES?? #{jobids.inspect}",20)
 
         if jobids.empty?
-          WorkflowMgr.stderr("Empty jobids",20)
+          #WorkflowMgr.stderr("Empty jobids",20)
         end
 
         # Initialize statuses to UNAVAILABLE
@@ -74,7 +83,7 @@ module WorkflowMgr
     def status(jobid)
     begin
 
-      WorkflowMgr.stderr("STATUS #{jobid.inspect} ??",20)
+      #WorkflowMgr.stderr("STATUS #{jobid.inspect} ??",20)
 
       # Populate the jobs status table if it is empty
       refresh_jobqueue if @jobqueue.empty?
@@ -100,25 +109,30 @@ module WorkflowMgr
     #
     #####################################################
     def reap()
-      WorkflowMgr.stderr('in reap')
+      #WorkflowMgr.stderr('in reap')
       begin
       terminal_statuses=['FAILED','SUCCEEDED']
 
-        WorkflowMgr.stderr("jobqueue is #{@jobqueue.inspect}")
+        #WorkflowMgr.stderr("jobqueue is #{@jobqueue.inspect}")
 
       @jobqueue.each do |jobid,job|
-        WorkflowMgr.stderr("Job #{job} state #{job[:state]} in #{terminal_statuses.inspect}?")
+        #WorkflowMgr.stderr("Job #{job} state #{job[:state]} in #{terminal_statuses.inspect}?")
         if terminal_statuses.include? job[:state]
           job_file="#{@rocoto_pid_dir}/#{job[:jobid]}.job"
           kill_file="#{@rocoto_pid_dir}/#{job[:jobid]}.kill"
           [ job_file, kill_file ].each do |file|
             begin
-              WorkflowMgr.stderr("delete #{file}")
-              File.unlink file
-            rescue IOError, SystemCallError
-              # Not an error.  We expect to get here frequently since
-              # the "kill" files usually won't exist, and the reaping
-              # may have been done already for some files.
+              if File.exists? file
+                if Time.new.to_i - File.mtime(file).to_i > 3600
+                  WorkflowMgr.stderr("reap job #{jobid}: delete #{file}",10)
+                  File.unlink file
+                else
+                  WorkflowMgr.stderr("reap job #{jobid}: too early to delete #{file}",20)
+                end
+              end
+            rescue IOError, SystemCallError => e
+              # Do not terminate when reaping fails.
+              WorkflowMgr.stderr("reap job #{jobid}: #{file}: #{e.to_s}",10)
             end
           end
         end
@@ -227,7 +241,7 @@ module WorkflowMgr
       # At the end we place the command to run
       cmd << task.attributes[:command]
 
-      WorkflowMgr.stderr("Spawning a daemon process to run #{cmd.inspect}",4)
+      WorkflowMgr.stderr("Spawning a daemon process to run #{cmd.inspect}",20)
 
       result=fork() {
           Process.setsid
@@ -237,7 +251,7 @@ module WorkflowMgr
               STDOUT.reopen(stdout_file)
               #STDERR.reopen(stderr_file)
               
-              WorkflowMgr.stderr("exec(*#{cmd.inspect})")
+              WorkflowMgr.stderr("job #{rocoto_jobid}: exec(*#{cmd.inspect})",10)
               
               exec(*cmd)
 
@@ -250,13 +264,13 @@ module WorkflowMgr
           }
         }
 
-      WorkflowMgr.stderr("Back from fork with result=#{result}",4)
+      #WorkflowMgr.stderr("Back from fork with result=#{result}",4)
 
       if result.nil? or not result:
         WorkflowMgr.stderr("Submission failed: #{result.inspect}",4)
         return nil,''
       else
-        WorkflowMgr.stderr("Submission succeeded; return #{rocoto_jobid.inspect},#{rocoto_jobid.inspect}",4)
+        #WorkflowMgr.stderr("Submission succeeded for job #{rocoto_jobid.inspect}",4)
         return rocoto_jobid,rocoto_jobid
       end
 
@@ -274,8 +288,9 @@ module WorkflowMgr
     def delete(jobid)
 
       # We ask the job to kill itself:
-
-      open("#{@rocoto_pid_dir}/#{jobid}.kill",a) do |f|
+      kill_file="#{@rocoto_pid_dir}/#{jobid}.kill"
+      open(kill_file,'a') do |f|
+        WorkflowMgr.stderr("job #{jobid}: write to \"kill file\" #{kill_file}")
         f.puts('@ #{Time.now.to_i} job #{jobid} : kill request from rocoto')
       end
 
@@ -305,14 +320,14 @@ private
     #
     #####################################################
     def refresh_jobqueue
-    WorkflowMgr.stderr("JQ",20)
+    #WorkflowMgr.stderr("JQ",20)
     begin
       pid_dir=Dir.new(@rocoto_pid_dir)
 
       pid_dir.each do |filename|
-          WorkflowMgr.stderr("JQ file #{filename}",20)
+          #WorkflowMgr.stderr("JQ file #{filename}",20)
         if not filename =~ /^(\S+)\.job$/
-          WorkflowMgr.stderr("JQ not a job log file #{filename}",20)
+          #WorkflowMgr.stderr("JQ not a job log file #{filename}",20)
           next # not a job log file
         end
   	record={}
@@ -343,7 +358,7 @@ private
             record[:native_state]='SIGNALED'
             record[:exit_status]=-1
             record[:state]='FAILED'
-          elsif line=~/START/
+          elsif line=~/START|COMMAND/
             record[:native_state]='STARTING'
             record[:state]='RUNNING'
           elsif line=~/RUNNING/
@@ -356,7 +371,7 @@ private
           break
         end
 
-          WorkflowMgr.stderr("JQ #{filename} is #{record.inspect}",20)
+          #WorkflowMgr.stderr("JQ #{filename} is #{record.inspect}",20)
         @jobqueue[record[:jobid]]=record
       end
     rescue => detail

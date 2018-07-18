@@ -77,9 +77,7 @@ module WorkflowMgr
         @running[task.attributes[:name]][cycle.to_i] = true
 
         # Submit the job
-        puts("batchsystem submit #{task}")
         @status[task.attributes[:name]][cycle.to_i]=@batchsystem.submit(task)
-        puts("batchsystem submit #{task} result #{@status[task.attributes[:name]][cycle.to_i].inspect}")
 
         # Mark this job submission as done
         @running[task.attributes[:name]][cycle.to_i] = false
@@ -98,17 +96,17 @@ module WorkflowMgr
 
       # Return nil for jobid and output if the submit thread doesn't exist
       if @running[taskid].nil?
-        puts("running #{taskid} nil")
+        #puts("running #{taskid} nil")
         return nil,nil 
       end
       if @running[taskid][cycle.to_i].nil?
-        puts("running #{taskid} {cycle} nil")
+        #puts("running #{taskid} {cycle} nil")
         return nil,nil 
       end
 
       # Return nil for jobid and output	if the submit thread is still running
       if @running[taskid][cycle.to_i]
-        puts("running #{taskid} {cycle} still running")
+        #puts("running #{taskid} {cycle} still running")
         return nil,nil 
       # Otherwise, get the jobid and output and return it
       else
@@ -118,7 +116,7 @@ module WorkflowMgr
         @harvested[taskid][cycle.to_i]=true
 
         # Return the output of the job submission
-        puts("status #{taskid} #{cycle} is #{status.inspect}")
+        #puts("status #{taskid} #{cycle} is #{status.inspect}")
         return status
       end
 

@@ -294,6 +294,17 @@ module WorkflowMgr
         # Build the workflow objects from the contents of the workflow document
         build_workflow
 
+        boot_warning=@bqServer.boot_warning
+        if not boot_warning.nil?
+          printf "#{boot_warning} (y/n) "
+          reply=STDIN.gets
+          unless reply=~/^[Yy]/
+            puts "Okay.  I will not boot anything."
+            Process.exit(0)
+          end
+          puts "I will go ahead and boot things, but don't tell me I didn't warn you."
+        end
+
         # Get the active cycles
         get_active_cycles
 
@@ -1818,7 +1829,6 @@ module WorkflowMgr
 
           # Submit the task
           result=@bqServer.submit(localtask,cycletime)
-            WorkflowMgr.stderr("From submit: #{result}")
           @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
 
         end
@@ -1829,9 +1839,7 @@ module WorkflowMgr
       Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
 
       # Harvest job ids for submitted tasks
-      WorkflowMgr.stderr("harvest jobs")
       newjobs.each do |job|
-          WorkflowMgr.stderr("harvest job #{job.inspect}")        
         uri=job.id
         jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
         if output.nil?

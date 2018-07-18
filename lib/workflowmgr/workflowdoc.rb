@@ -89,6 +89,9 @@ module WorkflowMgr
         raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
 
+      # Avoid remaking the scheduler if we can
+      @cached_scheduler_object=nil
+
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
       # Expand metatasks
@@ -231,16 +234,21 @@ module WorkflowMgr
     ##########################################
     def scheduler
 
-      if @workflowdoc.root.attributes?
+      if @cached_scheduler_object.nil? and @workflowdoc.root.attributes?
         sched=@workflowdoc.root["scheduler"]
-        if sched.nil?
-          return nil
-        else
-          return WorkflowMgr::const_get("#{sched.upcase}BatchSystem").new
+        if not sched.nil?
+          job_id_dir_elements=@workflowdoc.find('/workflow/job_id_dir')
+          class_name="#{sched.upcase}BatchSystem"
+          if job_id_dir_elements.nil? or job_id_dir_elements.empty?
+            @cached_scheduler_object=WorkflowMgr::const_get(class_name).new
+          else
+            job_id_dir=get_flattened_string(job_id_dir_elements.first)
+            @cached_scheduler_object=WorkflowMgr::const_get(class_name).new(job_id_dir=job_id_dir)
+          end
         end
-      else
-        return nil
       end
+
+      return @cached_scheduler_object
 
     end
 
@@ -520,6 +528,33 @@ module WorkflowMgr
        end
 
        return CompoundTimeString.new(strarray)
+
+     end
+
+
+     ##########################################
+     #
+     # get_flattened_string
+     # 
+     ##########################################
+     def get_flattened_string(element)
+       # Merge all text nodes and ignore comments; return result as a string.
+
+       if element.nil?
+         return nil
+       end
+
+       strarray=[] 
+       element.each do |e|
+         e.output_escaping=false
+         if e.node_type==LibXML::XML::Node::TEXT_NODE
+           strarray << unescape(e.content)
+         elsif e.node_type==LibXML::XML::Node::COMMENT_NODE
+           # Ignore comments
+         end
+       end
+
+       return strarray.join('')
 
      end
 
