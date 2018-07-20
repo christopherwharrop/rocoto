@@ -241,17 +241,21 @@ module WorkflowMgr
       # At the end we place the command to run
       cmd << task.attributes[:command]
 
-      WorkflowMgr.stderr("Spawning a daemon process to run #{cmd.inspect}",20)
+      WorkflowMgr.stderr("Spawning a daemon process to run #{cmd.inspect}",10)
 
       result=fork() {
           Process.setsid
           fork() {
             begin
               STDIN.reopen(stdin_file)
-              STDOUT.reopen(stdout_file)
-              #STDERR.reopen(stderr_file)
+              STDERR.reopen(stderr_file,'a')
+              if stderr_file == stdout_file
+                STDOUT.reopen(STDERR)
+              else
+                STDOUT.reopen(stdout_file,'a')
+              end
               
-              WorkflowMgr.stderr("job #{rocoto_jobid}: exec(*#{cmd.inspect})",10)
+              WorkflowMgr.stderr("job #{rocoto_jobid}: exec(*#{cmd.inspect})",4)
               
               exec(*cmd)
 
