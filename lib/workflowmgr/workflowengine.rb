@@ -13,7 +13,7 @@ module WorkflowMgr
   ##########################################
   class WorkflowEngine
 
-
+    require 'set'
     require 'drb'
     require 'workflowmgr/workflowconfig'
     require 'workflowmgr/workflowoption'
@@ -68,6 +68,12 @@ module WorkflowMgr
         # Initialize the workflow lock
         @locked=false
 
+        # Initialize the task and cycle selection to "I have not calculated it yet:"
+        @selected_cycles=nil
+        @selected_tasks=nil
+        @selected_cycles_set=nil
+        @selected_tasks_set=nil
+
       rescue => crash
         WorkflowMgr.stderr('Workflow Manager Initialization failed.',1)
         WorkflowMgr.stderr(crash.message,1)
@@ -93,6 +99,8 @@ module WorkflowMgr
 
     def selected_cycles
 
+      return @selected_cycles unless @selected_cycles.nil?
+
       # Get the list of boot cycles
       selected_cycles=[]
       @options.cycles.each do |cycopt|
@@ -113,8 +121,22 @@ module WorkflowMgr
       end
       selected_cycles.uniq!
       selected_cycles.sort!
+
+      @selected_cycles=selected_cycles
       
       return selected_cycles
+    end
+
+
+    ##########################################
+    #
+    # selected_cycles_set
+    #
+    ##########################################
+
+    def selected_cycles_set
+      return @selected_cycles_set unless @selected_cycles_set.nil?
+      @selected_cycles_set = Set.new @selected_cycles
     end
 
 
@@ -126,18 +148,119 @@ module WorkflowMgr
 
     def selected_tasks
 
+      return @selected_tasks unless @selected_tasks.nil?
+
       if @options.all_tasks
         return @tasks.keys
       end
 
-      selected_tasks=@options.tasks || []
+      pass1=@options.tasks || []
       @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
-        selected_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
+        pass1 << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
       } unless @options.metatasks.nil?
+
+      pass2=[]
+      pass1.each do |item|
+        puts "#{item}"
+        if item.start_with? ':'
+          negate=false
+          if item[1..1]=='!'
+            attribute_name=item[2..-1]
+            negate=true
+          else
+            attribute_name=item[1..-1]
+          end
+
+          case attribute_name
+            when 'final'     then attribute=:final
+            when 'shared'    then attribute=:shared
+            when 'exclusive' then attribute=:exclusive
+            when 'metatasks' then attribute=:metatasks
+            when 'cores'     then attribute=:cores
+            when 'nodes'     then attribute=:nodes
+          else
+            raise "Unknown attribute '#{attribute_name}' is not one of: final, shared, exclusive, metatasks, cores, nodes"
+          end
+          @tasks.values.each do |task|
+            if ( negate && ! task.attributes[attribute] ) || (!negate && task.attributes[attribute])
+              pass2 << task.attributes[:name]
+            end
+          end
+        elsif item.start_with? '/' and item.end_with? '/'
+          regex=Regexp.new item[1..-2]
+          @tasks.values.each do |task|
+            if regex=~task.attributes[:name]
+              pass2 << task.attributes[:name]
+            end
+          end
+        elsif item.start_with? '@'
+          puts 'search cycledefs'
+          cycledef=item[1..-1]
+          @tasks.values.each do |task|
+            next if task.attributes[:cycledefs].nil?
+            cycledefs=task.attributes[:cycledefs].split(',')
+            if cycledefs.include? cycledef
+              pass2 << task.attributes[:name] 
+            end
+          end
+        else
+          pass2 << item
+        end
+      end
+
+      selected_tasks=pass2
+
       selected_tasks.uniq!
       selected_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
+
+      @selected_tasks=selected_tasks
+
+      #puts "selected: #{@selected_tasks.inspect}"
+
       return selected_tasks
     end
+
+    ##########################################
+    #
+    # selected_tasks_set
+    #
+    ##########################################
+
+    def selected_tasks_set
+      return @selected_tasks_set unless @selected_tasks_set.nil?
+      @selected_tasks_set = Set.new @selected_tasks
+    end
+
+
+    ##########################################
+    #
+    # is_selected
+    #
+    ##########################################
+
+    def is_selected?(arg)
+
+      case arg
+      when Cycle
+        return selected_cycles_set.includes? arg.cycle
+      when String
+        return selected_tasks_set.includes? arg
+      when Task
+        return selected_tasks_set.includes? arg.attributes[:name]
+      when Time
+        return selected_cycles_set.includes? arg
+      when Job
+        return( selected_cycles_set.includes?(job.cycle) && selected_tasks_set.includes?(job.task.attributes[:name]))
+      when Range
+        raise "Internal error: unexpected type #{arg.class.name} in is_selected?.  Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof (except Ranges) are allowed."
+      when Enumerable
+        return arg.all? { |elem| is_selected? elem }
+      else
+        raise "Internal error: unexpected type #{arg.class.name} in is_selected?.  Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof (except Ranges) are allowed."
+      end
+
+    end
+
 
     ##########################################
     #
@@ -775,20 +898,14 @@ module WorkflowMgr
 
           } # complete_tasks.each
 
-          if @options.all_tasks and not complete_cycle.nil? and not complete_cycle.done?
-            puts "Marked all jobs as \"succeeded\" in cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}'.  I will now mark the cycle as \"done.\""
-            complete_cycle.done!
-            @dbServer.update_cycles([complete_cycle])
-          end
-
         } # complete_cycles.each
-      } # with_locked_db
 
-      # Deactivate completed cycles
-      deactivate_done_cycles
-      
-      # Expire active cycles that have exceeded the cycle life span
-      expire_cycles
+        # Deactivate completed cycles
+        deactivate_done_cycles
+        
+        # Expire active cycles that have exceeded the cycle life span
+        expire_cycles
+      } # with_locked_db
 
     end # complete
 

@@ -42,10 +42,6 @@ module WorkflowMgr
     ##########################################
     def add_opts(opts)
 
-      @cycles=[] if @cycles.nil?
-      @tasks=[] if @tasks.nil?
-      @metatasks=[] if @metatasks.nil?
-
       super(opts)
 
       # Override the command usage text
@@ -55,6 +51,7 @@ module WorkflowMgr
       #      C   C,C,C  C:C  :C   C:
       #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C 
       opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' | : | all",String,"List of cycles") do |clist|
+        @cycles=[] if @cycles.nil?
         case clist
         when /^\d{12}(,\d{12})*$/
           @cycles.concat(clist.split(",").collect { |c| Time.gm(c[0..3],c[4..5],c[6..7],c[8..9],c[10..11]) })
@@ -73,21 +70,26 @@ module WorkflowMgr
         end
       end
 
+      @cycles=nil if !@cycles.nil? and @cycles.empty?
+
       # Tasks of interest
       opts.on("-t","--tasks 'a,b,c'",Array,"List of tasks") do |tasklist|
-        puts('tasks')
-        @tasks.concat tasklist
+        @tasks=[] if @tasks.nil?
+        @tasks.concat tasklist unless tasklist.nil?
       end
+
+      @tasks=nil if !@tasks.nil? and @tasks.empty?
 
       # Metaasks of interest
       opts.on("-m","--metatasks 'a,b,c'",Array,"List of metatasks") do |metatasklist|
-        puts('metatasks')
-        @metatasks.concat metatasklist
+        @metatasks=[] if @metatasks.nil?
+        @metatasks.concat metatasklist unless metatasklist.nil?
       end
+
+      @metatasks=nil if !@metatasks.nil? and @metatasks.empty?
 
       # Rewind all tasks for the specified cycles instead of a list of tasks:
       opts.on("-a",'--all',"Selects all tasks.") do |flag|
-        puts "Requesting #{@action} of all tasks."
         @all_tasks=true
       end
 
@@ -104,7 +106,9 @@ module WorkflowMgr
 
       raise OptionParser::ParseError,"At least one cycle must be specified." if @cycles.nil?
 
-      raise OptionParser::ParseError,"At least one task or metatask (-t or -m) must be specified, or all tasks (-a)." if (@tasks.nil? && @metatasks.nil? && ! all_tasks)
+      if @tasks.nil? && @metatasks.nil? && ! @all_tasks
+        raise OptionParser::ParseError,"At least one task or metatask (-t or -m) must be specified, or all tasks (-a)."
+      end
 
     end
 
