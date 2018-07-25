@@ -94,7 +94,7 @@ module WorkflowMgr
     def selected_cycles
 
       # Get the list of boot cycles
-      boot_cycles=[]
+      selected_cycles=[]
       @options.cycles.each do |cycopt|
         if cycopt.is_a?(Range)
 
@@ -103,18 +103,18 @@ module WorkflowMgr
           while true do
             break if reftime.nil?
             break if reftime > cycopt.last
-            boot_cycles << reftime
+            selected_cycles << reftime
             reftime=@cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
           end
           
         else
-          boot_cycles=@options.cycles
+          selected_cycles=@options.cycles
         end
       end
-      boot_cycles.uniq!
-      boot_cycles.sort!
+      selected_cycles.uniq!
+      selected_cycles.sort!
       
-      return boot_cycles
+      return selected_cycles
     end
 
 
@@ -130,13 +130,13 @@ module WorkflowMgr
         return @tasks.keys
       end
 
-      boot_tasks=@options.tasks || []
+      selected_tasks=@options.tasks || []
       @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
-        boot_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
+        selected_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
       } unless @options.metatasks.nil?
-      boot_tasks.uniq!
-      boot_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
-      return boot_tasks
+      selected_tasks.uniq!
+      selected_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
+      return selected_tasks
     end
 
     ##########################################
@@ -605,10 +605,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # force_complete
+    # complete!
     #
     ##########################################
-    def force_complete!
+    def complete!
 
       with_locked_db {
 
@@ -638,7 +638,7 @@ module WorkflowMgr
         ncomplete_tasks = complete_tasks.length
 
         if @options.all_tasks
-          puts "Requesting completion of all tasks.  This will start the cycle, and mark all tasks within as \"succeeded.\"  Running \"rocotorun\" on the workflow after this will mark the cycle as \"done.\""
+          puts "Will complete all tasks in specified cycles.  This mark cycles as \"done\" and all tasks within the cycles as \"succeeded.\"  Running \"rocotorun\" will have no more impacts on cycles completed in this manner unless you \"rocotorewind\" them."
           printf "Are you sure you want to proceed? (y/n) "
           reply=STDIN.gets
           unless reply=~/^[Yy]/
@@ -648,7 +648,7 @@ module WorkflowMgr
 
         # Ask user for confirmation if complete tasks/cycles list is very large
         if (ncomplete_cycles > 10 || ncomplete_tasks > 10)
-          printf "Preparing to complete #{ncomplete_tasks} tasks for #{ncomplete_cycles} cycles.  A total of #{ncomplete_tasks * ncomplete_cycles} tasks will be completeed.  This may take a while.\n"
+          printf "Preparing to complete #{ncomplete_tasks} tasks for #{ncomplete_cycles} cycles.  A total of #{ncomplete_tasks * ncomplete_cycles} tasks will be completed.  This may take a while.\n"
           printf "Are you sure you want to proceed? (y/n) "
           reply=STDIN.gets
           unless reply=~/^[Yy]/
@@ -659,6 +659,9 @@ module WorkflowMgr
         # Iterate over cycles
         complete_cycles.each { |complete_cycle_time|
 
+          # Find the requested cycle
+          complete_cycle=find_cycle(complete_cycle_time)
+          
           # Complete each requested task for this cycle
           complete_tasks.each { |complete_task_name|
 
@@ -684,9 +687,6 @@ module WorkflowMgr
               end
             end  # unless
 
-            # Find the requested cycle
-            complete_cycle=find_cycle(complete_cycle_time)
-
             # Activate a new cycle if necessary and add it to the database
             if complete_cycle.nil? 
               if not @options.all_tasks
@@ -695,7 +695,7 @@ module WorkflowMgr
                 printf "Are you sure you want to complete '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
                 reply=STDIN.gets
               else
-                puts "Starting cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' so I can complete task '#{complete_task_name}'"
+                puts "Starting cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' so I can complete task '#{complete_task_name}'.  I will set the cycle to \"done\" shortly."
                 reply='y'
               end
               if reply=~/^[Yy]/
@@ -704,7 +704,7 @@ module WorkflowMgr
                 @dbServer.add_cycles([complete_cycle])
                 complete_job=nil
               else
-                puts "task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will not be completeed"
+                puts "task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will not be completed"
                 next  # complete next task
               end
             else
@@ -771,17 +771,24 @@ module WorkflowMgr
 
             # Add the new job to the database
 
-            puts "task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' has been completeed"
+            puts "task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' has been completed"
 
           } # complete_tasks.each
+
+          if @options.all_tasks and not complete_cycle.nil? and not complete_cycle.done?
+            puts "Marked all jobs as \"succeeded\" in cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}'.  I will now mark the cycle as \"done.\""
+            complete_cycle.done!
+            @dbServer.update_cycles([complete_cycle])
+          end
+
         } # complete_cycles.each
       } # with_locked_db
 
-              # Deactivate completed cycles
-        deactivate_done_cycles
-
-        # Expire active cycles that have exceeded the cycle life span
-        expire_cycles
+      # Deactivate completed cycles
+      deactivate_done_cycles
+      
+      # Expire active cycles that have exceeded the cycle life span
+      expire_cycles
 
     end # complete
 
