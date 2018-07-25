@@ -601,12 +601,12 @@ module WorkflowMgr
     #####################################################
     
      def name_stringdep(a,b,cmp)
-       ia=a.to_s
-       ib=b.to_s
+       ia=a.inspect
+       ib=b.inspect
        cmp=cmp.to_s
-       ia=ia[0..26]+'...' if(ia.size>30)
-       ib=ib[0..26]+'...' if(ib.size>30)
-       cmp=cmp[0..26]+'...' if(cmp.size>30)
+       ia=ia[0..26]+'...' if(ia.size>37)
+       ib=ib[0..26]+'...' if(ib.size>37)
+       cmp=cmp[0..26]+'...' if(cmp.size>37)
        return "'#{ia}'#{cmp}'#{ib}'"
      end
 

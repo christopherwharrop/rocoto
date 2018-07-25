@@ -14,18 +14,21 @@ module WorkflowMgr
 
     require 'workflowmgr/workflowoption'
 
-    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose
+    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose, :all_tasks
 
     ##########################################  
     #
     # Initialize
     #
     ##########################################
-    def initialize(args)
+    def initialize(args,name='rocotoboot',action='boot')
 
       @cycles=nil
       @tasks=nil
       @metatasks=nil
+      @name=name
+      @action=action
+      @all_tasks=false
       super(args)
 
     end
@@ -39,10 +42,14 @@ module WorkflowMgr
     ##########################################
     def add_opts(opts)
 
+      @cycles=[] if @cycles.nil?
+      @tasks=[] if @tasks.nil?
+      @metatasks=[] if @metatasks.nil?
+
       super(opts)
 
       # Override the command usage text
-      opts.banner = "Usage:  rocotoboot [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-m metatask_list]"
+      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-m metatask_list] [-a]"
 
       # Cycles of interest
       #      C   C,C,C  C:C  :C   C:
@@ -50,15 +57,15 @@ module WorkflowMgr
       opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' | : | all",String,"List of cycles") do |clist|
         case clist
         when /^\d{12}(,\d{12})*$/
-          @cycles=clist.split(",").collect { |c| Time.gm(c[0..3],c[4..5],c[6..7],c[8..9],c[10..11]) }
+          @cycles.concat(clist.split(",").collect { |c| Time.gm(c[0..3],c[4..5],c[6..7],c[8..9],c[10..11]) })
         when /^(\d{12}):(\d{12})$/
-          @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm($2[0..3],$2[4..5],$2[6..7],$2[8..9],$2[10..11]))
+          @cycles<< (Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm($2[0..3],$2[4..5],$2[6..7],$2[8..9],$2[10..11]))
         when /^:(\d{12})$/
-          @cycles=(Time.gm(1900,1,1,0,0)..Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11]))
+          @cycles<< (Time.gm(1900,1,1,0,0)..Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11]))
         when /^(\d{12}):$/
-          @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm(9999,12,31,23,59))
+          @cycles<< (Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm(9999,12,31,23,59))
         when /^all|:$/i
-          @cycles=(Time.gm(1900,1,1,0,0)..Time.gm(9999,12,31,23,59))
+          @cycles<< (Time.gm(1900,1,1,0,0)..Time.gm(9999,12,31,23,59))
         else
           puts opts
           puts "Unrecognized -c option #{clist}"
@@ -68,12 +75,20 @@ module WorkflowMgr
 
       # Tasks of interest
       opts.on("-t","--tasks 'a,b,c'",Array,"List of tasks") do |tasklist|
-        @tasks=tasklist
+        puts('tasks')
+        @tasks.concat tasklist
       end
 
       # Metaasks of interest
       opts.on("-m","--metatasks 'a,b,c'",Array,"List of metatasks") do |metatasklist|
-        @metatasks=metatasklist
+        puts('metatasks')
+        @metatasks.concat metatasklist
+      end
+
+      # Rewind all tasks for the specified cycles instead of a list of tasks:
+      opts.on("-a",'--all',"Selects all tasks.") do |flag|
+        puts "Requesting #{@action} of all tasks."
+        @all_tasks=true
       end
 
     end
@@ -89,7 +104,7 @@ module WorkflowMgr
 
       raise OptionParser::ParseError,"At least one cycle must be specified." if @cycles.nil?
 
-      raise OptionParser::ParseError,"At least one task or metatask must be specified." if (@tasks.nil? && @metatasks.nil?)
+      raise OptionParser::ParseError,"At least one task or metatask (-t or -m) must be specified, or all tasks (-a)." if (@tasks.nil? && @metatasks.nil? && ! all_tasks)
 
     end
 

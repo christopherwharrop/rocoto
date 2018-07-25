@@ -57,17 +57,18 @@ module WorkflowMgr
     def to_s
       strcyc=@cycle.strftime("%Y%m%d%H%M")
       if done?
-        return "#{strcyc}:done@#{@done.strftime('%Y%m%d%H%M')}"
-      elsif drained?
-        return "#{strcyc}:drained@#{@done.strftime('%Y%m%d%H%M')}"
+        return "#{strcyc} in state \"done\" since #{@done.strftime('%Y%m%d%H%M')}"
+      elsif draining?
+        return "#{strcyc} in state \"drained\" since @#{@draining.strftime('%Y%m%d%H%M')}"
       elsif expired?
-        return "#{strcyc}:expired@#{@done.strftime('%Y%m%d%H%M')}"
+        return "#{strcyc} in state \"expired\" since #{@expired.strftime('%Y%m%d%H%M')}"
       elsif active?
-        return "#{strcyc}:activated@#{@done.strftime('%Y%m%d%H%M')}"
+        return "#{strcyc} in state \"activated\" since #{@activated.strftime('%Y%m%d%H%M')})"
       else
-        return "#{strcyc}:inactive"
+        return "#{strcyc} in state \"inactive\""
       end
     end
+
 
     
     ##########################################
@@ -78,6 +79,18 @@ module WorkflowMgr
     def <=>(other)
       @cycle.getgm.to_i <=> other.cycle.getgm.to_i
     end
+
+
+    ##########################################
+    #
+    # inactive?
+    #
+    ##########################################
+    def inactive?
+
+      return @state==:inactive
+
+    end  # active?
 
 
     ##########################################
@@ -157,7 +170,24 @@ module WorkflowMgr
       raise "Draining cycle cannot be reactivated!" if @state==:draining
 
       @done=Time.at(0)
+      @draining=Time.at(0)
       @state=:active
+
+    end  # activate!
+
+
+    ##########################################
+    #
+    # rewind!
+    #
+    ##########################################
+    def rewind!
+
+      @done=Time.at(0)
+      @draining=Time.at(0)
+      @expired=Time.at(0)
+      @activated=Time.at(0)
+      @state=:inactive
 
     end  # activate!
 

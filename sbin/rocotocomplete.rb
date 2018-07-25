@@ -23,6 +23,6 @@ require 'libxml'
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
-workflowEngine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowBootOption.new(ARGV))
+workflowEngine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowBootOption.new(ARGV,name='rocotocomplete',action='completion'))
 workflowEngine.force_complete!
 

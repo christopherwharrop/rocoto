@@ -29,6 +29,17 @@ module WorkflowMgr
 
     end
 
+    #####################################################
+    #
+    # inspect
+    #
+    #####################################################
+    def inspect()
+
+      @str_objects.to_s
+
+    end
+
 
     #####################################################
     #
@@ -42,6 +53,24 @@ module WorkflowMgr
           obj
         else 
           obj.to_s(time)
+        end
+      }.join.strip
+
+    end
+
+
+    #####################################################
+    #
+    # to_s
+    #
+    #####################################################
+    def inspect()
+
+      @str_objects.collect {|obj|
+        if obj.is_a?(String)
+          obj
+        else 
+          obj.inspect()
         end
       }.join.strip
 

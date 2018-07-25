@@ -87,16 +87,67 @@ module WorkflowMgr
 
     ##########################################
     #
+    # selected_cycles
+    #
+    ##########################################
+
+    def selected_cycles
+
+      # Get the list of boot cycles
+      boot_cycles=[]
+      @options.cycles.each do |cycopt|
+        if cycopt.is_a?(Range)
+
+          # Find every cycle in the range that is a member of a cycledef
+          reftime=@cycledefs.collect { |cdef| cdef.next(cycopt.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
+          while true do
+            break if reftime.nil?
+            break if reftime > cycopt.last
+            boot_cycles << reftime
+            reftime=@cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
+          end
+          
+        else
+          boot_cycles=@options.cycles
+        end
+      end
+      boot_cycles.uniq!
+      boot_cycles.sort!
+      
+      return boot_cycles
+    end
+
+
+    ##########################################
+    #
+    # selected_tasks
+    #
+    ##########################################
+
+    def selected_tasks
+
+      if @options.all_tasks
+        return @tasks.keys
+      end
+
+      boot_tasks=@options.tasks || []
+      @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
+        boot_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
+      } unless @options.metatasks.nil?
+      boot_tasks.uniq!
+      boot_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
+      return boot_tasks
+    end
+
+    ##########################################
+    #
     # rewind!
     #
     ##########################################
     def rewind!
+
+
       with_locked_db {
-        # Get task name and cycle time:
-        rewind_task_name=@options.tasks.first
-        rewind_cycle_time=@options.cycles.first
-        all_tasks=@options.all_tasks?
-        
         # Build the workflow objects from the contents of the workflow document
         build_workflow
 
@@ -116,23 +167,51 @@ module WorkflowMgr
         # Expire active cycles that have exceeded the cycle life span
         expire_cycles
 
-        if @options.all_cycles?
-          # Process all active cycles
-          cycles=@active_cycles
-        else
-          cycles=@options.cycles
+        # Get the list of complete cycles
+        rewind_cycles=selected_cycles
+        nrewind_cycles=rewind_cycles.length
+
+        # Collect the names of tasks to complete
+        rewind_tasks=selected_tasks
+        nrewind_tasks = rewind_tasks.length
+        all_tasks=@options.all_tasks
+        
+        if rewind_tasks.empty? or rewind_cycles.empty?
+          puts "No tasks to rewind.  Successfully doing nothing.  You're welcome."
+        end
+
+        if all_tasks
+          puts "Rewinding all tasks will set the cycle to \"inactive\" status, as if Rocoto had never started it."
+          printf "Are you sure you want to proceed? (y/n) "
+          reply=STDIN.gets
+          unless reply=~/^[Yy]/
+            Process.exit(0)
+          end
+        end
+
+        # Ask user for confirmation if rewind tasks/cycles list is very large
+        if (nrewind_cycles > 10 || nrewind_tasks > 10)
+          printf "Preparing to rewind #{nrewind_tasks} tasks for #{nrewind_cycles} cycles.  A total of #{nrewind_tasks * nrewind_cycles} tasks will be rewound.\n"
+          printf "Are you sure you want to proceed? (y/n) "
+          reply=STDIN.gets
+          unless reply=~/^[Yy]/
+            Process.exit(0)
+          end
         end
 
         did_something=false
-        cycles.each do |cycle|
+        rewind_cycles.each do |cycle|
           strcyc=cycle.strftime('%Y%m%d%H%M')
-          puts "#{strcyc}: consider this cycle"
+          #puts "#{strcyc}: consider this cycle"
           # Find the cycle, or nil if the cycle was never attempted
           rewind_cycle=find_cycle(cycle)
+
+          if not rewind_cycle.nil?
+            puts "#{strcyc}: Rewind tasks for #{rewind_cycle}"
+          end
           
           if rewind_cycle.nil?
-            puts "#{strcyc}: cycle has never been started so all of its tasks should already have 0 tries."
-            puts "#{strcyc}: I will take no further action on this cycle."
+            puts "#{strcyc}: Cycle is inactive (unstarted).  Nothing to do."
             next
           end
 
@@ -140,35 +219,28 @@ module WorkflowMgr
             puts "ERROR: Cycle #{strcyc} is expired.  Expired cycles cannot be reactivated, so I cannot rewind tasks for this cycle."
             next
           end
-        
-          if rewind_cycle.draining?
-            puts "ERROR: Cycle #{strcyc} has completed a \"final\" state task.  Such cycles cannot be reactivated, so I cannot rewind tasks for this cycle."
-            next
-          end
-          
           
           if all_tasks
-            puts "Rewind all tasks!!"
             task_list=@active_jobs.keys
           else
-            puts "Rewind specified tasks."
+            #puts "Rewind specified tasks."
             task_list=@options.tasks
           end
 
           rewind_list=[]
           did_something=false
-          puts "ACTIVE JOBS: <#{@active_jobs.keys.join('><')}>"
-          task_list.each do |task_name|
-            puts "#{strcyc}: #{task_name}: consider this task"
+          #puts "ACTIVE JOBS: <#{@active_jobs.keys.join('><')}>"
+          rewind_tasks.each do |task_name|
+            #puts "#{strcyc}: #{task_name}: consider this task"
             cycjob=@active_jobs[task_name.to_s]
             if cycjob.nil?
-              puts "#{strcyc}: #{task_name}: job has not been tried yet.  Doing nothing to this task."
+              #puts "#{strcyc}: #{task_name}: job has not been tried yet.  Doing nothing to this task."
               next
             end
-            puts "#{strcyc}: #{task_name}: jobs exist for <#{cycjob.keys.join(', ')}>"
+            #puts "#{strcyc}: #{task_name}: jobs exist for <#{cycjob.keys.join(', ')}>"
             rewind_job=cycjob[cycle]
             if rewind_job.nil?
-              puts "#{strcyc}: #{task_name}: job has not been tried yet for cycle #{strcyc}.  Doing nothing to this task."
+              #puts "#{strcyc}: #{task_name}: job has not been tried yet for cycle #{strcyc}.  Doing nothing to this task."
               next
             else
               if rewind_job.dead?
@@ -199,9 +271,25 @@ module WorkflowMgr
             did_something=true
           end # task loop
 
-          if did_something
-            if rewind_cycle.done?
-              puts "#{strcyc}: WARNING: Cycle is done.  Setting its tasks' tries to 0 may start other tasks."
+          if not did_something
+            puts "#{strcyc}: No tasks to rewind."
+          end
+
+          if all_tasks
+            rewind_cycle.rewind!
+
+
+            puts "#{strcyc}: Deactivate cycle: #{rewind_cycle}"
+
+            # @dbServer.update_cycles([rewind_cycle])
+            @dbServer.remove_cycle(rewind_cycle.cycle)
+          elsif did_something
+            if rewind_cycle.done? or rewind_cycle.draining?
+              if rewind_cycle.done?
+                puts "#{strcyc}: WARNING: Cycle is done.  Setting its tasks' tries to 0 may start other tasks."
+              else
+                puts "#{strcyc}: WARNING: Cycle is draining.  Setting its tasks' tries to 0 may start other tasks.  If any final tasks are succeeded, the cycle will be drained as soon as rocotorun is executed again."
+              end
               rewind_cycle.reactivate!
               @dbServer.update_cycles([rewind_cycle])
             end
@@ -214,7 +302,8 @@ module WorkflowMgr
 
         end # cycle loop
 
-      }
+      } # with_locked_db
+
     end  # rewind
 
 
@@ -309,37 +398,16 @@ module WorkflowMgr
         taskcycledefs={}
 
         # Get the list of boot cycles
-        boot_cycles=[]
-        if @options.cycles.is_a?(Range)
-
-          # Find every cycle in the range that is a member of a cycledef
-          reftime=@cycledefs.collect { |cdef| cdef.next(@options.cycles.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-          while true do
-            break if reftime.nil?
-            break if reftime > @options.cycles.last
-            boot_cycles << reftime
-            reftime=@cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-          end
-
-        else
-          boot_cycles=@options.cycles
-        end
-        boot_cycles.uniq!
-        boot_cycles.sort!
-        nboot_cycles = boot_cycles.length
+        boot_cycles=selected_cycles
+        nboot_cycles=boot_cycles.length
 
         # Collect the names of tasks to boot
-        boot_tasks=@options.tasks || []
-        @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
-          boot_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
-        } unless @options.metatasks.nil?
-        boot_tasks.uniq!
-        boot_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
+        boot_tasks=selected_tasks
         nboot_tasks = boot_tasks.length
 
         # Ask user for confirmation if boot tasks/cycles list is very large
         if (nboot_cycles > 10 || nboot_tasks > 10)
-          printf "Preparing to boot #{nboot_tasks} tasks for #{nboot_cycles} cycles.  A total of #{nboot_tasks * nboot_cycles} tasks will be booted.\n"
+          printf "Preparing to boot #{nboot_tasks} tasks for #{nboot_cycles} cycles.  A total of #{nboot_tasks * nboot_cycles} tasks will be booted.  This may take a while.\n"
           printf "Are you sure you want to proceed? (y/n) "
           reply=STDIN.gets
           unless reply=~/^[Yy]/
@@ -349,6 +417,8 @@ module WorkflowMgr
 
         # Iterate over boot cycles
         boot_cycles.each { |boot_cycle_time|
+
+          booted_something=false
 
           # Boot each task for this boot cycle
           boot_tasks.each { |boot_task_name|
@@ -380,10 +450,15 @@ module WorkflowMgr
 
             # Activate a new cycle if necessary and add it to the database
             if boot_cycle.nil?
-              printf "Booting task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
-              printf "This may trigger submission of other tasks for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{boot_task_name}'\n"
-              printf "Are you sure you want to boot '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
-              reply=STDIN.gets
+              if @options.all_tasks
+                puts "Booting task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' for the first time."
+                reply='y'
+              else
+                printf "Booting task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
+                printf "This may trigger submission of other tasks for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{boot_task_name}'\n"
+                printf "Are you sure you want to boot '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
+                reply=STDIN.gets
+              end
               if reply=~/^[Yy]/
                 boot_cycle=Cycle.new(boot_cycle_time)
                 boot_cycle.activate!
@@ -396,7 +471,7 @@ module WorkflowMgr
             else
 
               # Reactivate the cycle if it is done (but not expired)
-              if boot_cycle.done?
+              if boot_cycle.done? or boot_cycle.draining?
                 boot_cycle.reactivate!
                 @dbServer.update_cycles([boot_cycle])
               end
@@ -425,12 +500,19 @@ module WorkflowMgr
             # Check for existing jobs that are not done or expired
             unless boot_job.nil?
               if !boot_job.done? && !boot_job.expired?
-                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because a job for it already exists in state #{boot_job.state}"
+                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because a job for it already exists in state #{boot_job.state}.  You need to rewind this task instead."
                 next
               end
               if boot_job.expired?
-                puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task has expired"
-                next
+                puts "I should not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' because the task has expired.  Are you sure you want to boot this task anyway? (y/n)"
+                reply=STDIN.gets
+                if reply=~/^[Yy]/
+                  puts "Okay, but don't say I didn't warn you."
+                  boot_job=nil
+                else
+                  puts "I'm glad you came to your senses!  Task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted!"
+                  next  # boot next task
+                end
               end
             end
 
@@ -516,6 +598,7 @@ module WorkflowMgr
 
           } # boot_tasks.each
         } # boot_cycles.each
+
       } # with_locked_db
 
     end # boot
@@ -547,37 +630,25 @@ module WorkflowMgr
         taskcycledefs={}
 
         # Get the list of complete cycles
-        complete_cycles=[]
-        if @options.cycles.is_a?(Range)
-
-          # Find every cycle in the range that is a member of a cycledef
-          reftime=@cycledefs.collect { |cdef| cdef.next(@options.cycles.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-          while true do
-            break if reftime.nil?
-            break if reftime > @options.cycles.last
-            complete_cycles << reftime
-            reftime=@cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-          end
-
-        else
-          complete_cycles=@options.cycles
-        end
-        complete_cycles.uniq!
-        complete_cycles.sort!
-        ncomplete_cycles = complete_cycles.length
+        complete_cycles=selected_cycles
+        ncomplete_cycles=complete_cycles.length
 
         # Collect the names of tasks to complete
-        complete_tasks=@options.tasks || []
-        @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
-          complete_tasks << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
-        } unless @options.metatasks.nil?
-        complete_tasks.uniq!
-        complete_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
+        complete_tasks=selected_tasks
         ncomplete_tasks = complete_tasks.length
+
+        if @options.all_tasks
+          puts "Requesting completion of all tasks.  This will start the cycle, and mark all tasks within as \"succeeded.\"  Running \"rocotorun\" on the workflow after this will mark the cycle as \"done.\""
+          printf "Are you sure you want to proceed? (y/n) "
+          reply=STDIN.gets
+          unless reply=~/^[Yy]/
+            Process.exit(0)
+          end
+        end
 
         # Ask user for confirmation if complete tasks/cycles list is very large
         if (ncomplete_cycles > 10 || ncomplete_tasks > 10)
-          printf "Preparing to complete #{ncomplete_tasks} tasks for #{ncomplete_cycles} cycles.  A total of #{ncomplete_tasks * ncomplete_cycles} tasks will be completeed.\n"
+          printf "Preparing to complete #{ncomplete_tasks} tasks for #{ncomplete_cycles} cycles.  A total of #{ncomplete_tasks * ncomplete_cycles} tasks will be completeed.  This may take a while.\n"
           printf "Are you sure you want to proceed? (y/n) "
           reply=STDIN.gets
           unless reply=~/^[Yy]/
@@ -617,11 +688,16 @@ module WorkflowMgr
             complete_cycle=find_cycle(complete_cycle_time)
 
             # Activate a new cycle if necessary and add it to the database
-            if complete_cycle.nil?
-              printf "Completing task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
-              printf "This may trigger submission of other tasks for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{complete_task_name}'\n"
-              printf "Are you sure you want to complete '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
-              reply=STDIN.gets
+            if complete_cycle.nil? 
+              if not @options.all_tasks
+                printf "Completing task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
+                printf "This may trigger submission of other tasks for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{complete_task_name}'\n"
+                printf "Are you sure you want to complete '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' ? (y/n) "
+                reply=STDIN.gets
+              else
+                puts "Starting cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' so I can complete task '#{complete_task_name}'"
+                reply='y'
+              end
               if reply=~/^[Yy]/
                 complete_cycle=Cycle.new(complete_cycle_time)
                 complete_cycle.activate!

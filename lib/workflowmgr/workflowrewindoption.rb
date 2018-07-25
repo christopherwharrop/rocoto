@@ -130,7 +130,6 @@ module WorkflowMgr
 
       # Rewind all tasks for the specified cycles instead of a list of tasks:
       opts.on("-a",'--all',"Selects all tasks.") do |flag|
-        puts "Requesting rewind of all tasks."
         @all_tasks[0]=true
       end
     end

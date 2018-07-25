@@ -442,6 +442,33 @@ module WorkflowMgr
 
     ##########################################
     #
+    # remove_cycle
+    #
+    ##########################################
+    def remove_cycle(cycletime)
+
+      begin
+
+        # Make sure write access is enabled
+        verify_write_access()
+
+        # Start a transaction so that the database will be locked
+        @database.transaction do |db|
+
+          db.execute("DELETE FROM cycles WHERE cycle=#{cycletime.to_i};")
+          db.execute("DELETE FROM jobs WHERE cycle=#{cycletime.to_i};")
+
+        end  # database transaction
+
+      rescue SQLite3::BusyException
+        msg="ERROR: WorkflowSQLite3DB.update_cycles: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
+        raise WorkflowMgr::WorkflowDBLockedException,msg
+      end  # begin                                                                                                                                                                                                                                                         
+    end
+
+
+    ##########################################
+    #
     # add_cycles
     #
     ##########################################
