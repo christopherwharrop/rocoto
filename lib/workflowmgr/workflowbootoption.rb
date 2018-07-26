@@ -15,8 +15,9 @@ module WorkflowMgr
     ALL_CYCLES=(Time.gm(1900,1,1,0,0)..Time.gm(9999,12,31,23,59))
 
     require 'workflowmgr/workflowoption'
+    require 'workflowmgr/workflowselection'
 
-    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose, :all_tasks
+    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose, :all_tasks, :selection
 
     ##########################################  
     #
@@ -32,6 +33,7 @@ module WorkflowMgr
       @name=name
       @action=action
       @all_tasks=false
+      @all_cycles=false
       super(args)
 
       puts("default_all=#{@default_all}")
@@ -68,6 +70,7 @@ module WorkflowMgr
           @cycles<< (Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm(9999,12,31,23,59))
         when /^all|:$/i
           @cycles<< ALL_CYCLES
+          @all_cycles=true
         else
           puts opts
           puts "Unrecognized -c option #{clist}"
@@ -126,6 +129,9 @@ module WorkflowMgr
           raise OptionParser::ParseError,"At least one task or metatask (-t or -m) must be specified, or all tasks (-a)."
         end
       end
+
+
+      @selection=WorkflowMgr::WorkflowSelection.new(@all_tasks,@tasks,@metatasks,@cycles,@default_all)
 
     end
 

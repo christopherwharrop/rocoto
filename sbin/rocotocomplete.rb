@@ -15,7 +15,7 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow status library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowbootoption.rb'
+require 'workflowmgr/workflowselection'
 require 'libxml'
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
@@ -23,6 +23,10 @@ require 'libxml'
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
-workflowEngine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowBootOption.new(ARGV,name='rocotocomplete',action='completion'))
+opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
+      name='rocotocomplete', # command name (used for messages)
+      action='completion',   # what the command does (used for messages)
+      default_all=true)      # default task and cycle selection is everything
+workflowEngine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowEngine.complete!
 

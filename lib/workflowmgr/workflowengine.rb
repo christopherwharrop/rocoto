@@ -68,12 +68,6 @@ module WorkflowMgr
         # Initialize the workflow lock
         @locked=false
 
-        # Initialize the task and cycle selection to "I have not calculated it yet:"
-        @selected_cycles=nil
-        @selected_tasks=nil
-        @selected_cycles_set=nil
-        @selected_tasks_set=nil
-
       rescue => crash
         WorkflowMgr.stderr('Workflow Manager Initialization failed.',1)
         WorkflowMgr.stderr(crash.message,1)
@@ -89,182 +83,6 @@ module WorkflowMgr
       end
 
     end  # initialize
-
-
-    ##########################################
-    #
-    # selected_cycles
-    #
-    ##########################################
-
-    def selected_cycles
-
-      return @selected_cycles unless @selected_cycles.nil?
-
-      # Get the list of boot cycles
-      selected_cycles=[]
-      @options.cycles.each do |cycopt|
-        if cycopt.is_a?(Range)
-
-          # Find every cycle in the range that is a member of a cycledef
-          reftime=@cycledefs.collect { |cdef| cdef.next(cycopt.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-          while true do
-            break if reftime.nil?
-            break if reftime > cycopt.last
-            selected_cycles << reftime
-            reftime=@cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-          end
-          
-        else
-          selected_cycles=@options.cycles
-        end
-      end
-      selected_cycles.uniq!
-      selected_cycles.sort!
-
-      @selected_cycles=selected_cycles
-      
-      return selected_cycles
-    end
-
-
-    ##########################################
-    #
-    # selected_cycles_set
-    #
-    ##########################################
-
-    def selected_cycles_set
-      return @selected_cycles_set unless @selected_cycles_set.nil?
-      @selected_cycles_set = Set.new selected_cycles
-      #puts "selected cycles list: #{@selected_cycles.inspect}"
-      #puts "selected cycles set: #{@selected_cycles_set.inspect}"
-
-      return @selected_cycles_set
-    end
-
-
-    ##########################################
-    #
-    # selected_tasks
-    #
-    ##########################################
-
-    def selected_tasks
-
-      return @selected_tasks unless @selected_tasks.nil?
-
-      if @options.all_tasks
-        return @tasks.keys
-      end
-
-      pass1=@options.tasks || []
-      @tasks.values.find_all { |t| !t.attributes[:metatasks].nil? }.each { |t|
-        pass1 << t.attributes[:name] unless (t.attributes[:metatasks].split(",") & @options.metatasks).empty?
-      } unless @options.metatasks.nil?
-
-      pass2=[]
-      pass1.each do |item|
-        puts "#{item}"
-        if item.start_with? ':'
-          negate=false
-          if item[1..1]=='!'
-            attribute_name=item[2..-1]
-            negate=true
-          else
-            attribute_name=item[1..-1]
-          end
-
-          case attribute_name
-            when 'final'     then attribute=:final
-            when 'shared'    then attribute=:shared
-            when 'exclusive' then attribute=:exclusive
-            when 'metatasks' then attribute=:metatasks
-            when 'cores'     then attribute=:cores
-            when 'nodes'     then attribute=:nodes
-          else
-            raise "Unknown attribute '#{attribute_name}' is not one of: final, shared, exclusive, metatasks, cores, nodes"
-          end
-          @tasks.values.each do |task|
-            if ( negate && ! task.attributes[attribute] ) || (!negate && task.attributes[attribute])
-              pass2 << task.attributes[:name]
-            end
-          end
-        elsif item.start_with? '/' and item.end_with? '/'
-          regex=Regexp.new item[1..-2]
-          @tasks.values.each do |task|
-            if regex=~task.attributes[:name]
-              pass2 << task.attributes[:name]
-            end
-          end
-        elsif item.start_with? '@'
-          puts 'search cycledefs'
-          cycledef=item[1..-1]
-          @tasks.values.each do |task|
-            next if task.attributes[:cycledefs].nil?
-            cycledefs=task.attributes[:cycledefs].split(',')
-            if cycledefs.include? cycledef
-              pass2 << task.attributes[:name] 
-            end
-          end
-        else
-          pass2 << item
-        end
-      end
-
-      selected_tasks=pass2
-
-      selected_tasks.uniq!
-      selected_tasks.sort! { |t1,t2| @tasks[t1].seq <=> @tasks[t2].seq}
-
-      @selected_tasks=selected_tasks
-
-      #puts "selected: #{@selected_tasks.inspect}"
-
-      return selected_tasks
-    end
-
-    ##########################################
-    #
-    # selected_tasks_set
-    #
-    ##########################################
-
-    def selected_tasks_set
-      return @selected_tasks_set unless @selected_tasks_set.nil?
-      @selected_tasks_set = Set.new selected_tasks
-      return @selected_tasks_set
-    end
-
-
-    ##########################################
-    #
-    # is_selected
-    #
-    ##########################################
-
-    def is_selected?(arg)
-
-      case arg
-      when Cycle
-        return selected_cycles_set.include? arg.cycle
-      when String
-        return selected_tasks_set.include? arg
-      when Task
-        return selected_tasks_set.include? arg.attributes[:name]
-      when Time
-        return selected_cycles_set.include? arg
-      when Job
-        return( selected_cycles_set.include?(job.cycle) && selected_tasks_set.include?(job.task.attributes[:name]))
-      when Range
-        raise "Internal error: unexpected type #{arg.class.name} in is_selected?.  Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof (except Ranges) are allowed."
-      when Enumerable
-        return arg.all? { |elem| is_selected? elem }
-      else
-        raise "Internal error: unexpected type #{arg.class.name} in is_selected?.  Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof (except Ranges) are allowed."
-      end
-
-    end
 
 
     ##########################################
@@ -296,11 +114,11 @@ module WorkflowMgr
         expire_cycles
 
         # Get the list of complete cycles
-        rewind_cycles=selected_cycles
+        rewind_cycles=@selected_cycles
         nrewind_cycles=rewind_cycles.length
 
         # Collect the names of tasks to complete
-        rewind_tasks=selected_tasks
+        rewind_tasks=@selected_tasks
         nrewind_tasks = rewind_tasks.length
         all_tasks=@options.all_tasks
         
@@ -328,6 +146,7 @@ module WorkflowMgr
         end
 
         did_something=false
+        do_not_reactivate=false
         rewind_cycles.each do |cycle|
           strcyc=cycle.strftime('%Y%m%d%H%M')
           #puts "#{strcyc}: consider this cycle"
@@ -344,8 +163,8 @@ module WorkflowMgr
           end
 
           if rewind_cycle.expired?
-            puts "ERROR: Cycle #{strcyc} is expired.  Expired cycles cannot be reactivated, so I cannot rewind tasks for this cycle."
-            next
+            puts "#{strcyc} is expired.  Will rewind tasks, but will not reactivate cycle."
+            do_not_reactivate=true
           end
           
           if all_tasks
@@ -403,7 +222,9 @@ module WorkflowMgr
             puts "#{strcyc}: No tasks to rewind."
           end
 
-          if all_tasks
+          if do_not_reactivate
+            puts "#{strcyc}: not reactivating this cycle."
+          elsif all_tasks
             rewind_cycle.rewind!
 
 
@@ -526,11 +347,11 @@ module WorkflowMgr
         taskcycledefs={}
 
         # Get the list of boot cycles
-        boot_cycles=selected_cycles
+        boot_cycles=@selected_cycles
         nboot_cycles=boot_cycles.length
 
         # Collect the names of tasks to boot
-        boot_tasks=selected_tasks
+        boot_tasks=@selected_tasks
         nboot_tasks = boot_tasks.length
 
         # Ask user for confirmation if boot tasks/cycles list is very large
@@ -758,11 +579,11 @@ module WorkflowMgr
         taskcycledefs={}
 
         # Get the list of complete cycles
-        complete_cycles=selected_cycles
+        complete_cycles=@selected_cycles
         ncomplete_cycles=complete_cycles.length
 
         # Collect the names of tasks to complete
-        complete_tasks=selected_tasks
+        complete_tasks=@selected_tasks
         ncomplete_tasks = complete_tasks.length
 
         if @options.all_tasks
@@ -851,13 +672,13 @@ module WorkflowMgr
                   complete_job=@active_jobs[complete_task_name][complete_cycle_time]
                 end
               else
-                puts "WARNING: Cycle #{boot_cycle_time.strftime("%Y%m%d%H%M")} state is #{boot_cycle.state}.  Proceed anyway (y/n)?"
+                puts "WARNING: Cycle #{complete_cycle_time.strftime("%Y%m%d%H%M")} state is #{complete_cycle.state}.  Proceed anyway (y/n)?"
                 reply=STDIN.gets
                 if reply=~/^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
                   complete_job=nil
                 else
-                  puts "Wheew.  I really dodged a bullet there.  Task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted!"
+                  puts "Wheew.  I really dodged a bullet there.  Task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will not be completed now!"
                   next  # complete next task
                 end
               end
@@ -1075,6 +896,12 @@ module WorkflowMgr
 
       # Warn use if any unsupported features are used:
       workflowdoc.features_supported?
+
+      # Obtain the task and cycle subsets, which may have been passed
+      # in on the command line via -m, -t, -c, and -a.
+      @subset=@options.selection.make_subset(tasks=@tasks,cycledefs=@cycledefs)
+      @selected_tasks=@subset.collect_tasks{|task| task}
+      @selected_cycles=@subset.collect_cycles{|cycle| cycle}
 
     end
 
@@ -1833,7 +1660,7 @@ module WorkflowMgr
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.sort { |c1,c2| c1.cycle <=> c2.cycle }.each do |cycle|
 
-        if not is_selected? cycle
+        if not @subset.is_selected? cycle
           WorkflowMgr.stderr("#{cycle.cycle.strftime('%Y%m%d%H%M')}: cycle is not selected by -c; skip",4)
           next
         end
@@ -1844,7 +1671,7 @@ module WorkflowMgr
         cycletime=cycle.cycle
         @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 
-          if not is_selected? task
+          if not @subset.is_selected? task
             WorkflowMgr.stderr("#{task.attributes[:name]}: task is not selected by -m, -t, or -a; skip",9)
             next
           end
