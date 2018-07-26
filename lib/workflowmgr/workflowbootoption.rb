@@ -12,6 +12,8 @@ module WorkflowMgr
   ##########################################
   class WorkflowBootOption < WorkflowOption
 
+    ALL_CYCLES=(Time.gm(1900,1,1,0,0)..Time.gm(9999,12,31,23,59))
+
     require 'workflowmgr/workflowoption'
 
     attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose, :all_tasks
@@ -21,15 +23,18 @@ module WorkflowMgr
     # Initialize
     #
     ##########################################
-    def initialize(args,name='rocotoboot',action='boot')
+    def initialize(args,name='rocotoboot',action='boot',default_all=false)
 
       @cycles=nil
       @tasks=nil
       @metatasks=nil
+      @default_all=default_all  # true => command defaults to all tasks and cycles
       @name=name
       @action=action
       @all_tasks=false
       super(args)
+
+      puts("default_all=#{@default_all}")
 
     end
 
@@ -62,7 +67,7 @@ module WorkflowMgr
         when /^(\d{12}):$/
           @cycles<< (Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm(9999,12,31,23,59))
         when /^all|:$/i
-          @cycles<< (Time.gm(1900,1,1,0,0)..Time.gm(9999,12,31,23,59))
+          @cycles<< ALL_CYCLES
         else
           puts opts
           puts "Unrecognized -c option #{clist}"
@@ -104,10 +109,22 @@ module WorkflowMgr
 
       super(opts,args)
 
-      raise OptionParser::ParseError,"At least one cycle must be specified." if @cycles.nil?
+      puts("default_all=#{@default_all}")
+
+      if @cycles.nil?
+        if @default_all
+          @cycles=[ALL_CYCLES]
+        else
+          raise OptionParser::ParseError,"At least one cycle must be specified."
+        end
+      end
 
       if @tasks.nil? && @metatasks.nil? && ! @all_tasks
-        raise OptionParser::ParseError,"At least one task or metatask (-t or -m) must be specified, or all tasks (-a)."
+        if @default_all
+          @all_tasks=true
+        else
+          raise OptionParser::ParseError,"At least one task or metatask (-t or -m) must be specified, or all tasks (-a)."
+        end
       end
 
     end

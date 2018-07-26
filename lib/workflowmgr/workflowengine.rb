@@ -136,7 +136,11 @@ module WorkflowMgr
 
     def selected_cycles_set
       return @selected_cycles_set unless @selected_cycles_set.nil?
-      @selected_cycles_set = Set.new @selected_cycles
+      @selected_cycles_set = Set.new selected_cycles
+      #puts "selected cycles list: #{@selected_cycles.inspect}"
+      #puts "selected cycles set: #{@selected_cycles_set.inspect}"
+
+      return @selected_cycles_set
     end
 
 
@@ -228,7 +232,8 @@ module WorkflowMgr
 
     def selected_tasks_set
       return @selected_tasks_set unless @selected_tasks_set.nil?
-      @selected_tasks_set = Set.new @selected_tasks
+      @selected_tasks_set = Set.new selected_tasks
+      return @selected_tasks_set
     end
 
 
@@ -242,15 +247,15 @@ module WorkflowMgr
 
       case arg
       when Cycle
-        return selected_cycles_set.includes? arg.cycle
+        return selected_cycles_set.include? arg.cycle
       when String
-        return selected_tasks_set.includes? arg
+        return selected_tasks_set.include? arg
       when Task
-        return selected_tasks_set.includes? arg.attributes[:name]
+        return selected_tasks_set.include? arg.attributes[:name]
       when Time
-        return selected_cycles_set.includes? arg
+        return selected_cycles_set.include? arg
       when Job
-        return( selected_cycles_set.includes?(job.cycle) && selected_tasks_set.includes?(job.task.attributes[:name]))
+        return( selected_cycles_set.include?(job.cycle) && selected_tasks_set.include?(job.task.attributes[:name]))
       when Range
         raise "Internal error: unexpected type #{arg.class.name} in is_selected?.  Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof (except Ranges) are allowed."
       when Enumerable
@@ -1828,11 +1833,21 @@ module WorkflowMgr
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.sort { |c1,c2| c1.cycle <=> c2.cycle }.each do |cycle|
 
+        if not is_selected? cycle
+          WorkflowMgr.stderr("#{cycle.cycle.strftime('%Y%m%d%H%M')}: cycle is not selected by -c; skip",4)
+          next
+        end
+        
         # Don't submit jobs for draining cycles
         next if cycle.draining?
 
         cycletime=cycle.cycle
         @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
+
+          if not is_selected? task
+            WorkflowMgr.stderr("#{task.attributes[:name]}: task is not selected by -m, -t, or -a; skip",9)
+            next
+          end
 
           # Make sure the task is eligible for submission
           resubmit=false
