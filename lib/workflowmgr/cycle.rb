@@ -57,16 +57,26 @@ module WorkflowMgr
     def to_s
       strcyc=@cycle.strftime("%Y%m%d%H%M")
       if done?
-        return "#{strcyc} in state \"done\" since #{@done.strftime('%Y%m%d%H%M')}"
+        return "#{strcyc} in state \"done\" since #{@done.strftime('%Y-%m-%d %H:%M:%S')}"
       elsif draining?
-        return "#{strcyc} in state \"drained\" since @#{@draining.strftime('%Y%m%d%H%M')}"
+        return "#{strcyc} in state \"drained\" since @#{@draining.strftime('%Y-%m-%d %H:%M:%S')}"
       elsif expired?
-        return "#{strcyc} in state \"expired\" since #{@expired.strftime('%Y%m%d%H%M')}"
+        return "#{strcyc} in state \"expired\" since #{@expired.strftime('%Y-%m-%d %H:%M:%S')}"
       elsif active?
-        return "#{strcyc} in state \"activated\" since #{@activated.strftime('%Y%m%d%H%M')})"
+        return "#{strcyc} in state \"activated\" since #{@activated.strftime('%Y-%m-%d %H:%M:%S')}"
       else
         return "#{strcyc} in state \"inactive\""
       end
+    end
+
+
+    ##########################################
+    #
+    # hash
+    #
+    ##########################################
+    def hash()
+      return @cycle.hash
     end
 
 

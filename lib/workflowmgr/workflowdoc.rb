@@ -317,9 +317,7 @@ module WorkflowMgr
       }
 
       return cycles
-
     end
-
 
     ##########################################
     #

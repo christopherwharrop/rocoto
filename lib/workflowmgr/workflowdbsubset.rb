@@ -42,9 +42,9 @@ module WorkflowMgr
       @undef_cycles_set=Set.new @undef_cycles_array
 
       cycles=[]
-      @xml_cycles_array.each{|c| cycles << c.cycle}
       @db_cycles_array.each{|c| cycles << c.cycle}
       @undef_cycles_array.each{|c| cycles << c.cycle}
+      @xml_cycles_array.each{|c| cycles << c.cycle}
       cycles.sort!
       cycles.uniq!
 

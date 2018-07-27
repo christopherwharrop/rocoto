@@ -8,6 +8,7 @@ module WorkflowMgr
   require 'workflowmgr/workflowselection'
   require 'workflowmgr/workflowdbsubset'
   require 'workflowmgr/workflowsubset'    # for ALL_POSSIBLE_CYCLES constant
+  require 'workflowmgr/cycledefselection'
 
   class WorkflowDBSelection < WorkflowMgr::WorkflowSelection
 
@@ -57,6 +58,27 @@ module WorkflowMgr
                 dbcycles += cycle
               end
             end
+          elsif cycopt.is_a? WorkflowMgr::CycleDefSelection
+            these_cycles=[]
+            cycledefs.each do |cdef|
+              if cycopt.name == cdef.group
+              cdef.each(cdef.first,by_activation_time=false) do |cyc|
+                  these_cycles << cyc
+                end
+              end
+            end
+            this_set=Set.new these_cycles
+            cyc_first=these_cycles.min
+            cyc_last=these_cycles.max
+            db_cycles_for_this=dbServer.get_cycles(reftime={:start=>cyc_first,:last=>cyc_last})
+            db_set=Set.new db_cycles_for_this
+
+            xml_set=this_set-db_set
+            
+            dbcycles.concat db_set.to_a
+
+            xml_set.each {|c| xmlcycles << WorkflowMgr::Cycle.new(c)}
+
           elsif cycopt == ALL_POSSIBLE_CYCLES
             dbcycles += @dbServer.get_cycles()
           else

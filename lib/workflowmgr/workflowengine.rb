@@ -899,7 +899,7 @@ module WorkflowMgr
 
       # Obtain the task and cycle subsets, which may have been passed
       # in on the command line via -m, -t, -c, and -a.
-      @subset=@options.selection.make_subset(tasks=@tasks,cycledefs=@cycledefs)
+      @subset=@options.selection.make_subset(@tasks,@cycledefs)
       @selected_tasks=@subset.collect_tasks{|task| task}
       @selected_cycles=@subset.collect_cycles{|cycle| cycle}
 

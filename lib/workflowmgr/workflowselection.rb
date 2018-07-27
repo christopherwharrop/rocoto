@@ -73,6 +73,7 @@ module WorkflowMgr
     def select_cycles(cycledefs)
       # Get the list of boot cycles
       selected_cycles=[]
+      
       @cycles.each do |cycopt|
         if cycopt.is_a?(Range)
 
@@ -84,7 +85,14 @@ module WorkflowMgr
             selected_cycles << reftime
             reftime=cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
           end
-          
+        elsif cycopt.is_a? CycleDefSelection
+          cycledefs.each do |cdef|
+            if cycopt.name == cdef.group
+              cdef.each(cdef.first,by_activation_time=false) do |cyc|
+                selected_cycles << cyc
+              end
+            end
+          end
         else
           selected_cycles << cycopt
         end

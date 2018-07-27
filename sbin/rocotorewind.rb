@@ -15,7 +15,7 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowbootoption'
+require 'workflowmgr/workflowsubsetoptions'
 require 'workflowmgr/utilities'
 require 'libxml'
 
@@ -29,5 +29,6 @@ LibXML::XML::Error.set_handler do |error|
 end
 
 # Create workflow engine and run it
-workflowengine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowBootOption.new(ARGV,'rocotorewind','rewind'))
+opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,'rocotorewind','rewind')
+workflowengine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowengine.rewind!

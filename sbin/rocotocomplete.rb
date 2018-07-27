@@ -15,7 +15,7 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow status library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowselection'
+require 'workflowmgr/workflowsubsetoptions'
 require 'libxml'
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr

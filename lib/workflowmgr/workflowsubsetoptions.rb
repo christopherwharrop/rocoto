@@ -7,6 +7,7 @@ module WorkflowMgr
 
   require 'workflowmgr/workflowoption'
   require 'workflowmgr/workflowsubset'  # for ALL_POSSIBLE_CYCLES constant
+  require 'workflowmgr/cycledefselection'
 
   ##########################################  
   #
@@ -69,6 +70,8 @@ module WorkflowMgr
         when /^all|:$/i
           @cycles<< ALL_POSSIBLE_CYCLES
           @all_cycles=true
+        when /^@(\S+)/
+          @cycles << CycleDefSelection.new($1)
         else
           puts opts
           puts "Unrecognized -c option #{clist}"
