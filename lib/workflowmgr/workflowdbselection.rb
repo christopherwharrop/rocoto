@@ -7,8 +7,7 @@ module WorkflowMgr
 
   require 'workflowmgr/workflowselection'
   require 'workflowmgr/workflowdbsubset'
-  require 'workflowmgr/workflowsubset'    # for ALL_POSSIBLE_CYCLES constant
-  require 'workflowmgr/cycledefselection'
+  require 'workflowmgr/selectionutil'
 
   class WorkflowDBSelection < WorkflowMgr::WorkflowSelection
 
@@ -27,7 +26,7 @@ module WorkflowMgr
       # Get the cycles of interest that are in the database
       if @cycles.nil? or @cycles.empty?
         # Get the latest cycle
-        last_cycle=@dbServer.get_last_cycle
+        last_cycle=dbServer.get_last_cycle
         dbcycles << last_cycle unless last_cycle.nil?
       else
         @cycles.each do |cycopt|
@@ -80,7 +79,7 @@ module WorkflowMgr
             xml_set.each {|c| xmlcycles << WorkflowMgr::Cycle.new(c)}
 
           elsif cycopt == ALL_POSSIBLE_CYCLES
-            dbcycles += @dbServer.get_cycles()
+            dbcycles += dbServer.get_cycles()
           else
             raise "Invalid cycle specification"
           end

@@ -5,6 +5,9 @@
 ##########################################
 module WorkflowMgr
 
+  require 'workflowmgr/workflowsubset'
+  require 'workflowmgr/selectionutil'
+  
   ##########################################
   #
   # Class WorkflowSelection
@@ -12,14 +15,12 @@ module WorkflowMgr
   ##########################################
   class WorkflowSelection
 
-    require 'workflowmgr/workflowsubset'
-
     ##########################################  
     #
     # Initialize
     #
     ##########################################
-    def initialize(all_tasks=nil,task_selection=[],metatask_selection=[],cycle_selection=[],default_all=false,allow_empty=false)
+    def initialize(all_tasks=nil,task_options=[],cycle_selection=[],default_all=false,allow_empty=false)
 
       all_tasks=default_all if all_tasks.nil?
 
@@ -29,9 +30,8 @@ module WorkflowMgr
       @allow_empty=!!allow_empty    # allow no task or cycle specifications
 
       # Enumerables:
-      @tasks=task_selection         # from parsing the -t options
-      @cycles=cycle_selection       # from parsing the -c options
-      @metatasks=metatask_selection # from parsing the -m options
+      @task_options=task_options.to_a
+      @cycles=cycle_selection
 
       @tasks=[] if @tasks.nil?
       @cycles=[] if @cycles.nil?
@@ -44,10 +44,9 @@ module WorkflowMgr
     # add_options
     #
     ##########################################
-    def add_options(all_tasks=nil,all_cycles=nil,task_selection=[],metatask_selection=[],cycle_selection=[])
-      @tasks.concat task_selection
+    def add_options(all_tasks=nil,all_cycles=nil,task_options=[],cycle_selection=[])
+      @task_options.concat task_options
       @cycles.concat cycle_selection
-      @metatasks.concat metatask_selection
       @all_tasks=!!all_tasks unless all_tasks.nil?
       @all_cycles=!!all_cycles unless all_cycles.nil?
     end
@@ -103,6 +102,108 @@ module WorkflowMgr
       return selected_cycles
     end
 
+    ##########################################  
+    #
+    # handle_metatask_selection
+    #
+    ##########################################
+    def handle_metatask_selection(opts,tasks,selection)
+      optspec=[]
+      opts.each do |metaopt|
+        negate=false
+        if metaopt.start_with? '-'
+          negate=true
+          metaopt=metaopt[1..-1]
+        end
+        optspec << [metaopt,negate]
+      end # each option
+
+      tasks.values.each do |task|
+        next if task.attributes[:metatasks].nil?
+        metatasks=task.attributes[:metatasks].split(',')
+
+        optspec.each do |metaopt,negate|
+          if metatasks.include? metaopt
+            if negate
+              selection.delete(task.attributes[:name])
+            else
+              selection.add(task.attributes[:name])
+            end
+          end
+        end # each option
+      end # each task
+    end
+
+    ##########################################  
+    #
+    # handle_task_selection
+    #
+    ##########################################
+    def handle_task_selection(opts,tasks,selection)
+      optspec=[]
+      opts.each do |item|
+        negate=false
+        if item.start_with? '-'
+          negate=true
+          item=item[1..-1]
+        end
+
+        if item.start_with? ':'
+          attribute_name=item[1..-1]
+          
+          case attribute_name
+          when 'final'     then attribute=:final
+          when 'shared'    then attribute=:shared
+          when 'exclusive' then attribute=:exclusive
+          when 'metatasks' then attribute=:metatasks
+          when 'cores'     then attribute=:cores
+          when 'nodes'     then attribute=:nodes
+          else
+            raise "Unknown attribute '#{attribute_name}' is not one of: final, shared, exclusive, metatasks, cores, nodes"
+          end
+          tasks.values.each do |task|
+            if ( negate && ! task.attributes[attribute] ) || (!negate && task.attributes[attribute])
+              if negate
+                selection.delete(task.attributes[:name])
+              else
+                selection.add(task.attributes[:name])
+              end
+            end
+          end
+        elsif item.start_with? '/' and item.end_with? '/'
+          regex=Regexp.new item[1..-2]
+          tasks.values.each do |task|
+            if regex=~task.attributes[:name]
+              if negate
+                selection.delete(task.attributes[:name])
+              else
+                selection.add(task.attributes[:name])
+              end
+            end
+          end
+        elsif item.start_with? '@'
+          cycledef=item[1..-1]
+          tasks.values.each do |task|
+            next if task.attributes[:cycledefs].nil?
+            cycledefs=task.attributes[:cycledefs].split(',')
+            if cycledefs.include? cycledef
+              if negate
+                selection.remove(task.attributes[:name])
+              else
+                selection.add(task.attributes[:name])
+              end
+            end
+          end
+        else # explicit task name
+          if negate
+            selection.remove(item)
+          else
+            selection.add(item)
+          end
+        end
+      end # each option
+    end
+
 
     ##########################################  
     #
@@ -110,6 +211,29 @@ module WorkflowMgr
     #
     ##########################################
     def select_tasks(tasks)
+      puts("task options: #{@task_options.inspect}")
+      selection=Set.new
+      @task_options.each do |opt|
+        if opt.is_a? WorkflowMgr::MetataskSelection
+          puts("metatask selection: #{opt.arg}")
+          handle_metatask_selection(opt.arg,tasks,selection)
+        else
+          puts("task selection: #{opt.arg}")
+          handle_task_selection(opt.arg,tasks,selection)
+        end
+      end
+      tasks=selection.to_a
+      tasks.sort!
+      puts("TASKS: #{tasks}")
+      return tasks
+    end
+
+    ##########################################  
+    #
+    # select_tasks
+    #
+    ##########################################
+    def dont_select_tasks(tasks)
       return tasks.keys if @all_tasks
 
       pass1=@tasks || []

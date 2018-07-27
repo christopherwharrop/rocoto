@@ -19,7 +19,7 @@ module WFMStat
     require 'pp'                      
     require 'parsedate'
     
-    attr_reader :database, :workflowdoc, :cycles, :tasks, :summary, :taskfirst, :verbose
+    attr_reader :database, :workflowdoc, :summary, :taskfirst, :verbose
 
     ##########################################  
     #
@@ -56,7 +56,7 @@ module WFMStat
     end # add_opts
 
     def make_selection()
-      @selection=WorkflowMgr::WorkflowDBSelection.new(@all_tasks,@tasks,@metatasks,@cycles,@default_all)
+      @selection=WorkflowMgr::WorkflowDBSelection.new(@all_tasks,@task_options,@cycles,@default_all)
       return @selection
     end
 

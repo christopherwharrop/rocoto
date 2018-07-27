@@ -5,8 +5,6 @@
 ##########################################
 module WorkflowMgr
 
-  ALL_POSSIBLE_CYCLES=(Time.gm(1900,1,1,0,0)..Time.gm(9999,12,31,23,59))
-
   ##########################################
   #
   # Class WorkflowSubset

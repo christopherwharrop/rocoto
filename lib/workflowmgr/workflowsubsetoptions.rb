@@ -6,8 +6,7 @@
 module WorkflowMgr
 
   require 'workflowmgr/workflowoption'
-  require 'workflowmgr/workflowsubset'  # for ALL_POSSIBLE_CYCLES constant
-  require 'workflowmgr/cycledefselection'
+  require 'workflowmgr/selectionutil'
 
   ##########################################  
   #
@@ -26,15 +25,16 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(args,name,action,default_all=false)
-
+puts 'got here'
       @cycles=nil
-      @tasks=nil
-      @metatasks=nil
+      @task_options=[]
       @default_all=!!default_all  # true => command defaults to all tasks and cycles
       @name=name # ie.: rocotoboot
       @action=action # ie.: boot
       @all_tasks=false
       @all_cycles=false
+      puts("task_options = #{@task_options.inspect}")
+puts 'call super'
       super(args)
 
     end
@@ -47,7 +47,7 @@ module WorkflowMgr
     #
     ##########################################
     def add_opts(opts)
-
+      puts("task_options = #{@task_options.inspect}")
       super(opts)
 
       # Override the command usage text
@@ -83,19 +83,13 @@ module WorkflowMgr
 
       # Tasks of interest
       opts.on("-t","--tasks 'a,b,c'",Array,"List of tasks") do |tasklist|
-        @tasks=[] if @tasks.nil?
-        @tasks.concat tasklist unless tasklist.nil?
+        add_task_option(TaskSelection.new(tasklist))
       end
-
-      @tasks=nil if !@tasks.nil? and @tasks.empty?
 
       # Metaasks of interest
       opts.on("-m","--metatasks 'a,b,c'",Array,"List of metatasks") do |metatasklist|
-        @metatasks=[] if @metatasks.nil?
-        @metatasks.concat metatasklist unless metatasklist.nil?
+        add_task_option(MetataskSelection.new(metatasklist))
       end
-
-      @metatasks=nil if !@metatasks.nil? and @metatasks.empty?
 
       # Rewind all tasks for the specified cycles instead of a list of tasks:
       opts.on("-a",'--all',"Selects all tasks.") do |flag|
@@ -103,6 +97,18 @@ module WorkflowMgr
       end
 
     end
+
+
+    ##########################################
+    #
+    # add_task_option
+    #
+    ##########################################
+    def add_task_option(opt)
+      puts("add #{opt.class.name} option #{opt.arg}")
+      @task_options << opt
+    end
+
 
     ##########################################
     #
@@ -121,7 +127,11 @@ module WorkflowMgr
         end
       end
 
-      if @tasks.nil? && @metatasks.nil? && ! @all_tasks
+      if @all_tasks && !@task_options.empty?
+        raise OptionParser::ParseError,"When providing the -a argument (all tasks), you must not provide -t or -m arguments."
+      end
+
+      if @task_options.empty? && ! @all_tasks
         if @default_all
           @all_tasks=true
         elsif !@allow_empty
@@ -134,7 +144,7 @@ module WorkflowMgr
     end
 
     def make_selection()
-      @selection=WorkflowSelection.new(@all_tasks,@tasks,@metatasks,@cycles,@default_all)
+      @selection=WorkflowSelection.new(@all_tasks,@task_options,@cycles,@default_all)
       return @selection
     end
 
