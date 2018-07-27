@@ -134,13 +134,69 @@ module WFMStat
 
     end  # wfmstat
 
+    ##########################################
+    #
+    # checkOneTask
+    #
+    ##########################################
+    def checkOneTask(cycletime,taskname,cycledefs)
+      # Get the cycle
+      cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
+
+      # Get the task
+      task=@workflowdoc.tasks[taskname]    
+      task=task.localize(cycletime) unless task.nil?
+
+      # Get the job (if there is one)
+      jobcycles=[cycletime]
+      @workflowdoc.taskdep_cycle_offsets.each do |offset|
+        jobcycles << cycletime + offset
+      end
+      jobs=@dbServer.get_jobs(jobcycles)
+      if jobs[taskname].nil?
+        job=nil
+      else
+        job=jobs[taskname][cycletime]
+      end
+
+      # Print the task information
+      print_taskinfo(task)
+
+      # Query and print task dependency info
+      dependencies=nil
+      hangdependencies=nil
+      unless task.nil?
+        unless task.dependency.nil?
+          wstate=WorkflowMgr::WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
+          dependencies=task.dependency.query(wstate)
+          printf "%2s%s\n", "","dependencies"
+          print_deps(dependencies,0)
+        end
+        unless task.hangdependency.nil?
+          wstate=WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
+          hangdependencies=task.hangdependency.query(wstate)
+          printf "%2s%s\n", "","hang dependencies"
+          print_deps(hangdependencies,0)
+        end
+      end
+
+      # Print the cycle information
+      print_cycleinfo(cycle,cycledefs,task)
+
+      # Print the job information
+      print_jobinfo(job)
+
+      # Print throttling violations
+      print_violations(task,cycle,dependencies) if job.nil?
+
+    end
 
     ##########################################
     #
-    # checkTask
+    # checkTasks
     #
     ##########################################
-    def checkTask
+    def checkTasks
 
       begin
 
@@ -153,61 +209,15 @@ module WFMStat
         # Open the workflow document
         @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
 
-        # Get cycle time and task name options
-        cycletime=@options.cycles.first
-        taskname=@options.tasks.first
+        @subset=@options.selection.make_subset(tasks=@workflowdoc.tasks,cycledefs=@workflowdoc.cycledefs,dbServer=@dbServer)
 
-        # Get the cycledefs
         cycledefs=@workflowdoc.cycledefs
 
-        # Get the cycle
-        cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
-
-        # Get the task
-        task=@workflowdoc.tasks[taskname]    
-        task=task.localize(cycletime) unless task.nil?
-
-        # Get the job (if there is one)
-        jobcycles=[cycletime]
-        @workflowdoc.taskdep_cycle_offsets.each do |offset|
-          jobcycles << cycletime + offset
-        end
-        jobs=@dbServer.get_jobs(jobcycles)
-        if jobs[taskname].nil?
-          job=nil
-        else
-          job=jobs[taskname][cycletime]
-        end
-
-        # Print the task information
-        print_taskinfo(task)
-
-        # Query and print task dependency info
-        dependencies=nil
-        hangdependencies=nil
-        unless task.nil?
-          unless task.dependency.nil?
-            wstate=WorkflowMgr::WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
-            dependencies=task.dependency.query(wstate)
-            printf "%2s%s\n", "","dependencies"
-            print_deps(dependencies,0)
-          end
-          unless task.hangdependency.nil?
-            wstate=WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
-            hangdependencies=task.hangdependency.query(wstate)
-            printf "%2s%s\n", "","hang dependencies"
-            print_deps(hangdependencies,0)
+        @subset.each_cycle do |cycletime|
+          @subset.each_task do |taskname|
+            checkOneTask(cycletime,taskname,cycledefs)
           end
         end
-
-        # Print the cycle information
-        print_cycleinfo(cycle,cycledefs,task)
-
-        # Print the job information
-        print_jobinfo(job)
-
-        # Print throttling violations
-        print_violations(task,cycle,dependencies) if job.nil?
 
       rescue => crash
         WorkflowMgr.stderr(crash.message,1)

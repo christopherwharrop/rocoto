@@ -15,7 +15,7 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow status library
 require 'wfmstat/statusengine'
-require 'wfmstat/checktaskoption'
+require 'workflowmgr/workflowsubsetoptions'
 require 'libxml'
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
@@ -23,6 +23,10 @@ require 'libxml'
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status engine and run it
-statusEngine=WFMStat::StatusEngine.new(WFMStat::CheckTaskOption.new(ARGV))
-statusEngine.checkTask
+opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
+      name='rocotocheck', # command name (used for messages)
+      action='check',     # what the command does (used for messages)
+      default_all=false)  # task and cycle are required
+statusEngine=WFMStat::StatusEngine.new(opt)
+statusEngine.checkTasks
 

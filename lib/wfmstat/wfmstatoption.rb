@@ -28,13 +28,8 @@ module WFMStat
     ##########################################
     def initialize(args,name,action)
 
-      @database=nil
-      @workflowdoc=nil
-      @cycles=nil
-      @tasks=nil
       @summary=false
       @taskfirst=false
-      @verbose=1
       super(args,name,action,true)
 
     end  # initialize
@@ -56,11 +51,6 @@ module WFMStat
       # cycle summary
       opts.on("-s","--summary","Cycle Summary") do 
         @summary=true
-      end
-
-      # display by task 
-      opts.on("-T","--by_task","Display by Task") do 
-        @taskfirst=true
       end
 
     end # add_opts
