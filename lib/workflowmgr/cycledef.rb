@@ -52,6 +52,24 @@ module WorkflowMgr
 
     end  # first
 
+
+    ##########################################
+    #
+    # each
+    #
+    ##########################################
+    def each(rawreftime,by_activation_time)
+      puts("rawreftime=#{rawreftime}")
+      now=rawreftime
+      while ! now.nil?
+        ret=self.next(now-1,by_activation_time)
+        puts "now-1=#{(now-1).inspect} ret=#{ret.inspect}"
+        return if ret.nil?
+        yield ret[0]
+        now=ret[0]+2
+      end
+    end
+    
   end
 
 

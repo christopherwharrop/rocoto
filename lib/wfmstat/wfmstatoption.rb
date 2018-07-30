@@ -5,34 +5,32 @@
 ##########################################
 module WFMStat
 
+  require 'workflowmgr/workflowsubsetoptions'
+  require 'workflowmgr/workflowdbselection'
+
   ##########################################  
   #
   # Class StatusOption
   # 
   ##########################################
-  class WFMStatOption
+  class WFMStatOption < WorkflowMgr::WorkflowSubsetOptions
 
     require 'optparse'
     require 'pp'                      
     require 'parsedate'
     
-    attr_reader :database, :workflowdoc, :cycles, :tasks, :summary, :taskfirst, :verbose
+    attr_reader :database, :workflowdoc, :summary, :taskfirst, :verbose
 
     ##########################################  
     #
     # Initialize
     #
     ##########################################
-    def initialize(args)
+    def initialize(args,name,action)
 
-      @database=nil
-      @workflowdoc=nil
-      @cycles=nil
-      @tasks=nil
       @summary=false
       @taskfirst=false
-      @verbose=1
-      parse(args)
+      super(args,name,action,true)
 
     end  # initialize
 
@@ -40,112 +38,27 @@ module WFMStat
 
     ##########################################  
     #
-    # parse
+    # add_opts
     #
     ##########################################
-    def parse(args)
+    def add_opts(opts)
 
-      OptionParser.new do |opts|
+      super(opts)
 
-        # Command usage text
-        opts.banner = "Usage:  rocotostat [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-s] [-T]"
-
-        # Specify the database file
-        opts.on("-d","--database file",String,"Path to workflow database file") do |db|
-          @database=db
-        end
-     
-        # Specify the XML file
-        opts.on("-w","--workflow PATH",String,"Path to workflow definition file") do |workflowdoc|
-          @workflowdoc=workflowdoc
-        end
-
-        # Cycles of interest
-        #      C   C,C,C  C:C  :C   C:
-        #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C
-        opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' | : | all",String,"List of cycles") do |clist|
-          case clist
-            when /^\d{12}(,\d{12})*$/
-              @cycles=clist.split(",").collect { |c| Time.gm(c[0..3],c[4..5],c[6..7],c[8..9],c[10..11]) }
-            when /^(\d{12}):(\d{12})$/
-              @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm($2[0..3],$2[4..5],$2[6..7],$2[8..9],$2[10..11]))
-            when /^:(\d{12})$/
-              @cycles=(Time.gm(1900,1,1,0,0)..Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11]))
-            when /^(\d{12}):$/
-              @cycles=(Time.gm($1[0..3],$1[4..5],$1[6..7],$1[8..9],$1[10..11])..Time.gm(9999,12,31,23,59))
-            when /^all|:$/i
-              @cycles="all"
-            else
-              puts opts
-              Process.exit
-          end
-        end
-
-        # Tasks of interest
-        opts.on("-t","--tasks 'a,b,c'",Array,"List of tasks") do |tasklist|
-          @tasks=tasklist
-        end
-     
-        # cycle summary
-        opts.on("-s","--summary","Cycle Summary") do 
-          @summary=true
-        end
-
-        # display by task 
-        opts.on("-T","--by_task","Display by Task") do 
-          @taskfirst=true
-        end
-
-        # Help
-        opts.on("-h","--help","Show this message") do
-          puts opts
-          Process.exit
-        end
-
-        # Handle option for version
-        opts.on("--version","Show Rocoto version") do
-          puts "Rocoto Version #{WorkflowMgr.version}"
-          Process.exit
-        end
-
-        # Handle option for verbose
-        opts.on("-v","--verbose [LEVEL]",/^[0-9]+$/,"Run Rocotostat in verbose mode") do |verbose|
-          if verbose.nil?
-            @verbose=1
-          else
-            @verbose=verbose.to_i
-          end
-        end
-
-        begin
-
-          # If no options are specified, turn on the help flag
-          args=["-h"] if args.empty?
-
-          # Parse the options
-          opts.parse!(args)
-
-          # Set verbosity level
-          WorkflowMgr.const_set("VERBOSE",@verbose)
-
-          # Set workflow id
-          WorkflowMgr.const_set("WORKFLOW_ID",File.basename(@workflowdoc))
-
-          # Print usage information if unknown options were passed
-          raise OptionParser::ParseError,"Unrecognized options" unless args.empty?
-
-          # The -d and -w options are mandatory
-          raise OptionParser::ParseError,"A database file must be specified" if @database.nil?
-          raise OptionParser::ParseError,"A workflow definition file must be specified" if @workflowdoc.nil?
-  
-        rescue OptionParser::ParseError => e
-          STDERR.puts e.message, "\n",opts
-          Process.exit(-1)
-        end
-        
+      # Command usage text
+      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-m metatask_list] [-a] [-s] [-T]"
+      
+      # cycle summary
+      opts.on("-s","--summary","Cycle Summary") do 
+        @summary=true
       end
 
-     end  # parse
+    end # add_opts
+
+    def make_selection()
+      @selection=WorkflowMgr::WorkflowDBSelection.new(@all_tasks,@task_options,@cycles,@default_all)
+      return @selection
+    end
 
   end  # Class StatusOption
 

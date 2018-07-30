@@ -15,7 +15,7 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowoption'
+require 'workflowmgr/workflowselection'
 require 'workflowmgr/utilities'
 require 'libxml'
 
@@ -29,6 +29,9 @@ LibXML::XML::Error.set_handler do |error|
 end
 
 # Create workflow engine and run it
-workflowengine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowOption.new(ARGV))
+opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
+      name='rocotorun', # command name (used for messages)
+      action='run',     # what the command does (used for messages)
+      default_all=true) # default task and cycle selection is everything
+workflowengine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowengine.run
-

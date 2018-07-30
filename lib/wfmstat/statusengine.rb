@@ -58,6 +58,7 @@ module WFMStat
         # Get command line options
         @options=options
 
+
         # Set up an object to serve the workflow database (but do not open the database)
         @dbServer=WorkflowMgr::DBProxy.new(@config,@options)
 
@@ -96,6 +97,9 @@ module WFMStat
 
         @workflowdoc.features_supported?
 
+        # Get the task and cycle subsets
+        @subset=@options.selection.make_subset(tasks=@workflowdoc.tasks,cycledefs=@workflowdoc.cycledefs,dbServer=@dbServer)
+
         # Print a cycle summary report if requested
         if @options.summary
           print_summary
@@ -130,13 +134,69 @@ module WFMStat
 
     end  # wfmstat
 
+    ##########################################
+    #
+    # checkOneTask
+    #
+    ##########################################
+    def checkOneTask(cycletime,taskname,cycledefs)
+      # Get the cycle
+      cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
+
+      # Get the task
+      task=@workflowdoc.tasks[taskname]    
+      task=task.localize(cycletime) unless task.nil?
+
+      # Get the job (if there is one)
+      jobcycles=[cycletime]
+      @workflowdoc.taskdep_cycle_offsets.each do |offset|
+        jobcycles << cycletime + offset
+      end
+      jobs=@dbServer.get_jobs(jobcycles)
+      if jobs[taskname].nil?
+        job=nil
+      else
+        job=jobs[taskname][cycletime]
+      end
+
+      # Print the task information
+      print_taskinfo(task)
+
+      # Query and print task dependency info
+      dependencies=nil
+      hangdependencies=nil
+      unless task.nil?
+        unless task.dependency.nil?
+          wstate=WorkflowMgr::WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
+          dependencies=task.dependency.query(wstate)
+          printf "%2s%s\n", "","dependencies"
+          print_deps(dependencies,0)
+        end
+        unless task.hangdependency.nil?
+          wstate=WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
+          hangdependencies=task.hangdependency.query(wstate)
+          printf "%2s%s\n", "","hang dependencies"
+          print_deps(hangdependencies,0)
+        end
+      end
+
+      # Print the cycle information
+      print_cycleinfo(cycle,cycledefs,task)
+
+      # Print the job information
+      print_jobinfo(job)
+
+      # Print throttling violations
+      print_violations(task,cycle,dependencies) if job.nil?
+
+    end
 
     ##########################################
     #
-    # checkTask
+    # checkTasks
     #
     ##########################################
-    def checkTask
+    def checkTasks
 
       begin
 
@@ -149,61 +209,15 @@ module WFMStat
         # Open the workflow document
         @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
 
-        # Get cycle time and task name options
-        cycletime=@options.cycles.first
-        taskname=@options.tasks.first
+        @subset=@options.selection.make_subset(tasks=@workflowdoc.tasks,cycledefs=@workflowdoc.cycledefs,dbServer=@dbServer)
 
-        # Get the cycledefs
         cycledefs=@workflowdoc.cycledefs
 
-        # Get the cycle
-        cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
-
-        # Get the task
-        task=@workflowdoc.tasks[taskname]    
-        task=task.localize(cycletime) unless task.nil?
-
-        # Get the job (if there is one)
-        jobcycles=[cycletime]
-        @workflowdoc.taskdep_cycle_offsets.each do |offset|
-          jobcycles << cycletime + offset
-        end
-        jobs=@dbServer.get_jobs(jobcycles)
-        if jobs[taskname].nil?
-          job=nil
-        else
-          job=jobs[taskname][cycletime]
-        end
-
-        # Print the task information
-        print_taskinfo(task)
-
-        # Query and print task dependency info
-        dependencies=nil
-        hangdependencies=nil
-        unless task.nil?
-          unless task.dependency.nil?
-            wstate=WorkflowMgr::WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
-            dependencies=task.dependency.query(wstate)
-            printf "%2s%s\n", "","dependencies"
-            print_deps(dependencies,0)
-          end
-          unless task.hangdependency.nil?
-            wstate=WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
-            hangdependencies=task.hangdependency.query(wstate)
-            printf "%2s%s\n", "","hang dependencies"
-            print_deps(hangdependencies,0)
+        @subset.each_cycle do |cycletime|
+          @subset.each_task do |taskname|
+            checkOneTask(cycletime,taskname,cycledefs)
           end
         end
-
-        # Print the cycle information
-        print_cycleinfo(cycle,cycledefs,task)
-
-        # Print the job information
-        print_jobinfo(job)
-
-        # Print throttling violations
-        print_violations(task,cycle,dependencies) if job.nil?
 
       rescue => crash
         WorkflowMgr.stderr(crash.message,1)
@@ -239,59 +253,12 @@ module WFMStat
     ##########################################
     def getCycles
 
-      # Initialize empty lists of cycles
-      dbcycles=[]
-      xmlcycles=[]
-      undefcycles=[]
+      # Turn the db, xml, and undef iterators into arrays:
+      dbcycles=@subset.collect_db_cycles(){|c|c}
+      xmlcycles=@subset.collect_xml_cycles(){|c|c}
+      undefcycles=@subset.collect_undef_cycles(){|c|c}
 
-      # Get the cycles of interest that are in the database
-      if @options.cycles.nil?
-        # Get the latest cycle
-        last_cycle=@dbServer.get_last_cycle
-        dbcycles << last_cycle unless last_cycle.nil?
-      elsif @options.cycles.is_a?(Range)
-        # Get all cycles within the range
-        dbcycles += @dbServer.get_cycles( {:start=>@options.cycles.first, :end=>@options.cycles.last } )
-      elsif @options.cycles.is_a?(Array)
-        # Get the specific cycles asked for
-        @options.cycles.each do |c|
-          cycle = @dbServer.get_cycles( {:start=>c, :end=>c } )
-          if cycle.empty?
-            undefcycles << WorkflowMgr::Cycle.new(c)
-          else
-            dbcycles += cycle
-          end
-        end
-      elsif @options.cycles == "all"
-        dbcycles += @dbServer.get_cycles()
-      else
-        puts "Invalid cycle specification"
-      end
-      
-      # Add cycles defined in XML that aren't in the database
-      # We only need to do this when a range of cycles is requested
-      if @options.cycles.is_a?(Range)
-
-        # Get the cycle definitions
-        cycledefs = @workflowdoc.cycledefs
-
-        # Find every cycle in the range
-        xml_cycle_times = []
-        reftime=cycledefs.collect { |cdef| cdef.next(@options.cycles.first,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-        while true do
-          break if reftime.nil?
-          break if reftime > @options.cycles.last
-          xml_cycle_times << reftime
-          reftime=cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
-        end
-
-        # Add the cycles that are in the XML but not in the DB
-        xmlcycles = (xml_cycle_times - dbcycles.collect { |c| c.cycle } ).collect { |c| WorkflowMgr::Cycle.new(c) }
-
-      end
-
-      [dbcycles,xmlcycles,undefcycles]
-
+      return [dbcycles,xmlcycles,undefcycles]
     end  
 
 
@@ -346,6 +313,8 @@ module WFMStat
       # Print the job status info
       if @options.taskfirst
 
+        puts "task first"
+
         format = "%20s    %12s    %24s    %16s    %16s    %6s    %10s\n"
         header = "TASK".rjust(20),"CYCLE".rjust(12),"JOBID".rjust(24),
                  "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6),
@@ -354,18 +323,24 @@ module WFMStat
 
         # Sort the task list in sequence order
         tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
-        unless @options.tasks.nil?
-          tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
-        end
+        # unless @options.tasks?
+        #   tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
+        # end
         tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
 
+        puts "\n\ntask list: #{tasklist}\n\n"
+
         tasklist.each do |task|
+
+          next unless @subset.is_selected? task
 
           printf "================================================================================================================================\n"
 
           # Print status of all jobs for this task
           cyclelist=(dbcycles | xmlcycles).collect { |c| c.cycle }.sort
           cyclelist.each do |cycle|
+
+            next unless @subset.is_selected? cycle
 
             # Only print info if the cycle is defined for this task
             unless definedTasks[task].attributes[:cycledefs].nil?
@@ -403,15 +378,25 @@ module WFMStat
         cyclelist=(dbcycles | xmlcycles).collect { |c| c.cycle }.sort
         cyclelist.each do |cycle|
 
+          if ! @subset.is_selected? cycle
+            puts "#{cycle.class.name} #{cycle.inspect}: not selected"
+            next
+          end
+
           printf "================================================================================================================================\n"
 
           # Sort the task list in sequence order 
           tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
-          unless @options.tasks.nil?
-            tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
-          end
+          #unless @options.tasks.nil?
+          #  tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
+          #end
           tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
           tasklist.each do |task|
+
+            if ! @subset.is_selected? task
+              #puts "#{task}: not selected"
+              next
+            end
 
             # Only print info if the task is defined for this cycle
             unless definedTasks[task].nil? or definedTasks[task].attributes[:cycledefs].nil?
