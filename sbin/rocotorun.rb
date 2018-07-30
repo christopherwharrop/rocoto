@@ -15,7 +15,7 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowselection'
+require 'workflowmgr/workflowsubsetoptions'
 require 'workflowmgr/utilities'
 require 'libxml'
 

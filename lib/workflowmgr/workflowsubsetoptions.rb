@@ -25,7 +25,6 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(args,name,action,default_all=false)
-puts 'got here'
       @cycles=nil
       @task_options=[]
       @default_all=!!default_all  # true => command defaults to all tasks and cycles
@@ -33,8 +32,6 @@ puts 'got here'
       @action=action # ie.: boot
       @all_tasks=false
       @all_cycles=false
-      puts("task_options = #{@task_options.inspect}")
-puts 'call super'
       super(args)
 
     end
@@ -47,7 +44,6 @@ puts 'call super'
     #
     ##########################################
     def add_opts(opts)
-      puts("task_options = #{@task_options.inspect}")
       super(opts)
 
       # Override the command usage text
@@ -105,7 +101,6 @@ puts 'call super'
     #
     ##########################################
     def add_task_option(opt)
-      puts("add #{opt.class.name} option #{opt.arg}")
       @task_options << opt
     end
 
