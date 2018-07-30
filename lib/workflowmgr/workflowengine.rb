@@ -122,10 +122,6 @@ module WorkflowMgr
         nrewind_tasks = rewind_tasks.length
         all_tasks=@options.all_tasks
         
-        if rewind_tasks.empty? or rewind_cycles.empty?
-          puts "No tasks to rewind.  Successfully doing nothing.  You're welcome."
-        end
-
         if all_tasks
           puts "Rewinding all tasks will set the cycle to \"inactive\" status, as if Rocoto had never started it."
           printf "Are you sure you want to proceed? (y/n) "
