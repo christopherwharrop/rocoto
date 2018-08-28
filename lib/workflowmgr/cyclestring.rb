@@ -76,7 +76,7 @@ module WorkflowMgr
     #####################################################
     def inspect
 
-      if @offset:
+      if @offset
           return "<cyclestr offset=\"#{@offset}\">#{@str}</cyclestr>"
       else
           return "<cyclestr>#{@str}</cyclestr>"
