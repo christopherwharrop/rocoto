@@ -170,6 +170,9 @@ module WorkflowMgr
             input += "#PBS -A #{value}\n"
           when :queue            
             input += "#PBS -q #{value}\n"
+          when :partition
+            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for PBSPro.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for PBSPro.", 1)
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?

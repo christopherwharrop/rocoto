@@ -116,6 +116,8 @@ module WorkflowMgr
             input += "#PBS -A #{value}\n"
           when :queue            
             input += "#PBS -q #{value}\n"
+          when :partition
+            input += "#PBS -l partition=#{value}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?

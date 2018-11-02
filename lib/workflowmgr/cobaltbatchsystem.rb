@@ -120,6 +120,9 @@ module WorkflowMgr
             input += "#COBALT -A #{value}\n"
           when :queue            
             input += "#COBALT -q #{value}\n"
+          when :partition
+            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for Cobalt.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for Cobalt.", 1)
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?

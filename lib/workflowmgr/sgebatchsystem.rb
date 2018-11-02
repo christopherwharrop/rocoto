@@ -244,13 +244,18 @@ module WorkflowMgr
           when :account
             cmd += " -A #{value}"
           when :queue            
+            cmd += " -q #{value}"
+          when :partition
             unless cmd =~/ -pe \S+ \d+/
               cmd += " -pe #{value} #{task.attributes[:cores]}"
             end
           when :cores
             unless cmd =~/ -pe \S+ \d+/
-              cmd += " -pe #{task.attributes[:queue]} #{value}"
+              cmd += " -pe #{task.attributes[:partition]} #{value}"
             end           
+          when :nodes
+            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for SGE.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for SGE.", 1)
           when :walltime
             hhmmss=WorkflowMgr.seconds_to_hhmmss(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -l h_rt=#{hhmmss}"

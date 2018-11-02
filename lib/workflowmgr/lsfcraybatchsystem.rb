@@ -76,6 +76,9 @@ module WorkflowMgr
             nodesize=value
           when :queue            
             cmd += " -q #{value}"
+          when :partition
+            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for LSF.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for LSF.", 1)
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
