@@ -343,7 +343,9 @@ private
       end
 
       # Make sure queued_jobs is properly encoded
-      queued_jobs = queued_jobs.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+      if String.method_defined? :encode
+        queued_jobs = queued_jobs.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+      end
 
       # For each job, find the various attributes and create a job record
       queued_jobs.split("\n").each { |job|
