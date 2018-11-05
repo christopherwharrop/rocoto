@@ -161,6 +161,12 @@ module WorkflowMgr
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
+         if value.is_a?(String)
+           if value.empty?
+             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+             next
+           end
+        end
         case option
           when :account
             cmd += " -P #{value}"

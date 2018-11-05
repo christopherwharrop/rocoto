@@ -69,6 +69,12 @@ module WorkflowMgr
       # that is not a request for cores/nodes:
       task.attributes.each do |option,value|
 
+         if value.is_a?(String)
+           if value.empty?
+             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+             next
+           end
+        end
         case option
           when :account
             cmd += " -P #{value}"
