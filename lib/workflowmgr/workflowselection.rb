@@ -211,20 +211,16 @@ module WorkflowMgr
     #
     ##########################################
     def select_tasks(tasks)
-      puts("task options: #{@task_options.inspect}")
       selection=Set.new
       @task_options.each do |opt|
         if opt.is_a? WorkflowMgr::MetataskSelection
-          puts("metatask selection: #{opt.arg}")
           handle_metatask_selection(opt.arg,tasks,selection)
         else
-          puts("task selection: #{opt.arg}")
           handle_task_selection(opt.arg,tasks,selection)
         end
       end
       tasks=selection.to_a
       tasks.sort!
-      puts("TASKS: #{tasks}")
       return tasks
     end
 

@@ -46,7 +46,14 @@ module WorkflowMgr
             
             # Add the cycles that are in the XML but not in the DB
             xmlcycles = (xml_cycle_times - dbcycles.collect { |c| c.cycle } ).collect { |c| WorkflowMgr::Cycle.new(c) }
-            
+          elsif cycopt.is_a?(Time)
+            # Get the specific cycle asked for
+            cycle = dbServer.get_cycles( {:start=>cycopt, :end=>cycopt } )
+            if cycle.empty?
+              undefcycles << WorkflowMgr::Cycle.new(c)
+            else
+              dbcycles += cycle
+            end
           elsif cycopt.is_a?(Array)
             # Get the specific cycles asked for
             cycopt.each do |c|
