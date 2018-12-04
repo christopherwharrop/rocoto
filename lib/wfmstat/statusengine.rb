@@ -313,8 +313,6 @@ module WFMStat
       # Print the job status info
       if @options.taskfirst
 
-        puts "task first"
-
         format = "%20s    %12s    %24s    %16s    %16s    %6s    %10s\n"
         header = "TASK".rjust(20),"CYCLE".rjust(12),"JOBID".rjust(24),
                  "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6),
@@ -328,7 +326,6 @@ module WFMStat
         # end
         tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
 
-        puts "\n\ntask list: #{tasklist}\n\n"
 
         tasklist.each do |task|
 
@@ -379,7 +376,7 @@ module WFMStat
         cyclelist.each do |cycle|
 
           if ! @subset.is_selected? cycle
-            puts "#{cycle.class.name} #{cycle.inspect}: not selected"
+            #puts "#{cycle.class.name} #{cycle.inspect}: not selected"
             next
           end
 

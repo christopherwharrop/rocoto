@@ -111,6 +111,7 @@ module WorkflowMgr
     #
     ##########################################
     def parse(args)
+
       OptionParser.new do |opts|
 
         add_opts(opts)
