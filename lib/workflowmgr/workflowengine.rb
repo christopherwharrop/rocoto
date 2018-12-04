@@ -683,10 +683,6 @@ module WorkflowMgr
 
             # Check for existing jobs that are not done or expired
             unless complete_job.nil?
-              if !complete_job.done? && !complete_job.expired?
-                puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because a job for it already exists in state #{complete_job.state}"
-                next
-              end
               if complete_job.expired?
                 puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' because the task has expired"
                 next
