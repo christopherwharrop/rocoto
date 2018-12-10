@@ -135,7 +135,9 @@ module WorkflowMgr
       # Initialize the submit command
       cmd="sbatch"
       input="#! /bin/sh\n"
-      nodes_input=""
+
+      per_pack_group_input=""
+      pack_group_nodes=Array.new
 
       # Add Slurm batch system options translated from the generic options specification
       task.attributes.each do |option,value|
@@ -147,18 +149,22 @@ module WorkflowMgr
         end
         case option
           when :account
-            input += "#SBATCH --account #{value}\n"
+            per_pack_group_input += "#SBATCH --account #{value}\n"
           when :queue
-            input += "#SBATCH --qos #{value}\n"
+            per_pack_group_input += "#SBATCH --qos #{value}\n"
           when :partition
-            input += "#SBATCH --partition #{value}\n"
+            per_pack_group_input += "#SBATCH --partition #{value}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
-            input += "#SBATCH --ntasks=#{value}\n"
+            if @heterogeneous_job_support
+              pack_group_nodes << "#SBATCH --ntasks=#{value}\n"
+            else
+              pack_group_nodes = ["#SBATCH --ntasks=#{value}\n"]
+            end
           when :nodes
             # Make sure exclusive access to nodes is enforced
-            nodes_input += "#SBATCH --exclusive\n"
+#            per_pack_group_input += "#SBATCH --exclusive\n"
 
             if @heterogeneous_job_support
 
@@ -178,8 +184,7 @@ module WorkflowMgr
                 }
 
                 # Request for this resource
-                nodes_input += "#SBATCH packjob\n" unless first_spec
-                nodes_input += "#SBATCH --nodes=#{nnodes}-#{nnodes} --tasks-per-node=#{ppn}\n"
+                pack_group_nodes << "#SBATCH --ntasks=#{nnodes*ppn} --tasks-per-node=#{ppn}\n"
 
                 first_spec = false
               }
@@ -214,10 +219,12 @@ module WorkflowMgr
               }
 
               # Request total number of nodes
-              nodes_input += "#SBATCH --nodes=#{nnodes}-#{nnodes}\n"
+              node_input += "#SBATCH --nodes=#{nnodes}-#{nnodes}\n"
 
               # Request max tasks per node
-              nodes_input += "#SBATCH --tasks-per-node=#{maxppn}\n"
+              node_input += "#SBATCH --tasks-per-node=#{maxppn}\n"
+
+              pack_group_nodes = [ node_input ] # ensure only one "pack group"
 
               # Print a warning if multiple nodespecs are specified
               if nodespecs.size > 1
@@ -234,7 +241,7 @@ module WorkflowMgr
 
           when :walltime
             # Make sure format is dd-hh:mm:ss if days are included
-            input += "#SBATCH -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}\n"
+            per_pack_group_input += "#SBATCH -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}\n"
           when :memory
             m=/^([\.\d]+)([\D]*)$/.match(value)
             amount=m[1].to_f
@@ -252,7 +259,7 @@ module WorkflowMgr
               amount=(amount / 1024.0 / 1024.0).ceil
             end
             if amount > 0
-              input += "#SBATCH --mem=#{amount}\n"
+              per_pack_group_input += "#SBATCH --mem=#{amount}\n"
             end
           when :stdout
             input += "#SBATCH -o #{value}\n"
@@ -266,10 +273,19 @@ module WorkflowMgr
       end
 
       task.each_native do |value|
-        input += "#SBATCH #{value}\n"
+        per_pack_group_input += "#SBATCH #{value}\n"
       end
 
-      input += nodes_input
+      first=true
+      pack_group_nodes.each do |this_group_nodes|
+        if first
+          first=false
+        else
+          input += "\n#SBATCH packjob\n\n"
+        end
+        input += per_pack_group_input
+        input += this_group_nodes
+      end
 
       # Add export commands to pass environment vars to the job
       unless task.envars.empty?
