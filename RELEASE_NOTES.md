@@ -1,5 +1,14 @@
 # Release Notes
 
+## New for Version 1.3.0
+
+* Update SLURM support to handle pack groups
+* Update LSF support to handle additional methods LSF uses to report the exit status
+* All rocoto commands have the same -a, -c, -m, and -t options
+* The -c and -t options can now select by cycledefs and attributes (ie. final)
+* The new "rocotocomplete" command can mark tasks or cycles as having completed
+* Manpages are updated to reflect current capabilities
+
 ## New for Version 1.2.4
 
 * Fix bugs relating to ~/.rocoto/log rotation
