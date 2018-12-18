@@ -43,18 +43,16 @@ and has not yet completed.
 .Pp
 The
 .Nm
-command requires four arguments. The
+command requires two arguments. The
 .Cm -w
 flag specifies the name
 of the workflow definition file. The
 .Cm -d
 flag specifies the name of the database file
 that contains the state of the workflow for the task that is to be booted.
-The
-.Cm -t
-flag specifies the task name to boot. The
-.Cm -c
-flag specifies the appropriate cycle number.
+.Pp
+Additionally, the rocotoboot command will not do anything unless the -c option
+and at least one of -a, -m, or -t are specified.
 .Pp
 The following options are available:
 .Bl -tag -width flag
@@ -66,13 +64,99 @@ Display a short help message and exit.
 Run Rocoto in verbose mode with the specified level. If no level is
 specified a level of 1 is used.
 .It Fl d, -database Ar file
-The path to the Rocoto database file for the workflow containing the task to be booted.
+The path to the Rocoto database file for the current workflow.
 .It Fl w, -workflow Ar file
-The path to the Rocoto workflow file defining the task that is to be booted
-.It Fl t, -task Ar taskname
-The task name to boot.
-.It Fl c, -cycle Ar YYYYMMDDHHMM
-The full cycle name for which the task is to be booted.
+The path to the Rocoto workflow file.
+.It Fl c, --cycle Ar cyclespec[,cyclespec[,...]]
+Only submit jobs for these cycles. See
+.Sx WORKFLOW SUBSETTING
+.It Fl m, --metatasks Ar metataskspec[,metataskspec[,...]]
+Only submit jobs for these metatasks.  See
+.Sx WORKFLOW SUBSETTING
+.It Fl t, --tasks Ar taskspec[,taskspec[,...]
+Only submit jobs for these tasks.  See
+.Sx WORKFLOW SUBSETTING
+.It Fl a, --all
+Include all tasks in the workflow subset.  See
+.Sx WORKFLOW SUBSETTING
+.El
+.Sh WORKFLOW SUBSETTING
+All Rocoto commands that monitor or modify the workflow can be told to
+run on some subset of that workflow.  Subset specifications use the
+-a, -t, -c, and -m options.  Using multiple options adds to the
+selection.  The rocotoboot program will only submit jobs if they're in
+the selected subset.  The rocotoboot program will do nothing unless a
+cyclespec (-c) and taskspec or metatask spec (-a, -m, -t) are given.
+.Pp
+The resulting set is the set union of the -t, -m, and -a option, for
+each cycle selected by the -c option.
+
+.Ss All Tasks: The -a Option
+The -a option has no arguments, and selects all possible tasks.  It is
+an error to specify -t or -m if the -a option is given.
+
+.Ss Task Subset: The -t Option
+This consists of one or more comma-separated lists of task
+specifications which describe the set of tasks.  Without a leading
+dash, every taskspec adds to the set of selected tasks (set union).
+With a dash, the taskspec is removed (set subtraction) from the list
+of tasks.
+.Bl -tag flag
+.It Ar -taskspec[,taskspec[,...]]
+Negate the option (remove tasks from the selection instead of adding).
+This applies to all taskspecs following the "-".
+.It Ar /regex/
+Include all tasks whose names match the given regular expression
+(everything within the two slashes).  Typical regular expression
+characters have their usual meanings: ( [ ] ) | . * +
+.It Ar :attribute
+Select all tasks that have the specified XML attribute set for its
+<task> tag, and the attribute is true, non-zero, or non-empty.
+Supported attributes are final, shared, exclusive, cores, and nodes.
+The special value "metatasks" selects tasks that are in a metatask
+(any metatask).
+.It Ar @cycledef
+Select all tasks in the given cycledef
+.It Ar taskname
+Select a task with the specified name.
+.El
+
+.Ss Metatask Subset: The -m Option
+This consists of one or more comma-separated lists of metatask
+specifications which describe the set of metatasks.  Without a leading
+dash, every metataskspec adds to the set of selected metatasks (set
+union).  With a dash, the metataskspec is removed (set subtraction)
+from the list of metatasks.
+.Bl -tag flag
+.It Ar -metataskspec[,metataskspec[,...]]
+Negate the option (remove metatasks from the selection instead of adding).
+This applies to all metataskspecs following the "-".
+.It Ar metataskname
+Add a metatask to the selected tasks.
+.El
+
+.Ss Cycle subset: The -c Option
+Unlike the -t and -m options, the -c option can only include one
+cyclespec, rather than a comma-separated list (except individual
+cycles; see below).  Every cyclespec adds to the set of selected
+cyclespec (set union).  Set subtraction is NOT supported (no -
+options).
+.Bl -tag flag
+.It Ar YYYYMMDDHHMM[,YYYYMMDDHHMM[,...]]
+Select specific cycles, given their twelve-digit date/time specification.
+.It Ar YYYYMMDDHHMM:YYYYMMDDHHMM
+Select the specified range of cycles.
+.It Ar :YYYYMMDDHHMM
+Select all cycles from the first one to the given cycle.
+.It Ar YYYYMMDDHHMM:
+Select all cycles from the given cycle to the last known cycle.
+.It Ar all | ALL
+Select all cycles.
+.It @cycledef
+Select all cycles in the specified cycledef.
+.El
+
+
 .Sh EXAMPLES
 The command:
 .Pp
@@ -91,7 +175,9 @@ and contained in the database file named
 .Sh DOCUMENTATION
 Complete documentation can be found at: http://rdhpcs.noaa.gov/rocoto/
 .Sh SEE ALSO
+.Xr rocotocomplete 1 ,
 .Xr rocotocheck 1 ,
+.Xr rocotorewind 1 ,
 .Xr rocotorun 1 ,
 .Xr rocotostat 1
 .Sh STANDARDS
