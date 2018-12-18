@@ -111,6 +111,11 @@ module WorkflowMgr
 
       # Add Torque batch system options translated from the generic options specification
       task.attributes.each do |option,value|
+         if value.is_a?(String)
+           if value.empty? and option != 'memory'
+             WorkflowMgr.stderr("DEPRECATION WARNING: <#{option}> has empty content.  This may be rejected by later versions of Rocoto.", 1)
+           end
+        end
         case option
           when :account
             input += "#PBS -A #{value}\n"
