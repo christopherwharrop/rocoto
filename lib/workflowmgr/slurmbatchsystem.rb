@@ -311,7 +311,7 @@ module WorkflowMgr
       output=`#{cmd} < #{tf.path} 2>&1`.chomp()
 
       # Parse the output of the submit command
-      if output=~/^Submitted batch job (\d+)$/
+      if output=~/^Submitted batch job (\d+)/
         return $1,output
       else
         return nil,output
@@ -460,7 +460,7 @@ private
         completed_jobs=""
         errors=""
         exit_status=0
-        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
+        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
 
         return if errors=~/SLURM accounting storage is disabled/
 
