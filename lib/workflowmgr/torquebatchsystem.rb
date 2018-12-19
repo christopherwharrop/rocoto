@@ -111,10 +111,13 @@ module WorkflowMgr
 
       # Add Torque batch system options translated from the generic options specification
       task.attributes.each do |option,value|
-         if value.is_a?(String)
-           if value.empty? and option != 'memory'
+        if value.is_a?(String) && value.empty?
+          if option.to_s != 'memory'
+            WorkflowMgr.stderr("ERROR: <#{option}> has empty content.  Will discard this tag.",1)
+            next
+          else
              WorkflowMgr.stderr("DEPRECATION WARNING: <#{option}> has empty content.  This may be rejected by later versions of Rocoto.", 1)
-           end
+          end
         end
         case option
           when :account
