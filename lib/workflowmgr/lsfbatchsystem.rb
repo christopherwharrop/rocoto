@@ -605,6 +605,8 @@ private
                   record[:state]='RUNNING'
                 when 'PEND'
                   record[:state]='QUEUED'
+                when 'EXIT'
+                  record[:native_state]='EXIT'
                 when 'DONE'
                   record[:native_state]='DONE'
                 when 'PSUSP'
@@ -636,6 +638,11 @@ private
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited; job has been forced to exit with exit code (\d+)/
               record[:end_time]=lsf_time($1)
               record[:exit_status]=$3.to_i             
+              record[:state]="FAILED"
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by LSF signal ([A-Za-z0-9_]+)/
+              record[:end_time]=lsf_time($1)
+              record[:exit_status]=-1
+              record[:native_state]=$3
               record[:state]="FAILED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited\./
               record[:end_time]=lsf_time($1)
