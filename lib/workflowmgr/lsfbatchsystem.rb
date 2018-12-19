@@ -161,6 +161,12 @@ module WorkflowMgr
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
+         if value.is_a?(String)
+           if value.empty?
+             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+             next
+           end
+        end
         case option
           when :account
             cmd += " -P #{value}"
@@ -168,6 +174,9 @@ module WorkflowMgr
             # Nothing to do
           when :queue            
             cmd += " -q #{value}"
+          when :partition
+            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for LSF.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for LSF.", 1)
           when :cores  
             next unless task.attributes[:nodes].nil?          
             wantcores=value.to_s.to_i
