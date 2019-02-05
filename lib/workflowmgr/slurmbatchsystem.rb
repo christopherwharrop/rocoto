@@ -219,7 +219,7 @@ module WorkflowMgr
               }
 
               # Request total number of nodes
-              node_input += "#SBATCH --nodes=#{nnodes}-#{nnodes}\n"
+              node_input = "#SBATCH --nodes=#{nnodes}-#{nnodes}\n"
 
               # Request max tasks per node
               node_input += "#SBATCH --tasks-per-node=#{maxppn}\n"
