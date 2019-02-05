@@ -35,6 +35,9 @@ module WorkflowMgr
       # Assume the scheduler is up
       @schedup=true
 
+      # Set heterogeneous job support to nil (it will be set once in submit)
+      @heterogeneous_job_support
+
     end
 
 
@@ -109,64 +112,136 @@ module WorkflowMgr
     #####################################################
     def submit(task)
 
+      # Check if heterogeneous jobs are supported
+      if @heterogeneous_job_support.nil?
+
+        # Get version of sbatch being used
+        version,errors,exit_status=WorkflowMgr.run4("sbatch --version",30)
+
+        # Raise SchedulerDown if the command failed
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+        # Get first four digits of version as an integer
+        @version = version.gsub(/[slurm.\s]/,"")[0..3].to_i
+
+        # Check for heterogeneous job support
+        @heterogeneous_job_support = false
+        if @version >= 1808
+          @heterogeneous_job_support = true
+        end
+
+      end
+
       # Initialize the submit command
       cmd="sbatch"
       input="#! /bin/sh\n"
 
+      per_pack_group_input=""
+      pack_group_nodes=Array.new
+
       # Add Slurm batch system options translated from the generic options specification
       task.attributes.each do |option,value|
+         if value.is_a?(String)
+           if value.empty?
+             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+             next
+           end
+        end
         case option
           when :account
-            input += "#SBATCH --account #{value}\n"
-          when :queue            
-            input += "#SBATCH -p #{value}\n"
+            per_pack_group_input += "#SBATCH --account #{value}\n"
+          when :queue
+            per_pack_group_input += "#SBATCH --qos #{value}\n"
+          when :partition
+            per_pack_group_input += "#SBATCH --partition #{value}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
-            input += "#SBATCH --ntasks=#{value}\n"
+            if @heterogeneous_job_support
+              pack_group_nodes << "#SBATCH --ntasks=#{value}\n"
+            else
+              pack_group_nodes = ["#SBATCH --ntasks=#{value}\n"]
+            end
           when :nodes
-            # Arbitrary processor geometry is not support by sbatch (it is supported by srun)
-            # Request number of nodes and tasks per node large enough to accommodate nodespec
-            # Get the total number of nodes and the maximum ppn
-            maxppn=1
-            nnodes=0
-            nodespecs=value.split("+")
-            nodespecs.each { |nodespec|
-              resources=nodespec.split(":")
-              nnodes+=resources.shift.to_i
-              ppn=0
-              resources.each { |resource|
-                case resource
-                  when /ppn=(\d+)/
-                    ppn=$1.to_i
-                  when /tpp=(\d+)/
-                    tpp=$1.to_i
-                end
-              }
-              maxppn=ppn if ppn > maxppn
-            }
-
-            # Request total number of nodes
-            input += "#SBATCH --nodes=#{nnodes}-#{nnodes}\n"
-
-            # Request max tasks per node
-            input += "#SBATCH --tasks-per-node=#{maxppn}\n"
-
             # Make sure exclusive access to nodes is enforced
-            input += "#SBATCH --exclusive\n"
+#            per_pack_group_input += "#SBATCH --exclusive\n"
 
-            # Print a warning if multiple nodespecs are specified
-            if nodespecs.size > 1
-              WorkflowMgr.stderr("WARNING: SLURM does not support multiple types of node requests for batch jobs",1)
-              WorkflowMgr.stderr("WARNING: You must use the -m option of the srun command in your script to launch your code with an arbitrary distribution of tasks",1)
-              WorkflowMgr.stderr("WARNING: Please see https://computing.llnl.gov/linux/slurm/faq.html#arbitrary for details",1)
-              WorkflowMgr.stderr("WARNING: Rocoto has automatically converted '#{value}' to '#{nnodes}:ppn=#{maxppn}' to facilitate the desired arbitrary task distribution",1)
-              WorkflowMgr.stderr("WARNING: Use <nodes>#{nnodes}:ppn=#{maxppn}</nodes> in your workflow to eliminate this warning message.",1)
+            if @heterogeneous_job_support
+
+              first_spec = true
+              nodespecs=value.split("+")
+              nodespecs.each { |nodespec|
+                resources=nodespec.split(":")
+                nnodes=resources.shift.to_i
+                ppn=0
+                resources.each { |resource|
+                  case resource
+                    when /ppn=(\d+)/
+                      ppn=$1.to_i
+                    when /tpp=(\d+)/
+                      tpp=$1.to_i
+                  end
+                }
+
+                # Request for this resource
+                pack_group_nodes << "#SBATCH --ntasks=#{nnodes*ppn} --tasks-per-node=#{ppn}\n"
+
+                first_spec = false
+              }
+
+            else
+
+              # This version of SLURM (< version 18.08) does not support submission of jobs
+              # (via sbatch) with non-uniform processor geometries.  SLURM refers to these as
+              # "heterogenous jobs".  To work around this, we will use sbatch to submit a job
+              # with the smallest uniform resource request that can accommodate the
+              # heterogeneous request.  It is up to the user to use the appropriate host file
+              # manipulation and/or MPI launcher command to specify the desired processor layout
+              # for the executable in the job script.
+
+              # Get the total nodes and max ppn requested
+              maxppn=1
+              nnodes=0
+              nodespecs=value.split("+")
+              nodespecs.each { |nodespec|
+                resources=nodespec.split(":")
+                nnodes+=resources.shift.to_i
+                ppn=0
+                resources.each { |resource|
+                  case resource
+                    when /ppn=(\d+)/
+                      ppn=$1.to_i
+                    when /tpp=(\d+)/
+                      tpp=$1.to_i
+                  end
+                }
+                maxppn=ppn if ppn > maxppn
+              }
+
+              # Request total number of nodes
+              node_input += "#SBATCH --nodes=#{nnodes}-#{nnodes}\n"
+
+              # Request max tasks per node
+              node_input += "#SBATCH --tasks-per-node=#{maxppn}\n"
+
+              pack_group_nodes = [ node_input ] # ensure only one "pack group"
+
+              # Print a warning if multiple nodespecs are specified
+              if nodespecs.size > 1
+                WorkflowMgr.stderr("WARNING: SLURM < 18.08 does not support requests for non-unifortm task geometries",1)
+                WorkflowMgr.stderr("WARNING: during batch job submission You must use the -m option of the srun command",1)
+                WorkflowMgr.stderr("WARNING: in your script to launch your code with an arbitrary distribution of tasks",1)
+                WorkflowMgr.stderr("WARNING: Please see https://slurm.schedmd.com/faq.html#arbitrary for details",1)
+                WorkflowMgr.stderr("WARNING: Rocoto has automatically converted '#{value}' to '#{nnodes}:ppn=#{maxppn}'",1)
+                WorkflowMgr.stderr("WARNING: to facilitate the desired arbitrary task distribution.  Use",1)
+                WorkflowMgr.stderr("WARNING: <nodes>#{nnodes}:ppn=#{maxppn}</nodes> in your workflow to eliminate this warning message.",1)
+              end
+
             end
 
-           when :walltime
+          when :walltime
             # Make sure format is dd-hh:mm:ss if days are included
-            input += "#SBATCH -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}\n"
+            per_pack_group_input += "#SBATCH -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}\n"
           when :memory
             m=/^([\.\d]+)([\D]*)$/.match(value)
             amount=m[1].to_f
@@ -184,7 +259,7 @@ module WorkflowMgr
               amount=(amount / 1024.0 / 1024.0).ceil
             end
             if amount > 0
-              input += "#SBATCH --mem=#{amount}\n"
+              per_pack_group_input += "#SBATCH --mem=#{amount}\n"
             end
           when :stdout
             input += "#SBATCH -o #{value}\n"
@@ -198,7 +273,18 @@ module WorkflowMgr
       end
 
       task.each_native do |value|
-        input += "#SBATCH #{value}\n"
+        per_pack_group_input += "#SBATCH #{value}\n"
+      end
+
+      first=true
+      pack_group_nodes.each do |this_group_nodes|
+        if first
+          first=false
+        else
+          input += "\n#SBATCH packjob\n\n"
+        end
+        input += per_pack_group_input
+        input += this_group_nodes
       end
 
       # Add export commands to pass environment vars to the job
@@ -225,7 +311,7 @@ module WorkflowMgr
       output=`#{cmd} < #{tf.path} 2>&1`.chomp()
 
       # Parse the output of the submit command
-      if output=~/^Submitted batch job (\d+)$/
+      if output=~/^Submitted batch job (\d+)/
         return $1,output
       else
         return nil,output
@@ -279,7 +365,9 @@ private
       end
 
       # Make sure queued_jobs is properly encoded
-      queued_jobs = queued_jobs.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+      if String.method_defined? :encode
+        queued_jobs = queued_jobs.encode('UTF-8', 'binary', {:invalid => :replace, :undef => :replace, :replace => ''})
+      end
 
       # For each job, find the various attributes and create a job record
       queued_jobs.split("\n").each { |job|
@@ -372,7 +460,7 @@ private
         completed_jobs=""
         errors=""
         exit_status=0
-        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
+        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
 
         return if errors=~/SLURM accounting storage is disabled/
 
@@ -437,11 +525,11 @@ private
 
         # Extract job state
         case jobfields[10]       
-          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
+          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/,/^REQUEUED$/
             record[:state]="QUEUED"
           when /^RUNNING$/,/^COMPLETING$/
             record[:state]="RUNNING"
-          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/
+          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/,/^OUT_OF_MEMORY$/,/^BOOT_FAIL$/,/^DEADLINE$/
             record[:state]="FAILED"
             record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
           when /^COMPLETED$/

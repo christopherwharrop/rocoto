@@ -161,6 +161,12 @@ module WorkflowMgr
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
+         if value.is_a?(String)
+           if value.empty?
+             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+             next
+           end
+        end
         case option
           when :account
             cmd += " -P #{value}"
@@ -168,6 +174,9 @@ module WorkflowMgr
             # Nothing to do
           when :queue            
             cmd += " -q #{value}"
+          when :partition
+            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for LSF.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for LSF.", 1)
           when :cores  
             next unless task.attributes[:nodes].nil?          
             wantcores=value.to_s.to_i
@@ -605,6 +614,8 @@ private
                   record[:state]='RUNNING'
                 when 'PEND'
                   record[:state]='QUEUED'
+                when 'EXIT'
+                  record[:native_state]='EXIT'
                 when 'DONE'
                   record[:native_state]='DONE'
                 when 'PSUSP'
@@ -636,6 +647,11 @@ private
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited; job has been forced to exit with exit code (\d+)/
               record[:end_time]=lsf_time($1)
               record[:exit_status]=$3.to_i             
+              record[:state]="FAILED"
+            when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by LSF signal ([A-Za-z0-9_]+)/
+              record[:end_time]=lsf_time($1)
+              record[:exit_status]=-1
+              record[:native_state]=$3
               record[:state]="FAILED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited\./
               record[:end_time]=lsf_time($1)

@@ -458,6 +458,13 @@
           </element>
         </optional>
 
+        <!-- Zero or one partition tag -->
+        <optional>
+          <element name="partition">
+            <data type="string"/>
+          </element>
+        </optional>
+
         <!-- Either one cores tag or one nodes tag-->
         <choice>
           <element name="cores">
