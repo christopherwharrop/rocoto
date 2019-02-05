@@ -14,6 +14,9 @@ module WorkflowMgr
   ##########################################
   class SLURMBatchSystem < BatchSystem
 
+    # Need at least this version of SLURM to get heterogeneous job support:
+    HETEROGENEOUS_JOB_VERSION="18.8"
+
     require 'etc'
     require 'parsedate'
     require 'libxml'
@@ -121,13 +124,20 @@ module WorkflowMgr
         # Raise SchedulerDown if the command failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
-        # Get first four digits of version as an integer
-        @version = version.gsub(/[slurm.\s]/,"")[0..3].to_i
-
-        # Check for heterogeneous job support
+        # Assume we don't have heterogeneous job support unless detected later:
         @heterogeneous_job_support = false
-        if @version >= 1808
-          @heterogeneous_job_support = true
+
+        if version =~ /slurm\s*(\d+(?:\.\d+)*)/
+          @version=$1
+          if WorkflowMgr.cmp_versions(@version,HETEROGENEOUS_JOB_VERSION)>=0
+            WorkflowMgr.stderr("SLURM #{@version} detected is at least #{HETEROGENEOUS_JOB_VERSION}, so I will assume heterogeneous job support is present.",9)
+            @heterogeneous_job_support = true
+          else
+            WorkflowMgr.stderr("SLURM #{@version} detected is older than #{HETEROGENEOUS_JOB_VERSION}, so you have no heterogeneous job support.",9)
+          end
+        else
+          @version=version.strip
+          WorkflowMgr.stderr("WARNING: cannot parse version #{@version} from sbatch --version; assuming no heterogeneous job support.",4)
         end
 
       end

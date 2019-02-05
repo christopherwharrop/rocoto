@@ -283,6 +283,37 @@ module WorkflowMgr
 
   end
 
+  ##########################################
+  #
+  # WorkflowMgr.version_str2dd
+  #
+  ##########################################
+  def WorkflowMgr.version_str2dd(dotted_decimal_version_string)
+    dotted_decimal_version_string.split(".").collect { |x| x.to_i(base=10) }
+  end
+
+  ##########################################
+  #
+  # WorkflowMgr.cmp_versions
+  #
+  ##########################################
+  def WorkflowMgr.cmp_versions(first_version_string,second_version_string)
+
+    v1=version_str2dd(first_version_string)
+    v2=version_str2dd(second_version_string)
+
+    i=0
+    cmp=0
+    
+    while cmp==0 and ( i<v1.length or i<v2.length )
+      v1v = (i<v1.length) ? v1[i] : 0
+      v2v = (i<v2.length) ? v2[i] : 0
+      cmp = v1v <=> v2v
+    i+=1
+    end
+    
+    cmp
+  end
 
   ##########################################
   #
