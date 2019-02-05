@@ -261,7 +261,6 @@ private
 	job.attributes.each { |jobstat| 
           case jobstat.name
             when /JobID/
-#              record[:jobid]=jobstat.value.split(".").last
               record[:jobid]=jobstat.value
             when /State/
               case jobstat.value
@@ -343,7 +342,6 @@ private
       recordxml.each { |job|
 
         record={}
-#        record[:jobid]=job.attributes['JobID'].split(".").last
         record[:jobid]=job.attributes['JobID']
         record[:native_state]=job.attributes['State']
         record[:jobname]=job.attributes['JobName']

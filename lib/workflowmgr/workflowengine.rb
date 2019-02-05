@@ -226,7 +226,6 @@ module WorkflowMgr
 
             puts "#{strcyc}: Deactivate cycle: #{rewind_cycle}"
 
-            # @dbServer.update_cycles([rewind_cycle])
             @dbServer.remove_cycle(rewind_cycle.cycle)
           elsif did_something
             if rewind_cycle.done? or rewind_cycle.draining?
@@ -566,10 +565,6 @@ module WorkflowMgr
         # Get the active jobs, which may include jobs from cycles that have just expired
         # as well as jobs needed for evaluating inter cycle dependencies
         get_active_jobs
-
-        # Update the status of all active jobs
-        #update_active_jobs
-
 
         # Initialize a task cycledef hash
         taskcycledefs={}

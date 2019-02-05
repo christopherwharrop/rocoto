@@ -84,7 +84,6 @@ class LoadLevelerBatchSystem < BatchSystem
   # initialize
   #
   #####################################################
-#  def initialize(ll_root="/ssg/loadl",qstat_refresh_rate=@@qstat_refresh_rate)
   def initialize(ll_root="/usr/lpp/LoadL/full",qstat_refresh_rate=@@qstat_refresh_rate)
 
     begin
@@ -300,8 +299,6 @@ puts "get_job_exit_status: #{record.inspect}"
         # Now write commands to create a step to retrieve the exit status
         puts("\#\@ step_name = script_exit")
         io.puts("\#\@ step_name = script_exit")
-#CWH        puts("\#\@ executable = /ssg/loadl/bin/llq")        
-#CWH        io.puts("\#\@ executable = /ssg/loadl/bin/llq")
         puts("\#\@ executable = /usr/lpp/LoadL/full/bin/llq")
         io.puts("\#\@ executable = /usr/lpp/LoadL/full/bin/llq")
         puts("\#\@ arguments = -l $(schedd_host).$(jobid).0 > /ptmp/#{username}/$(schedd_host).$(jobid)")

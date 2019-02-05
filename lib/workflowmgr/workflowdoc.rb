@@ -74,7 +74,6 @@ module WorkflowMgr
       # process.
       begin
         if @workflowIOServer.exists?(workflowdoc)
-          # @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
           context = LibXML::XML::Parser::Context.file(workflowdoc)
           context.options=LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
           parser=LibXML::XML::Parser.new(context)

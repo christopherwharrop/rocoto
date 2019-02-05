@@ -124,7 +124,6 @@ module WorkflowMgr
     end
 
     def set_cycle(cycle) # Add a Cycle
-      # @defaults['cycleobj']=cycle   # cycleobj = the Cycle object
       @defaults['cycle']=cycle # cycle = the cycle time
 
       @defaults['evalcycle']=cycle # evalcycle = the Cycle object again

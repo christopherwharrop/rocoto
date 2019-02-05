@@ -58,7 +58,6 @@ module WFMStat
         # Get command line options
         @options=options
 
-
         # Set up an object to serve the workflow database (but do not open the database)
         @dbServer=WorkflowMgr::DBProxy.new(@config,@options)
 
@@ -321,11 +320,7 @@ module WFMStat
 
         # Sort the task list in sequence order
         tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
-        # unless @options.tasks?
-        #   tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
-        # end
         tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
-
 
         tasklist.each do |task|
 
@@ -384,9 +379,6 @@ module WFMStat
 
           # Sort the task list in sequence order 
           tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
-          #unless @options.tasks.nil?
-          #  tasklist = tasklist.find_all { |task| @options.tasks.any? { |pattern| task=~/#{pattern}/ } }
-          #end
           tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
           tasklist.each do |task|
 
