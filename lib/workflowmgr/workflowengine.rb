@@ -37,7 +37,7 @@ module WorkflowMgr
       begin
 
         # Disable garbage collection
-	GC.disable
+        GC.disable
 
         # Turn on full program tracing for verbosity 1000+
         if WorkflowMgr::VERBOSE > 999
@@ -121,7 +121,7 @@ module WorkflowMgr
         rewind_tasks=@selected_tasks
         nrewind_tasks = rewind_tasks.length
         all_tasks=@options.all_tasks
-        
+
         if all_tasks
           puts "Rewinding all tasks will set the cycle to \"inactive\" status, as if Rocoto had never started it."
           printf "Are you sure you want to proceed? (y/n) "
@@ -152,7 +152,7 @@ module WorkflowMgr
           if not rewind_cycle.nil?
             puts "#{strcyc}: Rewind tasks for #{rewind_cycle}"
           end
-          
+
           if rewind_cycle.nil?
             puts "#{strcyc}: Cycle is inactive (unstarted).  Nothing to do."
             next
@@ -162,7 +162,7 @@ module WorkflowMgr
             puts "#{strcyc} is expired.  Will rewind tasks, but will not reactivate cycle."
             do_not_reactivate=true
           end
-          
+
           if all_tasks
             task_list=@active_jobs.keys
           else
@@ -237,7 +237,7 @@ module WorkflowMgr
               rewind_cycle.reactivate!
               @dbServer.update_cycles([rewind_cycle])
             end
-            
+
             if not rewind_cycle.active?
               puts "#{strcyc}: ERROR: Unable to active cycle.  Cycle is in state #{rewind_cycle.state}."
               return
@@ -299,7 +299,7 @@ module WorkflowMgr
     def find_cycle(cycle_time)
       # Look for the boot cycle in the active cycles
       boot_cycle=@active_cycles.find { |c| cycle_time==c.cycle }
-      
+
       # If it wasn't in the active cycle list, look for it in the
       # database and add the jobs for that cycle to the active job
       # list as well
@@ -438,7 +438,7 @@ module WorkflowMgr
                   next  # boot next task
                 end
               end
- 
+
             end
 
             # Check for existing jobs that are not done or expired
@@ -504,7 +504,7 @@ module WorkflowMgr
               end
 
             rescue WorkflowIOHang
-              msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"            
+              msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"
               @logServer.log(boot_cycle_time,msg)
               WorkflowMgr.stderr(msg,2)
               WorkflowMgr.log(msg)
@@ -601,7 +601,7 @@ module WorkflowMgr
 
           # Find the requested cycle
           complete_cycle=find_cycle(complete_cycle_time)
-          
+
           # Complete each requested task for this cycle
           complete_tasks.each { |complete_task_name|
 
@@ -628,7 +628,7 @@ module WorkflowMgr
             end  # unless
 
             # Activate a new cycle if necessary and add it to the database
-            if complete_cycle.nil? 
+            if complete_cycle.nil?
               if not @options.all_tasks
                 printf "Completing task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' will activate cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' for the first time.\n"
                 printf "This may trigger submission of other tasks for cycle '#{complete_cycle_time.strftime("%Y%m%d%H%M")}' in addition to '#{complete_task_name}'\n"
@@ -673,7 +673,7 @@ module WorkflowMgr
                   next  # complete next task
                 end
               end
- 
+
             end
 
             # Check for existing jobs that are not done or expired
@@ -715,7 +715,7 @@ module WorkflowMgr
 
         # Deactivate completed cycles
         deactivate_done_cycles
-        
+
         # Expire active cycles that have exceeded the cycle life span
         expire_cycles
       } # with_locked_db
@@ -762,7 +762,7 @@ module WorkflowMgr
         Process.exit(1) unless @locked
 
         # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)        
+        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config,@options)
         ######################################
         #
         # Pass control to the code block
@@ -774,14 +774,14 @@ module WorkflowMgr
       rescue => crash
         WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
-        case 
+        case
           when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
             WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
         Process.exit(1)
-        
+
       ensure
 
         # Shut down the batch queue server if it is no longer needed
@@ -805,7 +805,7 @@ module WorkflowMgr
         end
 
       end
- 
+
     end  # with_locked_db
 
 
@@ -865,7 +865,7 @@ module WorkflowMgr
 
       # Get the scheduler
       @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
-      
+
       # Add this scheduler to the bqserver database if needed
       @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer
 
@@ -875,7 +875,7 @@ module WorkflowMgr
       # Get the cycle defs
       @cycledefs=workflowdoc.cycledefs
 
-      # Get the tasks 
+      # Get the tasks
       @tasks=workflowdoc.tasks
 
       # Get the taskdep cycle offsets
@@ -996,7 +996,7 @@ module WorkflowMgr
             CycleInterval.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:activation_offset],dbcycledef[:position])
         end
       end
-        
+
       # Update the positions of the current cycledefs (loaded from the workflowdoc) 
       # with their last known positions that are stored in the database
       @cycledefs.each do |cycledef|
@@ -1217,7 +1217,7 @@ module WorkflowMgr
         bqservers.each do |uri,bqserver|
 
           begin
-            unless bqserver.running? 
+            unless bqserver.running?
               bqserver.stop!
               @dbServer.delete_bqservers([uri])
             end
@@ -1251,7 +1251,7 @@ module WorkflowMgr
       begin
 
         # Initialize array of jobs whose job ids have been updated
-        updated_jobs=[]  
+        updated_jobs=[]
 
         # Initialize counters for keeping track of active workflow parameters
         @active_task_count=0
@@ -1283,12 +1283,12 @@ module WorkflowMgr
               job.state="FAILED"
 
               # Update the state of the job in the database
-              @dbServer.update_jobs([job])                
+              @dbServer.update_jobs([job])
 
               # Log the fact that this job was resurrected
               @logServer.log(job.cycle,"Task #{job.task} has been resurrected.  #{@tasks[job.task].attributes[:maxtries] - job.tries} more tries will be allowed")
             end
- 
+
             # No need for more updates to this job
             next
 
@@ -1369,7 +1369,7 @@ module WorkflowMgr
             end
 
           end
-           
+
           # Check for maxtries violation and update counters
           if job.state=="SUCCEEDED" || job.state=="FAILED" || job.state=="EXPIRED" || job.state=="LOST"
             job.tries+=1
@@ -1416,7 +1416,7 @@ module WorkflowMgr
           end
 
         end # @active_jobs.each
-     
+
       end
 
     end
@@ -1459,16 +1459,16 @@ module WorkflowMgr
             # Validate that this cycle is a member of at least one of the cycledefs specified for this task
             unless task.attributes[:cycledefs].nil?
 
-              # Get the cycledefs associated with this task                                                                                                                                                                                                                                                               
+              # Get the cycledefs associated with this task
               if taskcycledefs[task].nil?
                 taskcycledefs[task]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
               end
 
-              # Reject this task if the cycle is not a member of the tasks cycle list                                                                                                                                                                                                                                     
+              # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle.cycle) }
-              
+
             end  # unless
-            
+
             # Skip to next final task if this task has not been submitted yet for any cycle
             next if @active_jobs[task.attributes[:name]].nil?
 
@@ -1478,9 +1478,9 @@ module WorkflowMgr
             # The cycle needs to drain if this task is successful
             if @active_jobs[task.attributes[:name]][cycle.cycle].state == "SUCCEEDED"
               cycle.drain!
-              @logServer.log(cycle.cycle,"This cycle is draining") 
+              @logServer.log(cycle.cycle,"This cycle is draining")
 
-              # Update the draining cycle in the database 
+              # Update the draining cycle in the database
               @dbServer.update_cycles([cycle])
 
               break
@@ -1493,43 +1493,43 @@ module WorkflowMgr
         # Initialize done flag to false for this cycle
         cycle_done=false
         cycle_success=true
-        
+
         catch (:not_done) do
-          
+
           # Loop over all final tasks
           (final_tasks + non_final_tasks).each do |task|
-            
+
             # Validate that this cycle is a member of at least one of the cycledefs specified for this task
             unless task.attributes[:cycledefs].nil?
-              
+
               # Get the cycledefs associated with this task
               if taskcycledefs[task].nil?
                 taskcycledefs[task]=@cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
               end
-              
+
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle.cycle) }
-              
+
             end  # unless
-            
+
             if cycle.draining?
-              
+
               # A draining cycle is not done if any task is still running
               next if @active_jobs[task.attributes[:name]].nil?
               next if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
               throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].state == "RUNNING"
-              
-            else 
-              
+
+            else
+
               # An active cycle is not done if this task has not been submitted yet for any of the active cycles
               throw :not_done if @active_jobs[task.attributes[:name]].nil?
-              
+
               # An active cycle is not done if this task has not been submitted yet for this cycle
               throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].nil?
-              
+
               # An active cycle is not done if the job for this task and cycle is not in the done state
               throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].state != "SUCCEEDED"
-              
+
               # For now, only tag cycles as done if they are done successfully, meaning that all tasks are complete and have exit status = 0.
               # If we mark cycles as done when they have tasks that exceeded retries, then increasing retries won't cause them to rerun again
               #
@@ -1537,46 +1537,46 @@ module WorkflowMgr
               #            if @active_jobs[task.attributes[:name]][cycle.cycle].tries >= task.attributes[:maxtries]
               #              cycle_success=false
               #            else
-              #              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].exit_status != 0 
+              #              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].exit_status != 0
               #            end
-              
+
             end  # if cycle.draining?
 
           end  # tasks.each
-            
+
           cycle_done=true
-            
+
         end  # catch :not_done
 
         # If the cycle is done, record the time and update active cycle list
         if cycle_done
-          
+
           # Mark the cycle as done
           cycle.done!
-          
+
           # Add to list of done cycles
           done_cycles << cycle
-          
+
           # Log the done status of this cycle
           if cycle_success
-            @logServer.log(cycle.cycle,"This cycle is complete: Success") 
+            @logServer.log(cycle.cycle,"This cycle is complete: Success")
           else
-            @logServer.log(cycle.cycle,"This cycle is complete: Failed") 
+            @logServer.log(cycle.cycle,"This cycle is complete: Failed")
           end
-          
-          # Update the done cycle in the database 
+
+          # Update the done cycle in the database
           @dbServer.update_cycles([cycle])
-          
+
           # Otherwise add the cycle to a new list of active cycles
         else
           active_cycles << cycle
         end
-        
+
       end  # active_cycles.each
-      
+
       # Update the active cycle list
       @active_cycles=active_cycles
-      
+
     end
 
 
@@ -1610,7 +1610,7 @@ module WorkflowMgr
       end
 
       # Delete any jobs for the expired cycles
-      expired_cycles.each do |cycle|          
+      expired_cycles.each do |cycle|
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle.cycle].nil?
           unless @active_jobs[taskname][cycle.cycle].state == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle].state == "FAILED" || @active_jobs[taskname][cycle.cycle].state == "DEAD" || @active_jobs[taskname][cycle.cycle].state == "EXPIRED"
@@ -1620,9 +1620,9 @@ module WorkflowMgr
         end
 
         @logServer.log(cycle.cycle,"This cycle has expired!")
-        
+
         # Update the expired cycles in the database
-        @dbServer.update_cycles([cycle]) 
+        @dbServer.update_cycles([cycle])
       end
 
       # Update the active cycle list
@@ -1651,7 +1651,7 @@ module WorkflowMgr
           WorkflowMgr.stderr("#{cycle.cycle.strftime('%Y%m%d%H%M')}: cycle is not selected by -c; skip",4)
           next
         end
-        
+
         # Don't submit jobs for draining cycles
         next if cycle.draining?
 
@@ -1707,7 +1707,7 @@ module WorkflowMgr
             next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycletime) }
 
           end
-          
+
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
             wstate=WorkflowState.new(cycletime,@active_jobs,@workflowIOServer,@cycledefs,task.attributes[:name],task,tasks=@tasks)
@@ -1747,7 +1747,7 @@ module WorkflowMgr
                 end
               end
             end
-            next if violation 
+            next if violation
           end
 
           # Reject this task if retries has been exceeded
@@ -1771,7 +1771,7 @@ module WorkflowMgr
 
           # If we are resubmitting the job, initialize the new job to the old job
           if @config.BatchQueueServer
-            newjobid=@bqServer.__drburi 
+            newjobid=@bqServer.__drburi
           else
             newjobid=0
           end
@@ -1799,9 +1799,9 @@ module WorkflowMgr
                              0,                        # tries
                              0,                        # nunknowns
                              0.0                       # duration
-                            )          
+                            )
           end
- 
+
 
           # Append the new job to the list of new jobs that were submitted
           newjobs << newjob
@@ -1834,7 +1834,7 @@ module WorkflowMgr
             end
 
           rescue WorkflowIOHang
-            msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"            
+            msg="WARNING! Can not submit #{task.attributes[:name]} because output directory '#{outdir}' resides on an unresponsive file system!"
             @logServer.log(cycletime,msg)
             WorkflowMgr.stderr(msg,2)
             WorkflowMgr.log(msg)
@@ -1846,7 +1846,7 @@ module WorkflowMgr
 
         end
 
-      end        
+      end
 
       # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
       Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer

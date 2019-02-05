@@ -11,7 +11,7 @@ module WorkflowMgr
 
   class WorkflowDBSelection < WorkflowMgr::WorkflowSelection
 
-    ##########################################  
+    ##########################################
     #
     # db_query_cycles
     #
@@ -43,7 +43,7 @@ module WorkflowMgr
               xml_cycle_times << reftime
               reftime=cycledefs.collect { |cdef| cdef.next(reftime+60,by_activation_time=false) }.compact.collect {|c| c[0] }.min
             end
-            
+
             # Add the cycles that are in the XML but not in the DB
             xmlcycles = (xml_cycle_times - dbcycles.collect { |c| c.cycle } ).collect { |c| WorkflowMgr::Cycle.new(c) }
           elsif cycopt.is_a?(Time)
@@ -79,7 +79,7 @@ module WorkflowMgr
             db_set=Set.new db_cycles_for_this
 
             xml_set=this_set-db_set
-            
+
             dbcycles.concat db_set.to_a
 
             xml_set.each {|c| xmlcycles << WorkflowMgr::Cycle.new(c)}
@@ -105,7 +105,7 @@ module WorkflowMgr
     end
 
 
-    ##########################################  
+    ##########################################
     #
     # make_subset
     #

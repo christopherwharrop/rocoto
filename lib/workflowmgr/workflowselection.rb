@@ -7,7 +7,7 @@ module WorkflowMgr
 
   require 'workflowmgr/workflowsubset'
   require 'workflowmgr/selectionutil'
-  
+
   ##########################################
   #
   # Class WorkflowSelection
@@ -15,7 +15,7 @@ module WorkflowMgr
   ##########################################
   class WorkflowSelection
 
-    ##########################################  
+    ##########################################
     #
     # Initialize
     #
@@ -39,7 +39,7 @@ module WorkflowMgr
     end
 
 
-    ##########################################  
+    ##########################################
     #
     # add_options
     #
@@ -51,7 +51,7 @@ module WorkflowMgr
       @all_cycles=!!all_cycles unless all_cycles.nil?
     end
 
-    ##########################################  
+    ##########################################
     #
     # make_subset
     #
@@ -64,7 +64,7 @@ module WorkflowMgr
       return WorkflowSubset.new(@all_cycles,@all_tasks,cycles,selected_tasks)
     end
 
-    ##########################################  
+    ##########################################
     #
     # select_cycles
     #
@@ -72,7 +72,7 @@ module WorkflowMgr
     def select_cycles(cycledefs)
       # Get the list of boot cycles
       selected_cycles=[]
-      
+
       @cycles.each do |cycopt|
         if cycopt.is_a?(Range)
 
@@ -102,7 +102,7 @@ module WorkflowMgr
       return selected_cycles
     end
 
-    ##########################################  
+    ##########################################
     #
     # handle_metatask_selection
     #
@@ -134,7 +134,7 @@ module WorkflowMgr
       end # each task
     end
 
-    ##########################################  
+    ##########################################
     #
     # handle_task_selection
     #
@@ -150,7 +150,7 @@ module WorkflowMgr
 
         if item.start_with? ':'
           attribute_name=item[1..-1]
-          
+
           case attribute_name
           when 'final'     then attribute=:final
           when 'shared'    then attribute=:shared
@@ -205,7 +205,7 @@ module WorkflowMgr
     end
 
 
-    ##########################################  
+    ##########################################
     #
     # select_tasks
     #
@@ -224,7 +224,7 @@ module WorkflowMgr
       return tasks
     end
 
-    ##########################################  
+    ##########################################
     #
     # select_tasks
     #
@@ -276,7 +276,7 @@ module WorkflowMgr
             next if task.attributes[:cycledefs].nil?
             cycledefs=task.attributes[:cycledefs].split(',')
             if cycledefs.include? cycledef
-              pass2 << task.attributes[:name] 
+              pass2 << task.attributes[:name]
             end
           end
         else

@@ -9,7 +9,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class LSFBatchSystem 
+  # Class LSFBatchSystem
   #
   ##########################################
   class LSFBatchSystem < BatchSystem
@@ -105,7 +105,7 @@ module WorkflowMgr
 
           # If we didn't find the job in the jobqueue, look for it in the accounting records
         end
-        
+
         refresh_bjobs if @bjobs.empty?
         vanquish_undead(@bjobs,jobid) if @should_vanquish_undead
         return unhold_job(@bjobs,jobid) if @bjobs.has_key?(jobid)
@@ -172,13 +172,13 @@ module WorkflowMgr
             cmd += " -P #{value}"
           when :nodesize
             # Nothing to do
-          when :queue            
+          when :queue
             cmd += " -q #{value}"
           when :partition
             WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for LSF.", 1)
             WorkflowMgr.log("WARNING: the <partition> tag is not supported for LSF.", 1)
-          when :cores  
-            next unless task.attributes[:nodes].nil?          
+          when :cores
+            next unless task.attributes[:nodes].nil?
             wantcores=value.to_s.to_i
             if task.attributes[:nodesize].nil?
               cmd += " -n #{value}"
@@ -263,7 +263,7 @@ module WorkflowMgr
 
             # Add -n to the command
             cmd += " -n #{nnodes*ptile}"
- 
+
             # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
             envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
 
@@ -284,7 +284,7 @@ module WorkflowMgr
                 amount=(amount * 1024.0).ceil
               when /[0-9]/
                 amount=(value.to_i / 1024.0 / 1024.0).ceil
-            end          
+            end
             if amount>0
               cmd += " -R rusage[mem=#{amount}]"
             end
@@ -293,7 +293,7 @@ module WorkflowMgr
           when :stderr
             cmd += " -e #{value}"
           when :join
-            cmd += " -o #{value}"           
+            cmd += " -o #{value}"
           when :jobname
             cmd += " -J #{value}"
         end
@@ -323,7 +323,7 @@ module WorkflowMgr
       if output=~/Job <(\d+)> is submitted to (default )*queue/
         return $1,output
       else
- 	return nil,output
+        return nil,output
       end
 
     end
@@ -369,7 +369,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`bkill #{jobid}`      
+      qdel=`bkill #{jobid}`
 
     end
 
@@ -411,19 +411,19 @@ private
       # Parse the output of bjobs, building job status records for each job
       queued_jobs.split(/\n/).each { |s|
         # Skip the header line
-	next if s=~/^JOBID/
+        next if s=~/^JOBID/
 
         # Split the fields of the bjobs output
         jobattributes=s.strip.split(/\s+/)
 
         # Build a job record from the attributes
-	if jobattributes.size == 1
+        if jobattributes.size == 1
           # This is a continuation of the exec host line, which we don't need
           next
         else
-        
-          # Initialize an empty job record 
-          record={} 
+
+          # Initialize an empty job record
+          record={}
 
           # Record the fields
           record[:jobid]=jobattributes[0]
@@ -435,9 +435,9 @@ private
             when /^RUN$/
               record[:state]="RUNNING"
             else
-              record[:state]="UNKNOWN"   
+              record[:state]="UNKNOWN"
               next
-          end          
+          end
           record[:queue]=jobattributes[3]
           record[:jobname]=jobattributes[6]
           record[:cores]=nil
@@ -454,7 +454,7 @@ private
           record[:priority]=nil
 
           # Put the job record in the jobqueue
-	  @jobqueue[record[:jobid]]=record
+          @jobqueue[record[:jobid]]=record
 
         end
 
@@ -474,7 +474,7 @@ private
     def final_update_record(record,jobacct)
       # do nothing
     end
-    
+
     #####################################################
     #
     # unhold_job: a workaround on WCOSS Cray.  This
@@ -486,17 +486,17 @@ private
     #####################################################
     def unhold_job(joblist,jobid)
       job=joblist[jobid]
-      
+
       return job unless @should_unhold_jobs
 
       # Nothing to do unless job state is userhold
       return job if job[:state] != 'USERHOLD'
-      
+
       cmd = "bresume -u #{ENV['USER']} #{job[:jobid]}"
-      
+
       # When jobs are held, resume them:
       queued_jobs,errors,exit_status=WorkflowMgr.run4(cmd,30)
-      
+
       if exit_status==0
         # If bresume works, assume the jobs are running now:
         WorkflowMgr.stderr("Job #{job[:jobid]} #{job[:jobname]} resumed.")
@@ -510,7 +510,7 @@ private
       end
       return job
     end
-    
+
     #####################################################
     #
     # refresh_bjobs - runs bjobs, updates @bjobs
@@ -628,7 +628,7 @@ private
               end
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, to Queue <([^>]+)>,/
               record[:submit_time]=lsf_time($1)
-              record[:queue]=$2        
+              record[:queue]=$2
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Submitted from host <[^>]+>, CWD/
               record[:submit_time]=lsf_time($1)
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: (Dispatched to|Started) /
@@ -638,15 +638,15 @@ private
               record[:reservation_time]=lsf_time($1)
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Done successfully. /
               record[:end_time]=lsf_time($1)
-              record[:exit_status]=0             
+              record[:exit_status]=0
               record[:state]="SUCCEEDED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited with exit code (\d+)/,/(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by signal (\d+)/
               record[:end_time]=lsf_time($1)
-              record[:exit_status]=$3.to_i             
+              record[:exit_status]=$3.to_i
               record[:state]="FAILED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited; job has been forced to exit with exit code (\d+)/
               record[:end_time]=lsf_time($1)
-              record[:exit_status]=$3.to_i             
+              record[:exit_status]=$3.to_i
               record[:state]="FAILED"
             when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by LSF signal ([A-Za-z0-9_]+)/
               record[:end_time]=lsf_time($1)
@@ -669,7 +669,7 @@ private
           end
         end
 
-      }        
+      }
 
       return jobacct
     end
@@ -685,7 +685,7 @@ private
       end
       return Time.local(*timestamp).getgm
     end
-    
+
   end
 
 end

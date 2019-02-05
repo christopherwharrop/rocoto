@@ -10,7 +10,7 @@ module WorkflowMgr
   require 'workflowmgr/compoundtimestring'
 
   ##########################################
-  # 
+  #
   # StringEvaluator
   #
   ##########################################
@@ -18,7 +18,7 @@ module WorkflowMgr
     require 'set'
 
     ##########################################
-    # 
+    #
     # initialize
     #
     ##########################################
@@ -103,7 +103,7 @@ module WorkflowMgr
       svar=var.to_s
       return defaults[svar]
     end
-    
+
     ##########################################
     #
     # set_* -- Add Groups of Variables
@@ -272,9 +272,9 @@ module WorkflowMgr
     @@reserved_vars=Set.new [ 'evalstr', 'evalbind', 'evalcycle' ]
 
     ##########################################
-    # 
+    #
     # var_name_ok?
-    # Checking variable names.  Raises an 
+    # Checking variable names.  Raises an
     # exception if a name is invalid.
     #
     ##########################################

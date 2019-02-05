@@ -5,7 +5,7 @@
 ##########################################
 module WorkflowMgr
 
-  ########################################## 
+  ##########################################
   #
   # Class CycleDef
   #
@@ -67,11 +67,11 @@ module WorkflowMgr
         now=ret[0]+2
       end
     end
-    
+
   end
 
 
-  ########################################## 
+  ##########################################
   #
   # Class CycleCron
   #
@@ -122,7 +122,7 @@ module WorkflowMgr
       nextwday=reftime.wday
       nextmonth=reftime.month
       nextyear=reftime.year
-    
+
       # Find the first minute >= ref minute, carry over to next hour if none found
       min=@fields[:minute].find { |minute| minute >= nextmin }
       if min.nil?
@@ -131,7 +131,7 @@ module WorkflowMgr
       end
       nextmin=min
 
-      # Find the first hour >= ref hour, carry over to next day 
+      # Find the first hour >= ref hour, carry over to next day
       hr=@fields[:hour].find { |hour| hour >= nexthr }
       if hr.nil?
         hr=@fields[:hour].first
@@ -186,7 +186,7 @@ module WorkflowMgr
           nextwday=nexttime.wday
           nextmonth=nexttime.month
           nextyear=nexttime.year
- 
+
         # If weekday spec is *, and day spec is not *, find next day
         elsif allweekdays
 
@@ -205,7 +205,7 @@ module WorkflowMgr
           nextday=day
 
         # If neither weekday nor day spec is *, find next day that satisfies one or the other
-        else          
+        else
 
           # Add one day until either days or weekdays is satisfied
           # Inefficient, but will loop no more than 6 times
@@ -235,11 +235,11 @@ module WorkflowMgr
           nextday=1
         end
         nextmonth=month
-        
+
         # Find the first year >= ref year, carry over to next year
         year=@fields[:year].find { |year| year >= nextyear }
         if year.nil?
-          return nil  # There is no date in the cron spec >= to the reftime 
+          return nil  # There is no date in the cron spec >= to the reftime
         end
         if nextyear != year
           done=false
@@ -268,7 +268,7 @@ module WorkflowMgr
       end  #  while true
 
     end  #  next
-      
+
 
     ##########################################
     #
@@ -291,7 +291,7 @@ module WorkflowMgr
       prevwday=reftime.wday
       prevmonth=reftime.month
       prevyear=reftime.year
-    
+
       # Find the last minute <= ref minute, carry over to prev hour if none found
       min=@fields[:minute].reverse.find { |minute| minute <= prevmin }
       if min.nil?
@@ -300,7 +300,7 @@ module WorkflowMgr
       end
       prevmin=min
 
-      # Find the last hour <= ref hour, carry over to prev day 
+      # Find the last hour <= ref hour, carry over to prev day
       hr=@fields[:hour].reverse.find { |hour| hour <= prevhr }
       if hr.nil?
         hr=@fields[:hour].last
@@ -356,7 +356,7 @@ module WorkflowMgr
           prevwday=prevtime.wday
           prevmonth=prevtime.month
           prevyear=prevtime.year
- 
+
         # If weekday spec is *, and day spec is not *, find prev day
         elsif allweekdays
 
@@ -375,7 +375,7 @@ module WorkflowMgr
           prevday=day
 
         # If neither weekday nor day spec is *, find prev day that satisfies one or the other
-        else          
+        else
 
           # Add one day until either days or weekdays is satisfied
           # Inefficient, but will loop no more than 6 times
@@ -405,11 +405,11 @@ module WorkflowMgr
           prevday=31
         end
         prevmonth=month
-        
+
         # Find the first year <= ref year, carry over to prev year
         year=@fields[:year].reverse.find { |year| year <= prevyear }
         if year.nil?
-          return nil  # There is no date in the cron spec <= to the reftime 
+          return nil  # There is no date in the cron spec <= to the reftime
         end
         if prevyear != year
           done=false
@@ -439,7 +439,7 @@ module WorkflowMgr
       end  #  while true
 
     end  #  previous
-      
+
     ##########################################
     #
     # member?
@@ -506,7 +506,7 @@ module WorkflowMgr
             when /^(\d+)-(\d+)\/(\d+)$/
               a=$1.to_i
               b=$2.to_i
-              c=$3.to_i      
+              c=$3.to_i
               (a..b).find_all {|i| (i-a)%c==0}
             else
               raise "Illegal Cycle cron field, '#{str}'"
@@ -518,7 +518,7 @@ module WorkflowMgr
         cronarr
 
       end
-       
+
     end
 
 
@@ -552,7 +552,7 @@ module WorkflowMgr
 
 
 
-  ########################################## 
+  ##########################################
   #
   # Class CycleInterval
   #

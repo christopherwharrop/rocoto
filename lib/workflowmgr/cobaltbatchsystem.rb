@@ -94,7 +94,7 @@ module WorkflowMgr
 
         # The state is unavailable since Moab doesn't have the state
         return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
- 
+
       rescue WorkflowMgr::SchedulerDown
         @schedup=false
         return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
@@ -124,7 +124,7 @@ module WorkflowMgr
         case option
           when :account
             input += "#COBALT -A #{value}\n"
-          when :queue            
+          when :queue
             input += "#COBALT -q #{value}\n"
           when :partition
             WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for Cobalt.", 1)
@@ -156,7 +156,7 @@ module WorkflowMgr
         end
       end
 
-      task.each_native do |native_line|        
+      task.each_native do |native_line|
         next if native_line.empty?
         input += "#COBALT #{native_line}\n"
       end
@@ -180,7 +180,7 @@ module WorkflowMgr
       tf.flush()
       tf.chmod(0700)
       tf.close
-          
+
       WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} --mode script #{tf.path} with input {{#{input}}}",4)
 
       # Run the submit command
@@ -203,7 +203,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`qdel #{jobid}`      
+      qdel=`qdel #{jobid}`
 
     end
 
@@ -239,7 +239,7 @@ private
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
-      
+
       # For each job, find the various attributes and create a job record
       record = {}
       queued_jobs.split(/\n/).each { |job|
@@ -315,8 +315,8 @@ private
       rescue WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
-        raise WorkflowMgr::SchedulerDown        
-      end 
+        raise WorkflowMgr::SchedulerDown
+      end
 
       # For each job, find the various attributes and create a job record
       record={:jobid => jobid}
@@ -335,11 +335,11 @@ private
             record[:command] = $1
           when /Info: user delete requested/
             record[:exit_status] = 255
-            record[:native_state] = "deleted"           
+            record[:native_state] = "deleted"
           when /initiating job termination/
             record[:exit_status] = 255
             record[:end_time]=Time.gm(*ParseDate.parsedate(line))
-            record[:native_state]="killed"                        
+            record[:native_state]="killed"
         end
 
       }
@@ -377,7 +377,7 @@ private
         # Remove the temporary submit script
         FileUtils.rm(record[:command])
         # Remove the temporary cobaltlog
-        FileUtils.rm(joblogfile)        
+        FileUtils.rm(joblogfile)
       end
 
     end
@@ -385,4 +385,3 @@ private
   end  # class
 
 end  # module
-

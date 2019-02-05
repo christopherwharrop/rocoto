@@ -19,7 +19,7 @@ module WorkflowMgr
 
     attr_reader :all_cycles, :all_tasks
 
-    ##########################################  
+    ##########################################
     #
     # Initialize
     #
@@ -38,7 +38,7 @@ module WorkflowMgr
     end
 
 
-    ##########################################  
+    ##########################################
     #
     # !empty? equivalents
     #
@@ -47,7 +47,7 @@ module WorkflowMgr
     def tasks?()         return !@tasks_array.empty? ; end
 
 
-    ##########################################  
+    ##########################################
     #
     # iterators
     #
@@ -56,7 +56,7 @@ module WorkflowMgr
     def each_task()         @tasks_array.each {|c|yield c} ; end
 
 
-    ##########################################  
+    ##########################################
     #
     # collectors
     #

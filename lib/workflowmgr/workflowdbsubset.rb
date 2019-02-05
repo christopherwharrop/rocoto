@@ -19,7 +19,7 @@ module WorkflowMgr
     require 'workflowmgr/task'
     require 'workflowmgr/job'
 
-    ##########################################  
+    ##########################################
     #
     # Initialize
     #
@@ -52,7 +52,7 @@ module WorkflowMgr
     end
 
 
-    ##########################################  
+    ##########################################
     #
     # !empty? equivalents
     #
@@ -62,7 +62,7 @@ module WorkflowMgr
     def undef_cycles?()  return !@undef_cycles_array.empty? ; end
 
 
-    ##########################################  
+    ##########################################
     #
     # iterators
     #
@@ -72,7 +72,7 @@ module WorkflowMgr
     def each_undef_cycle()  @undef_cycles_array.each {|c| yield c} ; end
 
 
-    ##########################################  
+    ##########################################
     #
     # collectors
     #

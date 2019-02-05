@@ -5,7 +5,7 @@
 ##########################################
 module WorkflowMgr
 
-  ##########################################  
+  ##########################################
   #
   # Class WorkflowYAMLConfig
   #
@@ -16,8 +16,8 @@ module WorkflowMgr
     require 'workflowmgr/forkit'
     require 'fileutils'
 
-    DEFAULT_CONFIG={ 
-                    :DatabaseType => "SQLite3", 
+    DEFAULT_CONFIG={
+                    :DatabaseType => "SQLite3",
                     :WorkflowDocType => "XML",
                     :DatabaseServer => true,
                     :BatchQueueServer => true,
@@ -29,7 +29,7 @@ module WorkflowMgr
                     :SubmitThreads => 8
                    }
 
-    ##########################################  
+    ##########################################
     #
     # Initialize
     #
@@ -50,7 +50,7 @@ module WorkflowMgr
 
           # Create a .rocoto tmp dir if one does not already exist
           FileUtils.mkdir_p(@config_tmp) unless File.exists?(@config_tmp)
-          
+
           # Move the legacy .wfmrc file to rocotorc file if it exists
           FileUtils.mv("#{ENV['HOME']}/.wfmrc",@config_file) if File.exists?("#{ENV['HOME']}/.wfmrc")
 
@@ -62,7 +62,7 @@ module WorkflowMgr
               if config.keys.collect {|c| c.to_s}.sort != DEFAULT_CONFIG.keys.collect {|c| c.to_s}.sort
                 config=DEFAULT_CONFIG.merge(config).delete_if { |k,v| !DEFAULT_CONFIG.has_key?(k) }
                 File.open("#{@config_file}.#{Process.ppid}","w") { |f| YAML.dump(config,f) }
-              end  
+              end
               config
             else
               WorkflowMgr.log("WARNING! Reverted corrupted configuration in #{@config_file} to default.")
@@ -73,7 +73,7 @@ module WorkflowMgr
           else
             # Create a rocotorc file with default settings if it does not exist
             File.open("#{@config_file}.#{Process.ppid}","w") { |f| YAML.dump(DEFAULT_CONFIG,f) }
-	    DEFAULT_CONFIG
+            DEFAULT_CONFIG
           end
 
         end  # @config do

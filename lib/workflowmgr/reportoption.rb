@@ -5,7 +5,7 @@
 ##########################################
 module WorkflowMgr
 
-  ##########################################  
+  ##########################################
   #
   # Class ReportOption
   #
@@ -13,12 +13,12 @@ module WorkflowMgr
   class ReportOption
 
     require 'optparse'
-    
+
     attr_reader :database
     attr_reader :workflowdoc
     attr_reader :verbose
 
-    ##########################################  
+    ##########################################
     #
     # Initialize
     #
@@ -34,7 +34,7 @@ module WorkflowMgr
 
   private
 
-    ##########################################  
+    ##########################################
     #
     # parse
     #
@@ -97,12 +97,12 @@ module WorkflowMgr
           # The -d and -w options are mandatory
           raise OptionParser::ParseError,"A database file must be specified" if @database.nil?
           raise OptionParser::ParseError,"A workflow definition file must be specified" if @workflowdoc.nil?
-  
+
         rescue OptionParser::ParseError => e
           STDERR.puts e.message, "\n",opts
           exit(-1)
         end
-        
+
       end
 
     end  # parse

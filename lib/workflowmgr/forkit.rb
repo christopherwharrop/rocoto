@@ -5,7 +5,7 @@
 ##########################################
 module WorkflowMgr
 
-  ##########################################  
+  ##########################################
   #
   # Class ForkitTimeoutException
   #
@@ -13,7 +13,7 @@ module WorkflowMgr
   class ForkitTimeoutException < RuntimeError
   end
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.forkit
   #
@@ -56,7 +56,7 @@ module WorkflowMgr
 
     # Wait for the block to run in the child process
     begin
- 
+
       # Timeout after timelimit seconds
       WorkflowMgr.timeout(timelimit) do
 
@@ -84,7 +84,7 @@ module WorkflowMgr
     rescue Timeout::Error
 
       # Kill the block
-      Process.kill(:KILL,pid)    
+      Process.kill(:KILL,pid)
 
       # The block took too long, exit with an error
       raise WorkflowMgr::ForkitTimeoutException, "The block timed out"

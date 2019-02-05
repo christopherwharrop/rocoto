@@ -19,7 +19,7 @@ require 'workflowmgr/workflowsubsetoptions'
 require 'libxml'
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
-# We want to control what output goes where and when                                     
+# We want to control what output goes where and when
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status engine and run it

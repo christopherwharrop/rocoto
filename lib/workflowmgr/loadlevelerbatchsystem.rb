@@ -43,11 +43,11 @@ class LoadLevelerBatchSystem < BatchSystem
                       "V"  => "V",
                       "VP" => "VP",
                       "X"  => "X",
-                      "XP" => "XP"                      
+                      "XP" => "XP"
                       }
 
   ########################################################
-  #                  
+  #
   # LoadLeveler jobs can be in any of the following states
   #
   # C   Completed
@@ -110,7 +110,7 @@ class LoadLevelerBatchSystem < BatchSystem
     rescue
       raise "LoadLevelerBatchSystem object could not be initialized\n\n#{$!}"
     end
-    
+
   end
 
 
@@ -142,10 +142,10 @@ class LoadLevelerBatchSystem < BatchSystem
           jobdata=s.strip.split(/\s+/)
           next unless jobdata[0]=~/^(\w+\.\d+)\.0$/
           @qstat[$1]=jobdata[1]
-        }        
+        }
       end
 
-    rescue 
+    rescue
       @qstat_available=false
       puts $!
       return
@@ -175,12 +175,11 @@ class LoadLevelerBatchSystem < BatchSystem
         state="unknown"
       end
     end
-      
+
     return state
 
   end
 
-  
   #####################################################
   #
   # get_job_generic_state
@@ -214,11 +213,11 @@ class LoadLevelerBatchSystem < BatchSystem
     lines.each { |line|
       case line
         when /^\s*Job Step Id: (\w+\.\d+)/
-          exit_record['jid']=$1          
+          exit_record['jid']=$1
         when /^\s*Allocated Host: (\w+)/
           exit_record['exec_host']=$1
         when /^\s*Queue Date: (.+)$/
-          date_arr=ParseDate::parsedate($1,false)          
+          date_arr=ParseDate::parsedate($1,false)
           exit_record['submit_time']=Time.local(*date_arr)
         when /^\s*Dispatch Time: (.+)$/
           date_arr=ParseDate::parsedate($1,false)
@@ -254,7 +253,6 @@ puts "get_job_exit_status: #{record.inspect}"
       return record['exit_status']
     end
 
-  
   end
 
 
@@ -264,7 +262,7 @@ puts "get_job_exit_status: #{record.inspect}"
   #
   #####################################################
   def submit(script,attributes)
-    
+
     begin
 
       # Get the username of this process
@@ -281,7 +279,7 @@ puts "get_job_exit_status: #{record.inspect}"
         puts("\#\@ executable = #{script}")
         io.puts("\#\@ executable = #{script}")
 
-        # Send keywords corresponding to other job properties        
+        # Send keywords corresponding to other job properties
         attributes.each { |attr,value|
           if value.nil?
             puts("\#\@ #{attr}")
@@ -344,7 +342,7 @@ puts "get_job_exit_status: #{record.inspect}"
 
       }
 
-    rescue 
+    rescue
       raise $!
     end
 

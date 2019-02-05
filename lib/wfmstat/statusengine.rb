@@ -35,10 +35,10 @@ module WFMStat
         # Disable garbage collection
         GC.disable
 
-        # Turn on full program tracing for verbosity 1000+        
+        # Turn on full program tracing for verbosity 1000+
         if WorkflowMgr::VERBOSE > 999
           set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
-        
+
         # Turn on program tracing for Rocoto code only for verbosity 100+
         elsif WorkflowMgr::VERBOSE > 99
           set_trace_func proc { |event,file,line,id,binding,classname|
@@ -118,17 +118,17 @@ module WFMStat
         Process.exit(1)
 
       ensure
-  
+
         # Make sure we release the workflow lock in the database and shutdown the dbserver
         unless @dbServer.nil?
           @dbServer.stop! if @config.DatabaseServer
         end
-  
+
         # Make sure to shut down the workflow file stat server
         unless @workflowIOServer.nil?
           @workflowIOServer.stop! if @config.WorkflowIOServer
         end
-  
+
       end  # ensure
 
     end  # wfmstat
@@ -143,7 +143,7 @@ module WFMStat
       cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
 
       # Get the task
-      task=@workflowdoc.tasks[taskname]    
+      task=@workflowdoc.tasks[taskname]
       task=task.localize(cycletime) unless task.nil?
 
       # Get the job (if there is one)
@@ -230,17 +230,17 @@ module WFMStat
         Process.exit(1)
 
       ensure
-  
+
         # Make sure we release the workflow lock in the database and shutdown the dbserver
         unless @dbServer.nil?
           @dbServer.stop! if @config.DatabaseServer
         end
-  
+
         # Make sure to shut down the workflow file stat server
         unless @workflowIOServer.nil?
           @workflowIOServer.stop! if @config.WorkflowIOServer
         end
-  
+
       end  # ensure
 
     end
@@ -258,10 +258,10 @@ module WFMStat
       undefcycles=@subset.collect_undef_cycles(){|c|c}
 
       return [dbcycles,xmlcycles,undefcycles]
-    end  
+    end
 
 
-    ########################################## 
+    ##########################################
     #
     # print_summary
     #
@@ -351,14 +351,14 @@ module WFMStat
                 when "SUCCEEDED","DEAD","FAILED"
                   jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries,jobs[task][cycle].duration]
                 else
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries,jobs[task][cycle].duration]                 
+                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries,jobs[task][cycle].duration]
               end
             end
             puts format % ([task,cycle.strftime("%Y%m%d%H%M")] + jobdata)
           end
         end
- 
-     else 
+
+     else
 
         format = "%12s    %20s    %24s    %16s    %16s    %6s    %10s\n"
         header = "CYCLE".rjust(12),"TASK".rjust(20),"JOBID".rjust(24),
@@ -377,7 +377,7 @@ module WFMStat
 
           printf "================================================================================================================================\n"
 
-          # Sort the task list in sequence order 
+          # Sort the task list in sequence order
           tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
           tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
           tasklist.each do |task|
@@ -411,12 +411,12 @@ module WFMStat
           end
         end
 
-      end      
+      end
 
     end
 
 
-    ########################################## 
+    ##########################################
     #
     # print_taskinfo
     #
@@ -440,13 +440,12 @@ module WFMStat
     end
 
 
-    ########################################## 
+    ##########################################
     #
     # print_cycleinfo
     #
     ##########################################
     def print_cycleinfo(cycle,cycledefs,task)
-
 
       # Make sure the cycle is valid for this task
       cycle_is_valid=true
@@ -457,7 +456,6 @@ module WFMStat
           cycle_is_valid=false
         end
       end  # unless
-      
 
       puts
       puts "Cycle: #{cycle.cycle.strftime("%Y%m%d%H%M")}"
@@ -470,11 +468,11 @@ module WFMStat
       puts "  Activated: #{cycle.activated != Time.at(0) ? cycle.activated : "-"}"
       puts "  Completed: #{cycle.done? ? cycle.done : "-"}"
       puts "  Expired: #{cycle.expired? ? cycle.expired : "-"}"
-      
+
     end
 
 
-    ########################################## 
+    ##########################################
     #
     # print_jobinfo
     #
@@ -565,10 +563,10 @@ module WFMStat
         if d.is_a?(Array)
           print_deps(d,n+1) if d.is_a?(Array)
         else
-          printf "%#{2*n+4}s%s %s\n","",d[:dep],d[:msg] 
+          printf "%#{2*n+4}s%s %s\n","",d[:dep],d[:msg]
         end
       end
- 
+
     end
 
 

@@ -7,7 +7,7 @@ module WorkflowMgr
 
   ALL_POSSIBLE_CYCLES=(Time.gm(1900,1,1,0,0)..Time.gm(9999,12,31,23,59))
 
-  ##########################################  
+  ##########################################
   #
   # Class CycleDefSelection
   #
@@ -24,7 +24,7 @@ module WorkflowMgr
     end
   end # class CycleDefSelection
 
-  ##########################################  
+  ##########################################
   #
   # Class TaskSelection
   #
@@ -35,7 +35,7 @@ module WorkflowMgr
     def initialize(arg) @arg=arg ; end
   end # class TaskSelection
 
-  ##########################################  
+  ##########################################
   #
   # Class MetataskSelection
   #
@@ -45,7 +45,5 @@ module WorkflowMgr
     attr_reader :arg
     def initialize(arg) @arg=arg ; end
   end # class MetataskSelection
-
-
 
 end # module WorkflowMgr

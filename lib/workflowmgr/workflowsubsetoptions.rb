@@ -8,7 +8,7 @@ module WorkflowMgr
   require 'workflowmgr/workflowoption'
   require 'workflowmgr/selectionutil'
 
-  ##########################################  
+  ##########################################
   #
   # Class WorkflowSubsetOptions
   #
@@ -19,7 +19,7 @@ module WorkflowMgr
 
     attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose, :all_tasks, :selection
 
-    ##########################################  
+    ##########################################
     #
     # Initialize
     #
@@ -51,7 +51,7 @@ module WorkflowMgr
 
       # Cycles of interest
       #      C   C,C,C  C:C  :C   C:
-      #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C 
+      #        where C='YYYYMMDDHHMM', C:  >= C, :C  <= C
       opts.on("-c","--cycles 'c1,c2,c3' | 'c1:c2' | ':c' | 'c:' | : | all",String,"List of cycles") do |clist|
         @cycles=[] if @cycles.nil?
         case clist
