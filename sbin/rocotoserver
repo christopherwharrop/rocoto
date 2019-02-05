@@ -29,7 +29,7 @@ WorkflowMgr.const_set("VERBOSE",ARGV[1].to_i)
 WorkflowMgr.const_set("WORKFLOW_ID",ARGV[2])
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
-# We want to control what output goes where and when                                     
+# We want to control what output goes where and when
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Daemonize this process so that there aren't problems caused
@@ -38,7 +38,7 @@ exit if fork
 Process.setsid
 exit if fork
 STDIN.reopen "/dev/null"
-STDOUT.reopen "/dev/null", "a" 
+STDOUT.reopen "/dev/null", "a"
 #STDERR.reopen "/dev/null", "a"
 
 # Start a Drb Server that will serve the workflow server object
@@ -102,14 +102,14 @@ Thread.new do
   # A safety net to shutdown the bqserver process if it has been alive for more than 4 days
   # The bqserver normally stays alive until all qsub status has been retrieved from it.
   # If the user runs Rocoto manually, and then goes home for the weekend, the status might
-  # not get retrieved until the following week.  This is not ideal, but until a better 
+  # not get retrieved until the following week.  This is not ideal, but until a better
   # solution is found, should catch those bqserver processes that get accidentally abandoned
   if $0=~/bqserver$/
     sleep 3600*24*4
     WorkflowMgr.log("Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it appears to be abandoned")
-    DRb.stop_service        
+    DRb.stop_service
 
-  # Shutdown the ioserver and dbserver processes as soon as they are orphaned (that should never happen unless rocotorun/rocotoboot dies uncleanly)   
+  # Shutdown the ioserver and dbserver processes as soon as they are orphaned (that should never happen unless rocotorun/rocotoboot dies uncleanly)
   else
     while true do
       begin
@@ -119,7 +119,7 @@ Thread.new do
       rescue Errno::ESRCH
         # If the process that launched this server is dead, shutdown this process
         WorkflowMgr.log("Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown.")
-        DRb.stop_service        
+        DRb.stop_service
       end
     end  # while true
   end  # unless $0

@@ -70,7 +70,7 @@ module WorkflowMgr
     ##########################################
     #
     # respond_to?
-    # 
+    #
     ##########################################
     def respond_to?(name, priv=false)
 
@@ -85,7 +85,7 @@ module WorkflowMgr
     ##########################################
     #
     # method_missing
-    # 
+    #
     ##########################################
     def method_missing(name,*args,&block)
 

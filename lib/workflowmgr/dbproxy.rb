@@ -78,7 +78,7 @@ module WorkflowMgr
                 retry
               else
                 raise
-              end            
+              end
             rescue Timeout::Error
               msg="WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} is unresponsive and is probably wedged." 
               raise msg
@@ -105,9 +105,9 @@ module WorkflowMgr
       # Create the database object
       begin
 
-	# Initialize the database but do not open it (call dbopen to open it)
-	database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@options.database)
-	if @config.DatabaseServer
+        # Initialize the database but do not open it (call dbopen to open it)
+        database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@options.database)
+        if @config.DatabaseServer
 
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)
@@ -119,18 +119,18 @@ module WorkflowMgr
           # Restore default SIGINT handler
           Signal.trap("INT","DEFAULT")
 
-	else
+        else
           @dbServer=database
         end
 
       rescue => crash
 
         # Try to stop the dbserver if something went wrong
-	if @config.DatabaseServer
+        if @config.DatabaseServer
           @dbServer.stop! unless @dbServer.nil?
         end
 
-        # Raise fatal exception        
+        # Raise fatal exception
         WorkflowMgr.stderr(crash.message,1)
         WorkflowMgr.log(crash.message)
         case
@@ -139,7 +139,7 @@ module WorkflowMgr
             WorkflowMgr.log(crash.backtrace.join("\n"))
           else
         end
-	raise "ERROR! Could not launch database server process."
+        raise "ERROR! Could not launch database server process."
 
       end
 

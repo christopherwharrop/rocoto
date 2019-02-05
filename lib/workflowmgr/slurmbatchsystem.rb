@@ -266,7 +266,7 @@ module WorkflowMgr
           when :stderr
             input += "#SBATCH -e #{value}\n"
           when :join
-            input += "#SBATCH -o #{value}\n"           
+            input += "#SBATCH -o #{value}\n"
           when :jobname
             input += "#SBATCH --job-name #{value}\n"
         end
@@ -327,7 +327,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`scancel #{jobid}`      
+      qdel=`scancel #{jobid}`
 
     end
 
@@ -373,15 +373,15 @@ private
       queued_jobs.split("\n").each { |job|
 
         # Initialize an empty job record
-  	record={}
+        record={}
 
-  	# Look at all the attributes for this job and build the record
+        # Look at all the attributes for this job and build the record
         jobfields=Hash[job.split.collect {|f| f.split("=")}.collect{|f| f.length == 2 ? f : [f[0], '']}]
 
         # Skip records for other users
         next unless jobfields["UserId"] =~/^#{username}\(/
 
-        # Extract job id        
+        # Extract job id
         record[:jobid]=jobfields["JobId"]
 
         # Extract job name
@@ -414,10 +414,10 @@ private
           record[:exit_status]=signal
         else
           record[:exit_status]=code
-        end            
+        end
 
         # Extract job state
-        case jobfields["JobState"]       
+        case jobfields["JobState"]
           when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
             record[:state]="QUEUED"
           when /^RUNNING$/,/^COMPLETING$/
@@ -428,7 +428,7 @@ private
           when /^COMPLETED$/
             if record[:exit_status]==0
               record[:state]="SUCCEEDED"
-            else    
+            else
               record[:state]="FAILED"
             end
           else
@@ -480,15 +480,15 @@ private
       completed_jobs.split("\n").each { |job|
 
         # Initialize an empty job record
-  	record={}
+        record={}
 
-  	# Look at all the attributes for this job and build the record
-	jobfields=job.split("|")
+        # Look at all the attributes for this job and build the record
+        jobfields=job.split("|")
 
         # Skip records for other users
         next unless jobfields[1] =~/^\s*#{username}$/
 
-        # Extract job id        
+        # Extract job id
         record[:jobid]=jobfields[0]
 
         # Extract job name
@@ -521,10 +521,10 @@ private
           record[:exit_status]=signal
         else
           record[:exit_status]=code
-        end            
+        end
 
         # Extract job state
-        case jobfields[10]       
+        case jobfields[10]
           when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/,/^REQUEUED$/
             record[:state]="QUEUED"
           when /^RUNNING$/,/^COMPLETING$/
@@ -535,7 +535,7 @@ private
           when /^COMPLETED$/
             if record[:exit_status]==0
               record[:state]="SUCCEEDED"
-            else    
+            else
               record[:state]="FAILED"
             end
           else
@@ -553,4 +553,3 @@ private
   end  # class
 
 end  # module
-

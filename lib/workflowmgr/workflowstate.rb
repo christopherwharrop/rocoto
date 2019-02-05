@@ -45,7 +45,7 @@ module WorkflowMgr
     ##########################################
     #
     # set_* routines to modify the StringEvaluator
-    # 
+    #
     ##########################################
     def set_cycle(cycle)
       @cycle=cycle

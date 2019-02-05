@@ -18,10 +18,12 @@
 .Sh DESCRIPTION
 .Nm
 is a Ruby program that interfaces to the underlying batch system. It
-does all the book keeping necessary to submit tasks when dependencies are
-satisfied and tracks the progress of the workflow. It will automatically
-resubmit failed tasks and can recover from system outages without human
-intervention.
+does all the book keeping necessary to submit tasks when dependencies
+are satisfied and tracks the progress of the workflow. It will
+automatically resubmit failed tasks and can recover from system
+outages without human intervention.  If a subset of the workflow is
+selected (-a, -c, -m, and -t options) then Rocoto will only run tasks
+within that selection, but will still perform all other book keeping.
 .Pp
 The rocotorun command requires two arguments. The 
 .Cm -w
@@ -33,6 +35,7 @@ flag specifies the name of the database file
 that is to be used to store the state of the workflow. The database file is a
 sqlite binary file created and used only by Rocoto and need not exist prior to
 the first time the command is run.
+.Pp
 The following options are available:
 .Bl -tag -width flag
 .It Fl -version
@@ -46,6 +49,96 @@ specified a level of 1 is used.
 The path to the Rocoto database file for the current workflow.
 .It Fl w, -workflow Ar file
 The path to the Rocoto workflow file.
+.It Fl c, --cycle Ar cyclespec[,cyclespec[,...]]
+Only submit jobs for these cycles. See
+.Sx WORKFLOW SUBSETTING
+.It Fl m, --metatasks Ar metataskspec[,metataskspec[,...]]
+Only submit jobs for these metatasks.  See
+.Sx WORKFLOW SUBSETTING
+.It Fl t, --tasks Ar taskspec[,taskspec[,...]
+Only submit jobs for these tasks.  See
+.Sx WORKFLOW SUBSETTING
+.It Fl a, --all
+Include all tasks in the workflow subset.  See
+.Sx WORKFLOW SUBSETTING
+.El
+.Sh WORKFLOW SUBSETTING
+All Rocoto commands that monitor or modify the workflow can be told to
+run on some subset of that workflow.  Subset specifications use the
+-a, -t, -c, and -m options.  Using multiple options adds to the
+selection.  The rocotorun program will only submit jobs if they're in
+the selected subset.  By default, rocotorun works on the entire
+workflow (all cycles and tasks).
+.Pp
+The resulting set is the set union of the -t, -m, and -a option, for
+each cycle selected by the -c option.
+
+.Ss All Tasks: The -a Option
+The -a option has no arguments, and selects all possible tasks.  This
+is the default for rocotorun if no -t or -m options are given.  It is
+an error to specify -t or -m if the -a option is given.
+
+.Ss Task Subset: The -t Option
+This consists of one or more comma-separated lists of task
+specifications which describe the set of tasks.  Without a leading
+dash, every taskspec adds to the set of selected tasks (set union).
+With a dash, the taskspec is removed (set subtraction) from the list
+of tasks.
+.Bl -tag flag
+.It Ar -taskspec[,taskspec[,...]]
+Negate the option (remove tasks from the selection instead of adding).
+This applies to all taskspecs following the "-".
+.It Ar /regex/
+Include all tasks whose names match the given regular expression
+(everything within the two slashes).  Typical regular expression
+characters have their usual meanings: ( [ ] ) | . * +
+.It Ar :attribute
+Select all tasks that have the specified XML attribute set for its
+<task> tag, and the attribute is true, non-zero, or non-empty.
+Supported attributes are final, shared, exclusive, cores, and nodes.
+The special value "metatasks" selects tasks that are in a metatask
+(any metatask).
+.It Ar @cycledef
+Select all tasks in the given cycledef
+.It Ar taskname
+Select a task with the specified name.
+.El
+
+.Ss Metatask Subset: The -m Option
+This consists of one or more comma-separated lists of metatask
+specifications which describe the set of metatasks.  Without a leading
+dash, every metataskspec adds to the set of selected metatasks (set
+union).  With a dash, the metataskspec is removed (set subtraction)
+from the list of metatasks.
+.Bl -tag flag
+.It Ar -metataskspec[,metataskspec[,...]]
+Negate the option (remove metatasks from the selection instead of adding).
+This applies to all metataskspecs following the "-".
+.It Ar metataskname
+Add a metatask to the selected tasks.
+.El
+
+.Ss Cycle subset: The -c Option
+Unlike the -t and -m options, the -c option can only include one
+cyclespec, rather than a comma-separated list (except individual
+cycles; see below).  Every cyclespec adds to the set of selected
+cyclespec (set union).  Set subtraction is NOT supported (no -
+options).
+.Bl -tag flag
+.It Ar YYYYMMDDHHMM[,YYYYMMDDHHMM[,...]]
+Select specific cycles, given their twelve-digit date/time specification.
+.It Ar YYYYMMDDHHMM:YYYYMMDDHHMM
+Select the specified range of cycles.
+.It Ar :YYYYMMDDHHMM
+Select all cycles from the first one to the given cycle.
+.It Ar YYYYMMDDHHMM:
+Select all cycles from the given cycle to the last known cycle.
+.It Ar all | ALL
+Select all cycles.
+.It @cycledef
+Select all cycles in the specified cycledef.
+.El
+
 .Sh EXAMPLES
 The command:
 .Pp
@@ -55,13 +148,25 @@ Will run the workflow contained in the file named
 .Qq foo.xml
 and create a database file named
 .Qq foo.db
+.Pp
+Subsetting the workflow will restrict what jobs are submitted.  Hence, the command:
+.Pp
+.Dl "rocotorun -d foo.db -w foo.xml -c 201801150000:202012151200 -t /post/"
+.Pp
+Will perform all book keeping tasks on the specified workflow (such as
+monitoring tasks and checking dependencies).  However, rocotorun will
+refuse to launch a job for a task unless its name contains the string
+"post" and its cycle is between January 15, 2018 and December 15 12:00
+UTC, 2020 (inclusive).
 .Sh EXIT STATUS
 .Ex -std
 .Sh DOCUMENTATION
 Complete documentation can be found at: http://rdhpcs.noaa.gov/rocoto/
 .Sh SEE ALSO
 .Xr rocotoboot 1 ,
+.Xr rocotocomplete 1 ,
 .Xr rocotocheck 1 ,
+.Xr rocotorewind 1 ,
 .Xr rocotostat 1
 .Sh STANDARDS
 The

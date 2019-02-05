@@ -30,7 +30,7 @@ module WorkflowMgr
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.version
   #
@@ -42,7 +42,7 @@ module WorkflowMgr
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.timeout
   #
@@ -88,7 +88,7 @@ module WorkflowMgr
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.seconds_to_hhmmss
   #
@@ -107,7 +107,7 @@ module WorkflowMgr
 
   end
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.seconds_to_hhmm
   #
@@ -129,19 +129,19 @@ module WorkflowMgr
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.config_set
   #
   ##########################################
   def WorkflowMgr.config_set(config)
 
-    WorkflowMgr.const_set("CONFIG",config)    
+    WorkflowMgr.const_set("CONFIG",config)
 
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.options_set
   #
@@ -153,7 +153,7 @@ module WorkflowMgr
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.stderr
   #
@@ -169,7 +169,7 @@ module WorkflowMgr
 
   end
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.log
   #
@@ -218,7 +218,7 @@ module WorkflowMgr
               maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/rocotorc")[:MaxLogDays]
 
               # Remove files last modified more than MaxAge days ago
-              Dir[rocotolog+".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each { |logfile| 
+              Dir[rocotolog+".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each { |logfile|
                 if (Time.now - File.mtime(logfile)) > (maxAge * 24 * 3600)
                   FileUtils.rm_f(logfile)
                 end
@@ -248,7 +248,7 @@ module WorkflowMgr
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.run
   #
@@ -284,14 +284,14 @@ module WorkflowMgr
   end
 
 
-  ##########################################  
+  ##########################################
   #
   # WorkflowMgr.run4
   #
   ##########################################
   def WorkflowMgr.run4(command,timeout=30)
 
-    # Turn off garbage collection to avoid possible seg faults caused by Ruby 
+    # Turn off garbage collection to avoid possible seg faults caused by Ruby
     # trying to allocate objects during GC when calling IO.select and IO#read.
     # See: http://tickets.opscode.com/browse/CHEF-2916
     GC.disable

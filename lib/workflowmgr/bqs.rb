@@ -23,7 +23,7 @@ module WorkflowMgr
     require 'workflowmgr/slurmbatchsystem'
     require 'workflowmgr/cobaltbatchsystem'
     require 'workflowmgr/task'
-  
+
     ##########################################
     #
     # initialize
@@ -100,7 +100,7 @@ module WorkflowMgr
 
       # Return nil for jobid and output	if the submit thread is still running
       if @running[taskid][cycle.to_i]
-        return nil,nil 
+        return nil,nil
       # Otherwise, get the jobid and output and return it
       else
         status=@status[taskid][cycle.to_i]
@@ -137,7 +137,7 @@ module WorkflowMgr
       end
 
       return false
- 
+
     end
 
 

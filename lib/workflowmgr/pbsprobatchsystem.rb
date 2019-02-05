@@ -46,7 +46,7 @@ module WorkflowMgr
       # Try to get a default node size from pbsnodes -a
       begin
         pbsnodes,errors,exit_status=WorkflowMgr.run4("pbsnodes -a | grep resources_available.ncpus | sort | uniq -c",30)
-      
+
         # Raise SchedulerDown if the pbsnodes failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
@@ -174,7 +174,7 @@ module WorkflowMgr
         case option
           when :account
             input += "#PBS -A #{value}\n"
-          when :queue            
+          when :queue
             input += "#PBS -q #{value}\n"
           when :partition
             WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for PBSPro.", 1)
@@ -245,7 +245,7 @@ module WorkflowMgr
           when :stderr
             input += "#PBS -e #{value}\n"
           when :join
-            input += "#PBS -j oe -o #{value}\n"           
+            input += "#PBS -j oe -o #{value}\n"
           when :jobname
             input += "#PBS -N #{value}\n"
         end
@@ -296,7 +296,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`qdel #{jobid}`      
+      qdel=`qdel #{jobid}`
 
     end
 
@@ -432,7 +432,7 @@ private
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
-      
+
       # Initialize an empty job record
       record={}
 
@@ -501,7 +501,7 @@ private
             when /resources_used.ncpus/
               record[:cores]=value
             when /Priority/
-              record[:priority]=value.to_i            
+              record[:priority]=value.to_i
 
             else
 #              record[key] = value
@@ -515,4 +515,3 @@ private
   end  # class
 
 end  # module
-

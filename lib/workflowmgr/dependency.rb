@@ -69,7 +69,7 @@ module WorkflowMgr
   ##########################################
   #
   # String Dependency
-  # 
+  #
   ##########################################
   class StringDependency
 
@@ -95,7 +95,7 @@ module WorkflowMgr
     end
 
     ##########################################
-    # 
+    #
     # resolved?
     #
     ##########################################
@@ -159,7 +159,7 @@ module WorkflowMgr
     def resolved?(d)
       return @value
     end
-    
+
     ##########################################
     #
     # query
@@ -185,7 +185,7 @@ module WorkflowMgr
     # This class can also be used in a <rewind> context, when #rewind!
     # is called.  It works the same way: the expression is evaluated
     # in a logical context, but the logical value is ignored.
-    
+
     attr_reader :name, :script
 
     ##########################################
@@ -254,7 +254,7 @@ module WorkflowMgr
     attr_reader :name, :script
 
     ##########################################
-    # 
+    #
     # initialize
     #
     ##########################################
@@ -312,7 +312,7 @@ module WorkflowMgr
   end
 
 
-  ########################################## 
+  ##########################################
   #
   # Class Dependency_NOT_Operator
   #
@@ -361,7 +361,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_AND_Operator 
+  # Class Dependency_AND_Operator
   #
   ##########################################
   class Dependency_AND_Operator
@@ -415,7 +415,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_OR_Operator 
+  # Class Dependency_OR_Operator
   #
   ##########################################
   class Dependency_OR_Operator
@@ -469,7 +469,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_NAND_Operator 
+  # Class Dependency_NAND_Operator
   #
   ##########################################
   class Dependency_NAND_Operator
@@ -520,7 +520,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_NOR_Operator 
+  # Class Dependency_NOR_Operator
   #
   ##########################################
   class Dependency_NOR_Operator
@@ -571,7 +571,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_XOR_Operator 
+  # Class Dependency_XOR_Operator
   #
   ##########################################
   class Dependency_XOR_Operator
@@ -623,14 +623,14 @@ module WorkflowMgr
       else
         return [{:dep=>"XOR", :msg=>"is not satisfied", :resolved=>false }, queries]
       end
- 
+
     end
 
   end
 
   ##########################################
   #
-  # Class Dependency_SOME_Operator 
+  # Class Dependency_SOME_Operator
   #
   ##########################################
   class Dependency_SOME_Operator
@@ -688,7 +688,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class TaskDependency 
+  # Class TaskDependency
   #
   ##########################################
   class TaskDependency
@@ -713,7 +713,7 @@ module WorkflowMgr
     #####################################################
     def resolved?(d)
 
-      return false if d.jobList.nil?      
+      return false if d.jobList.nil?
       return false if d.jobList[@task].nil?
       return false if d.jobList[@task][d.cycle.getgm+@cycle_offset].nil?
       return d.jobList[@task][d.cycle.getgm+@cycle_offset].state==@state
@@ -743,7 +743,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class CycleExistDependency 
+  # Class CycleExistDependency
   #
   ##########################################
   class CycleExistDependency
@@ -791,7 +791,7 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class TaskValidDependency 
+  # Class TaskValidDependency
   #
   ##########################################
   class TaskValidDependency
@@ -812,7 +812,7 @@ module WorkflowMgr
     #####################################################
     def resolved?(d)
 
-       # Get the jobs for this cycle 
+       # Get the jobs for this cycle
        return false if d.tasks[@task].nil?
 
        checkjob=d.tasks[@task]
@@ -837,10 +837,9 @@ module WorkflowMgr
     #####################################################
     def query(d)
 
-       
        # Set the job to check
 
-       # Get the jobs for this cycle 
+       # Get the jobs for this cycle
        return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] if d.tasks[@task].nil?
 
        checkjob=d.tasks[@task]
@@ -857,7 +856,7 @@ module WorkflowMgr
       if cycle_is_valid
         return [{:dep=>"#{@task}", :msg=>"is valid", :resolved=>true }]
       else
-        return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] 
+        return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }]
       end
     end
 
@@ -899,7 +898,7 @@ module WorkflowMgr
 
       return Time.now.getgm > t
 
-     end    
+     end
 
     #####################################################
     #
@@ -915,18 +914,18 @@ module WorkflowMgr
                 timestr[8..9],
                 timestr[10..11],
                 timestr[12..13])
-      
+
       if Time.now.getgm > t
         return [{:dep=>"Walltime", :msg=>"is > #{t}", :resolved=>true }]
       else
         return [{:dep=>"Walltime", :msg=>"is <= #{t}", :resolved=>false }]
       end
-    
+
     end
 
   end
 
-  ########################################## 
+  ##########################################
   #
   # Class DataDependency
   #
@@ -943,7 +942,7 @@ module WorkflowMgr
       @datapath=datapath
       @age=age
       @minsize=minsize
-    
+
     end
 
     #####################################################
@@ -989,7 +988,6 @@ module WorkflowMgr
       end
 
     end
-
 
   end
 

@@ -36,9 +36,9 @@ module WorkflowMgr
       # Initialize an empty hash for job accounting records
       @jobacct={}
 
-      # Currently there is no way to specify the amount of time to 
-      # look back at finished jobs.  MOAB showq will always return 
-      # all the records it finds the first time.  So, set this to 
+      # Currently there is no way to specify the amount of time to
+      # look back at finished jobs.  MOAB showq will always return
+      # all the records it finds the first time.  So, set this to
       # a big value to make sure showq doesn't get run twice.
       @hrsback=120
 
@@ -118,9 +118,9 @@ module WorkflowMgr
 
           # The state is unavailable since Torque is down and Moab doesn't have the state
           return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
-  
+
         end
- 
+
         # Return the status from Torque
         return job_status
 
@@ -175,7 +175,7 @@ private
         errors=""
         exit_status=0
         queued_jobs,errors,exit_status=WorkflowMgr.run4("showq --noblock --xml -u #{username}",30)
-                
+
         # Raise SchedulerDown if the showq failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
@@ -195,45 +195,45 @@ private
       queued_jobs=queued_jobs_doc.find('//job')
       queued_jobs.each { |job|
 
-	# Initialize an empty job record
-	record={}
+        # Initialize an empty job record
+        record={}
 
-	# Look at all the attributes for this job and build the record
-	job.attributes.each { |jobstat| 
+        # Look at all the attributes for this job and build the record
+        job.attributes.each { |jobstat|
           case jobstat.name
             when /JobID/
               record[:jobid]=jobstat.value
             when /State/
               case jobstat.value
                 when /^Idle$/,/^.*Hold$/,/^Deferred$/
-    	          record[:state]="QUEUED"
+                  record[:state]="QUEUED"
                 when /^Running$/
-    	          record[:state]="RUNNING"
+                  record[:state]="RUNNING"
                 else
-    	          record[:state]="UNKNOWN"
+                  record[:state]="UNKNOWN"
               end
-	      record[:native_state]=jobstat.value
-	    when /JobName/
-	      record[:jobname]=jobstat.value
-	    when /User/
-	      record[:user]=jobstat.value
-	    when /ReqProcs/
-	      record[:cores]=jobstat.value.to_i
-	    when /Class/
-	      record[:queue]=jobstat.value
-	    when /SubmissionTime/
-	      record[:submit_time]=Time.at(jobstat.value.to_i).getgm
-	    when /StartTime/
+              record[:native_state]=jobstat.value
+            when /JobName/
+              record[:jobname]=jobstat.value
+            when /User/
+              record[:user]=jobstat.value
+            when /ReqProcs/
+              record[:cores]=jobstat.value.to_i
+            when /Class/
+              record[:queue]=jobstat.value
+            when /SubmissionTime/
+              record[:submit_time]=Time.at(jobstat.value.to_i).getgm
+            when /StartTime/
               record[:start_time]=Time.at(jobstat.value.to_i).getgm
-	    when /StartPriority/
-	      record[:priority]=jobstat.value.to_i            
-	    else
+            when /StartPriority/
+              record[:priority]=jobstat.value.to_i
+            else
               record[jobstat.name]=jobstat.value
           end  # case jobstat
-	}  # job.children
+        }  # job.children
 
-	# Put the job record in the jobqueue
-	@jobqueue[record[:jobid]]=record
+        # Put the job record in the jobqueue
+        @jobqueue[record[:jobid]]=record
 
       }  #  queued_jobs.find
 
@@ -275,11 +275,11 @@ private
       rescue LibXML::XML::Error,Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
-        raise WorkflowMgr::SchedulerDown        
-      end 
+        raise WorkflowMgr::SchedulerDown
+      end
 
       # For each job, find the various attributes and create a job record
-      recordxml=recordxmldoc.find('//job')       
+      recordxml=recordxmldoc.find('//job')
       recordxml.each { |job|
 
         record={}
@@ -296,7 +296,7 @@ private
         record[:priority]=job.attributes['StartPriority'].to_i
         if job.attributes['State']=~/^Removed/ || job.attributes['CompletionCode']=~/^CNCLD/
           record[:exit_status]=255
-	else
+        else
           record[:exit_status]=job.attributes['CompletionCode'].to_i
         end
         if record[:exit_status]==0
@@ -311,10 +311,9 @@ private
       }
 
       recordxml=nil
-    
+
     end
 
   end
 
 end
-

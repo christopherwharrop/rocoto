@@ -19,7 +19,7 @@ module WorkflowMgr
     require 'etc'
     require 'tempfile'
 
-    @@features = { 
+    @@features = {
       :shared => true,
       :exclusive => true
     }
@@ -64,7 +64,7 @@ module WorkflowMgr
       totalcores=0 # Total requested cores, used to trigger -n
       nodesize=24  # Users will override with <nodesize> attribute.
       memoryoption=nil # Contains memory option if -n is used
-      
+
       # First pass over attributes: get node size and everything else
       # that is not a request for cores/nodes:
       task.attributes.each do |option,value|
@@ -80,7 +80,7 @@ module WorkflowMgr
             cmd += " -P #{value}"
           when :nodesize
             nodesize=value
-          when :queue            
+          when :queue
             cmd += " -q #{value}"
           when :partition
             WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for LSF.", 1)
@@ -102,7 +102,7 @@ module WorkflowMgr
                 amount=(amount * 1024.0).ceil
               when /[0-9]/
                 amount=(value.to_i / 1024.0 / 1024.0).ceil
-            end          
+            end
             if amount>0
               memoryoption = "#{amount}"
             end
@@ -111,7 +111,7 @@ module WorkflowMgr
           when :stderr
             cmd += " -e #{value}"
           when :join
-            cmd += " -o #{value}"           
+            cmd += " -o #{value}"
           when :jobname
             cmd += " -J #{value}"
         end
@@ -119,7 +119,7 @@ module WorkflowMgr
 
       nodes=0
       fnodesize=Float(nodesize)
-      
+
       # Second pass over attributes: figure out total number of
       # requested nodes.
       spanguess=0
@@ -171,7 +171,7 @@ module WorkflowMgr
         $stderr.puts "#{e}"
         raise
       end
-      
+
       inl=0
       task.each_native do |native_line|
         cmd += " #{native_line}"
@@ -196,7 +196,7 @@ module WorkflowMgr
       if output=~/Job <(\d+)> is submitted to (default )*queue/
         return $1,output
       else
- 	return nil,output
+        return nil,output
       end
 
     end

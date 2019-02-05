@@ -37,7 +37,7 @@ class NoBatchSystem
     rescue
       raise "NoBatchSystem object could not be initialized\n\n#{$!}"
     end
-    
+
   end
 
 
@@ -69,10 +69,10 @@ class NoBatchSystem
           jobdata=s.strip.split(/\s+/)
           next unless jobdata[0]=~/^(\w+\.\d+)\.0$/
           @qstat[$1]=jobdata[1]
-        }        
+        }
       end
 
-    rescue 
+    rescue
       @qstat_available=false
       puts $!
       return
@@ -96,7 +96,7 @@ class NoBatchSystem
       else
         state="done"
         output[0].each { |s|
-          if s=~/^\s*#{jid}\s+.*$/   
+          if s=~/^\s*#{jid}\s+.*$/
             state="r"
             break
           end
@@ -104,7 +104,7 @@ class NoBatchSystem
       end
       return state
 
-    rescue 
+    rescue
       puts "ERROR: The state of job '#{jid}' could not be determined"
       puts $!
       return "unknown"
@@ -124,7 +124,7 @@ class NoBatchSystem
 
     begin
 
-      # Set the No_ROOT 
+      # Set the No_ROOT
       ENV['No_ROOT']=@sge_root
 
       # Get the accounting record for the job
@@ -143,7 +143,7 @@ class NoBatchSystem
       puts "Exit status for job #{jid} could not be found\n\n#{$!}"
       return nil
     end
-  
+
   end
 
 
@@ -156,7 +156,7 @@ class NoBatchSystem
 
     begin
 
-      # Set the SGE_ROOT 
+      # Set the SGE_ROOT
       ENV['SGE_ROOT']=@sge_root
 
       # Get the current SGE server's hostname
@@ -184,7 +184,7 @@ class NoBatchSystem
           end
         end
       end
-      
+
       # Calculate the minimum end time we should look at
       min_end_time=Time.now - max_age
 
@@ -248,16 +248,16 @@ class NoBatchSystem
         end     # 2.times
       end       # catch
 
-      return record    
+      return record
 
     rescue
       puts "Accounting record for job #{jid} could not be found\n\n#{$!}"
       return nil
-    end   
+    end
 
   end
 
-  
+
   #####################################################
   #
   # find_all_jobs
@@ -302,7 +302,7 @@ class NoBatchSystem
         fd=IO.popen("gunzip -c #{file} | cat 2>&1")
       else
         fd=IO.popen("cat #{file} 2>&1")
-      end      
+      end
 
       while !fd.eof? do
         record=fd.gets
@@ -346,7 +346,7 @@ class NoBatchSystem
   #####################################################
   def wait_job_start(jid,timeout,interval,verbose)
 
-    # Set the SGE_ROOT 
+    # Set the SGE_ROOT
     ENV['SGE_ROOT']=@sge_root
 
     # Calculate the expiration time
@@ -354,7 +354,7 @@ class NoBatchSystem
 
     # Poll the job's state until it starts or the timeout expires
     state=get_job_state(jid)
-    if verbose 
+    if verbose
       puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
     end
     while (state != "r" && state != "done" && Time.now < expire_time)
@@ -364,14 +364,14 @@ class NoBatchSystem
         sleep(expire_time - Time.now)
       end
       state=get_job_state(jid)
-      if verbose 
+      if verbose
         puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
       end
     end
 
     # Raise an exception if the timeout expired
     if (state != "r" && state != "done")
-      if verbose 
+      if verbose
         puts "#{Time.now} :: Timeout expired!"
       end
       raise TimeoutExpired,"Job #{jid} did not start in time"
@@ -389,7 +389,7 @@ class NoBatchSystem
   #####################################################
   def wait_job_finish(jid,timeout,interval,verbose)
 
-    # Set the SGE_ROOT 
+    # Set the SGE_ROOT
     ENV['SGE_ROOT']=@sge_root
 
     # Calculate the expiration time
@@ -397,7 +397,7 @@ class NoBatchSystem
 
     # Poll the job's state until it is done or the timeout has expired
     state=get_job_state(jid)
-    if verbose 
+    if verbose
       puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
     end
     while (state != "done" && Time.now < expire_time)
@@ -407,14 +407,14 @@ class NoBatchSystem
         sleep(expire_time - Time.now)
       end
       state=get_job_state(jid)
-      if verbose 
+      if verbose
         puts "#{Time.now} :: Job #{jid} is in state '#{state}'"
       end
     end
 
     # If the timeout has expired, raise an exception
     if (state != "done")
-      if verbose 
+      if verbose
         puts "#{Time.now} :: Timeout expired!"
       end
       raise TimeoutExpired,"Job #{jid} did not finish in time"
@@ -431,7 +431,7 @@ class NoBatchSystem
   #
   #####################################################
   def submit(script,attributes)
-    
+
     begin
 
       # Issue the submit command
@@ -447,10 +447,10 @@ class NoBatchSystem
         raise "#{output[0]}"
       end
 
-    rescue 
+    rescue
       raise $!
     end
-  
+
   end
 
 
@@ -463,7 +463,7 @@ class NoBatchSystem
 
     begin
 
-      # Set the SGE_ROOT 
+      # Set the SGE_ROOT
       ENV['SGE_ROOT']=@sge_root
 
       # Run qdel to delete the job
@@ -491,7 +491,7 @@ class NoBatchSystem
 
     begin
 
-      # Set the SGE_ROOT 
+      # Set the SGE_ROOT
       ENV['SGE_ROOT']=@sge_root
 
       # Run qdel to delete the job
@@ -593,7 +593,7 @@ class NoBatchSystem
         }
 
         # Roll them over in reverse order
-        oldfiles.each { |file|        
+        oldfiles.each { |file|
           # Get the new extension for the file
           if file=~/^#{@acct_path}\/accounting\.\d+\.(\d+)$/
             ext=$1.to_i + 1
@@ -602,7 +602,7 @@ class NoBatchSystem
           end
 
           # Move the file to its new name
-          `mv #{file} #{@acct_path}/accounting.#{date_str}.#{ext}`        
+          `mv #{file} #{@acct_path}/accounting.#{date_str}.#{ext}`
         }
 
       end
@@ -629,7 +629,6 @@ class NoBatchSystem
       return 1
     end
   end
-
 
 end
 

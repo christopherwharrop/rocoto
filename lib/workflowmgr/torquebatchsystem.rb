@@ -30,7 +30,7 @@ module WorkflowMgr
       # Initialize an empty hash for job queue records
       @jobqueue={}
 
-      # Currently there is no way to specify the amount of time to 
+      # Currently there is no way to specify the amount of time to
       # look back at finished jobs. So set this to a big value
       @hrsback=120
 
@@ -122,7 +122,7 @@ module WorkflowMgr
         case option
           when :account
             input += "#PBS -A #{value}\n"
-          when :queue            
+          when :queue
             input += "#PBS -q #{value}\n"
           when :partition
             input += "#PBS -l partition=#{value}\n"
@@ -142,7 +142,7 @@ module WorkflowMgr
           when :stderr
             input += "#PBS -e #{value}\n"
           when :join
-            input += "#PBS -j oe -o #{value}\n"           
+            input += "#PBS -j oe -o #{value}\n"
           when :jobname
             input += "#PBS -N #{value}\n"
         end
@@ -192,7 +192,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`qdel #{jobid}`      
+      qdel=`qdel #{jobid}`
 
     end
 
@@ -231,57 +231,57 @@ private
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
-      
+
       # For each job, find the various attributes and create a job record
       queued_jobs=queued_jobs_doc.root.find('//Job')
       queued_jobs.each { |job|
 
         # Initialize an empty job record
-  	record={}
+        record={}
 
-  	# Look at all the attributes for this job and build the record
-	job.each_element { |jobstat| 
-        
+        # Look at all the attributes for this job and build the record
+        job.each_element { |jobstat|
+
           case jobstat.name
             when /Job_Id/
               record[:jobid]=jobstat.content.split(".").first
             when /job_state/
               case jobstat.content
                 when /^Q$/,/^H$/,/^W$/,/^S$/,/^T$/
-    	          record[:state]="QUEUED"
+                  record[:state]="QUEUED"
                 when /^R$/,/^E$/
-    	          record[:state]="RUNNING"
+                  record[:state]="RUNNING"
                 else
                   record[:state]="UNKNOWN"
               end
               record[:native_state]=jobstat.content
             when /Job_Name/
-	      record[:jobname]=jobstat.content
-	    when /Job_Owner/
-	      record[:user]=jobstat.content
-            when /Resource_List/       
+              record[:jobname]=jobstat.content
+            when /Job_Owner/
+              record[:user]=jobstat.content
+            when /Resource_List/
               jobstat.each_element { |e|
                 if e.name=='procs'
                   record[:cores]=e.content.to_i
                   break
                 end
             }
-  	    when /queue/
-	      record[:queue]=jobstat.content
-	    when /qtime/
-	      record[:submit_time]=Time.at(jobstat.content.to_i).getgm
-  	    when /start_time/
+            when /queue/
+              record[:queue]=jobstat.content
+            when /qtime/
+              record[:submit_time]=Time.at(jobstat.content.to_i).getgm
+            when /start_time/
               record[:start_time]=Time.at(jobstat.content.to_i).getgm
-	    when /comp_time/
+            when /comp_time/
               record[:end_time]=Time.at(jobstat.content.to_i).getgm
- 	    when /Priority/
-	      record[:priority]=jobstat.content.to_i            
+            when /Priority/
+              record[:priority]=jobstat.content.to_i
             when /exit_status/
               record[:exit_status]=jobstat.content.to_i
-	    else
+            else
               record[jobstat.name]=jobstat.content
           end  # case jobstat
-  	}  # job.children
+        }  # job.children
 
         # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
         if record[:state]=="UNKNOWN" && !record[:exit_status].nil?

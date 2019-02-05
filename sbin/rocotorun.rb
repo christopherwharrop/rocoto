@@ -15,20 +15,21 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowoption'
+require 'workflowmgr/workflowsubsetoptions'
 require 'workflowmgr/utilities'
 require 'libxml'
 
-# Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
-# We want to control what output goes where and when
-#LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
+# Replace that ridiculous Libxml-ruby handler that automatically sends
+# output to stderr We want to control what output goes where and when.
 LibXML::XML::Error.set_handler do |error|
-#  raise error
   WorkflowMgr.stderr(error.to_s)
   WorkflowMgr.log(error.to_s)
 end
 
 # Create workflow engine and run it
-workflowengine=WorkflowMgr::WorkflowEngine.new(WorkflowMgr::WorkflowOption.new(ARGV))
+opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
+      name='rocotorun', # command name (used for messages)
+      action='run',     # what the command does (used for messages)
+      default_all=true) # default task and cycle selection is everything
+workflowengine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowengine.run
-

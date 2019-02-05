@@ -99,10 +99,10 @@ module WorkflowMgr
       # Create the batch queue system object
       begin
 
-	# Initialize the 
+        # Initialize the
         bqs=BQS.new(@batchSystem,@options.database,@config)
 
-	if @config.BatchQueueServer
+        if @config.BatchQueueServer
 
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)
@@ -114,14 +114,14 @@ module WorkflowMgr
           # Restore default SIGINT handler
           Signal.trap("INT","DEFAULT")
 
-	else
+        else
           @bqServer=bqs
         end
 
       rescue => crash
 
         # Try to stop the bqserver if something went wrong
-	if @config.BatchQueueServer
+        if @config.BatchQueueServer
           @bqServer.stop! unless @bqServer.nil?
         end
 

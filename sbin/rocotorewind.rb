@@ -15,21 +15,18 @@ $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
-require 'workflowmgr/workflowrewindoption'
+require 'workflowmgr/workflowsubsetoptions'
 require 'workflowmgr/utilities'
 require 'libxml'
 
-# Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
-# We want to control what output goes where and when
-#LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
+# Replace that ridiculous Libxml-ruby handler that automatically sends
+# output to stderr We want to control what output goes where and when.
 LibXML::XML::Error.set_handler do |error|
-#  raise error
   WorkflowMgr.stderr(error.to_s)
   WorkflowMgr.log(error.to_s)
 end
 
 # Create workflow engine and run it
-opt=WorkflowMgr::WorkflowRewindOption.new(ARGV)
-opt.dump()
+opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,'rocotorewind','rewind')
 workflowengine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowengine.rewind!
