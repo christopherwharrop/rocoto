@@ -23,7 +23,7 @@ require 'libxml'
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
-opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,'rocotorewind','rewind')
+opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,'rocotoboot','boot')
 workflowEngine=WorkflowMgr::WorkflowEngine.new(opt)
 workflowEngine.boot
 
