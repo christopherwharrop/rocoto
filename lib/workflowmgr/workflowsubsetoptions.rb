@@ -107,7 +107,7 @@ module WorkflowMgr
 
     ##########################################
     #
-    # validate_args
+    # validate_opts
     #
     ##########################################
     def validate_opts(opts,args)
