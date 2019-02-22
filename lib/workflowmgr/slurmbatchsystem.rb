@@ -7,6 +7,8 @@ module WorkflowMgr
 
   require 'workflowmgr/batchsystem'
 
+  require 'date'
+
   ##########################################
   #
   # Class SLURMBatchSystem
@@ -31,6 +33,7 @@ module WorkflowMgr
 
       # Initialize an empty hash for job accounting records
       @jobacct={}
+      @jobacct_duration=0
 
       # Assume the scheduler is up
       @schedup=true
@@ -89,7 +92,13 @@ module WorkflowMgr
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
         # Populate the job accounting log table if it is empty
-        refresh_jobacct if @jobacct.empty?
+        refresh_jobacct(1) if @jobacct_duration<1
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+        # Now re-populate over a longer history:
+        refresh_jobacct(5) if @jobacct_duration<5
 
         # Return the jobacct record if there is one
         return @jobacct[jobid] if @jobacct.has_key?(jobid)
@@ -372,6 +381,8 @@ private
       # For each job, find the various attributes and create a job record
       queued_jobs.split("\n").each { |job|
 
+        WorkflowMgr.stderr("sbatch line is #{job}", 11)
+
         # Initialize an empty job record
         record={}
 
@@ -436,6 +447,9 @@ private
         end
         record[:native_state]=jobfields["JobState"]
 
+        WorkflowMgr.stderr("From sbatch, job #{record[:jobid]} name #{record[:jobname]} for user #{record[:user]} state #{record[:state]} from native state #{record[:native_state]}.", 11)
+        
+
         # Add record to job queue
         @jobqueue[record[:jobid]]=record
 
@@ -449,7 +463,7 @@ private
     # refresh_jobacct
     #
     #####################################################
-    def refresh_jobacct
+    def refresh_jobacct(delta_days)
 
       begin
 
@@ -460,15 +474,26 @@ private
         completed_jobs=""
         errors=""
         exit_status=0
-        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
+        mmddyy=(DateTime.now-delta_days).strftime('%m%d%y')
+        cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
+        completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,30)
 
-        return if errors=~/SLURM accounting storage is disabled/
+        if errors=~/SLURM accounting storage is disabled/
+          WorkflowMgr.stderr("SLURM accounting storage is disabled, so I will not check sacct.",11)
+          return
+        end
 
         # Raise SchedulerDown if the command failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+        if exit_status != 0
+          WorkflowMgr.stderr("Running sacct failed: #{cmd}: #{errors}",11)
+          raise WorkflowMgr::SchedulerDown,errors
+        end
 
         # Return if the output is empty
-        return if completed_jobs.empty?
+        if completed_jobs.empty?
+          WorkflowMgr.stderr("Got no output from sacct: #{cmd}",11)
+          return
+        end
 
       rescue Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
@@ -476,8 +501,11 @@ private
         raise WorkflowMgr::SchedulerDown
       end
 
+      WorkflowMgr.stderr("Running sacct for 0..#{delta_days} days ago.",11)
+
       # For each job, find the various attributes and create a job record
       completed_jobs.split("\n").each { |job|
+        WorkflowMgr.stderr("sacct line is #{job}", 11)
 
         # Initialize an empty job record
         record={}
@@ -542,6 +570,8 @@ private
             record[:state]="UNKNOWN"
         end
         record[:native_state]=jobfields[10]
+
+        WorkflowMgr.stderr("From sacct, job #{record[:jobid]} name #{record[:jobname]} for user #{record[:user]} state #{record[:state]} from native state #{record[:native_state]}.", 11)
 
         # Add record to job queue
         @jobacct[record[:jobid]]=record
