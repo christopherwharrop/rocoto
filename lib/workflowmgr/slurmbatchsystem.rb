@@ -295,6 +295,9 @@ module WorkflowMgr
         input += this_group_nodes
       end
 
+      # Do not export variables by default
+      input+="--export=NONE\n"
+
       # Add export commands to pass environment vars to the job
       unless task.envars.empty?
         varinput=''
