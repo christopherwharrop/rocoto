@@ -6,7 +6,6 @@
 module WorkflowMgr
 
   require 'workflowmgr/batchsystem'
-
   require 'date'
 
   ##########################################
@@ -380,8 +379,6 @@ private
 
       # For each job, find the various attributes and create a job record
       queued_jobs.split("\n").each { |job|
-
-        WorkflowMgr.stderr("sbatch line is #{job}", 11)
 
         # Initialize an empty job record
         record={}
