@@ -447,9 +447,6 @@ private
         end
         record[:native_state]=jobfields["JobState"]
 
-        WorkflowMgr.stderr("From sbatch, job #{record[:jobid]} name #{record[:jobname]} for user #{record[:user]} state #{record[:state]} from native state #{record[:native_state]}.", 11)
-        
-
         # Add record to job queue
         @jobqueue[record[:jobid]]=record
 
@@ -478,22 +475,16 @@ private
         cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
         completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,30)
 
-        if errors=~/SLURM accounting storage is disabled/
-          WorkflowMgr.stderr("SLURM accounting storage is disabled, so I will not check sacct.",11)
-          return
-        end
+        return if errors=~/SLURM accounting storage is disabled/
 
         # Raise SchedulerDown if the command failed
         if exit_status != 0
-          WorkflowMgr.stderr("Running sacct failed: #{cmd}: #{errors}",11)
+          WorkflowMgr.stderr("Running sacct failed with status #{exit_status}: #{cmd}: #{errors}",9)
           raise WorkflowMgr::SchedulerDown,errors
         end
 
         # Return if the output is empty
-        if completed_jobs.empty?
-          WorkflowMgr.stderr("Got no output from sacct: #{cmd}",11)
-          return
-        end
+        return if completed_jobs.empty?
 
       rescue Timeout::Error,WorkflowMgr::SchedulerDown
         WorkflowMgr.log("#{$!}")
@@ -501,11 +492,8 @@ private
         raise WorkflowMgr::SchedulerDown
       end
 
-      WorkflowMgr.stderr("Running sacct for 0..#{delta_days} days ago.",11)
-
       # For each job, find the various attributes and create a job record
       completed_jobs.split("\n").each { |job|
-        WorkflowMgr.stderr("sacct line is #{job}", 11)
 
         # Initialize an empty job record
         record={}
@@ -570,8 +558,6 @@ private
             record[:state]="UNKNOWN"
         end
         record[:native_state]=jobfields[10]
-
-        WorkflowMgr.stderr("From sacct, job #{record[:jobid]} name #{record[:jobname]} for user #{record[:user]} state #{record[:state]} from native state #{record[:native_state]}.", 11)
 
         # Add record to job queue
         @jobacct[record[:jobid]]=record
