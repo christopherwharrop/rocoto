@@ -475,10 +475,7 @@ private
         return if errors=~/SLURM accounting storage is disabled/
 
         # Raise SchedulerDown if the command failed
-        if exit_status != 0
-          WorkflowMgr.stderr("Running sacct failed with status #{exit_status}: #{cmd}: #{errors}",9)
-          raise WorkflowMgr::SchedulerDown,errors
-        end
+        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
         # Return if the output is empty
         return if completed_jobs.empty?
