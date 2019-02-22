@@ -6,6 +6,7 @@
 module WorkflowMgr
 
   require 'workflowmgr/batchsystem'
+  require 'date'
 
   ##########################################
   #
@@ -31,6 +32,7 @@ module WorkflowMgr
 
       # Initialize an empty hash for job accounting records
       @jobacct={}
+      @jobacct_duration=0
 
       # Assume the scheduler is up
       @schedup=true
@@ -89,7 +91,13 @@ module WorkflowMgr
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
         # Populate the job accounting log table if it is empty
-        refresh_jobacct if @jobacct.empty?
+        refresh_jobacct(1) if @jobacct_duration<1
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+        # Now re-populate over a longer history:
+        refresh_jobacct(5) if @jobacct_duration<5
 
         # Return the jobacct record if there is one
         return @jobacct[jobid] if @jobacct.has_key?(jobid)
@@ -449,7 +457,7 @@ private
     # refresh_jobacct
     #
     #####################################################
-    def refresh_jobacct
+    def refresh_jobacct(delta_days)
 
       begin
 
@@ -460,7 +468,9 @@ private
         completed_jobs=""
         errors=""
         exit_status=0
-        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
+        mmddyy=(DateTime.now-delta_days).strftime('%m%d%y')
+        cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
+        completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,30)
 
         return if errors=~/SLURM accounting storage is disabled/
 
