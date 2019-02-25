@@ -462,6 +462,8 @@ private
     #####################################################
     def refresh_jobacct(delta_days)
 
+      @jobacct_duration=delta_days
+
       begin
 
         # Get the username of this process
