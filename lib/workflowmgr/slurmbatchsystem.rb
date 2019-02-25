@@ -296,7 +296,7 @@ module WorkflowMgr
       end
 
       # Do not export variables by default
-      input+="--export=NONE\n"
+      input+="#SBATCH --export=NONE\n"
 
       # Add export commands to pass environment vars to the job
       unless task.envars.empty?
