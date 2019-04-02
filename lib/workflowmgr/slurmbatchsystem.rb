@@ -153,7 +153,7 @@ module WorkflowMgr
           when :queue
             per_pack_group_input += "#SBATCH --qos #{value}\n"
           when :partition
-            per_pack_group_input += "#SBATCH --partition #{value}\n"
+            per_pack_group_input += "#SBATCH --partition #{value.gsub(":",",")}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
