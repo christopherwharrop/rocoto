@@ -53,6 +53,11 @@ module WFMStat
         @summary=true
       end
 
+      # task order
+      opts.on("-T","--task-sort","Sort by task") do
+        @taskfirst=true
+      end
+
     end # add_opts
 
     def make_selection()
