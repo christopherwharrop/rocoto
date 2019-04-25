@@ -277,6 +277,11 @@ private
     # refresh_jobqueue
     #
     #####################################################
+    #####################################################
+    #
+    # refresh_jobqueue
+    #
+    #####################################################
     def refresh_jobqueue
 
       begin
@@ -288,7 +293,7 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("scontrol -o show job",30)
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
 
         # Raise SchedulerDown if the command failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -310,57 +315,59 @@ private
       # For each job, find the various attributes and create a job record
       queued_jobs.split("\n").each { |job|
 
+        next if job[0..4]=='JOBID' # skip heading
+
         # Initialize an empty job record
         record={}
 
-        # Look at all the attributes for this job and build the record
-        jobfields=Hash[job.split.collect {|f| f.split("=")}.collect{|f| f.length == 2 ? f : [f[0], '']}]
-
-        # Skip records for other users
-        next unless jobfields["UserId"] =~/^#{username}\(/
-
         # Extract job id
-        record[:jobid]=jobfields["JobId"]
+        record[:jobid]=job[0..39].strip
 
         # Extract job name
-        record[:jobname]=jobfields["Name"]
+        record[:jobname]=job[270..job.length].strip
 
         # Extract job owner
-        record[:user]=jobfields["UserId"].split("(").first
+        record[:user]=job[40..79].strip
 
         # Extract core count
-        record[:cores]=jobfields["NumCPUs"].to_i
+        record[:cores]=job[80..89].strip
 
         # Extract the partition
-        record[:queue]=jobfields["Partition"]
+        record[:queue]=job[90..109].strip
 
         # Extract the submit time
-        record[:submit_time]=Time.local(*jobfields["SubmitTime"].split(/[-:T]/)).getgm
+        record[:submit_time]=Time.local(*job[110..139].strip.split(/[-:T]/)).getgm
 
         # Extract the start time
-        record[:start_time]=Time.local(*jobfields["StartTime"].split(/[-:T]/)).getgm
+        record[:start_time]=Time.local(*job[140..169].strip.split(/[-:T]/)).getgm
 
         # Extract the end time
-        record[:end_time]=Time.local(*jobfields["EndTime"].split(/[-:T]/)).getgm
+        record[:end_time]=Time.local(*job[170..199].strip.split(/[-:T]/)).getgm
 
         # Extract the priority
-        record[:priority]=jobfields["Priority"]
+        record[:priority]=job[200..229].strip
 
         # Extract the exit status
-        code,signal=jobfields["ExitCode"].split(":").collect {|i| i.to_i}
-        if code==0
-          record[:exit_status]=signal
+        code_signal=job[230..239].strip
+        if code_signal=~ /:/
+
+          code,signal=core_signal.split(":").collect {|i| i.to_i}
+          if code==0
+            record[:exit_status]=signal
+          else
+            record[:exit_status]=code
+          end
         else
-          record[:exit_status]=code
+          record[:exit_status]=code_signal
         end
 
         # Extract job state
-        case jobfields["JobState"]
-          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
+        case job[240..269].strip
+          when /^(CONFIGURING|PENDING|SUSPENDED|RESV_DEL_HOLD|REQUEUE_FED|REQUEUE_HOLD|REQUEUED|SPECIAL_EXIT|SUSPENDED)$/
             record[:state]="QUEUED"
-          when /^RUNNING$/,/^COMPLETING$/
+          when /^(RUNNING|COMPLETING|RESIZING|SIGNALING|STAGE_OUT|STOPPED)$/
             record[:state]="RUNNING"
-          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/
+          when /^(CANCELLED|FAILED|NODE_FAIL|PREEMPTED|TIMEOUT|BOOT_FAIL|DEADLINE|OUT_OF_MEMORY|REVOKED)$/
             record[:state]="FAILED"
             record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
           when /^COMPLETED$/
@@ -372,10 +379,10 @@ private
           else
             record[:state]="UNKNOWN"
         end
-        record[:native_state]=jobfields["JobState"]
-
+        record[:native_state]=job[240..269].strip
         # Add record to job queue
         @jobqueue[record[:jobid]]=record
+        WorkflowMgr.stderr("String [[#{job}]] becomes record #{record}",1)
 
       }  #  queued_jobs.find
 
@@ -402,7 +409,7 @@ private
         exit_status=0
         mmddyy=(DateTime.now-delta_days).strftime('%m%d%y')
         cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
-        completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,30)
+        completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,45)
 
         return if errors=~/SLURM accounting storage is disabled/
 
