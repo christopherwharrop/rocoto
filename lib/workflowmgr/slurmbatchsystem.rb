@@ -377,7 +377,6 @@ private
         record[:native_state]=job[240..269].strip
         # Add record to job queue
         @jobqueue[record[:jobid]]=record
-        WorkflowMgr.stderr("String [[#{job}]] becomes record #{record}",1)
 
       }  #  queued_jobs.find
 
