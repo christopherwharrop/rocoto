@@ -499,7 +499,9 @@ module WorkflowMgr
                       # Roll the log file (if it already exists)
                       @workflowIOServer.roll_log(value)
                     end
-                    @workflowIOServer.mkdir_p(outdir)
+                    unless outdir.empty?
+                      @workflowIOServer.mkdir_p(outdir)
+                    end
                 end
               end
 
