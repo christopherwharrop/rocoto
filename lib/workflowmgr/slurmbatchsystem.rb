@@ -356,11 +356,11 @@ private
 
         # Extract job state
         case jobfields["JobState"]
-          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
+          when /^(CONFIGURING|PENDING|SUSPENDED|RESV_DEL_HOLD|REQUEUE_FED|REQUEUE_HOLD|REQUEUED|SPECIAL_EXIT|SUSPENDED)$/
             record[:state]="QUEUED"
-          when /^RUNNING$/,/^COMPLETING$/
+          when /^(RUNNING|COMPLETING|RESIZING|SIGNALING|STAGE_OUT|STOPPED)$/
             record[:state]="RUNNING"
-          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/
+          when /^(CANCELLED|FAILED|NODE_FAIL|PREEMPTED|TIMEOUT|BOOT_FAIL|DEADLINE|OUT_OF_MEMORY|REVOKED)$/
             record[:state]="FAILED"
             record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
           when /^COMPLETED$/
