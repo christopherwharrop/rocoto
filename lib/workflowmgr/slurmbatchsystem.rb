@@ -42,36 +42,6 @@ module WorkflowMgr
 
     #####################################################
     #
-    # statuses
-    #
-    #####################################################
-    def statuses(jobids)
-
-      begin
-
-        raise WorkflowMgr::SchedulerDown unless @schedup
-
-        # Initialize statuses to UNAVAILABLE
-        jobStatuses={}
-        jobids.each do |jobid|
-          jobStatuses[jobid] = { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
-        end
-
-        jobids.each do |jobid|
-          jobStatuses[jobid] = self.status(jobid)
-        end
-
-      rescue WorkflowMgr::SchedulerDown
-        @schedup=false
-      ensure
-        return jobStatuses
-      end
-
-    end
-
-
-    #####################################################
-    #
     # status
     #
     #####################################################
@@ -112,6 +82,58 @@ module WorkflowMgr
 
     #####################################################
     #
+    # statuses
+    #
+    #####################################################
+    def statuses(jobids)
+
+      begin
+
+        raise WorkflowMgr::SchedulerDown unless @schedup
+
+        # Initialize statuses to UNAVAILABLE
+        jobStatuses={}
+        jobids.each do |jobid|
+          jobStatuses[jobid] = { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+        end
+
+        # Populate the job status table if it is empty
+        refresh_jobqueue(jobids) if @jobqueue.empty?
+
+        # Check to see if status info is missing for any job and populate jobacct record if necessary
+        if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
+
+            refresh_jobacct(1) if @jobacct_duration<1
+
+            # Check again, and re-populate over a longer history if necessary
+            if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+              refresh_jobacct(5) if @jobacct_duration<5
+            end
+        end
+
+        # Collect the statuses of the jobs
+        jobids.each do |jobid|
+          if @jobqueue.has_key?(jobid)
+            jobStatuses[jobid] = @jobqueue[jobid]
+          elsif @jobacct.has_key?(jobid)
+            jobStatuses[jobid] = @jobacct[jobid]
+          else
+            # We didn't find the job, so return an uknown status record
+            jobStatuses[jobid] = { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+          end
+        end
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+      ensure
+        return jobStatuses
+      end
+
+    end
+
+
+    #####################################################
+    #
     # submit
     #
     #####################################################
@@ -131,11 +153,11 @@ module WorkflowMgr
         end
         case option
           when :account
-            input += "#SBATCH --account #{value}\n"
+            input += "#SBATCH --account=#{value}\n"
           when :queue
-            input += "#SBATCH --qos #{value}\n"
+            input += "#SBATCH --qos=#{value}\n"
           when :partition
-            input += "#SBATCH --partition #{value.gsub(":",",")}\n"
+            input += "#SBATCH --partition=#{value.gsub(":",",")}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
@@ -218,7 +240,7 @@ module WorkflowMgr
           when :join
             input += "#SBATCH -o #{value}\n"
           when :jobname
-            input += "#SBATCH --job-name #{value}\n"
+            input += "#SBATCH --job-name=#{value}\n"
         end
       end
 
@@ -277,7 +299,7 @@ private
     # refresh_jobqueue
     #
     #####################################################
-    def refresh_jobqueue
+    def refresh_jobqueue(jobids)
 
       begin
 
@@ -288,7 +310,13 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
+
+        if jobids.nil?
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
+        else
+          joblist = jobids.join(",")
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
+        end
 
         # Raise SchedulerDown if the command failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -310,7 +338,9 @@ private
       # For each job, find the various attributes and create a job record
       queued_jobs.split("\n").each { |job|
 
-        next if job[0..4]=='JOBID' # skip heading
+        # Skip headings
+        next if job[0..4] == 'JOBID'
+        next if job[0..7] == 'CLUSTER:'
 
         # Initialize an empty job record
         record={}
@@ -325,7 +355,7 @@ private
         record[:user]=job[40..79].strip
 
         # Extract core count
-        record[:cores]=job[80..89].strip
+        record[:cores]=job[80..89].strip.to_i
 
         # Extract the partition
         record[:queue]=job[90..109].strip
@@ -353,7 +383,7 @@ private
             record[:exit_status]=code
           end
         else
-          record[:exit_status]=code_signal
+          record[:exit_status]=code_signal.to_i
         end
 
         # Extract job state
@@ -468,11 +498,11 @@ private
 
         # Extract job state
         case jobfields[10]
-          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/,/^REQUEUED$/
+          when /^(CONFIGURING|PENDING|SUSPENDED|RESV_DEL_HOLD|REQUEUE_FED|REQUEUE_HOLD|REQUEUED|SPECIAL_EXIT|SUSPENDED)$/
             record[:state]="QUEUED"
-          when /^RUNNING$/,/^COMPLETING$/
+          when /^(RUNNING|COMPLETING|RESIZING|SIGNALING|STAGE_OUT|STOPPED)$/
             record[:state]="RUNNING"
-          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/,/^OUT_OF_MEMORY$/,/^BOOT_FAIL$/,/^DEADLINE$/
+          when /^(CANCELLED|FAILED|NODE_FAIL|PREEMPTED|TIMEOUT|BOOT_FAIL|DEADLINE|OUT_OF_MEMORY|REVOKED)$/
             record[:state]="FAILED"
             record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
           when /^COMPLETED$/
