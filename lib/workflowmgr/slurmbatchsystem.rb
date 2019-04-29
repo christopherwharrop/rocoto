@@ -311,7 +311,7 @@ private
         errors=""
         exit_status=0
 
-        if jobids.nil?
+        if jobids.nil? or jobids.join(',').length>64
           queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
         else
           joblist = jobids.join(",")
