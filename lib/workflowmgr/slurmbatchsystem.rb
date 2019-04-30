@@ -102,7 +102,6 @@ module WorkflowMgr
 
         # Check to see if status info is missing for any job and populate jobacct record if necessary
         if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
-
             refresh_jobacct(1) if @jobacct_duration<1
 
             # Check again, and re-populate over a longer history if necessary
@@ -174,6 +173,7 @@ module WorkflowMgr
             # Get the total nodes and max ppn requested
             maxppn=1
             nnodes=0
+            tpp=0
             nodespecs=value.split("+")
             nodespecs.each { |nodespec|
               resources=nodespec.split(":")
@@ -195,6 +195,11 @@ module WorkflowMgr
 
             # Request max tasks per node
             input += "#SBATCH --tasks-per-node=#{maxppn}\n"
+
+            # Request cpus per task if only one nodespec is specified and tpp was specified
+            if nodespecs.size == 1 && !tpp.zero?
+              input += "#SBATCH --cpus-per-task=#{tpp}\n"
+            end
 
             # Print a warning if multiple nodespecs are specified
             if nodespecs.size > 1
