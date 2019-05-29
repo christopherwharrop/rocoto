@@ -18,6 +18,7 @@ module WorkflowMgr
     require 'etc'
     require 'parsedate'
     require 'libxml'
+    require 'securerandom'
     require 'workflowmgr/utilities'
 
     #####################################################
@@ -253,6 +254,10 @@ module WorkflowMgr
         input += "#SBATCH #{value}\n"
       end
 
+      # Add secret identifier for later retrieval
+      randomID = SecureRandom.hex
+      input += "#SBATCH --comment=#{randomID}\n"
+
       # Add export commands to pass environment vars to the job
       unless task.envars.empty?
         varinput=''
@@ -270,7 +275,7 @@ module WorkflowMgr
       tf.write(input)
       tf.flush()
 
-      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input\n{{\n#{input}\n}}",4)
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input\n{{\n#{input}\n}}", 4)
 
       # Run the submit command
       output=`#{cmd} < #{tf.path} 2>&1`.chomp()
@@ -278,7 +283,56 @@ module WorkflowMgr
       # Parse the output of the submit command
       if output=~/^Submitted batch job (\d+)/
         return $1,output
+      elsif output=~/Batch job submission failed: Socket timed out/
+
+        WorkflowMgr.stderr("WARNING: '#{output}', looking to see if job was submitted anyway...", 1)
+        queued_jobs=""
+        errors=""
+        exit_status=0
+        begin
+
+          # Get the username of this process
+          username=Etc.getpwuid(Process.uid).name
+
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", 45)
+
+          # Raise SchedulerDown if the command failed
+          raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+          # Return if the output is empty
+          return nil,output if queued_jobs.empty?
+
+        rescue Timeout::Error,WorkflowMgr::SchedulerDown
+          WorkflowMgr.log("#{$!}")
+          WorkflowMgr.stderr("#{$!}",3)
+          raise WorkflowMgr::SchedulerDown
+        end
+          
+        # Make sure queued_jobs is properly encoded
+        if String.method_defined? :encode
+          queued_jobs = queued_jobs.encode('UTF-8', 'binary', {:invalid => :replace, :undef => :replace, :replace => ''})
+        end
+
+        # Look for a job that matches the randomID we inserted into the comment
+        queued_jobs.split("\n").each { |job|
+
+          # Skip headers
+          next if job=~/CLUSTER/
+          next if job=~/JOBID/
+
+          # Extract job id
+          jobid=job[0..39].strip
+
+          # Extract randomID
+          if randomID == job[40..71].strip
+            WorkflowMgr.log("WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} after sbatch failed with socket time out")
+            WorkflowMgr.stderr("WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} after sbatch failed with socket time out",1)
+            return jobid, output
+          end
+        }
+
       else
+        WorkflowMgr.stderr("WARNING: job submission failed: #{output}", 1)
         return nil,output
       end
 
