@@ -7,7 +7,7 @@ module WorkflowMgr
 
   require 'date'
 
-  ########################################## 
+  ##########################################
   #
   # Class CycleString
   #
@@ -65,6 +65,22 @@ module WorkflowMgr
     def hash
 
       @str.hash ^ @offset.hash
+
+    end
+
+
+    #####################################################
+    #
+    # inspect
+    #
+    #####################################################
+    def inspect
+
+      if @offset
+          return "<cyclestr offset=\"#{@offset}\">#{@str}</cyclestr>"
+      else
+          return "<cyclestr>#{@str}</cyclestr>"
+      end
 
     end
 

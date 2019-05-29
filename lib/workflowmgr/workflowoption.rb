@@ -5,7 +5,7 @@
 ##########################################
 module WorkflowMgr
 
-  ##########################################  
+  ##########################################
   #
   # Class WorkflowOption
   #
@@ -13,12 +13,12 @@ module WorkflowMgr
   class WorkflowOption
 
     require 'optparse'
-    
+
     attr_reader :database
     attr_reader :workflowdoc
     attr_reader :verbose
 
-    ##########################################  
+    ##########################################
     #
     # Initialize
     #
@@ -32,9 +32,9 @@ module WorkflowMgr
     end  # initialize
 
     ##########################################
-    # 
+    #
     # each_arg
-    # 
+    #
     ##########################################
     def each_arg
       # Loops over unparsed arguments, yielding each one.
@@ -45,7 +45,7 @@ module WorkflowMgr
 
   private
 
-    ##########################################  
+    ##########################################
     #
     # add_opts
     #
@@ -87,7 +87,7 @@ module WorkflowMgr
     end
 
 
-    ##########################################  
+    ##########################################
     #
     # validate_opts
     #
@@ -105,7 +105,7 @@ module WorkflowMgr
       raise OptionParser::ParseError,"A workflow definition file must be specified" if @workflowdoc.nil?
     end
 
-    ##########################################  
+    ##########################################
     #
     # parse
     #
@@ -141,7 +141,7 @@ module WorkflowMgr
           STDERR.puts e.message, "\n",opts
           Process.exit(-1)
         end
-        
+
       end
 
     end  # parse

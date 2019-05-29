@@ -46,7 +46,7 @@ module WorkflowMgr
       # Try to get a default node size from pbsnodes -a
       begin
         pbsnodes,errors,exit_status=WorkflowMgr.run4("pbsnodes -a | grep resources_available.ncpus | sort | uniq -c",30)
-      
+
         # Raise SchedulerDown if the pbsnodes failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
@@ -106,6 +106,44 @@ module WorkflowMgr
 
     #####################################################
     #
+    # statuses
+    #
+    #####################################################
+    def statuses(jobids)
+
+      begin
+
+        # Initialize statuses to UNAVAILABLE
+        jobStatuses={}
+        jobids.each do |jobid|
+          jobStatuses[jobid] = { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+        end
+
+        raise WorkflowMgr::SchedulerDown unless @schedup
+
+        # Populate the job accounting log table if it is empty
+        refresh_jobacct(jobids) if @jobacct.empty?
+
+        # Collect the statuses of the jobs
+        jobids.each do |jobid|
+          if @jobacct.has_key?(jobid)
+            jobStatuses[jobid] = @jobacct[jobid]
+          else
+            jobStatuses[jobid] = { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+          end
+        end
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+      ensure
+        return jobStatuses
+      end
+
+    end
+
+
+    #####################################################
+    #
     # submit
     #
     #####################################################
@@ -127,11 +165,20 @@ module WorkflowMgr
       # Add Pbspro batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
+         if value.is_a?(String)
+           if value.empty?
+             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+             next
+           end
+        end
         case option
           when :account
             input += "#PBS -A #{value}\n"
-          when :queue            
+          when :queue
             input += "#PBS -q #{value}\n"
+          when :partition
+            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for PBSPro.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for PBSPro.", 1)
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
@@ -198,7 +245,7 @@ module WorkflowMgr
           when :stderr
             input += "#PBS -e #{value}\n"
           when :join
-            input += "#PBS -j oe -o #{value}\n"           
+            input += "#PBS -j oe -o #{value}\n"
           when :jobname
             input += "#PBS -N #{value}\n"
         end
@@ -249,7 +296,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`qdel #{jobid}`      
+      qdel=`qdel #{jobid}`
 
     end
 
@@ -339,10 +386,10 @@ private
 
     #####################################################
     #
-    # refresh_jobqueue
+    # refresh_jobacct
     #
     #####################################################
-    def refresh_jobacct(jobid)
+    def refresh_jobacct(jobids)
 
       begin
 
@@ -355,7 +402,7 @@ private
         errors=""
         exit_status=0
 
-        if jobid.nil?
+        if jobids.nil?
 
           # Get the list of jobs that have completed within the last hour for this user
           joblist,errors,exit_status=WorkflowMgr.run4("qselect -H -u $USER -te.gt.#{(Time.now - 3600).strftime("%Y%m%d%H%M")}")
@@ -365,14 +412,14 @@ private
           joblist = joblist.split.join(" ")
 
         else
-          joblist = jobid
+          joblist = jobids.join(" ")
         end
 
         # Return if the joblist is empty
         return if joblist.empty?
 
         # Get the status of jobs in the job list
-        qstat,errors,exit_status=WorkflowMgr.run4("qstat -x -f #{joblist} | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'", 30)
+        qstat,errors,exit_status=WorkflowMgr.run4("qstat -x -f #{joblist} | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'", 60)
 
         # Raise SchedulerDown if the qstat failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -385,7 +432,7 @@ private
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
       end
-      
+
       # Initialize an empty job record
       record={}
 
@@ -454,7 +501,7 @@ private
             when /resources_used.ncpus/
               record[:cores]=value
             when /Priority/
-              record[:priority]=value.to_i            
+              record[:priority]=value.to_i
 
             else
 #              record[key] = value
@@ -468,4 +515,3 @@ private
   end  # class
 
 end  # module
-

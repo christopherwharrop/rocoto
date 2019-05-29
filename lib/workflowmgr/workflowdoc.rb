@@ -5,9 +5,9 @@
 ##########################################
 module WorkflowMgr
 
-  ########################################## 
+  ##########################################
   #
-  # Class WorkflowXMLDoc 
+  # Class WorkflowXMLDoc
   #
   ##########################################
   class WorkflowXMLDoc
@@ -24,22 +24,23 @@ module WorkflowMgr
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
     require 'workflowmgr/pbsprobatchsystem'
-    require 'workflowmgr/lsfbatchsystem'    
-    require 'workflowmgr/lsfcraybatchsystem'    
+    require 'workflowmgr/lsfbatchsystem'
+    require 'workflowmgr/lsfcraybatchsystem'
+    require 'workflowmgr/slurmbatchsystem'
     require 'workflowmgr/task'
 
     @@messages={
       :exclusive => "Ignoring <exclusive>; this platform does not support it.",
       :shared => "Ignoring <shared>; this platform does not support it."
     }
-    
+
     def unescape(s)
       # This is a workaround for a LibXML bug: it is impossible to
       # disable output escaping.  That means strings will have &quot;
       # instead of " no matter what you do.  This function replaces
       # some common XML entities with their corresponding values.
       t=s.gsub(/&quot;/,'"').gsub(/&lt;/,'<').gsub(/&gt;/,'>')
-      
+
       # The &amp; must be last:
       return t.gsub(/&amp;/,'&')
     end
@@ -59,9 +60,9 @@ module WorkflowMgr
       @featuresUsed={}
 
       # Get the text from the xml file and put it into a string.
-      # We have to do the full parsing in @workflowIOServer 
-      # because we must ensure all external entities (i.e. files) 
-      # are referenced inside the @workflowIOServer process and 
+      # We have to do the full parsing in @workflowIOServer
+      # because we must ensure all external entities (i.e. files)
+      # are referenced inside the @workflowIOServer process and
       # not locally.
       #
       # Update:  The above doesn't work properly because the resulting
@@ -73,7 +74,6 @@ module WorkflowMgr
       # process.
       begin
         if @workflowIOServer.exists?(workflowdoc)
-          # @workflowdoc = LibXML::XML::Parser.file(workflowdoc,:options => LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
           context = LibXML::XML::Parser::Context.file(workflowdoc)
           context.options=LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
           parser=LibXML::XML::Parser.new(context)
@@ -81,7 +81,7 @@ module WorkflowMgr
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
-      rescue WorkflowIOHang     
+      rescue WorkflowIOHang
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",2)
         raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
@@ -91,7 +91,7 @@ module WorkflowMgr
       validate_with_metatasks(@workflowdoc)
       # Expand metatasks
       expand_metatasks
-      
+
       # Expand metatask dependencies
       expand_metataskdeps
 
@@ -108,7 +108,7 @@ module WorkflowMgr
     ##########################################
     #
     # realtime?
-    # 
+    #
     ##########################################
     def realtime?
 
@@ -129,7 +129,7 @@ module WorkflowMgr
     ##########################################
     #
     # cyclelifespan
-    # 
+    #
     ##########################################
     def cyclelifespan
 
@@ -150,7 +150,7 @@ module WorkflowMgr
     ##########################################
     #
     # cyclethrottle
-    # 
+    #
     ##########################################
     def cyclethrottle
 
@@ -171,7 +171,7 @@ module WorkflowMgr
     ##########################################
     #
     # taskthrottle
-    # 
+    #
     ##########################################
     def taskthrottle
 
@@ -192,7 +192,7 @@ module WorkflowMgr
     ##########################################
     #
     # metatask_throttles
-    # 
+    #
     ##########################################
     def metatask_throttles
 
@@ -204,7 +204,7 @@ module WorkflowMgr
     ##########################################
     #
     # corethrottle
-    # 
+    #
     ##########################################
     def corethrottle
 
@@ -225,7 +225,7 @@ module WorkflowMgr
     ##########################################
     #
     # scheduler
-    # 
+    #
     ##########################################
     def scheduler
 
@@ -246,7 +246,7 @@ module WorkflowMgr
     ##########################################
     #
     # features_supported?
-    # 
+    #
     ##########################################
     def features_supported?
       supported=false
@@ -273,7 +273,7 @@ module WorkflowMgr
     ##########################################
     #
     # log
-    # 
+    #
     ##########################################
     def log
 
@@ -291,10 +291,10 @@ module WorkflowMgr
     ##########################################
     #
     # cycledefs
-    # 
+    #
     ##########################################
     def cycledefs
- 
+
       cycles=[]
       cyclenodes=@workflowdoc.find('/workflow/cycledef')
       cyclenodes.each { |cyclenode|
@@ -302,7 +302,7 @@ module WorkflowMgr
         cyclefields=unescape(cyclenode.content.strip)
         nfields=cyclefields.split.size
         group=cyclenode.attributes['group']
-        if self.realtime? 
+        if self.realtime?
           activation_offset=WorkflowMgr.ddhhmmss_to_seconds(cyclenode.attributes['activation_offset'])
         else
           activation_offset=0
@@ -312,19 +312,17 @@ module WorkflowMgr
         elsif nfields==6
           cycles << CycleCron.new(cyclefields,group,activation_offset)
         else
-	  raise "ERROR: Unsupported <cycle> type!"
+          raise "ERROR: Unsupported <cycle> type!"
         end
       }
 
       return cycles
-
     end
-
 
     ##########################################
     #
     # tasks
-    # 
+    #
     ##########################################
     def tasks
 
@@ -353,7 +351,7 @@ module WorkflowMgr
         end
 
         # Get task attributes, envars, and dependencies declared as elements inside <task> element
-        tasknode.each_element do |e|          
+        tasknode.each_element do |e|
           case e.name
             when /shared/
               taskattrs[:shared]=true
@@ -384,12 +382,12 @@ module WorkflowMgr
                 end
               end
             when /^dependency$/
-              e.each_element do |element| 
+              e.each_element do |element|
                 raise "ERROR: <dependency> tag contains too many elements" unless taskdep.nil?
                 taskdep=Dependency.new(get_dependency_node(element))
               end
             when /^hangdependency$/
-              e.each_element do |element| 
+              e.each_element do |element|
                 raise "ERROR: <hangdependency> tag contains too many elements" unless taskhangdep.nil?
                 taskhangdep=Dependency.new(get_dependency_node(element))
               end
@@ -462,7 +460,7 @@ module WorkflowMgr
     ##########################################
     #
     # taskdep_cycle_offsets
-    # 
+    #
     ##########################################
     def taskdep_cycle_offsets
 
@@ -477,7 +475,7 @@ module WorkflowMgr
         offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
       end
 
-      return offsets.uniq  
+      return offsets.uniq
 
     end
 
@@ -487,7 +485,7 @@ module WorkflowMgr
      ##########################################
      #
      # get_compound_time_string
-     # 
+     #
      ##########################################
      def get_compound_time_string(element)
 
@@ -495,7 +493,7 @@ module WorkflowMgr
          return nil
        end
 
-       strarray=[] 
+       strarray=[]
        element.each do |e|
          e.output_escaping=false
          if e.node_type==LibXML::XML::Node::TEXT_NODE
@@ -525,10 +523,10 @@ module WorkflowMgr
      ##########################################
      #
      # get_dependency_node
-     # 
+     #
      ##########################################
      def get_dependency_node(element)
- 
+
        # Build a dependency tree
        children=[]
        element.each_element { |e| children << e }
@@ -599,14 +597,14 @@ module WorkflowMgr
     # name_stringdep
     #
     #####################################################
-    
+
      def name_stringdep(a,b,cmp)
-       ia=a.to_s
-       ib=b.to_s
+       ia=a.inspect
+       ib=b.inspect
        cmp=cmp.to_s
-       ia=ia[0..26]+'...' if(ia.size>30)
-       ib=ib[0..26]+'...' if(ib.size>30)
-       cmp=cmp[0..26]+'...' if(cmp.size>30)
+       ia=ia[0..37]+'...' if(ia.size>40)
+       ib=ib[0..37]+'...' if(ib.size>40)
+       cmp=cmp[0..37]+'...' if(cmp.size>40)
        return "'#{ia}'#{cmp}'#{ib}'"
      end
 
@@ -616,16 +614,16 @@ module WorkflowMgr
      #
      #####################################################
      def get_taskdep(element)
- 
+
        # Get the mandatory task attribute
        task=element.attributes["task"]
- 
+
        # Get the state attribute
        state=element.attributes["state"] || "SUCCEEDED"
- 
+
        # Get the cycle offset, if there is one
        cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"]) || 0
- 
+
        return TaskDependency.new(task,state,cycle_offset)
 
      end
@@ -637,27 +635,25 @@ module WorkflowMgr
      #
      #####################################################
      def get_cycleexistdep(element)
- 
+
        # Get the cycle offset, if there is one
        cycle_offset=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"])
- 
+
        return CycleExistDependency.new(cycle_offset)
      end
 
-     
+
      #####################################################
      #
      # get_taskvaliddep
      #
      #####################################################
      def get_taskvaliddep(element)
- 
-       task=element.attributes["task"] 
+
+       task=element.attributes["task"]
 
        return TaskValidDependency.new(task)
      end
-
-
 
 
 
@@ -667,7 +663,7 @@ module WorkflowMgr
      #
      #####################################################
      def get_rubydep(element)
- 
+
        # Get the cycle offset, if there is one
        text=''
        name=element.attributes["name"]
@@ -682,7 +678,7 @@ module WorkflowMgr
      #
      #####################################################
      def get_shelldep(element)
- 
+
        # Get the cycle offset, if there is one
        text=''
        name=element.attributes["name"]
@@ -700,12 +696,12 @@ module WorkflowMgr
 
 
      ##########################################
-     # 
+     #
      # get_datadep
-     # 
+     #
      ##########################################
      def get_datadep(element)
- 
+
        # Get the age attribute
        age_sec=WorkflowMgr.ddhhmmss_to_seconds(element.attributes["age"]) || 0
 
@@ -731,9 +727,9 @@ module WorkflowMgr
        end
 
        return DataDependency.new(get_compound_time_string(element),age_sec,minsize)
- 
+
      end
- 
+
 
      #####################################################
      #
@@ -741,17 +737,17 @@ module WorkflowMgr
      #
      #####################################################
      def get_timedep(element)
- 
+
        # Get the time cycle string
        return TimeDependency.new(get_compound_time_string(element))
- 
+
      end
 
 
     ##########################################
     #
     # validate_with_metatasks
-    # 
+    #
     ##########################################
     def validate_with_metatasks(doc)
 
@@ -835,7 +831,7 @@ module WorkflowMgr
           metataskelements.each { |metataskelement| metataskelement.remove! }
 
         end
-      }    
+      }
 
     end
 
@@ -887,7 +883,7 @@ module WorkflowMgr
                       depchildren=depnode.children
                       andnode=LibXML::XML::Node.new("and")
                       depnode << andnode
-                      depchildren.each do |c| 
+                      depchildren.each do |c|
                         andnode << c
                       end
                     end
@@ -942,7 +938,7 @@ module WorkflowMgr
           metatask_name=ch.attributes["name"]
           @metatask_throttles[metatask_name]=ch.attributes["throttle"].nil? ? 999999 : ch.attributes["throttle"].to_i
           @metatask_modes[metatask_name]=ch.attributes["mode"].nil? ? "parallel" : ch.attributes["mode"]
-	  pre_parse(ch,metatask_name)
+          pre_parse(ch,metatask_name)
           metatasks << ch
         end
       }
@@ -957,7 +953,7 @@ module WorkflowMgr
     #
     #####################################################
     def traverse(node, id_table, index)
-    
+
       if node.node_type_name == "text"
         node.output_escaping=false
         cont = unescape(node.content)
@@ -965,12 +961,12 @@ module WorkflowMgr
           next while cont.sub!("#"+id+"#", id_table[id][index])
         }
         node.content = cont
-      
+
       else
         node.attributes.each{|attr|
           val = attr.value
           id_table.each{|id, value|
-	    next while val.sub!("#"+id+"#", id_table[id][index])
+            next while val.sub!("#"+id+"#", id_table[id][index])
           }
           attr.value = val
         }
@@ -979,14 +975,14 @@ module WorkflowMgr
 
     end
 
-  
+
     #####################################################
     #
     # pre-parse
     #
     #####################################################
     def pre_parse(metatask,metatask_list)
-    
+
       id_table = {}
       var_length = -1
 
@@ -1026,7 +1022,7 @@ module WorkflowMgr
 
       # Build a table of var tags and their values for this metatask
       metatask.children.each {|e|
-        if e.name == "var"  
+        if e.name == "var"
           e.output_escaping=false
           var_values = unescape(e.content).split
           var_length = var_values.length if var_length == -1
@@ -1047,7 +1043,7 @@ module WorkflowMgr
             if task_copy.attributes["metatasks"].nil?
               LibXML::XML::Attr.new(task_copy, "metatasks", metatask_list)
             end
-            traverse(task_copy,id_table, index)        
+            traverse(task_copy,id_table, index)
             seqarr=task_copy.attributes["seqnum"].split(",")
             if index==0
               maxseq=seqarr[depth-1].to_i

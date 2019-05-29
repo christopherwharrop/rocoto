@@ -4,10 +4,10 @@
 .\"
 .Dd January 25, 2013
 .Os
-.Dt ROCOTOSTAT 1 CON
+.Dt ROCOTOBOOT 1 CON
 .Sh NAME
-.Nm rocotostat
-.Nd Display status information for a Rocoto workflow
+.Nm rocotocomplete
+.Nd mark tasks or cycles as having completed
 .Sh SYNOPSIS
 .Nm
 .Op Fl h
@@ -15,27 +15,25 @@
 .Op Fl -version
 .Fl d Ar database_file
 .Fl w Ar workflow_file
-.Op Fl c Ar cyclespec
-.Op Fl t Ar taskspec
-.Op Fl s 
-.Op Fl T
+.Fl t Ar task
+.Fl c Ar cycle
 .Sh DESCRIPTION
 .Nm
-is a tool for querying the status of tasks or cycles in an active Rocoto
-workflow.  The summary level status information provides an overview
-of a workflow's execution progress.  There are  options that can be used
-to query the state of the specific sets of cycles and/or tasks that are
-of interest.  By default,
-.Nm
-will display the state of all tasks in the workflow for the most recently
-activated cycle.  
-.Pp
-The status information displayed for tasks includes: the job id, the task's
-current state, the task's exit status, and the number of task tries.  
-.Pp
-The status information displayed for cycles includes: the cycle's current state,
-when the cycle was activated, and when the cycle was deactivated.
-.Pp
+tells Rocoto that tasks or cycles have completed, even if they actually
+haven't.  This is typically used either to manually skip parts of a
+workflow, or to tell Rocoto a task has completed when that
+information is no longer available from the queuing system.  Upon
+executing this command, Rocoto will behave as if the selected tasks or
+cycles really did complete successfully; throttles and dependencies
+will be updated.  In the special case where all tasks (-a option) are
+selected, the cycle itself will be marked as having completed.  The
+following limitations apply:
+.Bl -bullet -offset indent -compact
+.It
+A task cannot be completed if its state is EXPIRED.
+.It
+A task cannot be completed for a cycle is EXPIRED.
+.El
 The
 .Nm
 command requires two arguments. The
@@ -44,14 +42,13 @@ flag specifies the name
 of the workflow definition file. The
 .Cm -d
 flag specifies the name of the database file
-that contains the state of the workflow that is to be queried.
+that contains the state of the workflow for the task that is to be booted.
+.Pp
+Additionally, the rocotocomplete will not do anything unless the -c option
+and at least one of -a, -m, or -t are specified.
 .Pp
 The following options are available:
 .Bl -tag -width flag
-.It Fl s
-Print a cycle status summary.
-.It Fl T
-Sort the output by task sequence (the order in which tasks are defined in the workflow definition file) instead of cycle.
 .It Fl -version
 Display the version number and exit.
 .It Fl h, -help
@@ -64,13 +61,13 @@ The path to the Rocoto database file for the current workflow.
 .It Fl w, -workflow Ar file
 The path to the Rocoto workflow file.
 .It Fl c, --cycle Ar cyclespec[,cyclespec[,...]]
-Only submit jobs for these cycles. See
+Only complete jobs for these cycles. See
 .Sx WORKFLOW SUBSETTING
 .It Fl m, --metatasks Ar metataskspec[,metataskspec[,...]]
-Only submit jobs for these metatasks.  See
+Only complete jobs for these metatasks.  See
 .Sx WORKFLOW SUBSETTING
 .It Fl t, --tasks Ar taskspec[,taskspec[,...]
-Only submit jobs for these tasks.  See
+Only complete jobs for these tasks.  See
 .Sx WORKFLOW SUBSETTING
 .It Fl a, --all
 Include all tasks in the workflow subset.  See
@@ -80,16 +77,14 @@ Include all tasks in the workflow subset.  See
 All Rocoto commands that monitor or modify the workflow can be told to
 run on some subset of that workflow.  Subset specifications use the
 -a, -t, -c, and -m options.  Using multiple options adds to the
-selection.  The rocotostat program will only print information about a
-cycle or task if they're in the selected subset.  By default,
-rocotostat works on all tasks in the latest cycle.
+selection.  The rocotocomplete program will only complete jobs if they're in
+the selected subset.
 .Pp
 The resulting set is the set union of the -t, -m, and -a option, for
 each cycle selected by the -c option.
 
 .Ss All Tasks: The -a Option
-The -a option has no arguments, and selects all possible tasks.  This
-is the default for rocotostat if no -t or -m options are given.  It is
+The -a option has no arguments, and selects all possible tasks.  It is
 an error to specify -t or -m if the -a option is given.
 
 .Ss Task Subset: The -t Option
@@ -152,40 +147,20 @@ Select all cycles.
 .It @cycledef
 Select all cycles in the specified cycledef.
 .El
-
 .Sh EXAMPLES
 The command:
 .Pp
-.Ic "rocotostat -d foo.db -w foo.xml -t wrf -c 201301010000"
+.Ic "rocotocomplete -d foo.db -w foo.xml -t wrf -c 201301010000"
 .Pp
-Will report the status of the
+Will record the completion of the
 .Qq wrf
 task for the cycle
 .Qq 201301010000
 defined in the workflow definition file named
 .Qq foo.xml
-and contained in the database file named
-.Qq foo.db
-.Pp
-The command:
-.Pp
-.Ic "rocotostat -d foo.db -w foo.xml -c 201301010000:201301312359 -T"
-.Pp
-Will report the status, sorted by task sequence, of all workflow tasks for all the cycles in January 2013
-defined in the workflow definition file named
-.Qq foo.xml
-and contained in the database file named
-.Qq foo.db
-.Pp
-The command:
-.Pp
-.Ic "rocotostat -d foo.db -w foo.xml -c 201301010000:201301312359 -t '/^post_.*/'"
-.Pp
-Will report the status of all workflow tasks whose name starts with "post_" for all the cycles in January 2013
-defined in the workflow definition file named
-.Qq foo.xml
-and contained in the database file named
-.Qq foo.db
+, contained in the database file named
+.Qq foo.db.
+It will then update any dependencies and throttles that are impacted by that task.
 .Sh EXIT STATUS
 .Ex -std
 .Sh DOCUMENTATION
@@ -194,8 +169,8 @@ Complete documentation can be found at: http://rdhpcs.noaa.gov/rocoto/
 .Xr rocotoboot 1 ,
 .Xr rocotocomplete 1 ,
 .Xr rocotocheck 1 ,
-.Xr rocotorewind 1 ,
-.Xr rocotorun 1
+.Xr rocotorun 1 ,
+.Xr rocotostat 1
 .Sh STANDARDS
 The
 .Nm

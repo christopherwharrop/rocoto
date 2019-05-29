@@ -1,8 +1,7 @@
 #!/bin/sh
-set -x
+
 sleep 1
-echo top of script
-env
+
 # Get the directory where the WFM is installed
 wfmdir=`dirname $0`
 

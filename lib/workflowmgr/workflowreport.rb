@@ -84,7 +84,7 @@ module WorkflowMgr
         Process.exit(0) unless @locked
 
         # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)        
+        @workflowIOServer=WorkflowIOProxy.new(@dbServer,@config)
 
         # Build the workflow objects from the contents of the workflow document
         build_workflow
@@ -111,7 +111,7 @@ module WorkflowMgr
       rescue
         puts $!
         Process.exit(1)
-        
+
       ensure
 
         # Shut down the batch queue server if it is no longer needed
@@ -135,7 +135,7 @@ module WorkflowMgr
         end
 
       end
- 
+
     end  # run
 
   private
@@ -167,7 +167,7 @@ module WorkflowMgr
 
       # Get the scheduler
       @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
-      
+
       # Add this scheduler to the bqserver database if needed
       @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer
 
@@ -177,7 +177,7 @@ module WorkflowMgr
       # Get the cycle defs
       @cycledefs=workflowdoc.cycledefs
 
-      # Get the tasks 
+      # Get the tasks
       @tasks=workflowdoc.tasks
 
       # Get the taskdep cycle offsets
@@ -220,7 +220,7 @@ module WorkflowMgr
     #
     # get_new_realtime_cycle
     #
-    ########################################## 
+    ##########################################
     def get_new_realtime_cycle
 
       # For realtime workflows, find the most recent cycle less than or equal to
@@ -274,8 +274,8 @@ module WorkflowMgr
             CycleInterval.new(dbcycledef[:cycledef],dbcycledef[:group],dbcycledef[:activation_offset],dbcycledef[:position])
         end
       end
-        
-      # Update the positions of the current cycledefs (loaded from the workflowdoc) 
+
+      # Update the positions of the current cycledefs (loaded from the workflowdoc)
       # with their last known positions that are stored in the database
       @cycledefs.each do |cycledef|
         dbcycledef=dbcycledefs.find { |dbcycledef| dbcycledef.group==cycledef.group && dbcycledef.cycledef==cycledef.cycledef }
@@ -424,7 +424,7 @@ module WorkflowMgr
 
               begin
 
-                # Query the workflowbqserver for the status of the job submission 
+                # Query the workflowbqserver for the status of the job submission
                 jobid,output=bqservers[uri].get_submit_status(taskname,cycle) if bqservers.has_key?(uri)
 
               # Catch exceptions for bqservers that have died unexpectedly
@@ -490,7 +490,7 @@ module WorkflowMgr
         bqservers.each do |uri,bqserver|
 
           begin
-            unless bqserver.running? 
+            unless bqserver.running?
               bqserver.stop!
               @dbServer.delete_bqservers([uri])
             end
@@ -520,7 +520,7 @@ module WorkflowMgr
       begin
 
         # Initialize array of jobs whose job ids have been updated
-        updated_jobs=[]  
+        updated_jobs=[]
 
         # Initialize counters for keeping track of active workflow parameters
         @active_task_count=0
@@ -529,7 +529,7 @@ module WorkflowMgr
         # Loop over all active jobs and retrieve and update their current status
         @tasks.each do |task|
           taskname=task.attributes[:name]
-          next if @active_jobs[taskname].nil?       
+          next if @active_jobs[taskname].nil?
           @active_jobs[taskname].keys.each do |cycle|
 
             # No need to query or update the status of jobs that we already know are done successfully or that remain failed
@@ -544,12 +544,12 @@ module WorkflowMgr
                 @active_jobs[taskname][cycle][:state]="FAILED"
 
                 # Update the state of the job in the database
-                @dbServer.update_jobs([@active_jobs[taskname][cycle]])                
+                @dbServer.update_jobs([@active_jobs[taskname][cycle]])
 
                 # Log the fact that this job was resurrected
                 @logServer.log(cycle,"Task #{taskname} has been resurrected.  #{task.attributes[:maxtries] - @active_jobs[taskname][cycle][:tries]} more tries will be allowed")
               end
- 
+
               # No need for more updates to this job
               next
 
@@ -560,7 +560,7 @@ module WorkflowMgr
 
             # Update the state of the job with its current state
             @active_jobs[taskname][cycle][:state]=status[:state]
-            @active_jobs[taskname][cycle][:native_state]=status[:native_state]            
+            @active_jobs[taskname][cycle][:native_state]=status[:native_state]
             if status[:state]=="SUCCEEDED" || status[:state]=="FAILED"
               @active_jobs[taskname][cycle][:exit_status]=status[:exit_status]
               if status[:start_time]==Time.at(0).getgm
@@ -618,7 +618,7 @@ module WorkflowMgr
 
           end # @active_jobs[taskname].keys.each
         end # @active_jobs.keys.each
-     
+
       end
 
     end
@@ -643,7 +643,7 @@ module WorkflowMgr
         # Initialize done flag to true for this cycle
         cycle_done=false
         cycle_success=true
-        
+
         catch (:not_done) do
 
           # Loop over all tasks
@@ -678,18 +678,18 @@ module WorkflowMgr
 #            if @active_jobs[task.attributes[:name]][cycle[:cycle]][:tries] >= task.attributes[:maxtries]
 #              cycle_success=false
 #            else
-#              throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:exit_status] != 0 
+#              throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:exit_status] != 0
 #            end
 
           end  # tasks.each
 
           cycle_done=true
-          
+
         end  # catch
 
         # If the cycle is done, record the time and update active cycle list
         if cycle_done
-        
+
           # Set the expiration time
           cycle[:done]=Time.now.getgm
 
@@ -698,12 +698,12 @@ module WorkflowMgr
 
           # Log the done status of this cycle
           if cycle_success
-            @logServer.log(cycle[:cycle],"This cycle is complete: Success") 
+            @logServer.log(cycle[:cycle],"This cycle is complete: Success")
           else
-            @logServer.log(cycle[:cycle],"This cycle is complete: Failed") 
+            @logServer.log(cycle[:cycle],"This cycle is complete: Failed")
           end
 
-          # Update the done cycle in the database 
+          # Update the done cycle in the database
           @dbServer.update_cycles([cycle])
 
         # Otherwise add the cycle to a new list of active cycles
@@ -749,7 +749,7 @@ module WorkflowMgr
       end
 
       # Delete any jobs for the expired cycles
-      expired_cycles.each do |cycle|          
+      expired_cycles.each do |cycle|
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle[:cycle]].nil?
           unless @active_jobs[taskname][cycle[:cycle]][:state] == "SUCCEEDED" || @active_jobs[taskname][cycle[:cycle]][:state] == "FAILED" || @active_jobs[taskname][cycle[:cycle]][:state] == "DEAD"
@@ -759,9 +759,9 @@ module WorkflowMgr
         end
 
         @logServer.log(cycle[:cycle],"This cycle has expired!")
-        
+
         # Update the expired cycles in the database
-        @dbServer.update_cycles([cycle]) 
+        @dbServer.update_cycles([cycle])
       end
 
       # Update the active cycle list
@@ -813,7 +813,7 @@ module WorkflowMgr
             next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
 
           end
-          
+
           # Reject this task if core throttle will be exceeded
           if @active_core_count + task.attributes[:cores] > @corethrottle
             @logServer.log(cycle,"Cannot submit #{task.attributes[:name]}, because maximum core throttle of #{@corethrottle} will be violated.",2)
@@ -866,7 +866,7 @@ module WorkflowMgr
 
         end
 
-      end        
+      end
 
       # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
       Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
@@ -918,7 +918,7 @@ module WorkflowMgr
           else
             lvalue=value
           end
-          lt[lkey]=lvalue        
+          lt[lkey]=lvalue
         end
       elsif t.is_a?(Array)
         lt=t.collect do |value|
@@ -930,7 +930,7 @@ module WorkflowMgr
             value
           end
         end
-      end 
+      end
 
       return lt
 

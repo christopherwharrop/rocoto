@@ -6,7 +6,7 @@
 module WorkflowMgr
 
 
-  ##########################################  
+  ##########################################
   #
   # Class CompoundTimeString
   #
@@ -40,8 +40,26 @@ module WorkflowMgr
       @str_objects.collect {|obj|
         if obj.is_a?(String)
           obj
-        else 
+        else
           obj.to_s(time)
+        end
+      }.join.strip
+
+    end
+
+
+    #####################################################
+    #
+    # to_s
+    #
+    #####################################################
+    def inspect()
+
+      @str_objects.collect {|obj|
+        if obj.is_a?(String)
+          obj
+        else
+          obj.inspect()
         end
       }.join.strip
 
@@ -57,7 +75,7 @@ module WorkflowMgr
 
       @str_objects.hash
 
-    end 
+    end
 
 
     #####################################################
@@ -75,4 +93,3 @@ module WorkflowMgr
 
 
 end
-

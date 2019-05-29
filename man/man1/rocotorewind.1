@@ -4,10 +4,10 @@
 .\"
 .Dd January 25, 2013
 .Os
-.Dt ROCOTOSTAT 1 CON
+.Dt ROCOTOBOOT 1 CON
 .Sh NAME
-.Nm rocotostat
-.Nd Display status information for a Rocoto workflow
+.Nm rocotorewind
+.Nd undo the effect of running specific jobs
 .Sh SYNOPSIS
 .Nm
 .Op Fl h
@@ -15,27 +15,25 @@
 .Op Fl -version
 .Fl d Ar database_file
 .Fl w Ar workflow_file
-.Op Fl c Ar cyclespec
-.Op Fl t Ar taskspec
-.Op Fl s 
-.Op Fl T
+.Fl t Ar task
+.Fl c Ar cycle
 .Sh DESCRIPTION
 .Nm
-is a tool for querying the status of tasks or cycles in an active Rocoto
-workflow.  The summary level status information provides an overview
-of a workflow's execution progress.  There are  options that can be used
-to query the state of the specific sets of cycles and/or tasks that are
-of interest.  By default,
-.Nm
-will display the state of all tasks in the workflow for the most recently
-activated cycle.  
-.Pp
-The status information displayed for tasks includes: the job id, the task's
-current state, the task's exit status, and the number of task tries.  
-.Pp
-The status information displayed for cycles includes: the cycle's current state,
-when the cycle was activated, and when the cycle was deactivated.
-.Pp
+is a tool that attempts to undo the effect of running jobs.  This
+command is most commonly used to rerun part of a workflow that has
+failed.  It edits the Rocoto database to remove evidence that the job
+is run.  If any <rewind> tags are given for a rewound <task>, then the
+<sh> and <rb> actions within are run.  That allows post-job cleanup,
+if necessary.  If the -a option (all tasks) is given, then the
+database is edited to remove all entries related to the cycle, making
+it as if the cycle had never been run.  The following limitations
+apply:
+.Bl -bullet -offset indent -compact
+.It
+A task cannot be rewound if its state is EXPIRED.
+.It
+A task cannot be rewound for a cycle is EXPIRED.
+.El
 The
 .Nm
 command requires two arguments. The
@@ -44,14 +42,13 @@ flag specifies the name
 of the workflow definition file. The
 .Cm -d
 flag specifies the name of the database file
-that contains the state of the workflow that is to be queried.
+that contains the state of the workflow for the task that is to be rewound.
+.Pp
+Additionally, the rocotorewind will not do anything unless the -c option
+and at least one of -a, -m, or -t are specified.
 .Pp
 The following options are available:
 .Bl -tag -width flag
-.It Fl s
-Print a cycle status summary.
-.It Fl T
-Sort the output by task sequence (the order in which tasks are defined in the workflow definition file) instead of cycle.
 .It Fl -version
 Display the version number and exit.
 .It Fl h, -help
@@ -80,16 +77,14 @@ Include all tasks in the workflow subset.  See
 All Rocoto commands that monitor or modify the workflow can be told to
 run on some subset of that workflow.  Subset specifications use the
 -a, -t, -c, and -m options.  Using multiple options adds to the
-selection.  The rocotostat program will only print information about a
-cycle or task if they're in the selected subset.  By default,
-rocotostat works on all tasks in the latest cycle.
+selection.  The rocotorun program will only submit jobs if they're in
+the selected subset.
 .Pp
 The resulting set is the set union of the -t, -m, and -a option, for
 each cycle selected by the -c option.
 
 .Ss All Tasks: The -a Option
-The -a option has no arguments, and selects all possible tasks.  This
-is the default for rocotostat if no -t or -m options are given.  It is
+The -a option has no arguments, and selects all possible tasks.  It is
 an error to specify -t or -m if the -a option is given.
 
 .Ss Task Subset: The -t Option
@@ -156,9 +151,9 @@ Select all cycles in the specified cycledef.
 .Sh EXAMPLES
 The command:
 .Pp
-.Ic "rocotostat -d foo.db -w foo.xml -t wrf -c 201301010000"
+.Ic "rocotorewind -d foo.db -w foo.xml -t wrf -c 201301010000"
 .Pp
-Will report the status of the
+Will remove from the database
 .Qq wrf
 task for the cycle
 .Qq 201301010000
@@ -166,26 +161,8 @@ defined in the workflow definition file named
 .Qq foo.xml
 and contained in the database file named
 .Qq foo.db
-.Pp
-The command:
-.Pp
-.Ic "rocotostat -d foo.db -w foo.xml -c 201301010000:201301312359 -T"
-.Pp
-Will report the status, sorted by task sequence, of all workflow tasks for all the cycles in January 2013
-defined in the workflow definition file named
-.Qq foo.xml
-and contained in the database file named
-.Qq foo.db
-.Pp
-The command:
-.Pp
-.Ic "rocotostat -d foo.db -w foo.xml -c 201301010000:201301312359 -t '/^post_.*/'"
-.Pp
-Will report the status of all workflow tasks whose name starts with "post_" for all the cycles in January 2013
-defined in the workflow definition file named
-.Qq foo.xml
-and contained in the database file named
-.Qq foo.db
+If the <task> had any <rewind> tags, the rewind actions (<sh> and
+<rb>) within are run.
 .Sh EXIT STATUS
 .Ex -std
 .Sh DOCUMENTATION
@@ -194,8 +171,8 @@ Complete documentation can be found at: http://rdhpcs.noaa.gov/rocoto/
 .Xr rocotoboot 1 ,
 .Xr rocotocomplete 1 ,
 .Xr rocotocheck 1 ,
-.Xr rocotorewind 1 ,
-.Xr rocotorun 1
+.Xr rocotorun 1 ,
+.Xr rocotostat 1
 .Sh STANDARDS
 The
 .Nm

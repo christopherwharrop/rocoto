@@ -23,7 +23,7 @@ module WorkflowMgr
     require 'workflowmgr/slurmbatchsystem'
     require 'workflowmgr/cobaltbatchsystem'
     require 'workflowmgr/task'
-  
+
     ##########################################
     #
     # initialize
@@ -44,7 +44,7 @@ module WorkflowMgr
       @status=Hash.new
 
       # Initialize hash of running threads
-      @threads=Hash.new
+      @running=Hash.new
 
       # Initialize hash to keep track of which submit outputs we've retrieved
       @harvested=Hash.new
@@ -62,23 +62,25 @@ module WorkflowMgr
       # Initialize a thread pool for multithreaded job submission if we don't have one yet
       @pool = Thread.pool(@poolSize) if @pool.nil?
 
-      # Initialize submission status to NOT harvested
-      @harvested[task.attributes[:name]]=Hash.new if @harvested[task.attributes[:name]].nil?
-      @harvested[task.attributes[:name]][cycle.to_i]=false
+      # Initialize hashes for this task
+      @harvested[task.attributes[:name]] = Hash.new if @harvested[task.attributes[:name]].nil?
+      @running[task.attributes[:name]] = Hash.new if @status[task.attributes[:name]].nil?
+      @status[task.attributes[:name]] = Hash.new if @status[task.attributes[:name]].nil?
 
       # Spawn a thread to submit the job
       @pool.process do
 
+        # Initialize submission status to NOT harvested
+        @harvested[task.attributes[:name]][cycle.to_i]=false
+
         # Mark this job submission in progress
-        @threads[task.attributes[:name]] = Hash.new if @status[task.attributes[:name]].nil?
-        @threads[task.attributes[:name]][cycle.to_i] = true
+        @running[task.attributes[:name]][cycle.to_i] = true
 
         # Submit the job
-        @status[task.attributes[:name]]=Hash.new if @status[task.attributes[:name]].nil?
         @status[task.attributes[:name]][cycle.to_i]=@batchsystem.submit(task)
 
         # Mark this job submission as done
-        @threads[task.attributes[:name]][cycle.to_i] = false
+        @running[task.attributes[:name]][cycle.to_i] = false
 
       end
 
@@ -93,12 +95,12 @@ module WorkflowMgr
     def get_submit_status(taskid,cycle)
 
       # Return nil for jobid and output if the submit thread doesn't exist
-      return nil,nil if @threads[taskid].nil?
-      return nil,nil if @threads[taskid][cycle.to_i].nil?
+      return nil,nil if @running[taskid].nil?
+      return nil,nil if @running[taskid][cycle.to_i].nil?
 
       # Return nil for jobid and output	if the submit thread is still running
-      if @threads[taskid][cycle.to_i]
-        return nil,nil 
+      if @running[taskid][cycle.to_i]
+        return nil,nil
       # Otherwise, get the jobid and output and return it
       else
         status=@status[taskid][cycle.to_i]
@@ -121,9 +123,9 @@ module WorkflowMgr
     def running?
 
       # Check to see if any threads are still running
-      @threads.keys.each do |taskid|
-        @threads[taskid].keys.each do |cycle|
-          return true if @threads[taskid][cycle.to_i]
+      @running.keys.each do |taskid|
+        @running[taskid].keys.each do |cycle|
+          return true if @running[taskid][cycle.to_i]
         end
       end
 
@@ -135,7 +137,7 @@ module WorkflowMgr
       end
 
       return false
- 
+
     end
 
 

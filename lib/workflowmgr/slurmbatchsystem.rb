@@ -6,6 +6,7 @@
 module WorkflowMgr
 
   require 'workflowmgr/batchsystem'
+  require 'date'
 
   ##########################################
   #
@@ -17,6 +18,7 @@ module WorkflowMgr
     require 'etc'
     require 'parsedate'
     require 'libxml'
+    require 'securerandom'
     require 'workflowmgr/utilities'
 
     #####################################################
@@ -31,6 +33,7 @@ module WorkflowMgr
 
       # Initialize an empty hash for job accounting records
       @jobacct={}
+      @jobacct_duration=0
 
       # Assume the scheduler is up
       @schedup=true
@@ -56,7 +59,13 @@ module WorkflowMgr
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
         # Populate the job accounting log table if it is empty
-        refresh_jobacct if @jobacct.empty?
+        refresh_jobacct(1) if @jobacct_duration<1
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
+        # Now re-populate over a longer history:
+        refresh_jobacct(5) if @jobacct_duration<5
 
         # Return the jobacct record if there is one
         return @jobacct[jobid] if @jobacct.has_key?(jobid)
@@ -67,6 +76,57 @@ module WorkflowMgr
       rescue WorkflowMgr::SchedulerDown
         @schedup=false
         return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+      end
+
+    end
+
+
+    #####################################################
+    #
+    # statuses
+    #
+    #####################################################
+    def statuses(jobids)
+
+      begin
+
+        raise WorkflowMgr::SchedulerDown unless @schedup
+
+        # Initialize statuses to UNAVAILABLE
+        jobStatuses={}
+        jobids.each do |jobid|
+          jobStatuses[jobid] = { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
+        end
+
+        # Populate the job status table if it is empty
+        refresh_jobqueue(jobids) if @jobqueue.empty?
+
+        # Check to see if status info is missing for any job and populate jobacct record if necessary
+        if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
+            refresh_jobacct(1) if @jobacct_duration<1
+
+            # Check again, and re-populate over a longer history if necessary
+            if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+              refresh_jobacct(5) if @jobacct_duration<5
+            end
+        end
+
+        # Collect the statuses of the jobs
+        jobids.each do |jobid|
+          if @jobqueue.has_key?(jobid)
+            jobStatuses[jobid] = @jobqueue[jobid]
+          elsif @jobacct.has_key?(jobid)
+            jobStatuses[jobid] = @jobacct[jobid]
+          else
+            # We didn't find the job, so return an uknown status record
+            jobStatuses[jobid] = { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
+          end
+        end
+
+      rescue WorkflowMgr::SchedulerDown
+        @schedup=false
+      ensure
+        return jobStatuses
       end
 
     end
@@ -85,21 +145,36 @@ module WorkflowMgr
 
       # Add Slurm batch system options translated from the generic options specification
       task.attributes.each do |option,value|
+        if value.is_a?(String)
+           if value.empty?
+             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+             next
+           end
+        end
         case option
           when :account
-            input += "#SBATCH --account #{value}\n"
-          when :queue            
-            input += "#SBATCH -p #{value}\n"
+            input += "#SBATCH --account=#{value}\n"
+          when :queue
+            input += "#SBATCH --qos=#{value}\n"
+          when :partition
+            input += "#SBATCH --partition=#{value.gsub(":",",")}\n"
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
             input += "#SBATCH --ntasks=#{value}\n"
           when :nodes
-            # Arbitrary processor geometry is not support by sbatch (it is supported by srun)
-            # Request number of nodes and tasks per node large enough to accommodate nodespec
-            # Get the total number of nodes and the maximum ppn
+            # Rocoto does not currently support Slurm heterogeneous jobs.  However, it does
+            # support requests for non-uniform processor geometries.  To accomplish this,
+            # Rocoto will use sbatch to submit a job with the smallest uniform resource
+            # request that can accommodate the non-uniform request.  It is up to the user to
+            # use the appropriate tools to manipulate the host file and use the appropriate
+            # MPI launcher command to specify the desired processor layout for the executable
+            #  in the job script.
+
+            # Get the total nodes and max ppn requested
             maxppn=1
             nnodes=0
+            tpp=0
             nodespecs=value.split("+")
             nodespecs.each { |nodespec|
               resources=nodespec.split(":")
@@ -122,19 +197,27 @@ module WorkflowMgr
             # Request max tasks per node
             input += "#SBATCH --tasks-per-node=#{maxppn}\n"
 
-            # Make sure exclusive access to nodes is enforced
-            input += "#SBATCH --exclusive\n"
+            # Request cpus per task if only one nodespec is specified and tpp was specified
+            if nodespecs.size == 1 && !tpp.zero?
+              input += "#SBATCH --cpus-per-task=#{tpp}\n"
+            end
 
             # Print a warning if multiple nodespecs are specified
             if nodespecs.size > 1
-              WorkflowMgr.stderr("WARNING: SLURM does not support multiple types of node requests for batch jobs",1)
-              WorkflowMgr.stderr("WARNING: You must use the -m option of the srun command in your script to launch your code with an arbitrary distribution of tasks",1)
-              WorkflowMgr.stderr("WARNING: Please see https://computing.llnl.gov/linux/slurm/faq.html#arbitrary for details",1)
-              WorkflowMgr.stderr("WARNING: Rocoto has automatically converted '#{value}' to '#{nnodes}:ppn=#{maxppn}' to facilitate the desired arbitrary task distribution",1)
-              WorkflowMgr.stderr("WARNING: Use <nodes>#{nnodes}:ppn=#{maxppn}</nodes> in your workflow to eliminate this warning message.",1)
+              WorkflowMgr.stderr("WARNING: Rocoto does not support Slurm's heterogeneous job feature.  However, Rocoto", 1)
+              WorkflowMgr.stderr("WARNING: does support Slurm requests for non-unifortm task geometries.  It does this by", 1)
+              WorkflowMgr.stderr("WARNING: converting non-uniform requests into the smallest uniform task geometry", 1)
+              WorkflowMgr.stderr("WARNING: request that can accommodate the non-uniform one during batch job submission.", 1)
+              WorkflowMgr.stderr("WARNING: It is up to the user to use the -m option of the srun command, or other", 1)
+              WorkflowMgr.stderr("WARNING: appropriate tools, in the job script to launch executables with an arbitrary", 1)
+              WorkflowMgr.stderr("WARNING: distribution of tasks.", 1)
+              WorkflowMgr.stderr("WARNING: Please see https://slurm.schedmd.com/faq.html#arbitrary for details", 1)
+              WorkflowMgr.stderr("WARNING: Rocoto has automatically converted '#{value}' to '#{nnodes}:ppn=#{maxppn}' for this job", 1)
+              WorkflowMgr.stderr("WARNING: to facilitate the desired arbitrary task distribution.  Use", 1)
+              WorkflowMgr.stderr("WARNING: <nodes>#{nnodes}:ppn=#{maxppn}</nodes> in your workflow to eliminate this warning message.", 1)
             end
 
-           when :walltime
+          when :walltime
             # Make sure format is dd-hh:mm:ss if days are included
             input += "#SBATCH -t #{value.sub(/^(\d+):(\d+:\d+:\d+)$/,'\1-\2')}\n"
           when :memory
@@ -161,15 +244,19 @@ module WorkflowMgr
           when :stderr
             input += "#SBATCH -e #{value}\n"
           when :join
-            input += "#SBATCH -o #{value}\n"           
+            input += "#SBATCH -o #{value}\n"
           when :jobname
-            input += "#SBATCH --job-name #{value}\n"
+            input += "#SBATCH --job-name=#{value}\n"
         end
       end
 
       task.each_native do |value|
         input += "#SBATCH #{value}\n"
       end
+
+      # Add secret identifier for later retrieval
+      randomID = SecureRandom.hex
+      input += "#SBATCH --comment=#{randomID}\n"
 
       # Add export commands to pass environment vars to the job
       unless task.envars.empty?
@@ -179,7 +266,6 @@ module WorkflowMgr
         }
         input += varinput
       end
-      input+="set -x\n"
 
       # Add the command to execute
       input += task.attributes[:command]
@@ -189,15 +275,64 @@ module WorkflowMgr
       tf.write(input)
       tf.flush()
 
-      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input {{#{input}}}",4)
+      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input\n{{\n#{input}\n}}", 4)
 
       # Run the submit command
       output=`#{cmd} < #{tf.path} 2>&1`.chomp()
 
       # Parse the output of the submit command
-      if output=~/^Submitted batch job (\d+)$/
+      if output=~/^Submitted batch job (\d+)/
         return $1,output
+      elsif output=~/Batch job submission failed: Socket timed out/
+
+        WorkflowMgr.stderr("WARNING: '#{output}', looking to see if job was submitted anyway...", 1)
+        queued_jobs=""
+        errors=""
+        exit_status=0
+        begin
+
+          # Get the username of this process
+          username=Etc.getpwuid(Process.uid).name
+
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", 45)
+
+          # Raise SchedulerDown if the command failed
+          raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+
+          # Return if the output is empty
+          return nil,output if queued_jobs.empty?
+
+        rescue Timeout::Error,WorkflowMgr::SchedulerDown
+          WorkflowMgr.log("#{$!}")
+          WorkflowMgr.stderr("#{$!}",3)
+          raise WorkflowMgr::SchedulerDown
+        end
+          
+        # Make sure queued_jobs is properly encoded
+        if String.method_defined? :encode
+          queued_jobs = queued_jobs.encode('UTF-8', 'binary', {:invalid => :replace, :undef => :replace, :replace => ''})
+        end
+
+        # Look for a job that matches the randomID we inserted into the comment
+        queued_jobs.split("\n").each { |job|
+
+          # Skip headers
+          next if job=~/CLUSTER/
+          next if job=~/JOBID/
+
+          # Extract job id
+          jobid=job[0..39].strip
+
+          # Extract randomID
+          if randomID == job[40..71].strip
+            WorkflowMgr.log("WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} after sbatch failed with socket time out")
+            WorkflowMgr.stderr("WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} after sbatch failed with socket time out",1)
+            return jobid, output
+          end
+        }
+
       else
+        WorkflowMgr.stderr("WARNING: job submission failed: #{output}", 1)
         return nil,output
       end
 
@@ -211,7 +346,7 @@ module WorkflowMgr
     #####################################################
     def delete(jobid)
 
-      qdel=`scancel #{jobid}`      
+      qdel=`scancel #{jobid}`
 
     end
 
@@ -223,7 +358,7 @@ private
     # refresh_jobqueue
     #
     #####################################################
-    def refresh_jobqueue
+    def refresh_jobqueue(jobids)
 
       begin
 
@@ -234,7 +369,13 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("scontrol -o show job",30)
+
+        if jobids.nil? or jobids.join(',').length>64
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
+        else
+          joblist = jobids.join(",")
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
+        end
 
         # Raise SchedulerDown if the command failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -248,73 +389,81 @@ private
         raise WorkflowMgr::SchedulerDown
       end
 
+      # Make sure queued_jobs is properly encoded
+      if String.method_defined? :encode
+        queued_jobs = queued_jobs.encode('UTF-8', 'binary', {:invalid => :replace, :undef => :replace, :replace => ''})
+      end
+
       # For each job, find the various attributes and create a job record
       queued_jobs.split("\n").each { |job|
 
+        # Skip headings
+        next if job[0..4] == 'JOBID'
+        next if job[0..7] == 'CLUSTER:'
+
         # Initialize an empty job record
-  	record={}
+        record={}
 
-  	# Look at all the attributes for this job and build the record
-	jobfields=Hash[job.split.collect {|f| f.split("=") }]
-
-        # Skip records for other users
-        next unless jobfields["UserId"] =~/^#{username}\(/
-
-        # Extract job id        
-        record[:jobid]=jobfields["JobId"]
+        # Extract job id
+        record[:jobid]=job[0..39].strip
 
         # Extract job name
-        record[:jobname]=jobfields["Name"]
+        record[:jobname]=job[270..job.length].strip
 
         # Extract job owner
-        record[:user]=jobfields["UserId"].split("(").first
+        record[:user]=job[40..79].strip
 
         # Extract core count
-        record[:cores]=jobfields["NumCPUs"].to_i
+        record[:cores]=job[80..89].strip.to_i
 
         # Extract the partition
-        record[:queue]=jobfields["Partition"]
+        record[:queue]=job[90..109].strip
 
         # Extract the submit time
-        record[:submit_time]=Time.local(*jobfields["SubmitTime"].split(/[-:T]/)).getgm
+        record[:submit_time]=Time.local(*job[110..139].strip.split(/[-:T]/)).getgm
 
         # Extract the start time
-        record[:start_time]=Time.local(*jobfields["StartTime"].split(/[-:T]/)).getgm
+        record[:start_time]=Time.local(*job[140..169].strip.split(/[-:T]/)).getgm
 
         # Extract the end time
-        record[:end_time]=Time.local(*jobfields["EndTime"].split(/[-:T]/)).getgm
+        record[:end_time]=Time.local(*job[170..199].strip.split(/[-:T]/)).getgm
 
         # Extract the priority
-        record[:priority]=jobfields["Priority"]
+        record[:priority]=job[200..229].strip
 
         # Extract the exit status
-        code,signal=jobfields["ExitCode"].split(":").collect {|i| i.to_i}
-        if code==0
-          record[:exit_status]=signal
+        code_signal=job[230..239].strip
+        if code_signal=~ /:/
+
+          code,signal=core_signal.split(":").collect {|i| i.to_i}
+          if code==0
+            record[:exit_status]=signal
+          else
+            record[:exit_status]=code
+          end
         else
-          record[:exit_status]=code
-        end            
+          record[:exit_status]=code_signal.to_i
+        end
 
         # Extract job state
-        case jobfields["JobState"]       
-          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
+        case job[240..269].strip
+          when /^(CONFIGURING|PENDING|SUSPENDED|RESV_DEL_HOLD|REQUEUE_FED|REQUEUE_HOLD|REQUEUED|SPECIAL_EXIT|SUSPENDED)$/
             record[:state]="QUEUED"
-          when /^RUNNING$/,/^COMPLETING$/
+          when /^(RUNNING|COMPLETING|RESIZING|SIGNALING|STAGE_OUT|STOPPED)$/
             record[:state]="RUNNING"
-          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/
+          when /^(CANCELLED|FAILED|NODE_FAIL|PREEMPTED|TIMEOUT|BOOT_FAIL|DEADLINE|OUT_OF_MEMORY|REVOKED)$/
             record[:state]="FAILED"
             record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
           when /^COMPLETED$/
             if record[:exit_status]==0
               record[:state]="SUCCEEDED"
-            else    
+            else
               record[:state]="FAILED"
             end
           else
             record[:state]="UNKNOWN"
         end
-        record[:native_state]=jobfields["JobState"]
-
+        record[:native_state]=job[240..269].strip
         # Add record to job queue
         @jobqueue[record[:jobid]]=record
 
@@ -328,7 +477,9 @@ private
     # refresh_jobacct
     #
     #####################################################
-    def refresh_jobacct
+    def refresh_jobacct(delta_days)
+
+      @jobacct_duration=delta_days
 
       begin
 
@@ -339,7 +490,9 @@ private
         completed_jobs=""
         errors=""
         exit_status=0
-        completed_jobs,errors,exit_status=WorkflowMgr.run4("sacct -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P",30)
+        mmddyy=(DateTime.now-delta_days).strftime('%m%d%y')
+        cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
+        completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,45)
 
         return if errors=~/SLURM accounting storage is disabled/
 
@@ -359,15 +512,15 @@ private
       completed_jobs.split("\n").each { |job|
 
         # Initialize an empty job record
-  	record={}
+        record={}
 
-  	# Look at all the attributes for this job and build the record
-	jobfields=job.split("|")
+        # Look at all the attributes for this job and build the record
+        jobfields=job.split("|")
 
         # Skip records for other users
         next unless jobfields[1] =~/^\s*#{username}$/
 
-        # Extract job id        
+        # Extract job id
         record[:jobid]=jobfields[0]
 
         # Extract job name
@@ -400,21 +553,21 @@ private
           record[:exit_status]=signal
         else
           record[:exit_status]=code
-        end            
+        end
 
         # Extract job state
-        case jobfields[10]       
-          when /^CONFIGURING$/,/^PENDING$/,/^SUSPENDED$/
+        case jobfields[10]
+          when /^(CONFIGURING|PENDING|SUSPENDED|RESV_DEL_HOLD|REQUEUE_FED|REQUEUE_HOLD|REQUEUED|SPECIAL_EXIT|SUSPENDED)$/
             record[:state]="QUEUED"
-          when /^RUNNING$/,/^COMPLETING$/
+          when /^(RUNNING|COMPLETING|RESIZING|SIGNALING|STAGE_OUT|STOPPED)$/
             record[:state]="RUNNING"
-          when /^CANCELLED$/,/^FAILED$/,/^NODE_FAIL$/,/^PREEMPTED$/,/^TIMEOUT$/
+          when /^(CANCELLED|FAILED|NODE_FAIL|PREEMPTED|TIMEOUT|BOOT_FAIL|DEADLINE|OUT_OF_MEMORY|REVOKED)$/
             record[:state]="FAILED"
             record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
           when /^COMPLETED$/
             if record[:exit_status]==0
               record[:state]="SUCCEEDED"
-            else    
+            else
               record[:state]="FAILED"
             end
           else
@@ -432,4 +585,3 @@ private
   end  # class
 
 end  # module
-

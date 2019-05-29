@@ -439,14 +439,37 @@
           </element>
         </optional>
 
-        <!-- Either one cores tag or one nodes tag-->
-        <choice>
-          <element name="cores">
-            <data type="positiveInteger"/>
-          </element>
-          <element name="nodes">
+        <!-- Zero or one partition tag -->
+        <optional>
+          <element name="partition">
             <data type="string"/>
           </element>
+        </optional>
+
+        <!-- Either one cores tag or one nodes or at least one native tag is required-->
+        <choice>
+          <interleave>
+	    <choice>
+	      <element name="cores">
+		<data type="positiveInteger"/>
+	      </element>
+	      <element name="nodes">
+		<data type="string"/>
+	      </element>
+	    </choice>
+	    <optional>
+              <oneOrMore>
+	        <element name="native">
+		  <ref name="compoundTimeString"/>
+	        </element>
+              </oneOrMore>
+	    </optional>
+          </interleave>
+          <oneOrMore>
+            <element name="native">
+              <ref name="compoundTimeString"/>
+            </element>
+          </oneOrMore>
         </choice>
 
         <!-- One walltime tag -->
@@ -490,15 +513,6 @@
           <element name="jobname">
             <ref name="compoundTimeString"/>
           </element>
-        </optional>
-
-        <!-- Zero or more native tags -->
-        <optional>
-          <oneOrMore>
-            <element name="native">
-              <ref name="compoundTimeString"/>
-            </element>
-          </oneOrMore>
         </optional>
 
         <!-- Optional nodesize tag -->
