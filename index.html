@@ -539,7 +539,7 @@ The name attribute</p>
 <h2>
 <a id="the-cores-tag" class="anchor" href="#the-cores-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;cores&gt; tag</h2>
 
-<p>Every &lt;task&gt; tag must contain either one &lt;cores&gt; tag or one &lt;nodes&gt; (see below) tag. The &lt;cores&gt; tag defines the number of cores that Rocoto will request when submitting the task for execution.</p>
+<p>Every &lt;task&gt; tag must contain one &lt;cores&gt; tag, one &lt;nodes&gt; (see below) tag, or one &lt;native&gt; (see below) tag. The &lt;cores&gt; tag defines the number of cores that Rocoto will request when submitting the task for execution.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
@@ -557,7 +557,7 @@ The name attribute</p>
 <h2>
 <a id="the-nodes-tag-version-11-and-higher" class="anchor" href="#the-nodes-tag-version-11-and-higher" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;nodes&gt; tag (version 1.1 and higher)</h2>
 
-<p>Every &lt;task&gt; tag must contain either one &lt;nodes&gt; tag or one &lt;cores&gt; (see above) tag. The &lt;nodes&gt; tag defines the task geometry (a list of node counts and cores per node) that Rocoto will request when submitting the task for execution. The &lt;cores&gt; tag should always be preferred. The &lt;nodes&gt; tag should only be used if the task has a requirement to use less than all of the available cores on at least one of its nodes. The &lt;nodes&gt; tag is primarily intended to support OpenMP/MPI hybrid codes, MPMD codes that consist of multiple components that must not share nodes, and parallel codes that require some ranks to be on their own nodes for memory consumption reasons.</p>
+<p>Every &lt;task&gt; tag must contain one &lt;nodes&gt; tag, one &lt;cores&gt; (see above) tag, or one &lt;native&gt; (see below) tag. The &lt;nodes&gt; tag defines the task geometry (a list of node counts and cores per node) that Rocoto will request when submitting the task for execution. The &lt;cores&gt; tag should always be preferred. The &lt;nodes&gt; tag should only be used if the task has a requirement to use less than all of the available cores on at least one of its nodes. The &lt;nodes&gt; tag is primarily intended to support OpenMP/MPI hybrid codes, MPMD codes that consist of multiple components that must not share nodes, and parallel codes that require some ranks to be on their own nodes for memory consumption reasons.</p>
 
 <p>The format of the contents of the &lt;nodes&gt; tag is very similar to the syntax of the Moab/Torque "-l nodes=..." option. The differences are that the "ppn" (processes per node) is always required, and there is an optional "tpp" (threads per process) that should be used for OpenMP/MPI hybrid tasks. The format of &lt;nodes&gt; is easiest to illustrate with examples.</p>
 
@@ -740,7 +740,9 @@ The name attribute</p>
 <h2>
 <a id="the-native-tag" class="anchor" href="#the-native-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;native&gt; tag</h2>
 
-<p>This tag may be used to define raw batch system options that Rocoto will use when submitting jobs for this &lt;task&gt;. This is useful in cases where an option is required but is not (yet) implemented as a generic tag. For example, this can be used when requesting advanced reservations or partitions). Multiple instances of &lt;native&gt; are not allowed. If more than one native option is required, all of them must be specified within a single &lt;native&gt; tag.</p>
+<p>This tag may be used to define raw batch system options that Rocoto will use when submitting jobs for this &lt;task&gt;. This is useful in cases where an option is required but is not (yet) implemented as a generic tag. For example, this can be used when requesting advanced reservations. Multiple instances of &lt;native&gt; are not allowed. If more than one native option is required, all of them must be specified within a single &lt;native&gt; tag.</p>
+
+<p>Starting in version 1.3.0, &lt;native&gt; may be used in lieu of &lt;cores&gt; and &lt;nodes&gt; to request complex resources that requires specifying names of consumable resources.</p>
 
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
