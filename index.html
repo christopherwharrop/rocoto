@@ -491,7 +491,7 @@ The name attribute</p>
 </code></pre>
 
 <h2>
-<a id="the--tag" class="anchor" href="#the--tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;account&gt; tag</h2>
+<a id="the-account-tag" class="anchor" href="#the-account-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;account&gt; tag</h2>
 
 <p>Every &lt;task&gt; tag should contain a &lt;account&gt; tag. However, it is optional to allow for situations where a default may be used. This defines the batch system account/project that Rocoto will use when submitting the task to the batch system for execution. This is usually not the same thing as the user's login name.</p>
 
@@ -507,8 +507,8 @@ The name attribute</p>
 <h2>
 <a id="the-queue-tag" class="anchor" href="#the-queue-tag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;queue&gt; tag</h2>
 
-<p>Every &lt;task&gt; tag should contain a &lt;queue&gt; tag. However, it is optional to allow for situations where a default may be used. This defines the batch system queue that Rocoto will submit the task to for execution. The queue name is inherently machine specific.</p>
-
+<p>Every &lt;task&gt; tag should contain a &lt;queue&gt; tag. However, it is optional to allow for situations where a default may be used. This defines the batch system queue or QOS that Rocoto will submit the task to for execution. The queue/QOS name is inherently machine specific.</p>        
+          
 <pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
 
      &lt;command&gt;&lt;cyclestr&gt;&amp;SCRIPTS;/wrf.ksh -c @Y@m@d@H&lt;/cyclestr&gt;&lt;/command&gt;
@@ -516,6 +516,22 @@ The name attribute</p>
      &lt;account&gt;dtc&lt;/account&gt;
 
      &lt;queue&gt;nserial&lt;/queue&gt;
+
+  &lt;/task &gt;
+</code></pre>
+
+<h2>
+<a id="the-partition-tag-version-130-and-higher" class="anchor" href="#the-partition-tag-version-130-and-higher" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The &lt;partition&gt; tag (version 1.3.0 and higher)</h2>
+
+<p>A &lt;task&gt; tag may contain a &lt;partition&gt; tag for use on batch systems that support partitions (SGE, Moab, Torque, Slurm). This defines the batch system partition that Rocoto will submit the task to for execution. The partition name is inherently machine specific.</p>        
+          
+<pre><code>  &lt;task name="wrf" cycledefs="3hourly,6hrlyJanFeb" maxtries="3"&gt;
+
+     &lt;command&gt;&lt;cyclestr&gt;&amp;SCRIPTS;/wrf.ksh -c @Y@m@d@H&lt;/cyclestr&gt;&lt;/command&gt;
+
+     &lt;account&gt;dtc&lt;/account&gt;
+
+     &lt;partition&gt;service&lt;/partition&gt;
 
   &lt;/task &gt;
 </code></pre>
