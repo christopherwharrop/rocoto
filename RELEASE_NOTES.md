@@ -3,6 +3,8 @@
 ## New for Version 1.3.0
 
 * Update SLURM support to handle pack groups
+* Update SLURM support to map `<queue>` to --qos instead of --partition
+* Update SLURM support to map `<partition>` to --partition
 * Update LSF support to handle additional methods LSF uses to report the exit status
 * All rocoto commands have the same -a, -c, -m, and -t options
 * The -c and -t options can now select by cycledefs and attributes (ie. final)

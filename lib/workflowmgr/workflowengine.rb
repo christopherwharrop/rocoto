@@ -499,7 +499,9 @@ module WorkflowMgr
                       # Roll the log file (if it already exists)
                       @workflowIOServer.roll_log(value)
                     end
-                    @workflowIOServer.mkdir_p(outdir)
+                    unless outdir.empty?
+                      @workflowIOServer.mkdir_p(outdir)
+                    end
                 end
               end
 
@@ -1613,7 +1615,7 @@ module WorkflowMgr
       expired_cycles.each do |cycle|
         @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle.cycle].nil?
-          unless @active_jobs[taskname][cycle.cycle].state == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle].state == "FAILED" || @active_jobs[taskname][cycle.cycle].state == "DEAD" || @active_jobs[taskname][cycle.cycle].state == "EXPIRED"
+          unless @active_jobs[taskname][cycle.cycle].state == "SUCCEEDED" || @active_jobs[taskname][cycle.cycle].state == "FAILED" || @active_jobs[taskname][cycle.cycle].state == "DEAD" || @active_jobs[taskname][cycle.cycle].state == "EXPIRED" || @active_jobs[taskname][cycle.cycle].state == "SUBMITTING"
             @logServer.log(cycle.cycle,"Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle].id} because this cycle has expired!")
             @bqServer.delete(@active_jobs[taskname][cycle.cycle].id)
           end
