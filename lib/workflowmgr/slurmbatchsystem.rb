@@ -289,6 +289,10 @@ module WorkflowMgr
         queued_jobs=""
         errors=""
         exit_status=0
+
+        # Wait a few seconds for information to propagate before trying to look if job was still submitted
+        sleep(5)
+
         begin
 
           # Get the username of this process
@@ -316,9 +320,9 @@ module WorkflowMgr
         # Look for a job that matches the randomID we inserted into the comment
         queued_jobs.split("\n").each { |job|
 
-          # Skip headers
-          next if job=~/CLUSTER/
-          next if job=~/JOBID/
+          # Skip headings
+          next if job[0..4] == 'JOBID'
+          next if job[0..7] == 'CLUSTER:'
 
           # Extract job id
           jobid=job[0..39].strip
@@ -330,6 +334,10 @@ module WorkflowMgr
             return jobid, output
           end
         }
+
+        WorkflowMgr.stderr("WARNING: Unable to retrieve jobid after sbatch failed with socket time out when submitting #{task.attributes[:name]}",1)
+
+        return nil,output
 
       else
         WorkflowMgr.stderr("WARNING: job submission failed: #{output}", 1)
