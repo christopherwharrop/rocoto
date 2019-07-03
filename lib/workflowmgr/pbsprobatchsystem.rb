@@ -231,7 +231,6 @@ module WorkflowMgr
                  ompthreads=$1.to_i
                end
                input += chunk.gsub(/ppn=\d+/,"mpiprocs=#{mpiprocs}").gsub(/tpp=\d+/,"ompthreads=#{ompthreads}")
-#               input += ":ncpus=#{nodesize}"
                input += ":ncpus=#{mpiprocs * ompthreads}"
                input += ":mem=#{task.attributes[:memory]}" unless task.attributes[:memory].nil?
                input += "+"
