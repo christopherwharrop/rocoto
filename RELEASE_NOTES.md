@@ -1,5 +1,10 @@
 # Release Notes
 
+## New for Version 1.3.1
+
+* Fix XML validation bug that caused sensitivity to ordering of tags
+* Fix <nodes> handling for PBSPro to allow specificaiton of node features 
+
 ## New for Version 1.3.0
 
 * Update SLURM support to handle pack groups

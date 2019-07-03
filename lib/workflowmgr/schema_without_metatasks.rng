@@ -446,31 +446,22 @@
           </element>
         </optional>
 
-        <!-- Either one cores tag or one nodes or at least one native tag is required-->
+        <!-- Either one cores tag or one nodes tag is required-->
         <choice>
-          <interleave>
-	    <choice>
-	      <element name="cores">
-		<data type="positiveInteger"/>
-	      </element>
-	      <element name="nodes">
-		<data type="string"/>
-	      </element>
-	    </choice>
-	    <optional>
-              <oneOrMore>
-	        <element name="native">
-		  <ref name="compoundTimeString"/>
-	        </element>
-              </oneOrMore>
-	    </optional>
-          </interleave>
-          <oneOrMore>
-            <element name="native">
-              <ref name="compoundTimeString"/>
-            </element>
-          </oneOrMore>
-        </choice>
+	    <element name="cores">
+	      <data type="positiveInteger"/>
+	    </element>
+	    <element name="nodes">
+	      <data type="string"/>
+	    </element>
+	</choice>
+
+        <!-- Zero or more native tags -->
+	<zeroOrMore>
+	  <element name="native">
+	    <ref name="compoundTimeString"/>
+	  </element>
+	</zeroOrMore>
 
         <!-- One walltime tag -->
         <element name="walltime">
