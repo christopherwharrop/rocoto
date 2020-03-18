@@ -1135,13 +1135,15 @@ If no units are specified, the units are bytes.</p>
 
 <p>There are several boolean operators that may be used to compose boolean expressions of dependencies. The operators and the operands (&lt;taskdep&gt;, &lt;datadep&gt;, &lt;timedep&gt;) can be combined without limit. The following lists the functions of the operators:</p>
 
-<p> &lt;and&gt; Satisfied if all enclosed dependencies are satisfied
-<p> &lt;or&gt; Satisfied if at least one of the enclosed dependencies is satisfied
-<p> &lt;not&gt;  Satisfied if the enclosed dependency is not satisfied
-<p> &lt;nand&gt; Satisfied if at least one of the enclosed dependencies is not satisfied
-<p> &lt;nor&gt; Satisfied if none of the enclosed dependencies are satisfied
-<p> &lt;xor&gt; Satisfied if exactly one of the enclosed dependencies is satisfied
-<p> &lt;and&gt; Satisfied if the fraction of enclosed dependencies that are satisfied exceeds some threshold (0 &lt;= threshold &lt;=1)</p>
+<pre><code>
+&lt;and&gt;  - Satisfied if all enclosed dependencies are satisfied
+&lt;or&gt;   - Satisfied if at least one of the enclosed dependencies is satisfied
+&lt;not&gt;  - Satisfied if the enclosed dependency is not satisfied
+&lt;nand&gt; - Satisfied if at least one of the enclosed dependencies is not satisfied
+&lt;nor&gt;  - Satisfied if none of the enclosed dependencies are satisfied
+&lt;xor&gt;  - Satisfied if exactly one of the enclosed dependencies is satisfied
+&lt;and&gt;  - Satisfied if the fraction of enclosed dependencies that are satisfied exceeds some threshold (0 &lt;= threshold &lt;=1)</p>
+</code></pre>
 
 <p>The example below illustrates how a complex dependency can be created. The example says "start this task if it is at least 25 minutes past the cycle time, and either (1) it is at least 50 minutes past the cycle time, or (2) the one hour forecast is available, or (3) It is at least 45 minutes past the cycle time and at least one of the 2,3,4,5, or 6 hour forecasts is available"</p>
 
