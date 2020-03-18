@@ -1141,7 +1141,7 @@ If no units are specified, the units are bytes.</p>
 &lt;nand&gt; - Satisfied if at least one of the enclosed dependencies is not satisfied
 &lt;nor&gt;  - Satisfied if none of the enclosed dependencies are satisfied
 &lt;xor&gt;  - Satisfied if exactly one of the enclosed dependencies is satisfied
-&lt;some&gt;  - Satisfied if the fraction of enclosed dependencies that are satisfied exceeds some threshold (0 &lt;= threshold &lt;=1)
+&lt;some threshold="n"&gt;  - Satisfied if the fraction of enclosed dependencies that are satisfied exceeds some threshold (0 &lt;= threshold &lt;=1)
 </code></pre>
 
 <p>The example below illustrates how a complex dependency can be created. The example says "start this task if it is at least 25 minutes past the cycle time, and either (1) it is at least 50 minutes past the cycle time, or (2) the one hour forecast is available, or (3) It is at least 45 minutes past the cycle time and at least one of the 2,3,4,5, or 6 hour forecasts is available"</p>
