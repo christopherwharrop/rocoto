@@ -302,12 +302,11 @@ module WorkflowMgr
 
           # Don't raise SchedulerDown if the command failed, otherwise
           # jobs that have moved to sacct will be missed.
-          #raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
           # Return if the output is empty
           return nil,output if queued_jobs.empty?
 
-        rescue Timeout::Error,WorkflowMgr::SchedulerDown
+        rescue Timeout::Error
           WorkflowMgr.log("#{$!}")
           WorkflowMgr.stderr("#{$!}",3)
           raise WorkflowMgr::SchedulerDown
@@ -388,12 +387,11 @@ private
 
         # Don't raise SchedulerDown if the command failed, otherwise
         # jobs that have moved to sacct will be missed
-        # raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
 
         # Return if the output is empty
         return if queued_jobs.empty?
 
-      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+      rescue Timeout::Error
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
