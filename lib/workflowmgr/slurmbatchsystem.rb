@@ -300,13 +300,13 @@ module WorkflowMgr
 
           queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", 45)
 
-          # Raise SchedulerDown if the command failed
-          raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+          # Don't raise SchedulerDown if the command failed, otherwise
+          # jobs that have moved to sacct will be missed.
 
           # Return if the output is empty
           return nil,output if queued_jobs.empty?
 
-        rescue Timeout::Error,WorkflowMgr::SchedulerDown
+        rescue Timeout::Error
           WorkflowMgr.log("#{$!}")
           WorkflowMgr.stderr("#{$!}",3)
           raise WorkflowMgr::SchedulerDown
@@ -385,13 +385,13 @@ private
           queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
         end
 
-        # Raise SchedulerDown if the command failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+        # Don't raise SchedulerDown if the command failed, otherwise
+        # jobs that have moved to sacct will be missed
 
         # Return if the output is empty
         return if queued_jobs.empty?
 
-      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+      rescue Timeout::Error
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
