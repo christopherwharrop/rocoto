@@ -21,6 +21,15 @@ module WorkflowMgr
     require 'securerandom'
     require 'workflowmgr/utilities'
 
+    @@features = {
+      :shared => true,
+      :exclusive => true
+    }
+
+    def self.feature?(flag)
+      return !!@@features[flag]
+    end
+
     #####################################################
     #
     # initialize
@@ -152,6 +161,10 @@ module WorkflowMgr
            end
         end
         case option
+          when :exclusive
+            if task.attributes[:shared].nil? or not task.attributes[:shared]
+              input += "#SBATCH --exclusive\n"
+            end
           when :account
             input += "#SBATCH --account=#{value}\n"
           when :queue
