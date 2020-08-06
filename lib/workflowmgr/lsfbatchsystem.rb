@@ -169,7 +169,31 @@ module WorkflowMgr
       nodesize=nil
       if not task.attributes[:nodesize].nil?
         nodesize=task.attributes[:nodesize].to_i
-      end     
+      end
+
+      rusage_mem=""
+      if not task.attributes[:memory].nil? 
+        value=task.attributes[:memory]
+        amount=0
+        units=value[-1,1]
+        amount=value[0..-2].to_i
+        case units
+          when /B|b/
+            amount=(amount / 1024.0 / 1024.0).ceil
+          when /K|k/
+            amount=(amount / 1024.0).ceil
+          when /M|m/
+            amount=amount.ceil
+          when /G|g/
+            amount=(amount * 1024.0).ceil
+          when /[0-9]/
+            amount=(value.to_i / 1024.0 / 1024.0).ceil
+        end
+        if amount>0
+          rusage_mem=" rusage[mem=#{amount}M]"
+        end
+      end
+
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
@@ -282,8 +306,10 @@ module WorkflowMgr
               # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
               envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
             else
+              # New behavior: generate a compound resource request.
               impossible=false
               parts=[]
+              total_ranks=0
               value.split('+').each do |nodespec|
                 resources=nodespec.split(":")
                 nodes=resources.shift.to_i
@@ -319,38 +345,27 @@ module WorkflowMgr
                   impossible=true
                 end
                 count=[nodes*ppn,1].max
-                parts << "#{count}*{span[ptile=#{ppn}] affinity[#{affinity}]}"
+                total_ranks+=count
+                parts << "#{count}*{span[ptile=#{ppn}] affinity[#{affinity}]#{rusage_mem}}"
               end
-            end
-            if impossible
-              WorkflowMgr.stderr("WARNING: requested job may be impossible. Resorting to faith-based job submission.")
-              WorkflowMgr.log("WARNING: requested job may be impossible. Resorting to faith-based job submission.")
-            end
-            if not parts.empty?
-              cmd += " -R '#{parts.join(" + ")}'"
+              if impossible
+                WorkflowMgr.stderr("WARNING: requested job may be impossible. Resorting to faith-based job submission.")
+                WorkflowMgr.log("WARNING: requested job may be impossible. Resorting to faith-based job submission.")
+              end
+              if not parts.empty?
+                cmd += " -R '#{parts.join(" + ")}'"
+                if parts.length == 1
+                  # WCOSS esub workaround
+                  cmd += " -n #{total_ranks}"
+                end
+              end
             end
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
           when :memory
-            units=value[-1,1]
-            amount=value[0..-2].to_i
-            case units
-              when /B|b/
-                amount=(amount / 1024.0 / 1024.0).ceil
-              when /K|k/
-                amount=(amount / 1024.0).ceil
-              when /M|m/
-                amount=amount.ceil
-              when /G|g/
-                amount=(amount * 1024.0).ceil
-              when /[0-9]/
-                amount=(value.to_i / 1024.0 / 1024.0).ceil
-            end
-            if not task.attributes[nodes].nil? and not nodesize.nil?
-              cmd += " -M #{amount}"
-            else
-              cmd += " -R rusage[mem=#{amount}]"
+            if nodesize.nil? or task.attributes[:nodes].nil?
+              cmd += " -R #{rusage_mem}"
             end
           when :stdout
             cmd += " -o #{value}"
