@@ -23,6 +23,14 @@ module WorkflowMgr
 
     @@qstat_refresh_rate=30
     @@max_history=3600*1
+    @@features = {
+      :shared => true,
+      :exclusive => true
+    }
+
+    def self.feature?(flag)
+      return !!@@features[flag]
+    end
 
     #####################################################
     #
@@ -158,6 +166,10 @@ module WorkflowMgr
         end
       }
 
+      nodesize=nil
+      if not task.attributes[:nodesize].nil?
+        nodesize=task.attributes[:nodesize].to_i
+      end     
       # Add LSF batch system options translated from the generic options specification
       task.attributes.each do |option,value|
 
@@ -168,10 +180,12 @@ module WorkflowMgr
            end
         end
         case option
+          when :exclusive 
+           if task.attributes[:shared].nil? or not task.attributes[:shared]
+              cmd += " -x"
+            end
           when :account
             cmd += " -P #{value}"
-          when :nodesize
-            # Nothing to do
           when :queue
             cmd += " -q #{value}"
           when :partition
@@ -180,10 +194,9 @@ module WorkflowMgr
           when :cores
             next unless task.attributes[:nodes].nil?
             wantcores=value.to_s.to_i
-            if task.attributes[:nodesize].nil?
+            if nodesize.nil?
               cmd += " -n #{value}"
             else
-              nodesize=task.attributes[:nodesize].to_i
               if wantcores>nodesize
                 rounddown=wantcores/nodesize
                 roundup=(wantcores+nodesize-1)/nodesize
@@ -225,48 +238,97 @@ module WorkflowMgr
               envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
             end
           when :nodes
-            # Get largest ppn*tpp to calculate ptile
-            # -n is ptile * number of nodes
-            ptile=0
-            nnodes=0
-            task_index=0
-            task_geometry="{"
-            value.split("+").each { |nodespec|
-              resources=nodespec.split(":")
-              mynodes=resources.shift.to_i
-              nnodes+=mynodes
-              ppn=0
-              tpp=1
-              resources.each { |resource|
-                case resource
-                  when /ppn=(\d+)/
-                    ppn=$1.to_i
-                  when /tpp=(\d+)/
-                    tpp=$1.to_i
+            if nodesize.nil?
+              # Old behavior
+              # Get largest ppn*tpp to calculate ptile
+              # -n is ptile * number of nodes
+              ptile=0
+              nnodes=0
+              task_index=0
+              task_geometry="{"
+              value.split("+").each { |nodespec|
+                resources=nodespec.split(":")
+                mynodes=resources.shift.to_i
+                nnodes+=mynodes
+                ppn=0
+                tpp=1
+                resources.each { |resource|
+                  case resource
+                    when /ppn=(\d+)/
+                      ppn=$1.to_i
+                    when /tpp=(\d+)/
+                      tpp=$1.to_i
+                  end
+                }
+                procs=ppn*tpp
+                ptile=procs if procs > ptile
+                appendme=''
+                inode=1
+                while inode<=mynodes do
+                  appendme+="(#{(task_index..task_index+ppn-1).to_a.join(",")})"
+                  task_index+=ppn
+                  inode+=1
                 end
+                task_geometry += appendme
               }
-              procs=ppn*tpp
-              ptile=procs if procs > ptile
-              appendme=''
-              inode=1
-              while inode<=mynodes do
-                appendme+="(#{(task_index..task_index+ppn-1).to_a.join(",")})"
-                task_index+=ppn
-                inode+=1
+              task_geometry+="}"
+
+              # Add the ptile to the command
+              cmd += " -R span[ptile=#{ptile}]"
+
+              # Add -n to the command
+              cmd += " -n #{nnodes*ptile}"
+
+              # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
+              envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
+            else
+              impossible=false
+              parts=[]
+              value.split('+').each do |nodespec|
+                resources=nodespec.split(":")
+                nodes=resources.shift.to_i
+                nodes=1 if nodes<1
+                ppn=0
+                tpp=0
+                resources.each do |resource|
+                  case resource
+                    when /ppn=(\d+)/
+                      ppn=$1.to_i
+                    when /tpp=(\d+)/
+                      tpp=$1.to_i
+                  end
+                end
+                if tpp<1
+                  if ppn<1
+                    ppn,tpp = nodesize,1
+                  else
+                    tpp = [nodesize/ppn,1].max
+                  end
+                elsif ppn<1
+                  ppn = [nodesize/tpp,1].max
+                end
+                if ppn>nodesize/tpp
+                  affinity="cpu(#{tpp})"
+                else
+                  affinity="core(#{tpp})"
+                end
+                if ppn*tpp>nodesize*2
+                  message="WARNING: request is larger than <nodesize> #{nodesize} even with hyperthreading (nodesize*2=#{nodesize*2}): ppn=#{ppn}:tpp=#{tpp} = #{ppn*tpp} threads per node in \"#{value}\"."
+                  WorkflowMgr.stderr(message,1)
+                  WorkflowMgr.log(message,1)
+                  impossible=true
+                end
+                count=[nodes*ppn,1].max
+                parts << "#{count}*{span[ptile=#{ppn}] affinity[#{affinity}]}"
               end
-              task_geometry += appendme
-            }
-            task_geometry+="}"
-
-            # Add the ptile to the command
-            cmd += " -R span[ptile=#{ptile}]"
-
-            # Add -n to the command
-            cmd += " -n #{nnodes*ptile}"
-
-            # Setenv the LSB_PJL_TASK_GEOMETRY to specify task layout
-            envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
-
+            end
+            if impossible
+              WorkflowMgr.stderr("WARNING: requested job may be impossible. Resorting to faith-based job submission.")
+              WorkflowMgr.log("WARNING: requested job may be impossible. Resorting to faith-based job submission.")
+            end
+            if not parts.empty?
+              cmd += " -R '#{parts.join(" + ")}'"
+            end
           when :walltime
             hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
             cmd += " -W #{hhmm}"
@@ -285,7 +347,9 @@ module WorkflowMgr
               when /[0-9]/
                 amount=(value.to_i / 1024.0 / 1024.0).ceil
             end
-            if amount>0
+            if not task.attributes[nodes].nil? and not nodesize.nil?
+              cmd += " -M #{amount}"
+            else
               cmd += " -R rusage[mem=#{amount}]"
             end
           when :stdout
@@ -325,7 +389,6 @@ module WorkflowMgr
       else
         return nil,output
       end
-
     end
 
 
