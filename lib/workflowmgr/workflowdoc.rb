@@ -50,7 +50,10 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(workflowdoc,workflowIOServer)
+    def initialize(workflowdoc,workflowIOServer,config)
+
+      # Set the configuration
+      @config=config
 
       # Set the workflowIOServer
       @workflowIOServer=workflowIOServer
@@ -234,7 +237,7 @@ module WorkflowMgr
         if sched.nil?
           return nil
         else
-          return WorkflowMgr::const_get("#{sched.upcase}BatchSystem").new
+          return WorkflowMgr::const_get("#{sched.upcase}BatchSystem").new(config=@config)
         end
       else
         return nil

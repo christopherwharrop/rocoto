@@ -26,7 +26,9 @@ module WorkflowMgr
                     :MaxLogDays => 7,
                     :AutoVacuum => true,
                     :VacuumPurgeDays => 30,
-                    :SubmitThreads => 8
+                    :SubmitThreads => 8,
+                    :JobQueueTimeout => 45,
+                    :JobAcctTimeout => 45
                    }
 
     ##########################################

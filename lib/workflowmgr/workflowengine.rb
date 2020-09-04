@@ -845,7 +845,7 @@ module WorkflowMgr
     def build_workflow
 
       # Open the workflow document, parse it, and validate it
-      workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@workflowIOServer)
+      workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@workflowIOServer,@config)
 
       # Get the realtime flag
       @realtime=workflowdoc.realtime?

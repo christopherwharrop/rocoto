@@ -25,7 +25,10 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(cobalt_root=nil)
+    def initialize(cobalt_root=nil,config)
+
+      # Get timeouts from the configuration
+      @qstat_timeout=config.JobQueueTimeout
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -226,7 +229,7 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("qstat -l -f -u #{username} ",30)
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("qstat -l -f -u #{username} ",@qstat_timeout)
 
         # Raise SchedulerDown if the showq failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
