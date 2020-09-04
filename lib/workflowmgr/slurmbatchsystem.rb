@@ -315,7 +315,7 @@ module WorkflowMgr
           # Get the username of this process
           username=Etc.getpwuid(Process.uid).name
 
-          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", squeue_timeout)
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", @squeue_timeout)
 
           # Don't raise SchedulerDown if the command failed, otherwise
           # jobs that have moved to sacct will be missed.
