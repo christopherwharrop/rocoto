@@ -71,6 +71,12 @@ module WorkflowMgr
         # Return the jobqueue record if there is one
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
+        # Load from the cached sacct if available:
+        refresh_jobacct(-1) if @jobacct_duration<1
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
+
         # Populate the job accounting log table if it is empty
         refresh_jobacct(1) if @jobacct_duration<1
 
@@ -116,7 +122,10 @@ module WorkflowMgr
 
         # Check to see if status info is missing for any job and populate jobacct record if necessary
         if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
-            refresh_jobacct(1) if @jobacct_duration<1
+            refresh_jobacct(-1) if @jobacct_duration<1
+            if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+              refresh_jobacct(1) if @jobacct_duration<1
+            end
 
             # Check again, and re-populate over a longer history if necessary
             if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
@@ -504,7 +513,7 @@ private
     #####################################################
     def refresh_jobacct(delta_days)
 
-      @jobacct_duration=delta_days
+      @jobacct_duration=delta_days if delta_days>=0
 
       begin
 
@@ -516,8 +525,23 @@ private
         errors=""
         exit_status=0
         mmddyy=(DateTime.now-delta_days).strftime('%m%d%y')
-        cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
-        completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,@sacct_timeout)
+
+        if delta_days<0
+          sacct_cache=ENV["ROCOTO_SACCT_CACHE"]
+          if sacct_cache.nil? or sacct_cache.empty?
+            if not ENV["HOME"].nil?
+              sacct_cache="#{ENV["HOME"]}/sacct-cache/sacct.txt"
+            end
+          end
+          return if File.zero? sacct_cache
+          open(sacct_cache) { |f|
+            completed_jobs,errors,exit_status=f.read,'',0
+          }
+          return if completed_jobs.empty?
+        else
+          cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
+          completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,@sacct_timeout)
+        end
 
         return if errors=~/SLURM accounting storage is disabled/
 
