@@ -41,6 +41,8 @@ module WorkflowMgr
       @squeue_timeout=config.JobQueueTimeout
       @sacct_timeout=config.JobAcctTimeout
 
+      WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: squeue_timeout=#{@squeue_timeout}, sacct_timeout=#{@sacct_timeout}")
+
       # Initialize an empty hash for job queue records
       @jobqueue={}
 
@@ -122,15 +124,47 @@ module WorkflowMgr
 
         # Check to see if status info is missing for any job and populate jobacct record if necessary
         if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
-            refresh_jobacct(-1) if @jobacct_duration<1
+
+          # Some job information is missing from squeue output, look in sacct cache next
+          WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: squeue miss")
+
+          # Populate job status from sacct cache
+          refresh_jobacct(-1) if @jobacct_duration<1
+          if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+
+            # Some job information is missing from the sacct cache, run sacct for past 24 hours
+            WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: sacct cache miss")
+
+            # Populate job status from sacct going 24hrs back
+            refresh_jobacct(1) if @jobacct_duration<1
             if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
-              refresh_jobacct(1) if @jobacct_duration<1
+
+              # Some job information is missing from the 24hr sacct output, run sacct for past 120hrs
+              WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: sacct 24hr miss")
+
+              # Populate job status from sacct going 120hrs back
+              refresh_jobacct(5) if @jobacct_duration<5
+              if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+
+                # Some job information is missing from the 120hr sacct output, give up
+                WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: sacct 120hr miss")
+
+              else
+                WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: sacct 120hr hit")
+              end
+
+            else
+              WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: sacct 24hr hit")
             end
 
-            # Check again, and re-populate over a longer history if necessary
-            if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
-              refresh_jobacct(5) if @jobacct_duration<5
-            end
+          else
+            # We found everything in the sacct cache, no need to look elsewhere
+            WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: sacct cache hit")
+          end
+
+        else
+            # We found everything in the squeue output no need to look elsewhere
+            WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: squeue hit")
         end
 
         # Collect the statuses of the jobs
@@ -324,7 +358,10 @@ module WorkflowMgr
           # Get the username of this process
           username=Etc.getpwuid(Process.uid).name
 
+          stimer=Time.now
           queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", @squeue_timeout)
+          etimer=Time.now
+          WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: squeue :: time = #{etimer-stimer} seconds, status = #{exit_status}")
 
           # Don't raise SchedulerDown if the command failed, otherwise
           # jobs that have moved to sacct will be missed.
@@ -404,11 +441,16 @@ private
         errors=""
         exit_status=0
 
+        stimer=Time.now
         if jobids.nil? or jobids.join(',').length>64
           queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
+          etimer=Time.now
+          WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: squeue :: time = #{etimer-stimer} seconds, status = #{exit_status}")
         else
           joblist = jobids.join(",")
           queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
+          etimer=Time.now
+          WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: squeue :: time = #{etimer-stimer} seconds, status = #{exit_status}")
         end
 
         # Don't raise SchedulerDown if the command failed, otherwise
@@ -533,6 +575,7 @@ private
               sacct_cache="#{ENV["HOME"]}/sacct-cache/sacct.txt"
             end
           end
+          return unless File.exist? sacct_cache
           return if File.zero? sacct_cache
           open(sacct_cache) { |f|
             completed_jobs,errors,exit_status=f.read,'',0
@@ -540,7 +583,10 @@ private
           return if completed_jobs.empty?
         else
           cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
+          stimer=Time.now
           completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,@sacct_timeout)
+          etimer=Time.now
+          WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: sacct :: time = #{etimer-stimer} seconds, status = #{exit_status}")
         end
 
         return if errors=~/SLURM accounting storage is disabled/
