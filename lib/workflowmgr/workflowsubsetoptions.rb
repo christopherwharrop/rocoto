@@ -146,7 +146,7 @@ public
     ##########################################
     def all_tasks
       return true if @all_tasks
-      return default_all if task_options.empty?
+      return default_all if @task_options.empty?
       return false
     end
 
