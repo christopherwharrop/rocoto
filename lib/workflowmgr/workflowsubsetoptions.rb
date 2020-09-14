@@ -17,7 +17,7 @@ module WorkflowMgr
 
     require 'workflowmgr/workflowselection'
 
-    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose, :all_tasks, :selection
+    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose
 
     ##########################################
     #
@@ -32,6 +32,7 @@ module WorkflowMgr
       @action=action # ie.: boot
       @all_tasks=false
       @all_cycles=false
+      @selection=nil
       super(args)
 
     end
@@ -134,12 +135,41 @@ module WorkflowMgr
         end
       end
 
-      make_selection
-
     end
 
-    def make_selection()
-      @selection=WorkflowSelection.new(@all_tasks,@task_options,@cycles,@default_all)
+
+    ##########################################
+    #
+    # all_tasks
+    #
+    ##########################################
+    def all_tasks
+      return true if @all_tasks
+      return default_all if task_options.empty?
+      return false
+    end
+
+
+    ##########################################
+    #
+    # all_cycles
+    #
+    ##########################################
+    def all_cycles
+      return default_all if @cycles.nil?
+      return @cycles.include? ALL_POSSIBLE_CYCLES
+    end
+
+
+    ##########################################
+    #
+    # selection
+    #
+    ##########################################
+    def selection
+      if @selection.nil?
+        @selection=WorkflowSelection.new(@all_tasks,@task_options,@cycles,@default_all)
+      end
       return @selection
     end
 
