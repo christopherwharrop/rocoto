@@ -1707,7 +1707,7 @@ module WorkflowMgr
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.sort { |c1,c2| c1.cycle <=> c2.cycle }.each do |cycle|
 
-        if not options.all_cycles and not subset.is_selected? cycle
+        if not @options.all_cycles and not subset.is_selected? cycle
           WorkflowMgr.stderr("#{cycle.cycle.strftime('%Y%m%d%H%M')}: cycle is not selected by -c; skip",4)
           next
         end
@@ -1718,7 +1718,7 @@ module WorkflowMgr
         cycletime=cycle.cycle
         @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 
-          if not options.all_tasks and not subset.is_selected? task
+          if not @options.all_tasks and not subset.is_selected? task
             WorkflowMgr.stderr("#{task.attributes[:name]}: task is not selected by -m, -t, or -a; skip",9)
             next
           end
