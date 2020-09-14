@@ -15,6 +15,7 @@ module WorkflowMgr
     require 'yaml'
     require 'workflowmgr/forkit'
     require 'fileutils'
+    require 'workflowmgr/utilities'
 
     DEFAULT_CONFIG={
                     :DatabaseType => "SQLite3",
@@ -38,8 +39,8 @@ module WorkflowMgr
     ##########################################
     def initialize
 
-      # Path to configuration file is $HOME/.rocoto/rocotorc
-      @config_dir="#{ENV['HOME']}/.rocoto"
+      # Path to configuration file is $HOME/.rocoto/$VERSION/rocotorc
+      @config_dir="#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}"
       @config_tmp="#{@config_dir}/tmp"
       @config_file="#{@config_dir}/rocotorc"
 
