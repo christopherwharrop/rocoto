@@ -447,6 +447,8 @@ module WFMStat
     ##########################################
     def print_cycleinfo(cycle,cycledefs,task)
 
+      return if task.nil? or task.attributes.nil?
+
       # Make sure the cycle is valid for this task
       cycle_is_valid=true
       unless task.attributes[:cycledefs].nil?

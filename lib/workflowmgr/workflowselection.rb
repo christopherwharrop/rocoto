@@ -188,7 +188,7 @@ module WorkflowMgr
             cycledefs=task.attributes[:cycledefs].split(',')
             if cycledefs.include? cycledef
               if negate
-                selection.remove(task.attributes[:name])
+                selection.delete(task.attributes[:name])
               else
                 selection.add(task.attributes[:name])
               end
@@ -196,7 +196,7 @@ module WorkflowMgr
           end
         else # explicit task name
           if negate
-            selection.remove(item)
+            selection.delete(item)
           else
             selection.add(item)
           end
