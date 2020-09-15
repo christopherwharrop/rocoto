@@ -40,7 +40,6 @@ module WorkflowMgr
       # Get timeouts from the configuration
       @squeue_timeout=config.JobQueueTimeout
       @sacct_timeout=config.JobAcctTimeout
-
       WorkflowMgr.log("#{__FILE__} :: #{__method__.to_s}:#{__LINE__} :: squeue_timeout=#{@squeue_timeout}, sacct_timeout=#{@sacct_timeout}")
 
       # Initialize an empty hash for job queue records
