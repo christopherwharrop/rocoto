@@ -6,6 +6,7 @@
 module WorkflowMgr
 
   require 'workflowmgr/batchsystem'
+  require 'workflowmgr/utilities'
 
   ##########################################
   #
@@ -25,7 +26,10 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(cobalt_root=nil)
+    def initialize(cobalt_root=nil,config)
+
+      # Get timeouts from the configuration
+      @qstat_timeout=config.JobQueueTimeout
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -110,7 +114,7 @@ module WorkflowMgr
     #####################################################
     def submit(task)
       # Initialize the submit command
-      cmd="qsub --debuglog #{ENV['HOME']}/.rocoto/tmp/\\$jobid.log"
+      cmd="qsub --debuglog #{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/tmp/\\$jobid.log"
       input="#!/bin/sh\n"
 
       # Add Cobalt batch system options translated from the generic options specification
@@ -175,7 +179,7 @@ module WorkflowMgr
 
       # Get a temporary file name to use as a wrapper and write job spec into it
       tfname=Tempfile.new('qsub.in').path.split("/").last
-      tf=File.new("#{ENV['HOME']}/.rocoto/tmp/#{tfname}","w")
+      tf=File.new("#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/tmp/#{tfname}","w")
       tf.write(input)
       tf.flush()
       tf.chmod(0700)
@@ -226,7 +230,7 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("qstat -l -f -u #{username} ",30)
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("qstat -l -f -u #{username} ",@qstat_timeout)
 
         # Raise SchedulerDown if the showq failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -305,7 +309,7 @@ private
 
       begin
 
-        joblogfile = "#{ENV['HOME']}/.rocoto/tmp/#{jobid}.log"
+        joblogfile = "#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/tmp/#{jobid}.log"
         return unless  File.exists?(joblogfile)
         joblog = IO.readlines(joblogfile,nil)[0]
 
