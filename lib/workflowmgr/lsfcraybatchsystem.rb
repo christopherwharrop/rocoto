@@ -33,9 +33,9 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize
+    def initialize(config)
       # Enable Cray workarounds in parent class:
-      super(true,false)
+      super(true,false,config)
     end
 
     #####################################################

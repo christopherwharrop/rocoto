@@ -29,7 +29,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(unhold_jobs_default=false,should_vanquish_undead=false)
+    def initialize(unhold_jobs_default=false,should_vanquish_undead=false,config)
+
+      # Get timeouts from the configuration
+      @bjobs_timeout=config.JobQueueTimeout
+      @bhist_timeout=config.JobAcctTimeout
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -390,7 +394,7 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -w",30)
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -w",@bjobs_timeout)
 
         # Raise SchedulerDown if the bjobs failed
         unless exit_status==0
@@ -558,10 +562,10 @@ private
         timeout=nacctfiles==1 ? 30 : 90
         if(bjobs) then
           WorkflowMgr.stderr("bjobs -l -a ",10)
-          completed_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -l -a",timeout)
+          completed_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -l -a",@bjobs_timeout)
         else
           WorkflowMgr.stderr("bhist -n #{nacctfiles} -l -d -w ",10)
-          completed_jobs,errors,exit_status=WorkflowMgr.run4("bhist -n #{nacctfiles} -l -d -w",timeout)
+          completed_jobs,errors,exit_status=WorkflowMgr.run4("bhist -n #{nacctfiles} -l -d -w",@bhist_timeout)
         end
 
         # Return if the bhist output is empty
