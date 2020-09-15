@@ -533,6 +533,7 @@ private
               sacct_cache="#{ENV["HOME"]}/sacct-cache/sacct.txt"
             end
           end
+          return unless File.exist? sacct_cache
           return if File.zero? sacct_cache
           open(sacct_cache) { |f|
             completed_jobs,errors,exit_status=f.read,'',0

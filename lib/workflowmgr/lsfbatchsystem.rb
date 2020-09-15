@@ -559,7 +559,6 @@ private
         completed_jobs=""
         errors=""
         exit_status=0
-        timeout=nacctfiles==1 ? 30 : 90
         if(bjobs) then
           WorkflowMgr.stderr("bjobs -l -a ",10)
           completed_jobs,errors,exit_status=WorkflowMgr.run4("bjobs -l -a",@bjobs_timeout)
