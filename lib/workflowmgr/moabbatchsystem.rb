@@ -25,7 +25,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(moab_root=nil,torque_root=nil)
+    def initialize(moab_root=nil,torque_root=nil,config)
+
+      # Get timeouts from the configuration
+      @showq_timeout=JobQueueTimeout
+      @showq_c_timeout=JobAcctTimeout
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -233,7 +237,7 @@ private
         queued_jobs=""
         errors=""
         exit_status=0
-        queued_jobs,errors,exit_status=WorkflowMgr.run4("showq --noblock --xml -u #{username}",30)
+        queued_jobs,errors,exit_status=WorkflowMgr.run4("showq --noblock --xml -u #{username}",@showq_timeout)
 
         # Raise SchedulerDown if the showq failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -320,7 +324,7 @@ private
         completed_jobs=""
         errors=""
         exit_status=0
-        completed_jobs,errors,exit_status=WorkflowMgr.run4("showq -c --noblock --xml -u #{username}",30)
+        completed_jobs,errors,exit_status=WorkflowMgr.run4("showq -c --noblock --xml -u #{username}",@showq_c_timeout)
 
         # Raise SchedulerDown if the showq failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
