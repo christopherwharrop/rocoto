@@ -51,14 +51,16 @@ module WorkflowMgr
     Process.waitpid(child_pid)
 
     # Initialize the URI and pid of the server process
-    uri=""
+    uri_str=""
+    encoded_uri=""
     server_pid=0
 
     begin
 
       # Read the URI and pid of the server from the read end of the pipe we just created
       WorkflowMgr.timeout(10) do
-        uri=rd.gets
+        uri_str=rd.gets
+        uri_str.chomp! unless uri_str.nil?
         server_pid=rd.gets
         server_pid.chomp! unless server_pid.nil?
         rd.close
@@ -76,7 +78,8 @@ module WorkflowMgr
     end
 
     # Connect to the server process and return the object being served
-    return [ DRbObject.new(nil,uri), Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3], server_pid ]
+    encoded_uri=uri_str.encode("UTF-8", "binary", invalid: :replace, undef: :replace, replace: '')
+    return [ DRbObject.new(nil,encoded_uri), Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0][3], server_pid ]
 
   end
 

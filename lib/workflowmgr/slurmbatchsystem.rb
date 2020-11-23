@@ -425,7 +425,7 @@ private
 
       # Make sure queued_jobs is properly encoded
       if String.method_defined? :encode
-        queued_jobs = queued_jobs.encode('UTF-8', 'binary', {:invalid => :replace, :undef => :replace, :replace => ''})
+        queued_jobs = queued_jobs.encode("UTF-8", "binary", invalid: :replace, undef: :replace, replace: '')
       end
 
       # For each job, find the various attributes and create a job record
