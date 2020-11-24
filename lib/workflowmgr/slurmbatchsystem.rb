@@ -324,7 +324,7 @@ module WorkflowMgr
           # Get the username of this process
           username=Etc.getpwuid(Process.uid).name
 
-          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", @squeue_timeout)
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} --federation -t all -O jobid:40,comment:32", @squeue_timeout)
 
           # Don't raise SchedulerDown if the command failed, otherwise
           # jobs that have moved to sacct will be missed.
@@ -405,10 +405,10 @@ private
         exit_status=0
 
         if jobids.nil? or jobids.join(',').length>64
-          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
         else
           joblist = jobids.join(",")
-          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
         end
 
         # Don't raise SchedulerDown if the command failed, otherwise
