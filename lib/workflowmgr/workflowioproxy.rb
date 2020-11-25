@@ -107,7 +107,7 @@ module WorkflowMgr
 
             retries=0
             begin
-              WorkflowMgr.timeout(45) do
+              WorkflowMgr.timeout(150) do
                 @workflowIOServer.send(m,*args)
               end
             rescue DRb::DRbConnError
