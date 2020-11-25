@@ -58,7 +58,7 @@ module WorkflowMgr
           define_method m do |*args|
             retries=0
             begin
-              WorkflowMgr.timeout(90) do
+              WorkflowMgr.timeout(150) do
                 @bqServer.send(m,*args)
               end
             rescue DRb::DRbConnError
