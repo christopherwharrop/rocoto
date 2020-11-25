@@ -1154,6 +1154,9 @@ module WorkflowMgr
 
       end
 
+      # Remove duplicates
+      job_cycles.uniq!
+
       # Get all jobs whose cycle is in the job_cycle list
       @active_jobs=@dbServer.get_jobs(job_cycles)
 
