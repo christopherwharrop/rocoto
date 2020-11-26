@@ -120,17 +120,25 @@ module WorkflowMgr
         # Populate the job status table if it is empty
         refresh_jobqueue(jobids) if @jobqueue.empty?
 
-        # Check to see if status info is missing for any job and populate jobacct record if necessary
+        # Check to see if status info is missing for any job
         if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
-            refresh_jobacct(-1) if @jobacct_duration<1
-            if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
-              refresh_jobacct(1) if @jobacct_duration<1
-            end
 
-            # Check again, and re-populate over a longer history if necessary
+          # Some job information is missing from squeue output, look in sacct cache next
+          refresh_jobacct(-1) if @jobacct_duration<1
+
+          # Check to see if status info is still missing for any job
+          if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+
+            # Some job information is still missing, look in sacct records going 24hrs back
+            refresh_jobacct(1) if @jobacct_duration<1
+
+            # Check to see if status info is still missing for any job
             if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+
+              # Some job information is still missing, look in sacct records going 120hrs back
               refresh_jobacct(5) if @jobacct_duration<5
             end
+          end
         end
 
         # Collect the statuses of the jobs
