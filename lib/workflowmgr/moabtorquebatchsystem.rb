@@ -32,7 +32,7 @@ module WorkflowMgr
       @showq_c_timeout=config.JobAcctTimeout
 
       # Initialize a Torque batch system object
-      @torque=TORQUEBatchSystem.new
+      @torque=TORQUEBatchSystem.new(config)
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
