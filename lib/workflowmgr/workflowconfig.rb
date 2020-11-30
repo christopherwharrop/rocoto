@@ -41,6 +41,7 @@ module WorkflowMgr
 
       # Path to configuration file is $HOME/.rocoto/$VERSION/rocotorc
       @config_dir="#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}"
+      @config_log="#{@config_dir}/#{WorkflowMgr::WORKFLOW_ID.sub(/.xml$/,"")}"
       @config_tmp="#{@config_dir}/tmp"
       @config_file="#{@config_dir}/rocotorc"
 
@@ -49,6 +50,9 @@ module WorkflowMgr
 
         # Create a .rocoto directory if one does not already exist
         FileUtils.mkdir_p(@config_dir) unless File.exists?(@config_dir)
+
+        # Create a .rocoto log directory for this workflow if one does not already exist
+        FileUtils.mkdir_p(@config_log) unless File.exists?(@config_log)
 
         # Create a .rocoto tmp dir if one does not already exist
         FileUtils.mkdir_p(@config_tmp) unless File.exists?(@config_tmp)
