@@ -180,7 +180,7 @@ module WorkflowMgr
     return if message.empty?
 
     # Name of the current log file
-    rocotolog="#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/log"
+    rocotolog="#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/#{WorkflowMgr::WORKFLOW_ID.sub(/.xml$/,"")}/log"
 
     # Logging requires exclusive access to the logs
     # Open the log lock file
