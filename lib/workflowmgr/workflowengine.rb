@@ -68,6 +68,10 @@ module WorkflowMgr
         # Initialize the workflow lock
         @locked=false
 
+        @subset=nil
+        @selected_tasks=nil
+        @selected_cycles=nil
+
       rescue => crash
         WorkflowMgr.stderr('Workflow Manager Initialization failed.',1)
         WorkflowMgr.stderr(crash.message,1)
@@ -114,11 +118,11 @@ module WorkflowMgr
         expire_cycles
 
         # Get the list of complete cycles
-        rewind_cycles=@selected_cycles
+        rewind_cycles=selected_cycles
         nrewind_cycles=rewind_cycles.length
 
         # Collect the names of tasks to complete
-        rewind_tasks=@selected_tasks
+        rewind_tasks=selected_tasks
         nrewind_tasks = rewind_tasks.length
         all_tasks=@options.all_tasks
 
@@ -342,11 +346,11 @@ module WorkflowMgr
         taskcycledefs={}
 
         # Get the list of boot cycles
-        boot_cycles=@selected_cycles
+        boot_cycles=selected_cycles
         nboot_cycles=boot_cycles.length
 
         # Collect the names of tasks to boot
-        boot_tasks=@selected_tasks
+        boot_tasks=selected_tasks
         nboot_tasks = boot_tasks.length
 
         # Ask user for confirmation if boot tasks/cycles list is very large
@@ -428,7 +432,7 @@ module WorkflowMgr
                   boot_job=@active_jobs[boot_task_name][boot_cycle_time]
                 end
               else
-                puts "WARNING: Cycle #{boot_cycle_time.strftime("%Y%m%d%H%M")} state is #{boot_cycle.state}.  I can boot task #{boot_task_name}, but this cycle might not complete again unless you boot the final task.  Proceed anyway (y/n)?"
+                print "WARNING: Cycle #{boot_cycle_time.strftime("%Y%m%d%H%M")} state is #{boot_cycle.state}.  I can boot task #{boot_task_name}, but this cycle might not complete again unless you boot the final task.  Proceed anyway (y/n)?"
                 reply=STDIN.gets
                 if reply=~/^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
@@ -572,11 +576,11 @@ module WorkflowMgr
         taskcycledefs={}
 
         # Get the list of complete cycles
-        complete_cycles=@selected_cycles
+        complete_cycles=selected_cycles
         ncomplete_cycles=complete_cycles.length
 
         # Collect the names of tasks to complete
-        complete_tasks=@selected_tasks
+        complete_tasks=selected_tasks
         ncomplete_tasks = complete_tasks.length
 
         if @options.all_tasks
@@ -665,7 +669,7 @@ module WorkflowMgr
                   complete_job=@active_jobs[complete_task_name][complete_cycle_time]
                 end
               else
-                puts "WARNING: Cycle #{complete_cycle_time.strftime("%Y%m%d%H%M")} state is #{complete_cycle.state}.  Proceed anyway (y/n)?"
+                print "WARNING: Cycle #{complete_cycle_time.strftime("%Y%m%d%H%M")} state is #{complete_cycle.state}.  Completing task #{complete_task_name} may have unintended consequences. Proceed anyway (y/n)?"
                 reply=STDIN.gets
                 if reply=~/^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
@@ -845,7 +849,7 @@ module WorkflowMgr
     def build_workflow
 
       # Open the workflow document, parse it, and validate it
-      workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@workflowIOServer)
+      workflowdoc=WorkflowMgr::const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,@workflowIOServer,@config)
 
       # Get the realtime flag
       @realtime=workflowdoc.realtime?
@@ -886,14 +890,68 @@ module WorkflowMgr
       # Warn use if any unsupported features are used:
       workflowdoc.features_supported?
 
-      # Obtain the task and cycle subsets, which may have been passed
-      # in on the command line via -m, -t, -c, and -a.
-      @subset=@options.selection.make_subset(@tasks,@cycledefs)
-      @selected_tasks=@subset.collect_tasks{|task| task}
-      @selected_cycles=@subset.collect_cycles{|cycle| cycle}
+    end
+
+
+    ##########################################
+    #
+    # selection
+    #
+    ##########################################
+    def selection
+
+      return @options.selection
 
     end
 
+
+    ##########################################
+    #
+    # subset
+    #
+    ##########################################
+    def subset
+
+      if @subset.nil?
+        @subset=selection.make_subset(@tasks,@cycledefs)
+      end
+
+      return @subset
+
+    end
+
+
+    ##########################################
+    #
+    # selected_tasks
+    #
+    ##########################################
+    def selected_tasks
+
+      if @selected_tasks.nil?
+        @selected_tasks=subset.collect_tasks{|task| task}
+      end
+
+      return @selected_tasks
+
+    end
+        
+
+    ##########################################
+    #
+    # selected_cycles
+    #
+    ##########################################
+    def selected_cycles
+
+      if @selected_cycles.nil?
+        @selected_cycles=subset.collect_cycles{|task| task}
+      end
+
+      return @selected_cycles
+
+    end
+        
 
     ##########################################
     #
@@ -1095,6 +1153,9 @@ module WorkflowMgr
         end
 
       end
+
+      # Remove duplicates
+      job_cycles.uniq!
 
       # Get all jobs whose cycle is in the job_cycle list
       @active_jobs=@dbServer.get_jobs(job_cycles)
@@ -1649,7 +1710,7 @@ module WorkflowMgr
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.sort { |c1,c2| c1.cycle <=> c2.cycle }.each do |cycle|
 
-        if not @subset.is_selected? cycle
+        if not @options.all_cycles and not subset.is_selected? cycle
           WorkflowMgr.stderr("#{cycle.cycle.strftime('%Y%m%d%H%M')}: cycle is not selected by -c; skip",4)
           next
         end
@@ -1660,7 +1721,7 @@ module WorkflowMgr
         cycletime=cycle.cycle
         @tasks.values.sort { |t1,t2| t1.seq <=> t2.seq }.each do |task|
 
-          if not @subset.is_selected? task
+          if not @options.all_tasks and not subset.is_selected? task
             WorkflowMgr.stderr("#{task.attributes[:name]}: task is not selected by -m, -t, or -a; skip",9)
             next
           end

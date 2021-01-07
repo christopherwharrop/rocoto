@@ -92,7 +92,7 @@ module WFMStat
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
 
         # Open the workflow document
-        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
+        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer,@config)
 
         @workflowdoc.features_supported?
 
@@ -206,7 +206,7 @@ module WFMStat
         @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
 
         # Open the workflow document
-        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer)
+        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer,@config)
 
         @subset=@options.selection.make_subset(tasks=@workflowdoc.tasks,cycledefs=@workflowdoc.cycledefs,dbServer=@dbServer)
 
@@ -446,6 +446,8 @@ module WFMStat
     #
     ##########################################
     def print_cycleinfo(cycle,cycledefs,task)
+
+      return if task.nil? or task.attributes.nil?
 
       # Make sure the cycle is valid for this task
       cycle_is_valid=true

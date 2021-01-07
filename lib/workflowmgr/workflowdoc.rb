@@ -19,7 +19,6 @@ module WorkflowMgr
     require 'workflowmgr/cycledef'
     require 'workflowmgr/workflowlog'
     require 'workflowmgr/cycledef'
-    require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
@@ -50,7 +49,10 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(workflowdoc,workflowIOServer)
+    def initialize(workflowdoc,workflowIOServer,config)
+
+      # Set the configuration
+      @config=config
 
       # Set the workflowIOServer
       @workflowIOServer=workflowIOServer
@@ -234,7 +236,7 @@ module WorkflowMgr
         if sched.nil?
           return nil
         else
-          return WorkflowMgr::const_get("#{sched.upcase}BatchSystem").new
+          return WorkflowMgr::const_get("#{sched.upcase}BatchSystem").new(config=@config)
         end
       else
         return nil

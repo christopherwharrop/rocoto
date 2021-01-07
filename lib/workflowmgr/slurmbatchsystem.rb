@@ -21,12 +21,25 @@ module WorkflowMgr
     require 'securerandom'
     require 'workflowmgr/utilities'
 
+    @@features = {
+      :shared => true,
+      :exclusive => true
+    }
+
+    def self.feature?(flag)
+      return !!@@features[flag]
+    end
+
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(slurm_root=nil)
+    def initialize(slurm_root=nil,config)
+
+      # Get timeouts from the configuration
+      @squeue_timeout=config.JobQueueTimeout
+      @sacct_timeout=config.JobAcctTimeout
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -57,6 +70,12 @@ module WorkflowMgr
 
         # Return the jobqueue record if there is one
         return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+
+        # Load from the cached sacct if available:
+        refresh_jobacct(-1) if @jobacct_duration<1
+
+        # Return the jobacct record if there is one
+        return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
         # Populate the job accounting log table if it is empty
         refresh_jobacct(1) if @jobacct_duration<1
@@ -101,14 +120,25 @@ module WorkflowMgr
         # Populate the job status table if it is empty
         refresh_jobqueue(jobids) if @jobqueue.empty?
 
-        # Check to see if status info is missing for any job and populate jobacct record if necessary
+        # Check to see if status info is missing for any job
         if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
+
+          # Some job information is missing from squeue output, look in sacct cache next
+          refresh_jobacct(-1) if @jobacct_duration<1
+
+          # Check to see if status info is still missing for any job
+          if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+
+            # Some job information is still missing, look in sacct records going 24hrs back
             refresh_jobacct(1) if @jobacct_duration<1
 
-            # Check again, and re-populate over a longer history if necessary
+            # Check to see if status info is still missing for any job
             if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
+
+              # Some job information is still missing, look in sacct records going 120hrs back
               refresh_jobacct(5) if @jobacct_duration<5
             end
+          end
         end
 
         # Collect the statuses of the jobs
@@ -152,6 +182,10 @@ module WorkflowMgr
            end
         end
         case option
+          when :exclusive
+            if task.attributes[:shared].nil? or not task.attributes[:shared]
+              input += "#SBATCH --exclusive\n"
+            end
           when :account
             input += "#SBATCH --account=#{value}\n"
           when :queue
@@ -298,15 +332,15 @@ module WorkflowMgr
           # Get the username of this process
           username=Etc.getpwuid(Process.uid).name
 
-          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,comment:32", 45)
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} --federation -t all -O jobid:40,comment:32", @squeue_timeout)
 
-          # Raise SchedulerDown if the command failed
-          raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+          # Don't raise SchedulerDown if the command failed, otherwise
+          # jobs that have moved to sacct will be missed.
 
           # Return if the output is empty
           return nil,output if queued_jobs.empty?
 
-        rescue Timeout::Error,WorkflowMgr::SchedulerDown
+        rescue Timeout::Error
           WorkflowMgr.log("#{$!}")
           WorkflowMgr.stderr("#{$!}",3)
           raise WorkflowMgr::SchedulerDown
@@ -379,19 +413,19 @@ private
         exit_status=0
 
         if jobids.nil? or jobids.join(',').length>64
-          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue -u #{username} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
         else
           joblist = jobids.join(",")
-          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} -M all -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",45)
+          queued_jobs,errors,exit_status=WorkflowMgr.run4("squeue --jobs=#{joblist} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200",@squeue_timeout)
         end
 
-        # Raise SchedulerDown if the command failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+        # Don't raise SchedulerDown if the command failed, otherwise
+        # jobs that have moved to sacct will be missed
 
         # Return if the output is empty
         return if queued_jobs.empty?
 
-      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+      rescue Timeout::Error
         WorkflowMgr.log("#{$!}")
         WorkflowMgr.stderr("#{$!}",3)
         raise WorkflowMgr::SchedulerDown
@@ -399,7 +433,7 @@ private
 
       # Make sure queued_jobs is properly encoded
       if String.method_defined? :encode
-        queued_jobs = queued_jobs.encode('UTF-8', 'binary', {:invalid => :replace, :undef => :replace, :replace => ''})
+        queued_jobs = queued_jobs.encode("UTF-8", "binary", invalid: :replace, undef: :replace, replace: '')
       end
 
       # For each job, find the various attributes and create a job record
@@ -487,7 +521,7 @@ private
     #####################################################
     def refresh_jobacct(delta_days)
 
-      @jobacct_duration=delta_days
+      @jobacct_duration=delta_days if delta_days>=0
 
       begin
 
@@ -499,8 +533,24 @@ private
         errors=""
         exit_status=0
         mmddyy=(DateTime.now-delta_days).strftime('%m%d%y')
-        cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
-        completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,45)
+
+        if delta_days<0
+          sacct_cache=ENV["ROCOTO_SACCT_CACHE"]
+          if sacct_cache.nil? or sacct_cache.empty?
+            if not ENV["HOME"].nil?
+              sacct_cache="#{ENV["HOME"]}/sacct-cache/sacct.txt"
+            end
+          end
+          return unless File.exist? sacct_cache
+          return if File.zero? sacct_cache
+          open(sacct_cache) { |f|
+            completed_jobs,errors,exit_status=f.read,'',0
+          }
+          return if completed_jobs.empty?
+        else
+          cmd="sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
+          completed_jobs,errors,exit_status=WorkflowMgr.run4(cmd,@sacct_timeout)
+        end
 
         return if errors=~/SLURM accounting storage is disabled/
 

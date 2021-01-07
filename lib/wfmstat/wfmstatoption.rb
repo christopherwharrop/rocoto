@@ -60,8 +60,17 @@ module WFMStat
 
     end # add_opts
 
-    def make_selection()
-      @selection=WorkflowMgr::WorkflowDBSelection.new(@all_tasks,@task_options,@cycles,@default_all)
+public
+
+    ##########################################
+    #
+    # selection
+    #
+    ##########################################
+    def selection
+      if @selection.nil?
+        @selection=WorkflowMgr::WorkflowDBSelection.new(@all_tasks,@task_options,@cycles,@default_all)
+      end
       return @selection
     end
 

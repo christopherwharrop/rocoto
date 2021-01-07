@@ -188,7 +188,7 @@ module WorkflowMgr
             cycledefs=task.attributes[:cycledefs].split(',')
             if cycledefs.include? cycledef
               if negate
-                selection.remove(task.attributes[:name])
+                selection.delete(task.attributes[:name])
               else
                 selection.add(task.attributes[:name])
               end
@@ -196,7 +196,7 @@ module WorkflowMgr
           end
         else # explicit task name
           if negate
-            selection.remove(item)
+            selection.delete(item)
           else
             selection.add(item)
           end
@@ -211,6 +211,9 @@ module WorkflowMgr
     #
     ##########################################
     def select_tasks(tasks)
+      if @all_tasks
+        return tasks.values.collect{|task| task.attributes[:name]}.sort
+      end
       selection=Set.new
       @task_options.each do |opt|
         if opt.is_a? WorkflowMgr::MetataskSelection

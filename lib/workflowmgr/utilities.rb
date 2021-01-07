@@ -37,7 +37,7 @@ module WorkflowMgr
   ##########################################
   def WorkflowMgr.version
 
-    IO.readlines("#{File.expand_path('../../../',__FILE__)}/VERSION",nil)[0]
+    IO.readlines("#{File.expand_path('../../../',__FILE__)}/VERSION",nil)[0].strip
 
   end
 
@@ -180,7 +180,7 @@ module WorkflowMgr
     return if message.empty?
 
     # Name of the current log file
-    rocotolog="#{ENV['HOME']}/.rocoto/log"
+    rocotolog="#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/#{WorkflowMgr::WORKFLOW_ID.sub(/.xml$/,"")}/log"
 
     # Logging requires exclusive access to the logs
     # Open the log lock file
@@ -215,7 +215,7 @@ module WorkflowMgr
 
               # Get the max age (in days) of the log file from the configuration
               # NOTE: This is a hack due to poor design preventing proper access to the configuration object
-              maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/rocotorc")[:MaxLogDays]
+              maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/rocotorc")[:MaxLogDays]
 
               # Remove files last modified more than MaxAge days ago
               Dir[rocotolog+".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each { |logfile|

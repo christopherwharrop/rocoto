@@ -25,7 +25,11 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(pbspro_root=nil)
+    def initialize(pbspro_root=nil,config)
+
+      # Get timeouts from the configuration
+      @qstat_timeout=config.JobQueueTimeout
+      @qstat_x_timeout=config.JobAcctTimeout
 
       # Initialize an empty hash for job queue records
       @jobqueue={}
@@ -320,7 +324,7 @@ private
         exit_status=0
 
         # Get the list of jobs queued or running for this user
-        qstat,errors,exit_status=WorkflowMgr.run4("qstat -u #{username} -w",30)
+        qstat,errors,exit_status=WorkflowMgr.run4("qstat -u #{username} -w",@qstat_timeout)
 
         # Raise SchedulerDown if the qstat failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
@@ -419,7 +423,7 @@ private
         return if joblist.empty?
 
         # Get the status of jobs in the job list
-        qstat,errors,exit_status=WorkflowMgr.run4("qstat -x -f #{joblist} | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'", 60)
+        qstat,errors,exit_status=WorkflowMgr.run4("qstat -x -f #{joblist} | sed -e ':a' -e 'N' -e '$\!ba' -e 's/\\n\\t/ /g'", @qstat_x_timeout)
 
         # Raise SchedulerDown if the qstat failed
         raise WorkflowMgr::SchedulerDown,errors unless exit_status==0

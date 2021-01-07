@@ -56,7 +56,7 @@ module WorkflowMgr
             retries=0
             busy_retries=0.0
             begin
-              WorkflowMgr.timeout(45) do
+              WorkflowMgr.timeout(150) do
                 @dbServer.send(m,*args)
               end
             rescue DRb::DRbConnError

@@ -519,7 +519,7 @@ module WorkflowMgr
         else
 
           # Retrieve all jobs from the job table that match the cycles provided
-          cycles.each do |cycle|
+          cycles.uniq.each do |cycle|
             dbjobs+=@database.execute("SELECT * FROM jobs WHERE cycle = #{cycle.to_i};")
           end
 

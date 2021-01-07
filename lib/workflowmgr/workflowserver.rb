@@ -18,7 +18,6 @@ module WorkflowMgr
     require 'workflowmgr/workflowdb'
     require 'workflowmgr/workflowio'
     require 'workflowmgr/bqsproxy'
-    require 'workflowmgr/sgebatchsystem'
     require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
@@ -92,7 +91,7 @@ module WorkflowMgr
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
 
       begin
-        WorkflowMgr.timeout(40) do
+        WorkflowMgr.timeout(150) do
           return @server.send(name,*args,&block)
         end
       rescue Timeout::Error
