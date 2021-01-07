@@ -432,7 +432,7 @@ module WorkflowMgr
                   boot_job=@active_jobs[boot_task_name][boot_cycle_time]
                 end
               else
-                puts "WARNING: Cycle #{boot_cycle_time.strftime("%Y%m%d%H%M")} state is #{boot_cycle.state}.  I can boot task #{boot_task_name}, but this cycle might not complete again unless you boot the final task.  Proceed anyway (y/n)?"
+                print "WARNING: Cycle #{boot_cycle_time.strftime("%Y%m%d%H%M")} state is #{boot_cycle.state}.  I can boot task #{boot_task_name}, but this cycle might not complete again unless you boot the final task.  Proceed anyway (y/n)?"
                 reply=STDIN.gets
                 if reply=~/^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
@@ -669,7 +669,7 @@ module WorkflowMgr
                   complete_job=@active_jobs[complete_task_name][complete_cycle_time]
                 end
               else
-                puts "WARNING: Cycle #{complete_cycle_time.strftime("%Y%m%d%H%M")} state is #{complete_cycle.state}.  Proceed anyway (y/n)?"
+                print "WARNING: Cycle #{complete_cycle_time.strftime("%Y%m%d%H%M")} state is #{complete_cycle.state}.  Completing task #{complete_task_name} may have unintended consequences. Proceed anyway (y/n)?"
                 reply=STDIN.gets
                 if reply=~/^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
