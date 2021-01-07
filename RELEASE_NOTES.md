@@ -3,12 +3,13 @@
 ## New for Version 1.3.3
 
 * Performance improvements
-* Add capability to control batch system command timeouts from ~/.rocoto/rocotorc file.
-* Store configuration in ~/.rocoto/$VERSION instead of ~/.rocoto to allow use of multiple versions of Rocoto.
+* Store configuration in ~/.rocoto/$VERSION/rocotorc instead of ~/.rocoto/rocotorc to allow use of multiple versions of Rocoto.
+* Add capability to control batch system command timeouts from ~/.rocoto/$VERSION/rocotorc file.
 * Store logs in ~/.rocoto/$VERSION/$WORKFLOW_ID/log instead of ~/.rocoto/log to improve logging
 * Increase internal inter-server timeouts to increase resiliency on systems under heavy loads.
 * Fix bugs and deprecation warnings when using Ruby 2.7.x
 * Add support for the <exclusive> and <shared> tags to Slurm
+* Fix bug when using command line options to select all tasks
 
 ## New for Version 1.3.2
 
