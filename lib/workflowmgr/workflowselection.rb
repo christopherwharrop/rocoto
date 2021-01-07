@@ -211,6 +211,9 @@ module WorkflowMgr
     #
     ##########################################
     def select_tasks(tasks)
+      if @all_tasks
+        return tasks.values.collect{|task| task.attributes[:name]}.sort
+      end
       selection=Set.new
       @task_options.each do |opt|
         if opt.is_a? WorkflowMgr::MetataskSelection
