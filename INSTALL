@@ -231,7 +231,7 @@ cd ${BUILD_DIR}
 gunzip -c ${TAR_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}.tar.gz | tar -xvf -
 cd sqlite3-ruby-${SQLITE3_RUBY_VERSION}/ext/sqlite3
 export LD_RUN_PATH=${LIB_DIR}/sqlite3/lib
-${RUBY} extconf.rb -- --with-sqlite3-dir=${LIB_DIR}/sqlite3
+${RUBY} extconf.rb -- --with-sqlite3-dir=${LIB_DIR}/sqlite3 --with-sqlite3-lib=${LIB_DIR}/sqlite3/lib
 make clean
 make
 rm -rf ${LIB_DIR}/sqlite3-ruby
