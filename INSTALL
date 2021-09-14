@@ -1,12 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 # Script to install required external packages
 
 # Get the OS
-OS=`uname -s`
+OS=$(uname -s)
 
 # Set location of WFM
-WFM_DIR=`pwd`
+WFM_DIR=$(pwd)
 
 # Set location where tarfiles for packages are kept
 TAR_DIR=${WFM_DIR}/tarfiles
@@ -20,7 +20,7 @@ LIB_DIR=${WFM_DIR}/lib
 # Process arguments
 for arg in $@; do
   case $arg in
-    --with-ruby=*) RUBY=`echo $arg | cut -f 2 -d "="`/bin/ruby;;
+    --with-ruby=*) RUBY=$(echo $arg | cut -f 2 -d "=")/bin/ruby;;
     -h|--help) echo
                echo "Run this script to install the Workflow Manager"
                echo
@@ -33,7 +33,7 @@ done
 
 # Make sure a ruby is specified
 if [ -z "$RUBY" ]; then
-  RUBY=`which ruby 2>/dev/null`
+  RUBY=$(which ruby 2>/dev/null)
   if [ $? -ne 0 ]; then
     echo "Can not find ruby.  Use --with-ruby to specify path where ruby is installed."
     exit 1
@@ -52,26 +52,24 @@ fi
 set -e
 
 # Make sure ruby is at least 1.8.7 or higher
-good_ruby=`$RUBY -e "puts RUBY_VERSION >= '1.8.7'"`
-if [ "$good_ruby" == "false" ]; then
+good_ruby=$($RUBY -e "puts RUBY_VERSION >= '1.8.7'")
+if [ "$good_ruby" = "false" ]; then
   echo "Ruby 1.8.7 or higher (and not 2.1.2) is required"
   exit 1
 fi
 
 # Make sure ruby is not 2.1.2
-good_ruby=`$RUBY -e "puts RUBY_VERSION != '2.1.2'"`
-if [ "$good_ruby" == "false" ]; then
+good_ruby=$($RUBY -e "puts RUBY_VERSION != '2.1.2'")
+if [ "$good_ruby" = "false" ]; then
   echo "Ruby 1.8.7 or higher (and not 2.1.2) is required"
   exit 1
 fi
 
-
-
 # Check if we are using ruby 1.9.x or higher
-new_ruby=`$RUBY -e "puts RUBY_VERSION >= '1.9.0'"`
+new_ruby=$($RUBY -e "puts RUBY_VERSION >= '1.9.0'")
 
 # Replace ruby shebangs with path to ruby
-for file in `ls sbin | grep -v '\.sh'`; do
+for file in $(ls sbin | grep -v '\.sh'); do
 
   # Skip files that are links
   if [ -L sbin/$file ]; then
@@ -83,7 +81,7 @@ for file in `ls sbin | grep -v '\.sh'`; do
   mv sbin/$file.new sbin/$file
 
   # Add path to libxml2 for AIX
-  if [ "$OS" == "AIX" ]; then
+  if [ "$OS" = "AIX" ]; then
     sed "2s%.*%ENV['LIBPATH']=\"${LIB_DIR}/libxml2/lib:#{ENV['LIBPATH']}\"%" sbin/$file > sbin/$file.new
     mv sbin/$file.new sbin/$file
   fi
@@ -105,7 +103,7 @@ RUBYSL_PARSEDATE_VERSION="1.0.1"
 THREAD_VERSION="0.2.2"
 
 # Set AIX_CFLAGS and AIX_LDFLAGS
-if [ "$OS" == "AIX" ]; then
+if [ "$OS" = "AIX" ]; then
   AIX_CFLAGS="-maix64 -g0"
   AIX_LDFLAGS="-maix64 -g0"
 else
@@ -116,7 +114,7 @@ fi
 # Create the build directory
 mkdir -p ${BUILD_DIR}
 
-if [ "$new_ruby" == "true" ]; then
+if [ "$new_ruby" = "true" ]; then
 
   # Install rubysl-date
   echo "==========================================="
@@ -154,7 +152,7 @@ echo "==========================================="
 cd ${BUILD_DIR}
 gunzip -c ${TAR_DIR}/libxml2-${LIBXML2_VERSION}.tar.gz | tar -xvf -
 cd libxml2-${LIBXML2_VERSION}
-if [ "$LIBXML2_VERSION" == "2.9.0" ]; then    # version 2.9.0 requires must be patched
+if [ "$LIBXML2_VERSION" = "2.9.0" ]; then    # version 2.9.0 requires must be patched
   echo "==========================================="
   echo "= PATCHING libxml2                        ="
   echo "==========================================="
@@ -177,7 +175,7 @@ gunzip -c ${TAR_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}.tar.gz | tar -xvf -
 cd libxml-ruby-${LIBXML_RUBY_VERSION}/ext/libxml
 echo ${RUBY} extconf.rb $libxml2_opts
 ${RUBY} extconf.rb $libxml2_opts
-if [ "$OS" == "AIX" ]; then
+if [ "$OS" = "AIX" ]; then
   :
 else
   sed -i "/^ldflags/ s:$: -Wl,-rpath,${LIB_DIR}/libxml2/lib:" Makefile
@@ -190,7 +188,7 @@ cp -r ${BUILD_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}/lib/* ${LIB_DIR}/libxml-ru
 cp libxml_ruby.so ${LIB_DIR}/libxml-ruby
 
 # Install SystemTimer unless we are using ruby > 1.8.7
-if [ "$new_ruby" == "true" ]; then
+if [ "$new_ruby" = "true" ]; then
   echo "==========================================="
   echo "= SKIPPING SystemTimer for ruby > 1.8.7   ="
   echo "==========================================="
