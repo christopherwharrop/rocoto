@@ -9,7 +9,6 @@ $:.unshift("#{__WFMDIR__}/lib/rubysl-date/lib")
 $:.unshift("#{__WFMDIR__}/lib/rubysl-parsedate/lib")
 $:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
 $:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
-$:.unshift("#{__WFMDIR__}/lib/SystemTimer")
 $:.unshift("#{__WFMDIR__}/lib/open4/lib")
 $:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
