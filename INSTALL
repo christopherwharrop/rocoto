@@ -92,10 +92,8 @@ for file in $(ls sbin | grep -v '\.sh'); do
 done
 
 # Package versions
-LIBXML2_VERSION="2.9.4"
 LIBXML_RUBY_VERSION="3.0.0"
 SYSTEMTIMER_VERSION="1.2.3"
-SQLITE3_VERSION="autoconf-3120200"
 SQLITE3_RUBY_VERSION="1.4.2"
 OPEN4_VERSION="1.3.4"
 RUBYSL_DATE_VERSION="2.0.9"
@@ -145,41 +143,15 @@ gunzip -c ${TAR_DIR}/open4-${OPEN4_VERSION}.tar.gz | tar -xvf -
 rm -rf open4
 mv open4-${OPEN4_VERSION} open4
 
-# Install libxml2
-echo "==========================================="
-echo "= INSTALLING libxml2                      ="
-echo "==========================================="
-cd ${BUILD_DIR}
-gunzip -c ${TAR_DIR}/libxml2-${LIBXML2_VERSION}.tar.gz | tar -xvf -
-cd libxml2-${LIBXML2_VERSION}
-if [ "$LIBXML2_VERSION" = "2.9.0" ]; then    # version 2.9.0 requires must be patched
-  echo "==========================================="
-  echo "= PATCHING libxml2                        ="
-  echo "==========================================="
-  patch -p1 -i ${TAR_DIR}/libxml2-2.9.0.patch
-fi
-export OBJECT_MODE=64
-./configure --prefix=${LIB_DIR}/libxml2 CFLAGS="$AIX_CFLAGS" LDFLAGS="$AIX_LDFLAGS" --without-python
-make clean
-make
-rm -rf ${LIB_DIR}/libxml2
-make install
-
 # Install libxml-ruby
 echo "==========================================="
 echo "= INSTALLING libxml-ruby                  ="
 echo "==========================================="
-libxml2_opts="--with-xml2-lib=${LIB_DIR}/libxml2/lib --with-xml2-include=${LIB_DIR}/libxml2/include/libxml2"
 cd ${BUILD_DIR}
 gunzip -c ${TAR_DIR}/libxml-ruby-${LIBXML_RUBY_VERSION}.tar.gz | tar -xvf -
 cd libxml-ruby-${LIBXML_RUBY_VERSION}/ext/libxml
-echo ${RUBY} extconf.rb $libxml2_opts
-${RUBY} extconf.rb $libxml2_opts
-if [ "$OS" = "AIX" ]; then
-  :
-else
-  sed -i "/^ldflags/ s:$: -Wl,-rpath,${LIB_DIR}/libxml2/lib:" Makefile
-fi
+echo ${RUBY} extconf.rb
+${RUBY} extconf.rb
 make clean
 make
 rm -rf ${LIB_DIR}/libxml-ruby
@@ -208,19 +180,6 @@ else
   cp system_timer_native.so ${LIB_DIR}/SystemTimer
 fi
 
-# Install sqlite3
-echo "==========================================="
-echo "= INSTALLING sqlite3                      ="
-echo "==========================================="
-cd ${BUILD_DIR}
-gunzip -c ${TAR_DIR}/sqlite-${SQLITE3_VERSION}.tar.gz | tar -xvf -
-cd sqlite-${SQLITE3_VERSION}
-./configure --prefix=${LIB_DIR}/sqlite3 CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_THREADSAFE=1 $AIX_CFLAGS $AIX_CFLAGS" LD_FLAGS="$AIX_LDFLAGS"
-make clean
-make
-rm -rf ${LIB_DIR}/sqlite3
-make install
-
 # Install sqlite3-ruby
 echo "==========================================="
 echo "= INSTALLING sqlite3-ruby                 ="
@@ -228,15 +187,13 @@ echo "==========================================="
 cd ${BUILD_DIR}
 gunzip -c ${TAR_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}.tar.gz | tar -xvf -
 cd sqlite3-ruby-${SQLITE3_RUBY_VERSION}/ext/sqlite3
-export LD_RUN_PATH=${LIB_DIR}/sqlite3/lib
-${RUBY} extconf.rb -- --with-sqlite3-dir=${LIB_DIR}/sqlite3 --with-sqlite3-lib=${LIB_DIR}/sqlite3/lib
+${RUBY} extconf.rb
 make clean
 make
 rm -rf ${LIB_DIR}/sqlite3-ruby
 mkdir ${LIB_DIR}/sqlite3-ruby
 cp -r ${BUILD_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}/lib/* ${LIB_DIR}/sqlite3-ruby
 cp sqlite3_native.so ${LIB_DIR}/sqlite3-ruby/sqlite3
-unset LDFLAGS
 
 # Insteall thread
 echo "==========================================="
