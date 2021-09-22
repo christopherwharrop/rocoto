@@ -1,5 +1,10 @@
 # Release Notes
 
+## New for Version 1.3.4
+
+* Fix INSTALL script incompatibilities with Bourne shell.
+* Fix missing sqlite3 library path during installation.
+
 ## New for Version 1.3.3
 
 * Performance improvements
