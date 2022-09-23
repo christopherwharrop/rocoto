@@ -45,25 +45,25 @@ module WorkflowMgr
 
       # Set default node size to 0
       # If a user does not specify one, it will be determined from pbsnodes
-      @default_node_size=nil
+      @default_node_size=128
 
-      # Try to get a default node size from pbsnodes -a
-      begin
-        pbsnodes,errors,exit_status=WorkflowMgr.run4("pbsnodes -a | grep resources_available.ncpus | sort | uniq -c",30)
-
-        # Raise SchedulerDown if the pbsnodes failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
-
-      rescue Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",3)
-        @schedup=false
-        raise WorkflowMgr::SchedulerDown
-      end
-
-      if pbsnodes =~ /\s*\d+\s+resources_available.ncpus = (\d+)/
-        @default_node_size = $1.to_i
-      end
+#      # Try to get a default node size from pbsnodes -a
+#      begin
+#        pbsnodes,errors,exit_status=WorkflowMgr.run4("pbsnodes -a | grep resources_available.ncpus | sort | uniq -c",30)
+#
+#        # Raise SchedulerDown if the pbsnodes failed
+#        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
+#
+#      rescue Timeout::Error,WorkflowMgr::SchedulerDown
+#        WorkflowMgr.log("#{$!}")
+#        WorkflowMgr.stderr("#{$!}",3)
+#        @schedup=false
+#        raise WorkflowMgr::SchedulerDown
+#      end
+#
+#      if pbsnodes =~ /\s*\d+\s+resources_available.ncpus = (\d+)/
+#        @default_node_size = $1.to_i
+#      end
 
     end
 
@@ -160,8 +160,8 @@ module WorkflowMgr
       # Get the node size
       nodesize = @default_node_size
       if task.attributes[:nodesize].nil?
-        WorkflowMgr.stderr("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.",1)
-        WorkflowMgr.log("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.")
+#        WorkflowMgr.stderr("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.",1)
+#        WorkflowMgr.log("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.")
       else
         nodesize = task.attributes[:nodesize]
       end
