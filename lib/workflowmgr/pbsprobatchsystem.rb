@@ -90,7 +90,6 @@ module WorkflowMgr
 
       # Add Pbspro batch system options translated from the generic options specification
       task.attributes.each do |option,value|
-
          if value.is_a?(String)
            if value.empty?
              WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
@@ -104,24 +103,24 @@ module WorkflowMgr
             input += "#PBS -q #{value}\n"
           when :partition
             WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for PBSPro.", 1)
-            WorkflowMgr.log("WARNING: the <partition> tag is not supported for PBSPro.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for PBSPro.")
           when :nodesize
             WorkflowMgr.stderr("WARNING: <nodesize> support is deprecated, please use <nodes> to specify the requested resources", 1)
-            WorkflowMgr.log("WARNING: <nodesize> support is deprecated, please use <nodes> to specify the requested resources", 1)
+            WorkflowMgr.log("WARNING: <nodesize> support is deprecated, please use <nodes> to specify the requested resources")
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
 
             # Print deprecation warning
-            WorkflowMgr.stderr("WARNING: <cores> is deprecated for PBSPro, please use <nodes> to specify the requested resources", 1)
-            WorkflowMgr.log("WARNING: <cores> is deprecated for PBSPro, please use <nodes> to specify the requested resources", 1)
+            WorkflowMgr.stderr("WARNING: <cores> support is deprecated for PBSPro, please use <nodes> to specify the requested resources", 1)
+            WorkflowMgr.log("WARNING: <cores> support is deprecated for PBSPro, please use <nodes> to specify the requested resources")
 
             # Get the node size
             nodesize = task.attributes[:nodesize]
             if nodesize.nil?
-              WorkflowMgr.stderr("FATAL ERROR: task `${task.name}` cannot be submitted due to missing <nodesize> information",0)
-              WorkflowMgr.log("FATAL ERROR: task `${task.name}` cannot be submitted due to missing <nodesize> information",0)
-              return
+              WorkflowMgr.stderr("FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information",0)
+              WorkflowMgr.log("FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information")
+              return nil, "FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information"
             end
 
             # Calculate the number of full nodes required
@@ -262,7 +261,9 @@ private
         errors=""
         exit_status=0
 
-        unless jobids.nil? joblist = jobids.join(" ")
+        unless jobids.nil?
+          joblist = jobids.join(" ")
+        end
 
         # Return if the joblist is empty
         return if joblist.empty?
