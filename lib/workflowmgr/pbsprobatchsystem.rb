@@ -28,82 +28,13 @@ module WorkflowMgr
     def initialize(pbspro_root=nil,config)
 
       # Get timeouts from the configuration
-      @qstat_timeout=config.JobQueueTimeout
       @qstat_x_timeout=config.JobAcctTimeout
-
-      # Initialize an empty hash for job queue records
-      @jobqueue={}
 
       # Initialize an empty hash for job completion records
       @jobacct={}
 
-      # Hours to look back for finished jobs.
-      @hrsback=1
-
       # Assume the scheduler is up
       @schedup=true
-
-      # Set default node size to 0
-      # If a user does not specify one, it will be determined from pbsnodes
-      @default_node_size=nil
-
-      # Try to get a default node size from pbsnodes -a
-      begin
-        pbsnodes,errors,exit_status=WorkflowMgr.run4("pbsnodes -a | grep resources_available.ncpus | sort | uniq -c",30)
-
-        # Raise SchedulerDown if the pbsnodes failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
-
-      rescue Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",3)
-        @schedup=false
-        raise WorkflowMgr::SchedulerDown
-      end
-
-      if pbsnodes =~ /\s*\d+\s+resources_available.ncpus = (\d+)/
-        @default_node_size = $1.to_i
-      end
-
-    end
-
-
-    #####################################################
-    #
-    # status
-    #
-    #####################################################
-    def status(jobid)
-
-      begin
-
-        raise WorkflowMgr::SchedulerDown unless @schedup
-
-        # Populate the jobs status table if it is empty
-        refresh_jobqueue if @jobqueue.empty?
-
-        # Return the jobqueue record if there is one
-        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
-
-        # Populate the job accounting log table if it is empty
-        refresh_jobacct(nil) if @jobacct.empty?
-
-        # Return the jobacct record if there is one
-        return @jobacct[jobid] if @jobacct.has_key?(jobid)
-
-        # Try to find the job individually
-        refresh_jobacct(jobid)
-
-        # Return the jobacct record if there is one
-        return @jobacct[jobid] if @jobacct.has_key?(jobid)
-
-        # We didn't find the job, so return an uknown status record
-        return { :jobid => jobid, :state => "UNKNOWN", :native_state => "Unknown" }
-
-      rescue WorkflowMgr::SchedulerDown
-        @schedup=false
-        return { :jobid => jobid, :state => "UNAVAILABLE", :native_state => "Unavailable" }
-      end
 
     end
 
@@ -157,18 +88,8 @@ module WorkflowMgr
       cmd="qsub"
       input="#! /bin/sh\n"
 
-      # Get the node size
-      nodesize = @default_node_size
-      if task.attributes[:nodesize].nil?
-        WorkflowMgr.stderr("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.",1)
-        WorkflowMgr.log("WARNING: <nodesize> attribute not set, using default node size of #{@default_node_size} cores.")
-      else
-        nodesize = task.attributes[:nodesize]
-      end
-
       # Add Pbspro batch system options translated from the generic options specification
       task.attributes.each do |option,value|
-
          if value.is_a?(String)
            if value.empty?
              WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
@@ -182,10 +103,25 @@ module WorkflowMgr
             input += "#PBS -q #{value}\n"
           when :partition
             WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for PBSPro.", 1)
-            WorkflowMgr.log("WARNING: the <partition> tag is not supported for PBSPro.", 1)
+            WorkflowMgr.log("WARNING: the <partition> tag is not supported for PBSPro.")
+          when :nodesize
+            WorkflowMgr.stderr("WARNING: <nodesize> support is deprecated, please use <nodes> to specify the requested resources", 1)
+            WorkflowMgr.log("WARNING: <nodesize> support is deprecated, please use <nodes> to specify the requested resources")
           when :cores
             # Ignore this attribute if the "nodes" attribute is present
             next unless task.attributes[:nodes].nil?
+
+            # Print deprecation warning
+            WorkflowMgr.stderr("WARNING: <cores> support is deprecated for PBSPro, please use <nodes> to specify the requested resources", 1)
+            WorkflowMgr.log("WARNING: <cores> support is deprecated for PBSPro, please use <nodes> to specify the requested resources")
+
+            # Get the node size
+            nodesize = task.attributes[:nodesize]
+            if nodesize.nil?
+              WorkflowMgr.stderr("FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information",0)
+              WorkflowMgr.log("FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information")
+              return nil, "FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information"
+            end
 
             # Calculate the number of full nodes required
             nchunks = value / nodesize
@@ -306,87 +242,6 @@ module WorkflowMgr
 
 private
 
-    #####################################################
-    #
-    # refresh_jobqueue
-    #
-    #####################################################
-    def refresh_jobqueue
-
-      begin
-
-        # Get the username of this process
-        username=Etc.getpwuid(Process.uid).name
-
-        # Run qstat to obtain the current status of queued jobs
-        qstat=""
-        errors=""
-        exit_status=0
-
-        # Get the list of jobs queued or running for this user
-        qstat,errors,exit_status=WorkflowMgr.run4("qstat -u #{username} -w",@qstat_timeout)
-
-        # Raise SchedulerDown if the qstat failed
-        raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
-
-        # Return if the qstat output is empty
-        return if qstat.empty?
-
-      rescue Timeout::Error,WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}",3)
-        raise WorkflowMgr::SchedulerDown
-      end
-
-      # Initialize an empty job record
-      record={}
-
-      # For each line, find the various attributes and create job records
-      qstat.each_line { |line|
-
-        # Remove leading and trailing white space
-        line.strip!
-
-        # Skip lines that don't start with a jobid number
-        next unless line=~/^\d+/
-
-        # Split the line into fields
-        fields = line.split(/\s+/)
-
-        # Extract the jobid
-        if fields[0] =~ /^(\d+)\..*/
-          record[:jobid] = $1
-        end
-
-        # Extract the user
-        record[:user] = username
-
-        # Extract the native state
-        record[:native_state] = fields[9]
-
-        # Compute the state
-        case record[:native_state]
-          when /^Q$/,/^H$/,/^W$/,/^S$/,/^T$/,/^M$/
-            record[:state] = "QUEUED"
-          when /^B$/,/^R$/,/^E$/
-            record[:state]="RUNNING"
-          else
-            record[:state]="UNKNOWN"
-        end
-
-        # Extract jobname
-        record[:jobname] = fields[3]
-
-        # Extract queue
-        record[:queue] = fields[2]
-
-        record[:cores] = fields[6]
-
-        @jobqueue[record[:jobid]] = record
-
-      }  #  qstat.each
-
-    end  # refresh_job_queue
 
     #####################################################
     #
@@ -406,16 +261,7 @@ private
         errors=""
         exit_status=0
 
-        if jobids.nil?
-
-          # Get the list of jobs that have completed within the last hour for this user
-          joblist,errors,exit_status=WorkflowMgr.run4("qselect -H -u $USER -te.gt.#{(Time.now - 3600).strftime("%Y%m%d%H%M")}")
-
-          # Raise SchedulerDown if the qselect failed
-          raise WorkflowMgr::SchedulerDown,errors unless exit_status==0
-          joblist = joblist.split.join(" ")
-
-        else
+        unless jobids.nil?
           joblist = jobids.join(" ")
         end
 

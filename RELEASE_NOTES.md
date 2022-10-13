@@ -1,5 +1,12 @@
 # Release Notes
 
+## New for Version 1.3.5
+
+* Remove automatic detection of default nodesize from PBSPro support.
+* Deprecate use of <nodesize> tag.
+* Deprecate support for <cores> tag for PBSPro.
+* Remove unused/dead code from PBSPro support.
+
 ## New for Version 1.3.4
 
 * Fix INSTALL script incompatibilities with Bourne shell.
