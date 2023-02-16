@@ -440,7 +440,7 @@ Avoid combining serial and parallel processing in the same workflow task unless 
 <p>Sometimes it is necessary, in realtime mode, for a cycle to be activated before or after the wall clock time reaches the cycle time.  In these cases the activation_offset attribute may be used to specify an offset from the cycle time that changes when cycles are activated.  Note that the cycle's life span starts when it is activated, not when the wall clock time is equal to the cycle time.  The cycle activation offset is in DD:HH:MM:SS format and can be either positive or negative.
 
 <pre><code>
-&lt;cycledef activation_offset="-01:00:00"&gt;*/6 * * * 2016 *&lt;/cycledef&gt;
+&lt;cycledef activation_offset="-01:00:00"&gt;0 */6 * * 2016 *&lt;/cycledef&gt;
 </code></pre>
 
 <p>In the above example, the 00Z, 06Z, 12Z, and 18Z cycles would be activated at 23Z, 05Z, 11Z, and 17Z respectively.</p>
