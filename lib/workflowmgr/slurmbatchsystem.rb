@@ -477,7 +477,7 @@ private
         code_signal=job[230..239].strip
         if code_signal=~ /:/
 
-          code,signal=core_signal.split(":").collect {|i| i.to_i}
+          code,signal=code_signal.split(":").collect {|i| i.to_i}
           if code==0
             record[:exit_status]=signal
           else
