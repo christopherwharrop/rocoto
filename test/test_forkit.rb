@@ -16,9 +16,9 @@ puts result.inspect
 
 exit
 
-# File exists?
+# File exist?
 result=forkit(2) do
-  File.exists?(filename)
+  File.exist?(filename)
 end
 puts result
 
@@ -33,6 +33,6 @@ end
 # Performance test of forking
 10.times do
   result=forkit(1) do
-    File.exists?(filename)
+    File.exist?(filename)
   end
 end

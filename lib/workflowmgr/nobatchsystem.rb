@@ -583,7 +583,7 @@ class NoBatchSystem
       fname="#{@acct_path}/accounting.#{date_str}"
 
       # If the file already exists roll it over
-      if File.exists?(fname)
+      if File.exist?(fname)
 
         # Find all files associated with that date sorted by modification date
         oldfiles=files.find_all { |file|

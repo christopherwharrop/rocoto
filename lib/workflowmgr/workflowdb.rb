@@ -1019,7 +1019,7 @@ module WorkflowMgr
       if @mode[:readonly]
 
         # Make sure the database file exists and that we can read it
-        if File.exists?(@database_file)
+        if File.exist?(@database_file)
           if !File.readable?(@database_file)
             raise WorkflowDBAccessException, "ERROR: You do not have permission to read #{@database_file}"
           end
@@ -1035,7 +1035,7 @@ module WorkflowMgr
 
         # Make sure the database and database lock files are writable
         [@database_file, @database_lock_file].each do |dbfile|
-          if File.exists?(dbfile)
+          if File.exist?(dbfile)
             if !File.writable?(dbfile)
               raise WorkflowDBAccessException, "ERROR: You do not have permission to modify #{dbfile}"
             end
