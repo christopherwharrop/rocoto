@@ -49,19 +49,19 @@ module WorkflowMgr
       begin
 
         # Create a .rocoto directory if one does not already exist
-        FileUtils.mkdir_p(@config_dir) unless File.exists?(@config_dir)
+        FileUtils.mkdir_p(@config_dir) unless File.exist?(@config_dir)
 
         # Create a .rocoto log directory for this workflow if one does not already exist
-        FileUtils.mkdir_p(@config_log) unless File.exists?(@config_log)
+        FileUtils.mkdir_p(@config_log) unless File.exist?(@config_log)
 
         # Create a .rocoto tmp dir if one does not already exist
-        FileUtils.mkdir_p(@config_tmp) unless File.exists?(@config_tmp)
+        FileUtils.mkdir_p(@config_tmp) unless File.exist?(@config_tmp)
 
         # Move the legacy .wfmrc file to rocotorc file if it exists
-        FileUtils.mv("#{ENV['HOME']}/.wfmrc",@config_file) if File.exists?("#{ENV['HOME']}/.wfmrc")
+        FileUtils.mv("#{ENV['HOME']}/.wfmrc",@config_file) if File.exist?("#{ENV['HOME']}/.wfmrc")
 
         # Load the rocotorc config if one exists
-        if File.exists?(@config_file) && !File.zero?(@config_file)
+        if File.exist?(@config_file) && !File.zero?(@config_file)
           config=YAML.load_file(@config_file)
           if config.is_a?(Hash)
             # Merge default config into rocotorc config if there are unspecified config options
@@ -88,7 +88,7 @@ module WorkflowMgr
         raise msg
       ensure
         # Update the config file in a quasi-atomic way.
-        FileUtils.mv("#{@config_file}.#{Process.pid}", @config_file) if File.exists?("#{@config_file}.#{Process.pid}")
+        FileUtils.mv("#{@config_file}.#{Process.pid}", @config_file) if File.exist?("#{@config_file}.#{Process.pid}")
       end
 
     end  # initialize

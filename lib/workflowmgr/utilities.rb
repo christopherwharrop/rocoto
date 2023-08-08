@@ -202,7 +202,7 @@ module WorkflowMgr
         begin
 
           # Only rotate logs if they exist
-          if File.exists?(rocotolog)
+          if File.exist?(rocotolog)
 
             # Determine if it is time to rotate the logs
             log_mod_time = File.mtime(rocotolog)
@@ -226,7 +226,7 @@ module WorkflowMgr
 
             end  # if rotate?
 
-          end  # if File.exists?
+          end  # if File.exist?
 
           # Log the message
           File.open(rocotolog,"a") { |f|

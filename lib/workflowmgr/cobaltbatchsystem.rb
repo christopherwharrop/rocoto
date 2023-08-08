@@ -310,7 +310,7 @@ private
       begin
 
         joblogfile = "#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/tmp/#{jobid}.log"
-        return unless  File.exists?(joblogfile)
+        return unless  File.exist?(joblogfile)
         joblog = IO.readlines(joblogfile,nil)[0]
 
         # Return if the joblog output is empty

@@ -56,9 +56,9 @@ module WorkflowMgr
     # exists?
     #
     ##########################################
-    def exists?(filename)
+    def exist?(filename)
 
-      return File.exists?(filename)
+      return File.exist?(filename)
 
     end
 
@@ -152,7 +152,7 @@ module WorkflowMgr
     def roll_log(logname)
 
       # If the log file exists, roll it
-      if File.exists?(logname)
+      if File.exist?(logname)
 
         Dir["#{logname}*"].sort.reverse.each do |f|
           if f=~/#{logname}\.(\d+)$/ then

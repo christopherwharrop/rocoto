@@ -75,7 +75,7 @@ module WorkflowMgr
       # external entities on other filesystems) outside the IO server
       # process.
       begin
-        if @workflowIOServer.exists?(workflowdoc)
+        if @workflowIOServer.exist?(workflowdoc)
           context = LibXML::XML::Parser::Context.file(workflowdoc)
           context.options=LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
           parser=LibXML::XML::Parser.new(context)

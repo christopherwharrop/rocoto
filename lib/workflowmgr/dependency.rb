@@ -953,7 +953,7 @@ module WorkflowMgr
     def resolved?(d)
 
       filename=@datapath.to_s(d.cycle)
-      if d.workflowIOServer.exists?(filename)
+      if d.workflowIOServer.exist?(filename)
         if d.workflowIOServer.size(filename) >= @minsize
           return Time.now > (d.workflowIOServer.mtime(filename) + @age)
         else
@@ -973,7 +973,7 @@ module WorkflowMgr
     def query(d)
 
       filename=@datapath.to_s(d.cycle)
-      if d.workflowIOServer.exists?(filename)
+      if d.workflowIOServer.exist?(filename)
         if Time.now > (d.workflowIOServer.mtime(filename) + @age)
           if d.workflowIOServer.size(filename) >= @minsize
             return [{:dep=>filename, :msg=>"is available", :resolved=>true }]
