@@ -1,5 +1,10 @@
 # Release Notes
 
+## New for Version 1.3.6
+
+* Fix typo in Slurm support causing persistent UNAVAILABLE state
+* Replace deprecated File.exists?() with File.exist?()
+
 ## New for Version 1.3.5
 
 * Remove automatic detection of default nodesize from PBSPro support.
