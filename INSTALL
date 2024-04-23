@@ -92,11 +92,11 @@ for file in $(ls sbin | grep -v '\.sh'); do
 done
 
 # Package versions
-LIBXML2_VERSION="2.9.4"
-LIBXML_RUBY_VERSION="3.0.0"
+LIBXML2_VERSION="2.12.6"
+LIBXML_RUBY_VERSION="5.0.3"
 SYSTEMTIMER_VERSION="1.2.3"
-SQLITE3_VERSION="autoconf-3120200"
-SQLITE3_RUBY_VERSION="1.4.2"
+SQLITE3_VERSION="autoconf-3450300"
+SQLITE3_RUBY_VERSION="2.0.1"
 OPEN4_VERSION="1.3.4"
 RUBYSL_DATE_VERSION="2.0.9"
 RUBYSL_PARSEDATE_VERSION="1.0.1"
@@ -150,7 +150,7 @@ echo "==========================================="
 echo "= INSTALLING libxml2                      ="
 echo "==========================================="
 cd ${BUILD_DIR}
-gunzip -c ${TAR_DIR}/libxml2-${LIBXML2_VERSION}.tar.gz | tar -xvf -
+unxz -c ${TAR_DIR}/libxml2-${LIBXML2_VERSION}.tar.xz | tar -xvf -
 cd libxml2-${LIBXML2_VERSION}
 if [ "$LIBXML2_VERSION" = "2.9.0" ]; then    # version 2.9.0 requires must be patched
   echo "==========================================="
@@ -213,7 +213,7 @@ echo "==========================================="
 echo "= INSTALLING sqlite3                      ="
 echo "==========================================="
 cd ${BUILD_DIR}
-gunzip -c ${TAR_DIR}/sqlite-${SQLITE3_VERSION}.tar.gz | tar -xvf -
+unxz -c ${TAR_DIR}/sqlite-${SQLITE3_VERSION}.tar.xz | tar -xvf -
 cd sqlite-${SQLITE3_VERSION}
 ./configure --prefix=${LIB_DIR}/sqlite3 CFLAGS="-Os -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_THREADSAFE=1 $AIX_CFLAGS $AIX_CFLAGS" LD_FLAGS="$AIX_LDFLAGS"
 make clean
@@ -229,7 +229,7 @@ cd ${BUILD_DIR}
 gunzip -c ${TAR_DIR}/sqlite3-ruby-${SQLITE3_RUBY_VERSION}.tar.gz | tar -xvf -
 cd sqlite3-ruby-${SQLITE3_RUBY_VERSION}/ext/sqlite3
 export LD_RUN_PATH=${LIB_DIR}/sqlite3/lib
-${RUBY} extconf.rb -- --with-sqlite3-dir=${LIB_DIR}/sqlite3 --with-sqlite3-lib=${LIB_DIR}/sqlite3/lib
+${RUBY} extconf.rb -- --with-sqlite3-include=${LIB_DIR}/sqlite3/include --with-sqlite3-lib=${LIB_DIR}/sqlite3/lib --enable-system-libraries
 make clean
 make
 rm -rf ${LIB_DIR}/sqlite3-ruby

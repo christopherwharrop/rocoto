@@ -240,16 +240,14 @@ module WorkflowMgr
         # Retrieve the cycle definitions from the database
         dbcycledefs=@database.execute("SELECT groupname,activation_offset,cycledef,dirty FROM cycledef;")
 
-        # Return the array of cycledefs
-        dbcycledefs.collect! do |cycledef|
+        # Return the array of Cycles
+        return dbcycledefs.collect do |cycledef|
           if cycledef[3].nil?
             {:group=>cycledef[0], :activation_offset=>(cycledef[1] || 0), :cycledef=>cycledef[2], :position=>nil}
           else
             {:group=>cycledef[0], :activation_offset=>(cycledef[1] || 0), :cycledef=>cycledef[2], :position=>Time.at(cycledef[3]).getgm}
           end
-        end  #
-
-        return dbcycledefs
+        end
 
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.get_cycledefs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
@@ -314,10 +312,8 @@ module WorkflowMgr
         # Retrieve all cycles from the cycle table
         dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle == #{reftime.getgm.to_i};")
 
-        # Return an array of cycles
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
-
-        return dbcycles
+        # Return an array of Cycles
+        return dbcycles.collect { |cycle| Cycle.new(Time.at(cycle[0]).getgm,{:activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
 
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.get_cycle: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
@@ -344,10 +340,8 @@ module WorkflowMgr
         # Retrieve all cycles from the cycle table
         dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle >= #{startcycle.getgm.to_i} and cycle <= #{endcycle.getgm.to_i};")
 
-        # Return an array of cycles
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
-
-        return dbcycles
+        # Return an array of Cycles
+        return dbcycles.collect { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
 
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.get_cycles: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
@@ -374,10 +368,10 @@ module WorkflowMgr
           dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle=#{max_cycle}")
         end
 
-        # Return the last cycle
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
+        # Return the last Cycle
+        last_cycle = dbcycles.collect { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm }) }
 
-        return dbcycles.first
+        return last_cycle.first
 
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.get_last_cycle: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
@@ -399,10 +393,8 @@ module WorkflowMgr
         # Get the cycles that are neither done nor expired
         dbcycles=@database.execute("SELECT cycle,activated,expired,done,draining FROM cycles WHERE done=0 and expired=0;")
 
-        # Return the array of cycle specs
-        dbcycles.collect! { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm}) }
-
-        return dbcycles
+        # Return the array of Cycles
+        return dbcycles.collect { |cycle| Cycle.new(Time.at(cycle[0]).getgm, { :activated=>Time.at(cycle[1]).getgm, :expired=>Time.at(cycle[2]).getgm, :done=>Time.at(cycle[3]).getgm, :draining=>Time.at(cycle[4] || 0).getgm}) }
 
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.get_active_cycles: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
@@ -773,10 +765,7 @@ module WorkflowMgr
         dbdownpaths=@database.execute("SELECT path,downdate,host,pid FROM downpaths;")
 
         # Return an array of downpaths
-        dbdownpaths.collect! { |downpath| {:path=>downpath[0], :downtime=>Time.at(downpath[1]).getgm, :host=>downpath[2], :pid=>downpath[3]} }
-
-        # Return downpaths hash
-        return dbdownpaths
+        return dbdownpaths.collect { |downpath| {:path=>downpath[0], :downtime=>Time.at(downpath[1]).getgm, :host=>downpath[2], :pid=>downpath[3]} } 
 
       rescue SQLite3::BusyException
         msg="ERROR: WorkflowSQLite3DB.get_downpaths: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"

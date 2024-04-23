@@ -465,10 +465,18 @@ private
         record[:submit_time]=Time.local(*job[110..139].strip.split(/[-:T]/)).getgm
 
         # Extract the start time
-        record[:start_time]=Time.local(*job[140..169].strip.split(/[-:T]/)).getgm
+        if job[140..169].strip != "N/A"
+          record[:start_time]=Time.local(*job[140..169].strip.split(/[-:T]/)).getgm
+        else
+          record[:start_time]=nil
+        end
 
         # Extract the end time
-        record[:end_time]=Time.local(*job[170..199].strip.split(/[-:T]/)).getgm
+        if job[170..199].strip != "N/A"
+          record[:end_time]=Time.local(*job[170..199].strip.split(/[-:T]/)).getgm
+        else
+          record[:end_time]=nil
+        end
 
         # Extract the priority
         record[:priority]=job[200..229].strip
@@ -597,10 +605,18 @@ private
         record[:submit_time]=Time.local(*jobfields[5].split(/[-:T]/)).getgm
 
         # Extract the start time
-        record[:start_time]=Time.local(*jobfields[6].split(/[-:T]/)).getgm
+        if jobfields[6] != "None"
+          record[:start_time]=Time.local(*jobfields[6].split(/[-:T]/)).getgm
+        else
+          record[:start_time]=nil
+        end
 
         # Extract the end time
-        record[:end_time]=Time.local(*jobfields[7].split(/[-:T]/)).getgm
+        if jobfields[7] != "None"
+          record[:end_time]=Time.local(*jobfields[7].split(/[-:T]/)).getgm
+        else
+          record[:end_time]=nil
+        end
 
         # Extract the priority
         record[:priority]=jobfields[4]
@@ -619,7 +635,7 @@ private
             record[:state]="QUEUED"
           when /^(RUNNING|COMPLETING|RESIZING|SIGNALING|STAGE_OUT|STOPPED)$/
             record[:state]="RUNNING"
-          when /^(CANCELLED|FAILED|NODE_FAIL|PREEMPTED|TIMEOUT|BOOT_FAIL|DEADLINE|OUT_OF_MEMORY|REVOKED)$/
+          when /^(CANCELLED|FAILED|NODE_FAIL|PREEMPTED|TIMEOUT|BOOT_FAIL|DEADLINE|OUT_OF_MEMORY|REVOKED)/
             record[:state]="FAILED"
             record[:exit_status]=255 if record[:exit_status]==0 # Override exit status of 0 for "failed" jobs
           when /^COMPLETED$/
