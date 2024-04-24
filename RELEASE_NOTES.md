@@ -1,5 +1,12 @@
 # Release Notes
 
+## New for Version 1.3.7
+
+* Update libxml2 and libxml-ruby
+* Update sqlite3 and sqlite-ruby
+* Fix date parsing bug that caused UNAVAILABLE jobs states to persist in certain conditions
+* Fix bash dependency bug that caused sh dependency commands to fail 
+
 ## New for Version 1.3.6
 
 * Fix typo in Slurm support causing persistent UNAVAILABLE state

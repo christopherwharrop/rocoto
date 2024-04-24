@@ -213,7 +213,7 @@ module WorkflowMgr
         save_env[k]=v
       end
       begin
-       each_var do |k,v|
+        each_var do |k,v|
           if v.is_a?(CompoundTimeString)
             ENV[k.to_s]=v.to_s(cycle)
           elsif v.is_a?(Hash)
@@ -229,6 +229,12 @@ module WorkflowMgr
             else
               # Skip other hashes.
             end
+          elsif v.is_a?(Array)
+            # Skip arrays
+          elsif v.is_a?(Task)
+            # Skip task objects
+          elsif v.is_a?(WorkflowIOProxy)
+            # Skip IO proxy objects
           else
             ENV[k.to_s]=v.to_s
           end

@@ -295,7 +295,6 @@ module WorkflowMgr
     ##########################################
     def resolved?(d)
       ex=@shellexpr.to_s(d.cycle)
-      puts "#{@shell} #{@runopt} #{ex} (#{d.cycle})"
       return d.shell_bool(@shell,@runopt,ex,d.cycle)
     end
 
@@ -306,7 +305,6 @@ module WorkflowMgr
     ##########################################
     def rewind!(d)
       ex=@shellexpr.to_s(d.cycle)
-      puts "#{@shell} #{@runopt} #{ex} (#{d.cycle})"
       d.shell_bool(@shell,@runopt,ex,d.cycle)
     end
   end
