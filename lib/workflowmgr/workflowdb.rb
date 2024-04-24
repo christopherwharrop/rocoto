@@ -240,7 +240,7 @@ module WorkflowMgr
         # Retrieve the cycle definitions from the database
         dbcycledefs=@database.execute("SELECT groupname,activation_offset,cycledef,dirty FROM cycledef;")
 
-        # Return the array of Cycles
+        # Return the array of cycledefs
         return dbcycledefs.collect do |cycledef|
           if cycledef[3].nil?
             {:group=>cycledef[0], :activation_offset=>(cycledef[1] || 0), :cycledef=>cycledef[2], :position=>nil}
