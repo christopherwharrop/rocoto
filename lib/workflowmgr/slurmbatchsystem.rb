@@ -462,17 +462,21 @@ private
         record[:queue]=job[90..109].strip
 
         # Extract the submit time
-        record[:submit_time]=Time.local(*job[110..139].strip.split(/[-:T]/)).getgm
+        if job[110..139].strip =~ /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$/
+          record[:submit_time]=Time.local(*job[110..139].strip.split(/[-:T]/)).getgm
+        else
+          record[:submit_time]=nil
+        end
 
         # Extract the start time
-        if job[140..169].strip != "N/A"
+        if job[140..169].strip =~ /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$/
           record[:start_time]=Time.local(*job[140..169].strip.split(/[-:T]/)).getgm
         else
           record[:start_time]=nil
         end
 
         # Extract the end time
-        if job[170..199].strip != "N/A"
+        if job[170..199].strip =~ /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$/
           record[:end_time]=Time.local(*job[170..199].strip.split(/[-:T]/)).getgm
         else
           record[:end_time]=nil
@@ -602,17 +606,21 @@ private
         record[:queue]=jobfields[3]
 
         # Extract the submit time
-        record[:submit_time]=Time.local(*jobfields[5].split(/[-:T]/)).getgm
+        if jobfields[5] =~ /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$/
+          record[:submit_time]=Time.local(*jobfields[5].split(/[-:T]/)).getgm
+        else
+          record[:submit_time]=nil
+        end
 
         # Extract the start time
-        if jobfields[6] != "None"
+        if jobfields[6] =~ /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$/
           record[:start_time]=Time.local(*jobfields[6].split(/[-:T]/)).getgm
         else
           record[:start_time]=nil
         end
 
         # Extract the end time
-        if jobfields[7] != "None"
+        if jobfields[7] =~ /^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$/
           record[:end_time]=Time.local(*jobfields[7].split(/[-:T]/)).getgm
         else
           record[:end_time]=nil
