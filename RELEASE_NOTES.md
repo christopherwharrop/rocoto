@@ -5,7 +5,8 @@
 * Update libxml2 and libxml-ruby
 * Update sqlite3 and sqlite-ruby
 * Fix date parsing bug that caused UNAVAILABLE jobs states to persist in certain conditions
-* Fix bash dependency bug that caused sh dependency commands to fail 
+* Fix bash dependency bug that caused sh dependency commands to fail
+* Remove support for Ruby < 2.4.0
 
 ## New for Version 1.3.6
 
