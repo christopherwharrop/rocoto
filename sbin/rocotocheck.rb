@@ -3,15 +3,14 @@
 # Get the base directory of the WFM installation
 __WFMDIR__=File.expand_path("../../",__FILE__)
 
-# Add include paths for WFM and libxml-ruby libraries
+# Add include paths for WFM and gem dependencies
 $:.unshift("#{__WFMDIR__}/lib")
-$:.unshift("#{__WFMDIR__}/lib/rubysl-date/lib")
-$:.unshift("#{__WFMDIR__}/lib/rubysl-parsedate/lib")
-$:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
-$:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
-$:.unshift("#{__WFMDIR__}/lib/SystemTimer")
-$:.unshift("#{__WFMDIR__}/lib/open4/lib")
-$:.unshift("#{__WFMDIR__}/lib/thread/lib")
+$:.unshift("#{__WFMDIR__}/gems/gems/libxml-ruby-5.0.3/lib")
+$:.unshift("#{__WFMDIR__}/gems/gems/open4-1.3.4/lib")
+$:.unshift("#{__WFMDIR__}/gems/gems/rubysl-date-1.0.1/lib")
+$:.unshift("#{__WFMDIR__}/gems/gems/rubysl-parsedate-1.0.1/lib")
+$:.unshift("#{__WFMDIR__}/gems/gems/sqlite3-2.0.2-x86_64-linux-gnu/lib")
+$:.unshift("#{__WFMDIR__}/gems/gems/thread-0.2.2/lib")
 
 # Load workflow status library
 require 'wfmstat/statusengine'
