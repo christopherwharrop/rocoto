@@ -13,7 +13,7 @@ module WorkflowMgr
   class WorkflowIO
 
     require 'fileutils'
-    require 'libxml-ruby/libxml'
+    require 'libxml'
 
 
     ##########################################

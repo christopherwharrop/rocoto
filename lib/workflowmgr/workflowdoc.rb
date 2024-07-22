@@ -14,7 +14,7 @@ module WorkflowMgr
 
     require 'time'
 
-    require 'libxml-ruby/libxml'
+    require 'libxml'
     require 'workflowmgr/utilities'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/workflowlog'
