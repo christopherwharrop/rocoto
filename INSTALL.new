@@ -70,4 +70,3 @@ gem install -i ${GEM_DIR} --no-user-install --no-document \
     rubysl-parsedate:1.0.1 \
     sqlite3:1.7.3 \
     thread:0.2.2
-
