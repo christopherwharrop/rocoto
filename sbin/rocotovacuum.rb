@@ -5,12 +5,10 @@ __WFMDIR__=File.expand_path("../../",__FILE__)
 
 # Add include paths for WFM and gem dependencies
 $:.unshift("#{__WFMDIR__}/lib")
-$:.unshift("#{__WFMDIR__}/gems/gems/libxml-ruby-5.0.3/lib")
-$:.unshift("#{__WFMDIR__}/gems/gems/open4-1.3.4/lib")
-$:.unshift("#{__WFMDIR__}/gems/gems/rubysl-date-1.0.1/lib")
-$:.unshift("#{__WFMDIR__}/gems/gems/rubysl-parsedate-1.0.1/lib")
-$:.unshift("#{__WFMDIR__}/gems/gems/sqlite3-2.0.2-x86_64-linux-gnu/lib")
-$:.unshift("#{__WFMDIR__}/gems/gems/thread-0.2.2/lib")
+Dir["#{__WFMDIR__}/gems/gems/*"].each do |gemdir|
+  next if gemdir == "." or gemdir == ".."
+  $:.unshift("#{gemdir}/lib")
+end
 
 # Load workflow status library
 require 'workflowmgr/workflowengine'
