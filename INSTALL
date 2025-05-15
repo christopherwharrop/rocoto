@@ -71,7 +71,7 @@ fi
 # Abort if any command returns an error
 set -e
 
-# Make sure ruby is at least 2.4.0 or higher
+# Make sure ruby is at least 3.0.0 or higher
 good_ruby=$($RUBY -e "puts RUBY_VERSION >= '3.0.0'")
 if [ "$good_ruby" = "false" ]; then
   echo "Ruby 3.0.0 or higher is required"
@@ -100,4 +100,3 @@ gem install -i ${GEM_DIR} --no-user-install --no-document \
     thread:0.2.2 \
     libxml-ruby:5.0.3 \
     -- $GEM_ARGS
-
