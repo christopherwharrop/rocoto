@@ -12,10 +12,18 @@ GEM_DIR=${WFM_DIR}/gems
 for arg in $@; do
   case $arg in
     --with-ruby=*) RUBY=$(echo $arg | cut -f 2 -d "=")/bin/ruby;;
+    --with-xml2-dir=*) xml2dir=$(echo $arg | cut -f 2 -d "=");;
+    --with-xml2-include=*) xml2include=$(echo $arg | cut -f 2 -d "=");;
+    --with-xml2-config=*) xml2config=$(echo $arg | cut -f 2 -d "=");;
+    --with-xml2-lib=*) xml2lib=$(echo $arg | cut -f 2 -d "=");;
     -h|--help) echo
                echo "Run this script to install the Workflow Manager"
                echo
-               echo "INSTALL [--with-ruby=/path/to/ruby]"
+               echo 'INSTALL [--with-ruby=/path/to/ruby]'
+               echo '[--with-xml2-dir=/path/to/${xml2-dir}]'
+               echo '[--with-xml2-include=/path/to/${xml2-dir}/include]'
+               echo '[--with-xml2-config=/path/to/xml2-config]'
+               echo '[--with-xml2-lib=/path/to/${xml2-dir}/lib]'
                echo
                exit;;
     *)
@@ -39,6 +47,27 @@ else
   exit 1
 fi
 
+GEM_ARGS=""
+# Check whether libxml2 headers, libs, and xml2-config are defined
+# xml2dir
+if [[  -n "$xml2dir" &&  -d "$xml2dir" ]]; then
+    GEM_ARGS+=" --with-xml2-dir="$xml2dir
+    [[ -z "${xml2include+x}" || ! -d "${xml2include}" ]] && xml2include=${xml2dir}/include
+    [[ -z "${xml2lib+x}" || ! -d "${xml2lib}" ]] && xml2lib=${xml2dir}/lib
+    [[ -z "${xml2config+x}" || ! -d "${xml2config}" ]] && xml2config=${xml2dir}/bin/xml2-config
+fi
+# Add configuration options if they are set:
+if [[ -n "${xml2include}" && -d "${xml2include}" ]]; then 
+   GEM_ARGS+=" --with-xml2-include="$xml2include
+fi
+
+if [[ -n "${xml2lib}" && -d "${xml2lib}" ]]; then 
+   GEM_ARGS+=" --with-xml2-lib="$xml2lib
+fi
+
+if [[ -n "${xml2config}" && -f "${xml2config}" ]]; then 
+   GEM_ARGS+=" --with-xml2-config="$xml2config
+fi
 # Abort if any command returns an error
 set -e
 
@@ -64,9 +93,11 @@ done
 
 # Install gem dependencies into local gem repository
 gem install -i ${GEM_DIR} --no-user-install --no-document \
-    libxml-ruby:5.0.3 \
     open4:1.3.4 \
     rubysl-date:1.0.1 \
     rubysl-parsedate:1.0.1 \
     sqlite3:1.7.3 \
-    thread:0.2.2
+    thread:0.2.2 \
+    libxml-ruby:5.0.3 \
+    -- $GEM_ARGS
+
