@@ -318,7 +318,7 @@ module WorkflowMgr
       tf.flush()
 
       # Run the submit command script
-      if WorkflowMgr.DRYRUN
+      if WorkflowMgr::DRYRUN > 0
         output="This is a dryrun"
       else
         output=`/bin/sh #{tf.path} 2>&1`.chomp
