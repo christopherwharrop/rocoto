@@ -29,7 +29,7 @@ module WorkflowMgr
       @database=nil
       @workflowdoc=nil
       @verbose=0
-      @dryrun=false
+      @dryrun=0
       parse(args)
 
     end  # initialize
@@ -76,7 +76,7 @@ module WorkflowMgr
 
         # Handle option for dryrun
         opts.on("-n","--dryrun","Show Workflow Manager commands, but do not execute") do |dryrun|
-          @dryrun=true
+          @dryrun=1
           WorkflowMgr.const_set("DRYRUN",@dryrun)
         end
 
@@ -103,7 +103,7 @@ module WorkflowMgr
           WorkflowMgr.const_set("VERBOSE",0) unless WorkflowMgr.const_defined?("VERBOSE")
 
           # Set dryrun to 0 if not set by options
-          WorkflowMgr.const_set("DRYRUN",false) unless WorkflowMgr.const_defined?("DRYRUN")
+          WorkflowMgr.const_set("DRYRUN",0) unless WorkflowMgr.const_defined?("DRYRUN")
 
           # The -d and -w options are mandatory
           raise OptionParser::ParseError,"A database file must be specified" if @database.nil?

@@ -17,6 +17,7 @@ module WorkflowMgr
     attr_reader :database
     attr_reader :workflowdoc
     attr_reader :verbose
+    attr_reader :dryrun
 
     ##########################################
     #
@@ -27,6 +28,7 @@ module WorkflowMgr
       @database=nil
       @workflowdoc=nil
       @verbose=1
+			@dryrun=0
       @more_args=parse(args)
 
     end  # initialize
@@ -72,6 +74,11 @@ module WorkflowMgr
           else
             @verbose=verbose.to_i
           end
+        end
+
+        # Handle option for dryrun
+        opts.on("-n","--dryrun","Show Workflow Manager commands, but do not execute") do |dryrun|
+          @dryrun=1
         end
 
         # Handle option for version
@@ -126,6 +133,9 @@ module WorkflowMgr
 
           # Set verbosity level
           WorkflowMgr.const_set("VERBOSE",@verbose)
+
+          # Set dryrun level
+          WorkflowMgr.const_set("DRYRUN",@dryrun)
 
           # Set workflow id
           WorkflowMgr.const_set("WORKFLOW_ID",File.basename(@workflowdoc))
