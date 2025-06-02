@@ -28,7 +28,7 @@ module WorkflowMgr
       @database=nil
       @workflowdoc=nil
       @verbose=1
-			@dryrun=0
+      @dryrun=0
       @more_args=parse(args)
 
     end  # initialize
