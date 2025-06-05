@@ -1919,16 +1919,17 @@ module WorkflowMgr
         uri=job.id
         jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
         if output.nil?
-          @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+          if WorkflowMgr::DRYRUN > 0
+            @dbServer.delete_jobs([job])
+            @logServer.log(job.cycle,"Submission of #{job.task} was a dryrun!")
+          else
+            @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+          end
         else
           if jobid.nil?
             # Delete the job from the database since it failed to submit.  It will be retried next time around.
             @dbServer.delete_jobs([job])
-            if WorkflowMgr::DRYRUN > 0
-              msg="#{job.task} was not submitted!  #{output}"
-            else
-              msg="Submission of #{job.task} failed!  #{output}"
-            end
+            msg="Submission of #{job.task} failed!  #{output}"
             @logServer.log(job.cycle,msg)
             WorkflowMgr.stderr(msg,1)
           else
