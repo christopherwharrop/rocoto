@@ -199,8 +199,6 @@ module WorkflowMgr
       # Parse the output of the submit command
       if output=~/Job <(\d+)> is submitted to (default )*queue/
         return $1,output
-      elsif output=~/^This is a dryrun/
-        return nil,output
       else
         return nil,output
       end
