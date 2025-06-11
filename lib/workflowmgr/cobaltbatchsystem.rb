@@ -198,7 +198,7 @@ module WorkflowMgr
       if output=~/^(\d+)$/
         return $1,output
       elsif output=~/^This is a dryrun/
-        return $1,output
+        return nil,output
       else
         return nil,output
       end
