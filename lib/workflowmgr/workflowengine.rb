@@ -410,7 +410,9 @@ module WorkflowMgr
               if reply=~/^[Yy]/
                 boot_cycle=Cycle.new(boot_cycle_time)
                 boot_cycle.activate!
-                @dbServer.add_cycles([boot_cycle])
+                unless WorkflowMgr::DRYRUN > 0
+                  @dbServer.add_cycles([boot_cycle])
+                end
                 boot_job=nil
               else
                 puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted"
@@ -421,7 +423,9 @@ module WorkflowMgr
               # Reactivate the cycle if it is done (but not expired)
               if boot_cycle.done? or boot_cycle.draining?
                 boot_cycle.reactivate!
-                @dbServer.update_cycles([boot_cycle])
+                unless WorkflowMgr::DRYRUN > 0
+                  @dbServer.update_cycles([boot_cycle])
+                end
               end
 
               # Retrieve the boot job from the database
@@ -485,7 +489,9 @@ module WorkflowMgr
                          )
 
             # Add the new job to the database
-            @dbServer.add_jobs([job])
+            unless WorkflowMgr::DRYRUN > 0
+              @dbServer.add_jobs([job])
+            end
 
             # Localize all <cyclestr> to current cycle
             localtask=task.localize(boot_cycle_time)
@@ -527,11 +533,17 @@ module WorkflowMgr
             uri=job.id
             jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
             if output.nil?
-              @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+              if WorkflowMgr::DRYRUN > 0
+                @logServer.log(job.cycle,"Dryrun: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
+              else
+                @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+              end
             else
               if jobid.nil?
                 # Delete the job from the database since it failed to submit.  It will be retried next time around.
-                @dbServer.delete_jobs([job])
+                unless WorkflowMgr::DRYRUN > 0
+                  @dbServer.delete_jobs([job])
+                end
                 WorkflowMgr.stderr(output,1)
                 @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
               else
@@ -540,11 +552,17 @@ module WorkflowMgr
                 job.native_state="queued"
                 @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
                 # Update the jobid for the job in the database
-                @dbServer.update_jobs([job])
+                unless WorkflowMgr::DRYRUN > 0
+                  @dbServer.update_jobs([job])
+                end
               end
             end
 
-            puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
+            if WorkflowMgr::DRYRUN > 0
+              puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' would be booted (dryrun mode)"
+            else
+              puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
+            end
 
           } # boot_tasks.each
         } # boot_cycles.each
