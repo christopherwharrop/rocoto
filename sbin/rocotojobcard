@@ -288,7 +288,7 @@ end
 # Add environment variables
 env_vars = target_task.find(".//envar")
 unless env_vars.empty?
-  puts "\n# Environment variables"
+  puts "# Environment variables"
   env_vars.each do |envar|
     name_node = envar.find_first(".//name")
     value_node = envar.find_first(".//value")
