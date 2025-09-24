@@ -1,4 +1,4 @@
-#!/home/tmcguinness/spack/opt/spack/linux-skylake/ruby-3.3.5-47m5pgc7oqzjgqfjxb3fds25lzplcuyy/bin/ruby
+#!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
 __WFMDIR__=File.expand_path("../../",__FILE__)
