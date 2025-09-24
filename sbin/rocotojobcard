@@ -12,6 +12,7 @@ $:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
 require 'libxml'
 require 'optparse'
 require 'time'
+require 'securerandom'
 
 # Parse command line options
 options = {}
@@ -234,6 +235,10 @@ when "slurm"
       puts "#SBATCH #{child.content}"
     end
   end
+
+  # Add secret identifier for later retrieval
+  randomID = SecureRandom.hex
+  puts "#SBATCH --comment=#{randomID}"
 
   # Check for exclusive flag
   if target_task.find_first(".//native[contains(text(), '--exclusive')]")
