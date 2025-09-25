@@ -1,4 +1,4 @@
-#!/home/tmcguinness/spack/opt/spack/linux-skylake/ruby-3.3.5-47m5pgc7oqzjgqfjxb3fds25lzplcuyy/bin/ruby
+#!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
 __WFMDIR__=File.expand_path("../../",__FILE__)
@@ -239,11 +239,6 @@ when "slurm"
   # Add secret identifier for later retrieval
   randomID = SecureRandom.hex
   puts "#SBATCH --comment=#{randomID}"
-
-  # Check for exclusive flag
-  if target_task.find_first(".//native[contains(text(), '--exclusive')]")
-    puts "#SBATCH --exclusive"
-  end
 
 when "pbs", "torque"
   puts "#! /bin/sh"
