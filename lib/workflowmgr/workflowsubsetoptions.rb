@@ -48,7 +48,7 @@ module WorkflowMgr
       super(opts)
 
       # Override the command usage text
-      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-m metatask_list] [-a]"
+      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-m metatask_list] [-a] [-n]"
 
       # Cycles of interest
       #      C   C,C,C  C:C  :C   C:
