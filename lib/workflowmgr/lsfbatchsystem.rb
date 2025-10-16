@@ -318,11 +318,7 @@ module WorkflowMgr
       tf.flush()
 
       # Run the submit command script
-      if WorkflowMgr::DRYRUN > 0
-        output="This is a dryrun"
-      else
-        output=`/bin/sh #{tf.path} 2>&1`.chomp
-      end
+      output=`/bin/sh #{tf.path} 2>&1`.chomp
 
       WorkflowMgr.log("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
       WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}",4)
