@@ -5,6 +5,13 @@
 ##########################################
 module WorkflowMgr
 
+  #####################################################
+  # Helper method to check if we're in dry run mode
+  #####################################################
+  def self.dryrun_mode?
+    DRYRUN > 0
+  end
+
   if RUBY_VERSION < "1.9.0"
     require 'system_timer'
   else

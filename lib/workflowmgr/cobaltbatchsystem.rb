@@ -188,7 +188,7 @@ module WorkflowMgr
       WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} --mode script #{tf.path} with input {{#{input}}}",4)
 
       # Run the submit command
-      if WorkflowMgr::DRYRUN > 0
+      if WorkflowMgr.dryrun_mode?
         output="This is a dryrun"
       else
         output=`#{cmd} --mode script #{tf.path} 2>&1`.chomp()
