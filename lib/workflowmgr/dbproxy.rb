@@ -107,7 +107,8 @@ module WorkflowMgr
 
         # Initialize the database but do not open it (call dbopen to open it)
         database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@options.database)
-        if @config.DatabaseServer
+        # Skip launching daemon in dryrun mode - no database writes needed
+        if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
 
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)

@@ -102,7 +102,8 @@ module WorkflowMgr
         # Initialize the
         bqs=BQS.new(@batchSystem,@options.database,@config)
 
-        if @config.BatchQueueServer
+        # Skip launching daemon in dryrun mode - no batch system interaction needed
+        if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
 
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)

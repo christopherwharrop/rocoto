@@ -809,7 +809,8 @@ module WorkflowMgr
       ensure
 
         # Shut down the batch queue server if it is no longer needed
-        unless @bqServer.nil? || !@config.BatchQueueServer
+        # Skip if in dryrun mode since no server was launched
+        unless @bqServer.nil? || !@config.BatchQueueServer || WorkflowMgr.dryrun_mode?
           unless @bqServer.running?
             uri=@bqServer.__drburi
             @bqServer.stop!
@@ -818,14 +819,16 @@ module WorkflowMgr
         end
 
         # Make sure we release the workflow lock in the database and shutdown the dbserver
+        # Skip server shutdown if in dryrun mode since no server was launched
         unless @dbServer.nil?
           @dbServer.unlock_workflow if @locked
-          @dbServer.stop! if @config.DatabaseServer
+          @dbServer.stop! if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
         end
 
         # Make sure to shut down the workflow file stat server
+        # Skip if in dryrun mode since no server was launched
         unless @workflowIOServer.nil?
-          @workflowIOServer.stop! if @config.WorkflowIOServer
+          @workflowIOServer.stop! if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
         end
 
       end
@@ -890,8 +893,8 @@ module WorkflowMgr
       # Get the scheduler
       @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
 
-      # Add this scheduler to the bqserver database if needed
-      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer
+      # Add this scheduler to the bqserver database if needed (skip in dryrun mode)
+      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
 
       # Get the log parameters
       @logServer=workflowdoc.log

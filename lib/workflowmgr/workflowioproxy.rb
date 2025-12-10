@@ -199,7 +199,8 @@ module WorkflowMgr
         workflowIO=WorkflowIO.new
 
         # Set up an object to serve requests for batch queue system services
-        if @config.WorkflowIOServer
+        # Skip launching daemon in dryrun mode - no I/O operations needed
+        if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
 
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)
