@@ -469,7 +469,8 @@ module WorkflowMgr
             end
 
             # Initialize jobid of the new job
-            if @config.BatchQueueServer
+            # In dryrun mode, no DRb server is launched, so use 0 as placeholder
+            if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
               newjobid=@bqServer.__drburi
             else
               newjobid=0
@@ -1198,7 +1199,8 @@ module WorkflowMgr
         begin
 
           # We are only interested in old bqserver processes
-          next if uri==@bqServer.__drburi
+          # In dryrun mode, no DRb server is launched, so skip this check
+          next if !WorkflowMgr.dryrun_mode? && uri==@bqServer.__drburi
 
           bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
 
@@ -1854,7 +1856,8 @@ module WorkflowMgr
           end
 
           # If we are resubmitting the job, initialize the new job to the old job
-          if @config.BatchQueueServer
+          # In dryrun mode, no DRb server is launched, so use 0 as placeholder
+          if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
             newjobid=@bqServer.__drburi
           else
             newjobid=0
