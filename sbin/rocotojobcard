@@ -1,0 +1,310 @@
+#!/usr/bin/ruby
+
+# Get the base directory of the WFM installation
+__WFMDIR__=File.expand_path("../../",__FILE__)
+
+# Add include paths for WFM and libxml-ruby libraries
+$:.unshift("#{__WFMDIR__}/lib")
+$:.unshift("#{__WFMDIR__}/lib/rubysl-date/lib")
+$:.unshift("#{__WFMDIR__}/lib/rubysl-parsedate/lib")
+$:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
+$:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
+$:.unshift("#{__WFMDIR__}/lib/SystemTimer")
+$:.unshift("#{__WFMDIR__}/lib/open4/lib")
+$:.unshift("#{__WFMDIR__}/lib/thread/lib")
+
+# rocotojobcard utility - generates job cards from workflow XML without database
+
+require 'libxml'
+require 'optparse'
+require 'time'
+require 'workflowmgr/utilities'
+
+# Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
+# We want to control what output goes where and when
+LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
+
+# Parse command line options
+options = {}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: rocotojobcard [-h] [-v #] -w workflow_document -c cycle -t task"
+
+  opts.on("-w", "--workflow PATH", "Path to workflow definition file") do |w|
+    options[:workflow] = w
+  end
+
+  opts.on("-c", "--cycle CYCLE", "Cycle in YYYYMMDDHHMM format") do |c|
+    if c =~ /^\d{12}$/
+      options[:cycle] = Time.gm(c[0..3], c[4..5], c[6..7], c[8..9], c[10..11])
+      options[:cycle_str] = c
+    else
+      puts "Invalid cycle format. Use YYYYMMDDHHMM"
+      exit(-1)
+    end
+  end
+
+  opts.on("-t", "--task TASK", "Task name") do |t|
+    options[:task] = t
+  end
+
+  opts.on("-v", "--verbose [LEVEL]", Integer, "Run in verbose mode") do |v|
+    options[:verbose] = v || 1
+  end
+
+  opts.on("-h", "--help", "Show this message") do
+    puts opts
+    exit(0)
+  end
+
+  opts.on("--version", "Show version") do
+    puts "rocotojobcard utility v1.0"
+    exit(0)
+  end
+end.parse!
+
+# Validate required options
+unless options[:workflow] && options[:cycle] && options[:task]
+  puts "Error: -w, -c, and -t options are required"
+  exit(1)
+end
+
+unless File.exist?(options[:workflow])
+  puts "Error: Workflow file '#{options[:workflow]}' not found"
+  exit(1)
+end
+
+# Parse the XML workflow using libxml (same as other rocoto utilities)
+begin
+  context = LibXML::XML::Parser::Context.file(options[:workflow])
+  context.options = LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
+  parser = LibXML::XML::Parser.new(context)
+  doc = parser.parse
+rescue => e
+  puts "Error parsing XML file: #{e.message}"
+  exit(1)
+end
+
+# Find the workflow node
+workflow = doc.find_first("//workflow")
+unless workflow
+  puts "Error: No workflow element found in XML"
+  exit(1)
+end
+
+# Get the scheduler (default to slurm)
+scheduler = workflow["scheduler"] || "slurm"
+
+# Find all tasks and metatasks
+tasks = []
+metatasks = []
+doc.find("//task[@name]").each { |task| tasks << task }
+doc.find("//metatask").each { |metatask| metatasks << metatask }
+
+# Find the requested task
+target_task = nil
+task_node = nil
+
+# First check regular tasks
+tasks.each do |task|
+  if task["name"] == options[:task]
+    target_task = task
+    task_node = task
+    break
+  end
+end
+
+# If not found, check metatasks
+unless target_task
+  metatasks.each do |metatask|
+    metatask.find(".//task").each do |task|
+      task_name = task["name"]
+      # Handle metatask variable substitution
+      if task_name && task_name.include?("#")
+        # Simple variable expansion for metatasks
+        metatask.find(".//var").each do |var|
+          var_name = var["name"]
+          var_value = var.content.strip
+          if var_value.include?(" ")
+            # Multiple values - take the first one for simplicity
+            var_value = var_value.split.first
+          end
+          task_name = task_name.gsub("##{var_name}#", var_value)
+        end
+      end
+      if task_name == options[:task]
+        target_task = task
+        task_node = task
+        break
+      end
+    end
+    break if target_task
+  end
+end
+
+unless target_task
+  puts "ERROR: Task '#{options[:task]}' not found in workflow definition"
+  exit(1)
+end
+
+# Check cycle validity
+cycledefs = []
+doc.find("//cycledef[@group]").each { |cycledef| cycledefs << cycledef }
+task_cycledefs = target_task["cycledefs"]
+
+if task_cycledefs
+  valid_cycle = false
+  cycledefs.each do |cycledef|
+    if task_cycledefs.split(/[\s,]+/).include?(cycledef["group"])
+      # Simple cycle validation - just check if it matches the pattern
+      # In a full implementation, this would parse the cycledef properly
+      valid_cycle = true
+      break
+    end
+  end
+
+  unless valid_cycle
+    puts "ERROR: Cycle '#{options[:cycle_str]}' is not valid for task '#{options[:task]}'"
+    exit(1)
+  end
+end
+
+# Substitute cycle strings in task elements
+def substitute_cycle_strings(text, cycle_time)
+  return text unless text && cycle_time
+
+  # Basic substitution for common cycle string patterns
+  # Uses strftime-compatible patterns like rocoto's CycleString class
+  text = text.gsub(/@Y/, cycle_time.year.to_s.rjust(4, '0'))
+  text = text.gsub(/@y/, cycle_time.strftime('%y'))
+  text = text.gsub(/@m/, cycle_time.month.to_s.rjust(2, '0'))
+  text = text.gsub(/@d/, cycle_time.day.to_s.rjust(2, '0'))
+  text = text.gsub(/@H/, cycle_time.hour.to_s.rjust(2, '0'))
+  text = text.gsub(/@M/, cycle_time.min.to_s.rjust(2, '0'))
+  text = text.gsub(/@S/, cycle_time.sec.to_s.rjust(2, '0'))
+  text = text.gsub(/@j/, cycle_time.yday.to_s.rjust(3, '0'))
+
+  text
+end
+
+# Generate the job script
+case scheduler.downcase
+when "slurm"
+  puts "#! /bin/sh"
+
+  # Process task attributes for SLURM directives
+  target_task.each_element do |child|
+    case child.name
+    when "account"
+      puts "#SBATCH --account=#{child.content}"
+    when "queue"
+      puts "#SBATCH --qos=#{child.content}"
+    when "partition"
+      puts "#SBATCH --partition=#{child.content.gsub(':', ',')}"
+    when "cores"
+      puts "#SBATCH --ntasks=#{child.content}"
+    when "walltime"
+      puts "#SBATCH -t #{child.content}"
+    when "memory"
+      # Convert memory format
+      mem = child.content
+      if mem =~ /^(\d+)([KMG]?)$/
+        value = $1.to_i
+        unit = $2.upcase
+        case unit
+        when 'G'
+          value *= 1024
+        when 'K'
+          value = (value / 1024.0).ceil
+        when '', 'M'
+          # Already in MB
+        end
+        puts "#SBATCH --mem=#{value}" if value > 0
+      end
+    when "stdout"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#SBATCH -o #{content}"
+    when "stderr"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#SBATCH -e #{content}"
+    when "join"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#SBATCH -o #{content}"
+    when "jobname"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#SBATCH --job-name=#{content}"
+    when "native"
+      puts "#SBATCH #{child.content}"
+    end
+  end
+
+  # Check for exclusive flag
+  native_elem = target_task.find_first(".//native")
+  if native_elem && native_elem.content.include?("--exclusive")
+    puts "#SBATCH --exclusive"
+  end
+
+when "pbs", "torque"
+  puts "#! /bin/sh"
+
+  # Process task attributes for PBS directives
+  target_task.each_element do |child|
+    case child.name
+    when "account"
+      puts "#PBS -A #{child.content}"
+    when "queue"
+      puts "#PBS -q #{child.content}"
+    when "cores"
+      puts "#PBS -l procs=#{child.content}"
+    when "walltime"
+      puts "#PBS -l walltime=#{child.content}"
+    when "memory"
+      puts "#PBS -l mem=#{child.content}"
+    when "stdout"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#PBS -o #{content}"
+    when "stderr"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#PBS -e #{content}"
+    when "join"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#PBS -j oe"
+      puts "#PBS -o #{content}"
+    when "jobname"
+      content = substitute_cycle_strings(child.content, options[:cycle])
+      puts "#PBS -N #{content}"
+    when "native"
+      puts "#PBS #{child.content}"
+    end
+  end
+
+else
+  puts "#! /bin/sh"
+end
+
+# Add environment variables
+env_vars = []
+target_task.find(".//envar").each { |envar| env_vars << envar }
+unless env_vars.empty?
+  puts "\n# Environment variables"
+  env_vars.each do |envar|
+    name_node = envar.find_first("name")
+    value_node = envar.find_first("value")
+
+    if name_node && value_node
+      name = name_node.content
+      value = substitute_cycle_strings(value_node.content, options[:cycle])
+      puts "export #{name}='#{value}'"
+    end
+  end
+end
+
+# Add the command
+command_node = target_task.find_first("command")
+if command_node
+  command = substitute_cycle_strings(command_node.content, options[:cycle])
+  puts "\n# Command to execute"
+  puts command
+else
+  puts "\n# No command found"
+end
