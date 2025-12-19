@@ -104,6 +104,7 @@ doc.find("//metatask").each { |metatask| metatasks << metatask }
 # Find the requested task
 target_task = nil
 task_node = nil
+metatask_vars = {}  # Store variable substitutions for the matched task
 
 # First check regular tasks
 tasks.each do |task|
@@ -118,25 +119,39 @@ end
 unless target_task
   metatasks.each do |metatask|
     metatask.find(".//task").each do |task|
-      task_name = task["name"]
-      # Handle metatask variable substitution
-      if task_name && task_name.include?("#")
-        # Simple variable expansion for metatasks
-        metatask.find(".//var").each do |var|
-          var_name = var["name"]
-          var_value = var.content.strip
-          if var_value.include?(" ")
-            # Multiple values - take the first one for simplicity
-            var_value = var_value.split.first
+      task_name_template = task["name"]
+      next unless task_name_template
+
+      # Build the variable table from metatask <var> tags
+      id_table = {}
+      var_length = -1
+      metatask.find(".//var").each do |var|
+        var_name = var["name"]
+        var_values = var.content.strip.split
+        var_length = var_values.length if var_length == -1
+        id_table[var_name] = var_values
+      end
+
+      # Try each index to find the one that produces the requested task name
+      if var_length > 0
+        0.upto(var_length - 1) do |index|
+          test_name = task_name_template.dup
+          id_table.each do |var_name, values|
+            test_name = test_name.gsub("##{var_name}#", values[index])
           end
-          task_name = task_name.gsub("##{var_name}#", var_value)
+
+          if test_name == options[:task]
+            target_task = task
+            task_node = task
+            # Store the variable values at this index for later substitution
+            id_table.each do |var_name, values|
+              metatask_vars[var_name] = values[index]
+            end
+            break
+          end
         end
       end
-      if task_name == options[:task]
-        target_task = task
-        task_node = task
-        break
-      end
+      break if target_task
     end
     break if target_task
   end
@@ -169,9 +184,16 @@ if task_cycledefs
   end
 end
 
-# Substitute cycle strings in task elements
-def substitute_cycle_strings(text, cycle_time)
-  return text unless text && cycle_time
+# Substitute cycle strings and metatask variables in task elements
+def substitute_cycle_strings(text, cycle_time, metatask_vars = {})
+  return text unless text
+
+  # First substitute metatask variables (#varname#)
+  metatask_vars.each do |var_name, var_value|
+    text = text.gsub("##{var_name}#", var_value)
+  end
+
+  return text unless cycle_time
 
   # Basic substitution for common cycle string patterns
   # Uses strftime-compatible patterns like rocoto's CycleString class
@@ -222,26 +244,20 @@ when "slurm"
         puts "#SBATCH --mem=#{value}" if value > 0
       end
     when "stdout"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#SBATCH -o #{content}"
     when "stderr"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#SBATCH -e #{content}"
     when "join"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#SBATCH -o #{content}"
     when "jobname"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#SBATCH --job-name=#{content}"
     when "native"
       puts "#SBATCH #{child.content}"
     end
-  end
-
-  # Check for exclusive flag
-  native_elem = target_task.find_first(".//native")
-  if native_elem && native_elem.content.include?("--exclusive")
-    puts "#SBATCH --exclusive"
   end
 
 when "pbs", "torque"
@@ -261,17 +277,17 @@ when "pbs", "torque"
     when "memory"
       puts "#PBS -l mem=#{child.content}"
     when "stdout"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#PBS -o #{content}"
     when "stderr"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#PBS -e #{content}"
     when "join"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#PBS -j oe"
       puts "#PBS -o #{content}"
     when "jobname"
-      content = substitute_cycle_strings(child.content, options[:cycle])
+      content = substitute_cycle_strings(child.content, options[:cycle], metatask_vars)
       puts "#PBS -N #{content}"
     when "native"
       puts "#PBS #{child.content}"
@@ -293,7 +309,7 @@ unless env_vars.empty?
 
     if name_node && value_node
       name = name_node.content
-      value = substitute_cycle_strings(value_node.content, options[:cycle])
+      value = substitute_cycle_strings(value_node.content, options[:cycle], metatask_vars)
       puts "export #{name}='#{value}'"
     end
   end
@@ -302,7 +318,7 @@ end
 # Add the command
 command_node = target_task.find_first("command")
 if command_node
-  command = substitute_cycle_strings(command_node.content, options[:cycle])
+  command = substitute_cycle_strings(command_node.content, options[:cycle], metatask_vars)
   puts "\n# Command to execute"
   puts command
 else
