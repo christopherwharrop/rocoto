@@ -528,7 +528,10 @@ module WorkflowMgr
             @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
 
             # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
-            Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+            # Skip thread join in dryrun mode - thread pool workers sleep indefinitely waiting for work and cause deadlock
+            unless @config.BatchQueueServer || WorkflowMgr.dryrun_mode?
+              Thread.list.each { |t| t.join unless t==Thread.main }
+            end
 
             # Harvest job ids for submitted tasks
             uri=job.id
@@ -1936,7 +1939,10 @@ module WorkflowMgr
       end
 
       # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
-      Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+      # Skip thread join in dryrun mode - thread pool workers sleep indefinitely waiting for work and cause deadlock
+      unless @config.BatchQueueServer || WorkflowMgr.dryrun_mode?
+        Thread.list.each { |t| t.join unless t==Thread.main }
+      end
 
       # Harvest job ids for submitted tasks
       newjobs.each do |job|
