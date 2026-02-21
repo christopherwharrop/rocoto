@@ -639,7 +639,7 @@ module WorkflowMgr
     #
     ##########################################
     def hour_valid?(time)
-      hour = time.hour
+      hour = time.getgm.hour  # always use UTC hour
 
       if @valid_hours
         # Only valid_hours are valid
