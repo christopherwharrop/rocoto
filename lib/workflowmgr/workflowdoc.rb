@@ -309,8 +309,10 @@ module WorkflowMgr
         else
           activation_offset=0
         end
+        exclude_hours=cyclenode.attributes['exclude_hours']
+        valid_hours=cyclenode.attributes['valid_hours']
         if nfields==3
-          cycles << CycleInterval.new(cyclefields,group,activation_offset)
+          cycles << CycleInterval.new(cyclefields,group,activation_offset,nil,exclude_hours,valid_hours)
         elsif nfields==6
           cycles << CycleCron.new(cyclefields,group,activation_offset)
         else
