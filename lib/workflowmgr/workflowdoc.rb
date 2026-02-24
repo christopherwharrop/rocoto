@@ -314,6 +314,9 @@ module WorkflowMgr
         if nfields==3
           cycles << CycleInterval.new(cyclefields,group,activation_offset,nil,exclude_hours,valid_hours)
         elsif nfields==6
+          if exclude_hours || valid_hours
+            raise "ERROR: 'exclude_hours' or 'valid_hours' not supported in cron-style <cycledef>."
+          end
           cycles << CycleCron.new(cyclefields,group,activation_offset)
         else
           raise "ERROR: Unsupported <cycle> type!"
