@@ -98,6 +98,18 @@
                 <ref name="time"/>
 	      </attribute>
             </optional>
+            <!-- exclude_hours attribute: space-separated list of hours (0-23) to exclude -->
+            <optional>
+              <attribute name="exclude_hours">
+                <data type="string"/>
+              </attribute>
+            </optional>
+            <!-- valid_hours attribute: space-separated list of hours (0-23) to include (exclude all others) -->
+            <optional>
+              <attribute name="valid_hours">
+                <data type="string"/>
+              </attribute>
+            </optional>
             <choice>
               <list>
                 <ref name="cronField"/>
