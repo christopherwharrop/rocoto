@@ -9,6 +9,7 @@ module WorkflowMgr
   # Helper method to check if we're in dry run mode
   #####################################################
   def self.dryrun_mode?
+    return false unless const_defined?(:DRYRUN)
     DRYRUN > 0
   end
 
