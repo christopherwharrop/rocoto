@@ -122,8 +122,9 @@ module WorkflowMgr
       rescue => crash
 
         # Try to stop the bqserver if something went wrong
-        if @config.BatchQueueServer
-          @bqServer.stop! unless @bqServer.nil?
+        # Only attempt daemon shutdown when a daemon was actually launched (not in dryrun)
+        if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
+          @bqServer.stop! unless @bqServer.nil? || !@bqServer.respond_to?(:stop!)
         end
 
         # Raise fatal exception

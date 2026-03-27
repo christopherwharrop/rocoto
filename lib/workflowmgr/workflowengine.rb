@@ -536,30 +536,26 @@ module WorkflowMgr
             # Harvest job ids for submitted tasks
             uri=job.id
             jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
-            if output.nil?
-              if WorkflowMgr.dryrun_mode?
-                @logServer.log(job.cycle,"Dryrun: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
-              else
-                @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
-              end
+
+            # Classify submission outcome: dryrun first, then pending, failure, success
+            # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
+            # checking output.nil? first would mis-classify dryrun as failure.
+            if WorkflowMgr.dryrun_mode?
+              @logServer.log(job.cycle,"Dryrun: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
+            elsif output.nil?
+              @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+            elsif jobid.nil?
+              # Delete the job from the database since it failed to submit.  It will be retried next time around.
+              @dbServer.delete_jobs([job])
+              WorkflowMgr.stderr(output,1)
+              @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
             else
-              if jobid.nil?
-                # Delete the job from the database since it failed to submit.  It will be retried next time around.
-                unless WorkflowMgr.dryrun_mode?
-                  @dbServer.delete_jobs([job])
-                end
-                WorkflowMgr.stderr(output,1)
-                @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
-              else
-                job.id=jobid
-                job.state="QUEUED"
-                job.native_state="queued"
-                @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
-                # Update the jobid for the job in the database
-                unless WorkflowMgr.dryrun_mode?
-                  @dbServer.update_jobs([job])
-                end
-              end
+              job.id=jobid
+              job.state="QUEUED"
+              job.native_state="queued"
+              @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
+              # Update the jobid for the job in the database
+              @dbServer.update_jobs([job])
             end
 
             if WorkflowMgr.dryrun_mode?
@@ -1265,6 +1261,10 @@ module WorkflowMgr
 
             next
 
+          # Dryrun: submission was simulated, classify as expected outcome
+          elsif WorkflowMgr.dryrun_mode?
+            @logServer.log(job.cycle,"Submission of #{job.task} was a dryrun")
+
           # If there is no output from the submission, it means the submission is still pending
           elsif output.nil?
             @logServer.log(job.cycle,"Submission status of #{job.task} is still pending at #{uri}.  The batch system server may be down, unresponsive, or under heavy load.")
@@ -1948,28 +1948,27 @@ module WorkflowMgr
       newjobs.each do |job|
         uri=job.id
         jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
-        if output.nil?
-          if WorkflowMgr.dryrun_mode?
-            @dbServer.delete_jobs([job])
-            @logServer.log(job.cycle,"Submission of #{job.task} was a dryrun!")
-          else
-            @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
-          end
+        # Classify submission outcome: dryrun first, then pending, failure, success
+        # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
+        # checking output.nil? first would mis-classify dryrun as failure.
+        if WorkflowMgr.dryrun_mode?
+          @dbServer.delete_jobs([job])
+          @logServer.log(job.cycle,"Submission of #{job.task} was a dryrun!")
+        elsif output.nil?
+          @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+        elsif jobid.nil?
+          # Delete the job from the database since it failed to submit.  It will be retried next time around.
+          @dbServer.delete_jobs([job])
+          msg="Submission of #{job.task} failed!  #{output}"
+          @logServer.log(job.cycle,msg)
+          WorkflowMgr.stderr(msg,1)
         else
-          if jobid.nil?
-            # Delete the job from the database since it failed to submit.  It will be retried next time around.
-            @dbServer.delete_jobs([job])
-            msg="Submission of #{job.task} failed!  #{output}"
-            @logServer.log(job.cycle,msg)
-            WorkflowMgr.stderr(msg,1)
-          else
-            job.id=jobid
-            job.state="QUEUED"
-            job.native_state="queued"
-            @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
-            # Update the jobid for the job in the database
-            @dbServer.update_jobs([job])
-          end
+          job.id=jobid
+          job.state="QUEUED"
+          job.native_state="queued"
+          @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
+          # Update the jobid for the job in the database
+          @dbServer.update_jobs([job])
         end
       end
 

@@ -127,8 +127,9 @@ module WorkflowMgr
       rescue => crash
 
         # Try to stop the dbserver if something went wrong
-        if @config.DatabaseServer
-          @dbServer.stop! unless @dbServer.nil?
+        # Only attempt daemon shutdown when a daemon was actually launched (not in dryrun)
+        if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
+          @dbServer.stop! unless @dbServer.nil? || !@dbServer.respond_to?(:stop!)
         end
 
         # Raise fatal exception

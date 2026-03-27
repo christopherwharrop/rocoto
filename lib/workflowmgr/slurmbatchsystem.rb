@@ -313,7 +313,9 @@ module WorkflowMgr
 
       # Run the submit command
       if WorkflowMgr.dryrun_mode?
-        output="This is a dryrun"
+        # Return dryrun marker directly — do not fall through to regex parsing
+        # which would mis-classify this as a submission failure
+        return nil,"This is a dryrun"
       else
         output=`#{cmd} < #{tf.path} 2>&1`.chomp()
       end

@@ -218,8 +218,9 @@ module WorkflowMgr
       rescue => crash
 
         # Try to stop the log server if something went wrong
-        if @config.WorkflowIOServer
-          @workflowIOServer.stop! unless @workflowIOServer.nil?
+        # Only attempt daemon shutdown when a daemon was actually launched (not in dryrun)
+        if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
+          @workflowIOServer.stop! unless @workflowIOServer.nil? || !@workflowIOServer.respond_to?(:stop!)
         end
 
         # Raise fatal exception

@@ -115,7 +115,8 @@ module WorkflowMgr
       ensure
 
         # Shut down the batch queue server if it is no longer needed
-        unless @bqServer.nil? || !@config.BatchQueueServer
+        # Skip daemon cleanup in dryrun mode — BQServer is in-process without DRb
+        unless @bqServer.nil? || !@config.BatchQueueServer || WorkflowMgr.dryrun_mode?
           unless @bqServer.running?
             uri=@bqServer.__drburi
             @bqServer.stop!
@@ -126,12 +127,12 @@ module WorkflowMgr
         # Make sure we release the workflow lock in the database and shutdown the dbserver
         unless @dbServer.nil?
           @dbServer.unlock_workflow if @locked
-          @dbServer.stop! if @config.DatabaseServer
+          @dbServer.stop! if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
         end
 
         # Make sure to shut down the workflow file stat server
         unless @workflowIOServer.nil?
-          @workflowIOServer.stop! if @config.WorkflowIOServer
+          @workflowIOServer.stop! if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
         end
 
       end
@@ -168,8 +169,8 @@ module WorkflowMgr
       # Get the scheduler
       @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
 
-      # Add this scheduler to the bqserver database if needed
-      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer
+      # Add this scheduler to the bqserver database if needed (skip in dryrun — no DRb URI)
+      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
 
       # Get the log parameters
       @logServer=workflowdoc.log
@@ -386,25 +387,28 @@ module WorkflowMgr
     def harvest_pending_jobids
 
       # Initialize hash of old bqserver processes from the database and establish connections to them
+      # Skip BQServer management in dryrun mode — no DRb-backed servers exist
       bqservers={}
-      @dbServer.get_bqservers.each do |uri|
+      unless WorkflowMgr.dryrun_mode?
+        @dbServer.get_bqservers.each do |uri|
 
-        begin
+          begin
 
-          # We are only interested in old bqserver processes
-          next if uri==@bqServer.__drburi
+            # We are only interested in old bqserver processes
+            next if uri==@bqServer.__drburi
 
-          bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+            bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
 
-        # The bqserver has died!
-        rescue DRb::DRbConnError
-          # Remove the bqserver uri from the database
-          @dbServer.delete_bqservers([uri])
+          # The bqserver has died!
+          rescue DRb::DRbConnError
+            # Remove the bqserver uri from the database
+            @dbServer.delete_bqservers([uri])
 
-          # Remove the bqserver uri from the bqservers list if needed
-          bqservers.delete(uri) if bqservers.has_key?(uri)
+            # Remove the bqserver uri from the bqservers list if needed
+            bqservers.delete(uri) if bqservers.has_key?(uri)
+          end
+
         end
-
       end
 
       begin
@@ -853,7 +857,8 @@ module WorkflowMgr
           newjob[:state]="SUBMITTING"
           newjob[:exit_status]=0
           newjob[:cores]=task.attributes[:cores]
-          newjob[:jobid]=@bqServer.__drburi if @config.BatchQueueServer
+          # In dryrun mode, no DRb server is launched, so use 0 as placeholder
+          newjob[:jobid]= @config.BatchQueueServer && !WorkflowMgr.dryrun_mode? ? @bqServer.__drburi : 0
 
           # Append the new job to the list of new jobs that were submitted
           newjobs << newjob
