@@ -1896,8 +1896,8 @@ module WorkflowMgr
           # Append the new job to the list of new jobs that were submitted
           newjobs << newjob
 
-          # Add the new job to the database
-          @dbServer.add_jobs([newjob])
+          # Add the new job to the database (skip in dryrun to avoid persistent side effects)
+          @dbServer.add_jobs([newjob]) unless WorkflowMgr.dryrun_mode?
 
           # Localize all <cyclestr> to current cycle
           localtask=task.localize(cycletime)
@@ -1952,8 +1952,7 @@ module WorkflowMgr
         # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
         # checking output.nil? first would mis-classify dryrun as failure.
         if WorkflowMgr.dryrun_mode?
-          @dbServer.delete_jobs([job])
-          @logServer.log(job.cycle,"Submission of #{job.task} was a dryrun!")
+          @logServer.log(job.cycle,"Dryrun: would submit #{job.task}")
         elsif output.nil?
           @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
         elsif jobid.nil?
