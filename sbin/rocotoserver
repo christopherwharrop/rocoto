@@ -28,8 +28,11 @@ WorkflowMgr.const_set("VERBOSE",ARGV[1].to_i)
 # Set the workflow id for the server process
 WorkflowMgr.const_set("WORKFLOW_ID",ARGV[2])
 
-# Daemon is only launched in non-dryrun mode, but batch system submit() checks this constant
-WorkflowMgr.const_set("DRYRUN",0)
+# Daemon is only launched in non-dryrun mode, but batch system submit() checks this constant.
+# Ensure DRYRUN is set to 0 without emitting "already initialized constant" warnings.
+if WorkflowMgr.const_defined?(:DRYRUN)
+  WorkflowMgr.send(:remove_const, :DRYRUN)
+end
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
 # We want to control what output goes where and when
