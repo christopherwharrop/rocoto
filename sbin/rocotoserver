@@ -33,6 +33,7 @@ WorkflowMgr.const_set("WORKFLOW_ID",ARGV[2])
 if WorkflowMgr.const_defined?(:DRYRUN)
   WorkflowMgr.send(:remove_const, :DRYRUN)
 end
+WorkflowMgr.const_set("DRYRUN", 0)
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
 # We want to control what output goes where and when
