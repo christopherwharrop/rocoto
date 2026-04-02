@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 echo $1 $2
 echo "Testing..."
