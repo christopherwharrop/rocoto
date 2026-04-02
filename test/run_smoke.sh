@@ -124,9 +124,17 @@ print_report() {
 
 detect_partition() {
   if command -v scontrol &>/dev/null; then
-    scontrol show partition 2>/dev/null \
-      | grep -m1 'PartitionName=' \
-      | cut -d= -f2 || true
+    scontrol show partition 2>/dev/null | awk '
+      /PartitionName=/ {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^PartitionName=/) {
+            split($i, a, "=");
+            print a[2];
+            exit;
+          }
+        }
+      }
+    ' || true
   fi
 }
 
