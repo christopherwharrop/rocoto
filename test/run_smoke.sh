@@ -141,7 +141,7 @@ detect_partition() {
 detect_account() {
   if command -v sacctmgr &>/dev/null; then
     sacctmgr -nP show account format=account 2>/dev/null \
-      | head -1 | tr -d ' ' || true
+      | head -1 | cut -d'|' -f1 | tr -d '[:space:]' || true
   fi
 }
 
