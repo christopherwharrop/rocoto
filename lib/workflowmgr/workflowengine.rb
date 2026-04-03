@@ -1265,10 +1265,6 @@ module WorkflowMgr
 
             next
 
-          # Dryrun: submission was simulated, classify as expected outcome
-          elsif WorkflowMgr.dryrun_mode?
-            @logServer.log(job.cycle,"Submission of #{job.task} was a dryrun")
-
           # If there is no output from the submission, it means the submission is still pending
           elsif output.nil?
             @logServer.log(job.cycle,"Submission status of #{job.task} is still pending at #{uri}.  The batch system server may be down, unresponsive, or under heavy load.")
