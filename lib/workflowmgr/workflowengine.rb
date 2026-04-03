@@ -1191,6 +1191,10 @@ module WorkflowMgr
     ##########################################
     def harvest_pending_jobids
 
+      # In dryrun mode, no DRb-backed BQServers exist and no real submissions
+      # were made, so skip all pending-job harvesting and DB mutations.
+      return if WorkflowMgr.dryrun_mode?
+
       # Initialize hash of old bqserver processes from the database and establish connections to them
       bqservers={}
       @dbServer.get_bqservers.each do |uri|
