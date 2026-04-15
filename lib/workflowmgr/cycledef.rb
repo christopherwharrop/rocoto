@@ -669,7 +669,7 @@ module WorkflowMgr
       end
 
       if reftime > @finish
-        return nil
+        return nil, nil
       elsif reftime <= @start
         candidate = @start
       else
@@ -708,7 +708,7 @@ module WorkflowMgr
       end
 
       if reftime < @start
-        return nil
+        return nil, nil
       elsif reftime >= @finish
         candidate = @finish
       else
