@@ -689,7 +689,7 @@ module WorkflowMgr
         candidate = Time.at(candidate.to_i + @interval)
       end
 
-      return nil
+      return nil, nil
 
     end  # next
 
@@ -724,7 +724,7 @@ module WorkflowMgr
         candidate = Time.at(candidate.to_i - @interval)
       end
 
-      return nil
+      return nil, nil
     end
 
     ##########################################

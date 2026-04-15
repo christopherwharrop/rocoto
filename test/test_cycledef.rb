@@ -404,7 +404,7 @@ specific year\n   12Z, every day of June, July, August of 2010")
   def test_cycleinterval_exclude_hours
 
     # Create a 6-hourly cycle (00, 06, 12, 18) but exclude hours 6 and 18
-    cycle1=WorkflowMgr::CycleInterval.new("201101010000 201101012300 06:00:00","test",0,nil,"6 18")
+    cycle1=WorkflowMgr::CycleInterval.new("201101010000 201101020600 06:00:00","test",0,nil,"6 18")
 
     # Test next - should skip hour 6 and go to hour 12
     cycle2=cycle1.next(Time.gm(2011,1,1,0,0))
@@ -442,7 +442,7 @@ specific year\n   12Z, every day of June, July, August of 2010")
   def test_cycleinterval_valid_hours
 
     # Create an hourly cycle but only keep hours 3, 9, 15
-    cycle1=WorkflowMgr::CycleInterval.new("201101010000 201101012300 01:00:00","test",0,nil,nil,"3 9 15")
+    cycle1=WorkflowMgr::CycleInterval.new("201101010000 201101020600 01:00:00","test",0,nil,nil,"3 9 15")
 
     # Test next - from hour 0, should go to hour 3
     cycle2=cycle1.next(Time.gm(2011,1,1,0,0))
