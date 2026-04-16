@@ -399,4 +399,107 @@ specific year\n   12Z, every day of June, July, August of 2010")
 
   end
 
+
+  # Tests for exclude_hours attribute
+  def test_cycleinterval_exclude_hours
+
+    # Create a 6-hourly cycle (00, 06, 12, 18) but exclude hours 6 and 18
+    cycle1=WorkflowMgr::CycleInterval.new("201101010000 201101020600 06:00:00","test",0,nil,"6 18")
+
+    # Test next - should skip hour 6 and go to hour 12
+    cycle2=cycle1.next(Time.gm(2011,1,1,0,0))
+    assert_equal(Time.gm(2011,1,1,0,0),cycle2[0], message="Hour 0 should be valid with exclude_hours='6 18'")
+
+    cycle2=cycle1.next(Time.gm(2011,1,1,0,1))
+    assert_equal(Time.gm(2011,1,1,12,0),cycle2[0], message="Next after 0 should skip hour 6 and go to 12")
+
+    cycle2=cycle1.next(Time.gm(2011,1,1,12,1))
+    assert_equal(Time.gm(2011,1,2,0,0),cycle2[0], message="Next after 12 should skip hour 18 and go to next day 0")
+
+    # Test previous
+    cycle2=cycle1.previous(Time.gm(2011,1,1,18,0))
+    assert_equal(Time.gm(2011,1,1,12,0),cycle2[0], message="Previous from 18 should be 12 since 18 is excluded")
+
+    cycle2=cycle1.previous(Time.gm(2011,1,1,12,0))
+    assert_equal(Time.gm(2011,1,1,12,0),cycle2[0], message="Previous from 12 should be 12")
+
+    cycle2=cycle1.previous(Time.gm(2011,1,1,6,0))
+    assert_equal(Time.gm(2011,1,1,0,0),cycle2[0], message="Previous from 6 should be 0 since 6 is excluded")
+
+    # Test member?
+    assert_equal(true,cycle1.member?(Time.gm(2011,1,1,0,0)), message="Hour 0 should be a member")
+    assert_equal(false,cycle1.member?(Time.gm(2011,1,1,6,0)), message="Hour 6 should NOT be a member (excluded)")
+    assert_equal(true,cycle1.member?(Time.gm(2011,1,1,12,0)), message="Hour 12 should be a member")
+    assert_equal(false,cycle1.member?(Time.gm(2011,1,1,18,0)), message="Hour 18 should NOT be a member (excluded)")
+
+    # Test first and last
+    assert_equal(Time.gm(2011,1,1,0,0),cycle1.first, message="First should be hour 0")
+
+  end
+
+
+  # Tests for valid_hours attribute
+  def test_cycleinterval_valid_hours
+
+    # Create an hourly cycle but only keep hours 3, 9, 15
+    cycle1=WorkflowMgr::CycleInterval.new("201101010000 201101020600 01:00:00","test",0,nil,nil,"3 9 15")
+
+    # Test next - from hour 0, should go to hour 3
+    cycle2=cycle1.next(Time.gm(2011,1,1,0,0))
+    assert_equal(Time.gm(2011,1,1,3,0),cycle2[0], message="First valid hour from 0 should be 3")
+
+    cycle2=cycle1.next(Time.gm(2011,1,1,3,1))
+    assert_equal(Time.gm(2011,1,1,9,0),cycle2[0], message="Next after 3 should be 9")
+
+    cycle2=cycle1.next(Time.gm(2011,1,1,9,1))
+    assert_equal(Time.gm(2011,1,1,15,0),cycle2[0], message="Next after 9 should be 15")
+
+    cycle2=cycle1.next(Time.gm(2011,1,1,15,1))
+    assert_equal(Time.gm(2011,1,2,3,0),cycle2[0], message="Next after 15 should be 3 on next day")
+
+    # Test previous
+    cycle2=cycle1.previous(Time.gm(2011,1,1,16,0))
+    assert_equal(Time.gm(2011,1,1,15,0),cycle2[0], message="Previous from 16 should be 15")
+
+    cycle2=cycle1.previous(Time.gm(2011,1,1,15,0))
+    assert_equal(Time.gm(2011,1,1,15,0),cycle2[0], message="Previous from 15 should be 15")
+
+    cycle2=cycle1.previous(Time.gm(2011,1,1,14,0))
+    assert_equal(Time.gm(2011,1,1,9,0),cycle2[0], message="Previous from 14 should be 9")
+
+    # Test member?
+    assert_equal(false,cycle1.member?(Time.gm(2011,1,1,0,0)), message="Hour 0 should NOT be a member")
+    assert_equal(true,cycle1.member?(Time.gm(2011,1,1,3,0)), message="Hour 3 should be a member")
+    assert_equal(false,cycle1.member?(Time.gm(2011,1,1,6,0)), message="Hour 6 should NOT be a member")
+    assert_equal(true,cycle1.member?(Time.gm(2011,1,1,9,0)), message="Hour 9 should be a member")
+    assert_equal(false,cycle1.member?(Time.gm(2011,1,1,12,0)), message="Hour 12 should NOT be a member")
+    assert_equal(true,cycle1.member?(Time.gm(2011,1,1,15,0)), message="Hour 15 should be a member")
+
+    # Test first
+    assert_equal(Time.gm(2011,1,1,3,0),cycle1.first, message="First should be hour 3")
+
+  end
+
+
+  # Test that both exclude_hours and valid_hours raises an error
+  def test_cycleinterval_both_exclude_and_valid_hours_error
+    assert_raise(RuntimeError) {
+      WorkflowMgr::CycleInterval.new("201101010000 201101012300 01:00:00","test",0,nil,"6 18","3 9 15")
+    }
+  end
+
+
+  # Test invalid hour values
+  def test_cycleinterval_invalid_hour_values
+    assert_raise(RuntimeError) {
+      WorkflowMgr::CycleInterval.new("201101010000 201101012300 01:00:00","test",0,nil,"25")
+    }
+    assert_raise(RuntimeError) {
+      WorkflowMgr::CycleInterval.new("201101010000 201101012300 01:00:00","test",0,nil,nil,"30")
+    }
+    assert_raise(RuntimeError) {
+      WorkflowMgr::CycleInterval.new("201101010000 201101012300 01:00:00","test",0,nil,"-1")
+    }
+  end
+
 end
