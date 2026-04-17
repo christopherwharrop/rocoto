@@ -20,18 +20,7 @@ Workflow Management is a concept that originated in the 1970's to handle busines
    export PATH="/path/to/rocoto/bin:${PATH}"
    ```
 
-### Installation Details
-
-The `INSTALL` script uses [Bundler](https://bundler.io/) to manage Ruby gem dependencies in **standalone mode**. This means:
-
-- Gems are installed locally in the `bundle/` directory within Rocoto
-- **The Bundler gem is NOT required at runtime** - only during installation
-- You do not need write access to the system Ruby installation
-- Perfect for both user installations and system-wide deployments
-
-This approach works well for both installation scenarios:
-1. **User installation**: Bundler installs to `~/.gem` during setup, but can be removed after installation
-2. **System installation**: Admins can install as root without affecting runtime requirements for users
+### Installation Options
 
 If you need to specify a custom Ruby installation or libxml2 location, use these options:
 
