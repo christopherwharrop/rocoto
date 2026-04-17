@@ -1,102 +1,224 @@
 #!/usr/bin/env bash
 
-# Script to install required external packages
+# Script to install Rocoto Workflow Manager using Bundler
 
-# Set location of WFM
-WFM_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+set -euo pipefail  # Exit on error, undefined vars, pipe failures
 
-# Set the location where gem dependencies are installed
-GEM_DIR=${WFM_DIR}/gems
+# Set location of Rocoto installation
+ROCOTO_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Process arguments
-for arg in $@; do
-  case $arg in
-    --with-ruby=*) RUBY=$(echo $arg | cut -f 2 -d "=")/bin/ruby;;
-    --with-xml2-dir=*) xml2dir=$(echo $arg | cut -f 2 -d "=");;
-    --with-xml2-include=*) xml2include=$(echo $arg | cut -f 2 -d "=");;
-    --with-xml2-config=*) xml2config=$(echo $arg | cut -f 2 -d "=");;
-    --with-xml2-lib=*) xml2lib=$(echo $arg | cut -f 2 -d "=");;
-    -h|--help) echo
-               echo "Run this script to install the Workflow Manager"
-               echo
-               echo 'INSTALL [--with-ruby=/path/to/ruby]'
-               echo '[--with-xml2-dir=/path/to/${xml2-dir}]'
-               echo '[--with-xml2-include=/path/to/${xml2-dir}/include]'
-               echo '[--with-xml2-config=/path/to/xml2-config]'
-               echo '[--with-xml2-lib=/path/to/${xml2-dir}/lib]'
-               echo
-               exit;;
-    *)
-  esac 
+# Print usage information
+usage() {
+    cat << EOF
+Usage: ${0##*/} [OPTIONS]
+
+Install the Rocoto Workflow Manager and its dependencies.
+
+Options:
+    --with-ruby=PATH         Path to Ruby installation directory
+    --with-xml2-dir=PATH     Path to libxml2 installation directory
+    --with-xml2-include=PATH Path to libxml2 include directory
+    --with-xml2-lib=PATH     Path to libxml2 library directory
+    --with-xml2-config=PATH  Path to xml2-config executable
+    -h, --help               Show this help message
+
+Examples:
+    ./INSTALL
+    ./INSTALL --with-ruby=/opt/ruby/3.2.0
+    ./INSTALL --with-xml2-dir=/usr/local
+
+EOF
+    exit 0
+}
+
+# Parse command line arguments
+RUBY=""
+xml2dir=""
+xml2include=""
+xml2config=""
+xml2lib=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --with-ruby=*)
+            RUBY="${arg#*=}/bin/ruby"
+            ;;
+        --with-xml2-dir=*)
+            xml2dir="${arg#*=}"
+            ;;
+        --with-xml2-include=*)
+            xml2include="${arg#*=}"
+            ;;
+        --with-xml2-config=*)
+            xml2config="${arg#*=}"
+            ;;
+        --with-xml2-lib=*)
+            xml2lib="${arg#*=}"
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            echo "Error: Unknown option '$arg'" >&2
+            echo "Use --help to see available options" >&2
+            exit 1
+            ;;
+    esac
 done
 
-# Make sure a ruby is specified
-if [ -z "$RUBY" ]; then
-  RUBY=$(which ruby 2>/dev/null)
-  if [ $? -ne 0 ]; then
-    echo "Can not find ruby.  Use --with-ruby to specify path where ruby is installed."
+# Find Ruby executable
+if [[ -z "$RUBY" ]]; then
+    if ! RUBY=$(command -v ruby); then
+        echo "Error: Cannot find ruby in PATH." >&2
+        echo "Use --with-ruby to specify the Ruby installation directory." >&2
+        exit 1
+    fi
+fi
+
+# Verify Ruby executable exists and is executable
+if [[ ! -x "$RUBY" ]]; then
+    echo "Error: Ruby executable not found or not executable: $RUBY" >&2
+    echo "Use --with-ruby to specify the correct Ruby installation directory." >&2
     exit 1
-  fi
 fi
 
-# Make sure ruby exists
-if [ -x $RUBY ]; then
-  echo "Installing using $RUBY"
+echo "==> Using Ruby: $RUBY"
+
+# Check Ruby version
+RUBY_VERSION=$("$RUBY" -e "puts RUBY_VERSION")
+echo "==> Ruby version: $RUBY_VERSION"
+
+if ! "$RUBY" -e "exit(RUBY_VERSION >= '3.0.0' ? 0 : 1)"; then
+    echo "Error: Ruby 3.0.0 or higher is required (found $RUBY_VERSION)" >&2
+    exit 1
+fi
+
+# Check if bundler is installed
+echo "==> Checking for Bundler..."
+if ! "$RUBY" -e "require 'bundler'" 2>/dev/null; then
+    echo "==> Bundler not found, installing..."
+
+    # Get the gem command associated with this Ruby
+    GEM_CMD="${RUBY%/ruby}/gem"
+    if [[ ! -x "$GEM_CMD" ]]; then
+        GEM_CMD=$(command -v gem) || {
+            echo "Error: Cannot find gem command for $RUBY" >&2
+            exit 1
+        }
+    fi
+
+    "$GEM_CMD" install bundler --user-install --no-document
+
+    # Add user gem bin directory to PATH if not already there
+    USER_GEM_BIN=$("$RUBY" -e "puts Gem.user_dir")/bin
+    if [[ ":$PATH:" != *":$USER_GEM_BIN:"* ]]; then
+        export PATH="${USER_GEM_BIN}:${PATH}"
+        echo "==> Added ${USER_GEM_BIN} to PATH for this session"
+        echo ""
+        echo "Note: You may want to add this to your ~/.bashrc or ~/.bash_profile:"
+        echo "  export PATH=\"${USER_GEM_BIN}:\${PATH}\""
+        echo ""
+    fi
 else
-  echo "Installation failed.  $RUBY does not exist.  Use --with-ruby to specify path where ruby is installed."
-  exit 1
+    echo "==> Bundler already installed"
 fi
 
-GEM_ARGS=""
-# Check whether libxml2 headers, libs, and xml2-config are defined
-# xml2dir
-if [[  -n "$xml2dir" &&  -d "$xml2dir" ]]; then
-    GEM_ARGS+=" --with-xml2-dir="$xml2dir
-    [[ -z "${xml2include+x}" || ! -d "${xml2include}" ]] && xml2include=${xml2dir}/include
-    [[ -z "${xml2lib+x}" || ! -d "${xml2lib}" ]] && xml2lib=${xml2dir}/lib
-    [[ -z "${xml2config+x}" || ! -d "${xml2config}" ]] && xml2config=${xml2dir}/bin/xml2-config
-fi
-# Add configuration options if they are set:
-if [[ -n "${xml2include}" && -d "${xml2include}" ]]; then 
-   GEM_ARGS+=" --with-xml2-include="$xml2include
-fi
+# Update Ruby shebangs in scripts
+echo "==> Updating Ruby shebangs in scripts..."
+shebang_count=0
+for file in sbin/*; do
+    # Skip if not a file, or is a shell script, or is a symlink
+    [[ -f "$file" ]] || continue
+    [[ "$file" == *.sh ]] && continue
+    [[ -L "$file" ]] && continue
 
-if [[ -n "${xml2lib}" && -d "${xml2lib}" ]]; then 
-   GEM_ARGS+=" --with-xml2-lib="$xml2lib
-fi
-
-if [[ -n "${xml2config}" && -f "${xml2config}" ]]; then 
-   GEM_ARGS+=" --with-xml2-config="$xml2config
-fi
-# Abort if any command returns an error
-set -e
-
-# Make sure ruby is at least 3.0.0 or higher
-good_ruby=$($RUBY -e "puts RUBY_VERSION >= '3.0.0'")
-if [ "$good_ruby" = "false" ]; then
-  echo "Ruby 3.0.0 or higher is required"
-  exit 1
-fi
-
-# Replace ruby shebangs with path to ruby
-for file in $(ls sbin | grep -v '\.sh'); do
-
-  # Skip files that are links
-  if [ -L sbin/$file ]; then
-    continue
-  fi
-
-  # Replace first line with correct shebang
-  sed "1s:.*:#!${RUBY}:" -i sbin/$file
-
+    # Update shebang line
+    if sed -i.bak "1s|^#!.*|#!${RUBY}|" "$file"; then
+        rm -f "${file}.bak"
+        shebang_count=$((shebang_count + 1))
+    fi
 done
+echo "==> Updated shebangs in $shebang_count script(s)"
 
-# Install gem dependencies into local gem repository
-gem install -i ${GEM_DIR} --no-user-install --no-document \
-    open4:1.3.4 \
-    rubysl-date:1.0.1 \
-    rubysl-parsedate:1.0.1 \
-    sqlite3:1.7.3 \
-    thread:0.2.2 \
-    libxml-ruby:5.0.3 \
-    -- $GEM_ARGS
+# Build bundle config arguments for libxml2
+BUNDLE_BUILD_ARGS=""
+
+# Configure libxml2 paths if specified
+if [[ -n "$xml2dir" ]]; then
+    if [[ ! -d "$xml2dir" ]]; then
+        echo "Warning: Specified xml2dir does not exist: $xml2dir" >&2
+    else
+        BUNDLE_BUILD_ARGS+=" --with-xml2-dir=${xml2dir}"
+        # Auto-detect subdirectories if not explicitly set
+        [[ -z "$xml2include" && -d "${xml2dir}/include" ]] && xml2include="${xml2dir}/include"
+        [[ -z "$xml2lib" && -d "${xml2dir}/lib" ]] && xml2lib="${xml2dir}/lib"
+        [[ -z "$xml2config" && -x "${xml2dir}/bin/xml2-config" ]] && xml2config="${xml2dir}/bin/xml2-config"
+    fi
+fi
+
+# Add individual configuration options if set
+if [[ -n "$xml2include" ]]; then
+    if [[ -d "$xml2include" ]]; then
+        BUNDLE_BUILD_ARGS+=" --with-xml2-include=${xml2include}"
+    else
+        echo "Warning: Specified xml2include directory does not exist: $xml2include" >&2
+    fi
+fi
+
+if [[ -n "$xml2lib" ]]; then
+    if [[ -d "$xml2lib" ]]; then
+        BUNDLE_BUILD_ARGS+=" --with-xml2-lib=${xml2lib}"
+    else
+        echo "Warning: Specified xml2lib directory does not exist: $xml2lib" >&2
+    fi
+fi
+
+if [[ -n "$xml2config" ]]; then
+    if [[ -x "$xml2config" ]]; then
+        BUNDLE_BUILD_ARGS+=" --with-xml2-config=${xml2config}"
+    else
+        echo "Warning: Specified xml2-config is not executable: $xml2config" >&2
+    fi
+fi
+
+# Configure bundler build options for libxml-ruby if needed
+if [[ -n "$BUNDLE_BUILD_ARGS" ]]; then
+    echo "==> Configuring bundler build options for libxml-ruby:${BUNDLE_BUILD_ARGS}"
+    bundle config build.libxml-ruby "${BUNDLE_BUILD_ARGS}"
+fi
+
+# Install gem dependencies using Bundler in standalone mode
+echo "==> Installing gem dependencies with Bundler (standalone mode)..."
+echo "==> Standalone mode removes runtime dependency on Bundler gem"
+if ! bundle install --standalone; then
+    echo ""
+    echo "Error: Bundler installation failed." >&2
+    echo "This is often due to missing system dependencies for native gems." >&2
+    echo ""
+    echo "For libxml-ruby, you may need to install libxml2 development files:" >&2
+    echo "  - Ubuntu/Debian: sudo apt-get install libxml2-dev" >&2
+    echo "  - RHEL/CentOS: sudo yum install libxml2-devel" >&2
+    echo "  - macOS: brew install libxml2" >&2
+    echo ""
+    echo "Or specify a custom location with --with-xml2-dir" >&2
+    exit 1
+fi
+
+echo ""
+echo "=============================================="
+echo "  Rocoto Installation Complete!"
+echo "=============================================="
+echo ""
+echo "Installation directory: ${ROCOTO_DIR}"
+echo "Gems installed in:      ${ROCOTO_DIR}/bundle"
+echo "Ruby version:           ${RUBY_VERSION}"
+echo ""
+echo "Note: This installation uses standalone mode."
+echo "The Bundler gem is NOT required at runtime."
+echo ""
+echo "To use Rocoto, add the bin/ directory to your PATH:"
+echo "  export PATH=\"${ROCOTO_DIR}/bin:\${PATH}\""
+echo ""
+echo "To make this permanent, add the above line to your"
+echo "~/.bashrc or ~/.bash_profile"
+echo ""

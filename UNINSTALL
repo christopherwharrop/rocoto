@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# Script to uninstall Rocoto (reset to pre-installation state)
+
+set -euo pipefail  # Exit on error, undefined vars, pipe failures
+
+# Set location of Rocoto installation
+ROCOTO_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+echo "==> Uninstalling Rocoto from ${ROCOTO_DIR}"
+echo ""
+
+# Remove bundler directories and files
+echo "==> Removing gem dependencies..."
+rm -rf "${ROCOTO_DIR}/bundle" "${ROCOTO_DIR}/.bundle" "${ROCOTO_DIR}/Gemfile.lock"
+
+# Reset Ruby shebangs to generic form
+echo "==> Resetting Ruby shebangs..."
+for file in sbin/rocotoboot.rb sbin/rocotocheck.rb sbin/rocotocomplete.rb \
+            sbin/rocotorewind.rb sbin/rocotorun.rb sbin/rocotostat.rb \
+            sbin/rocotovacuum.rb sbin/rocotoserver; do
+  if [[ -f "$file" && ! -L "$file" ]]; then
+    sed -i.bak '1s|^#!.*|#!/usr/bin/env ruby|' "$file"
+    rm -f "${file}.bak"
+  fi
+done
+
+echo ""
+echo "=============================================="
+echo "  Rocoto Uninstall Complete!"
+echo "=============================================="
+echo ""
+echo "Removed:"
+echo "  - ${ROCOTO_DIR}/bundle/"
+echo "  - ${ROCOTO_DIR}/.bundle/"
+echo "  - ${ROCOTO_DIR}/Gemfile.lock"
+echo ""
+echo "Reset all script shebangs to #!/usr/bin/env ruby"
+echo ""
+echo "To reinstall, run: ./INSTALL"
+echo ""

@@ -1,14 +1,7 @@
-# Ignore directories where external libraries get built and installed.
-build/
-lib/SystemTimer/
-lib/libxml-ruby/
-lib/libxml2/
-lib/open4/
-lib/sqlite3-ruby/
-lib/sqlite3/
-lib/rubysl-date/
-lib/rubysl-parsedate/
-lib/thread/
+# Ignore directories where gems are installed
+bundle/
+vendor/bundle/
+gems/
 
 # Ignore test files
 test/log

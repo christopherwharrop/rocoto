@@ -1,14 +1,13 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
 __WFMDIR__=File.expand_path("../../",__FILE__)
 
-# Add include paths for WFM and gem dependencies
+# Set up standalone bundle (no bundler gem required at runtime)
+require_relative '../bundle/bundler/setup'
+
+# Add include path for WFM libraries
 $:.unshift("#{__WFMDIR__}/lib")
-Dir["#{__WFMDIR__}/gems/gems/*"].each do |gemdir|
-  next if gemdir == "." or gemdir == ".."
-  $:.unshift("#{gemdir}/lib")
-end
 
 # Load workflow engine library
 require 'tmpdir'
