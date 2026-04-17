@@ -3,6 +3,9 @@ bundle/
 vendor/bundle/
 gems/
 
+# Allow vendor/cache/ (contains .gem files for air-gapped installations)
+!vendor/cache/
+
 # Ignore test files
 test/log
 test/test.db

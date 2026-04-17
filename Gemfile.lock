@@ -6,20 +6,10 @@ GEM
     rubysl-date (1.0.1)
     rubysl-parsedate (1.0.1)
       rubysl-date (~> 1.0)
-    sqlite3 (1.7.3-aarch64-linux)
-    sqlite3 (1.7.3-arm-linux)
-    sqlite3 (1.7.3-arm64-darwin)
-    sqlite3 (1.7.3-x86-linux)
-    sqlite3 (1.7.3-x86_64-darwin)
     sqlite3 (1.7.3-x86_64-linux)
     thread (0.2.2)
 
 PLATFORMS
-  aarch64-linux
-  arm-linux
-  arm64-darwin
-  x86-linux
-  x86_64-darwin
   x86_64-linux
 
 DEPENDENCIES
@@ -30,21 +20,8 @@ DEPENDENCIES
   sqlite3 (~> 1.7)
   thread (~> 0.2)
 
-CHECKSUMS
-  libxml-ruby (5.0.6) sha256=ef82ff4b4c6aaaa9629f0a2d5deccd9502507e368bf2c5a98d675f634013ca46
-  open4 (1.3.4) sha256=a1df037310624ecc1ea1d81264b11c83e96d0c3c1c6043108d37d396dcd0f4b1
-  rubysl-date (1.0.1) sha256=4e2721b569ae826306dd6157769d349e82bb3862da125564fa9e3f95c4d409d5
-  rubysl-parsedate (1.0.1) sha256=56ead922b918b67e820370bd3d686a8cc98bb0e56a966cd0e6c7bb2c1219b0de
-  sqlite3 (1.7.3-aarch64-linux) sha256=0ccb8c001cd2617f4801a2c816142d3c9bc299e3f3e0f49e03812f3610b0891c
-  sqlite3 (1.7.3-arm-linux) sha256=eb653026d44f8502b74564e585245485a5667d72f8888854e53c561f816541b0
-  sqlite3 (1.7.3-arm64-darwin) sha256=b956160cc882d2568f332f915c9fe27cae9a4521b202d6e7ea540171c88e4600
-  sqlite3 (1.7.3-x86-linux) sha256=95543cad6bbdf1ba822526bcd0aba4a378887d9da906b8bfa250002745f3847e
-  sqlite3 (1.7.3-x86_64-darwin) sha256=b88e117ae14b2c5b61a7eb14da24b3b0e93cd3e1c17774ff3b6e5a03ffe4e5b7
-  sqlite3 (1.7.3-x86_64-linux) sha256=522a3285660dec8253465880c97980e873db0d79060900be8d14194217a3ee73
-  thread (0.2.2) sha256=0ef704d20878d4dc9090fd2e8e99282fdc7bb047b2ee53fe15916bdfd97776f5
-
 RUBY VERSION
-  ruby 3.2.3
+   ruby 3.2.3p157
 
 BUNDLED WITH
-  4.0.10
+   2.4.19

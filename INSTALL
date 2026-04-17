@@ -207,18 +207,57 @@ fi
 # Install gem dependencies using Bundler in standalone mode
 echo "==> Installing gem dependencies with Bundler (standalone mode)..."
 echo "==> Standalone mode removes runtime dependency on Bundler gem"
-if ! bundle install --standalone; then
-    echo ""
-    echo "Error: Bundler installation failed." >&2
-    echo "This is often due to missing system dependencies for native gems." >&2
-    echo ""
-    echo "For libxml-ruby, you may need to install libxml2 development files:" >&2
-    echo "  - Ubuntu/Debian: sudo apt-get install libxml2-dev" >&2
-    echo "  - RHEL/CentOS: sudo yum install libxml2-devel" >&2
-    echo "  - macOS: brew install libxml2" >&2
-    echo ""
-    echo "Or specify a custom location with --with-xml2-dir" >&2
-    exit 1
+
+# Capture output and error from bundle install
+BUNDLE_OUTPUT=$(mktemp)
+if ! bundle install --standalone 2>&1 | tee "$BUNDLE_OUTPUT"; then
+    # Installation failed - check if it was a network issue
+    NETWORK_ERROR=false
+    if grep -qiE '(could not (fetch|reach|download|connect)|network|timeout|connection (refused|reset)|no route to host|name resolution|rubygems.org)' "$BUNDLE_OUTPUT"; then
+        NETWORK_ERROR=true
+    fi
+
+    rm -f "$BUNDLE_OUTPUT"
+
+    # If network error and cache exists, try air-gapped install
+    if [[ "$NETWORK_ERROR" == "true" ]] && [[ -d "vendor/cache" ]] && [[ -n "$(ls -A vendor/cache 2>/dev/null)" ]]; then
+        echo ""
+        echo "==> Network issue detected. Attempting air-gapped installation using cached gems..." >&2
+        echo ""
+        if ! bundle install --local --standalone; then
+            echo ""
+            echo "Error: Air-gapped installation also failed." >&2
+            echo "The cached gems may be incompatible with this system." >&2
+            exit 1
+        fi
+        echo ""
+        echo "==> Successfully installed using cached gems (air-gapped mode)"
+    else
+        # Not a network error, or no cache available
+        echo ""
+        echo "Error: Bundler installation failed." >&2
+
+        if [[ "$NETWORK_ERROR" == "true" ]]; then
+            echo "Network connectivity issue detected, but no gem cache is available." >&2
+            echo ""
+            echo "If you're on an air-gapped system, the repository may be missing cached gems." >&2
+            echo "Run these commands on a system with internet to create the cache:" >&2
+            echo "  bundle config set cache_all true" >&2
+            echo "  bundle cache" >&2
+        else
+            echo "This is often due to missing system dependencies." >&2
+            echo ""
+            echo "For libxml-ruby, you may need to install libxml2 development files:" >&2
+            echo "  - Ubuntu/Debian: sudo apt-get install libxml2-dev" >&2
+            echo "  - RHEL/CentOS: sudo yum install libxml2-devel" >&2
+            echo "  - macOS: brew install libxml2" >&2
+            echo ""
+            echo "Or specify a custom location with --with-xml2-dir" >&2
+        fi
+        exit 1
+    fi
+else
+    rm -f "$BUNDLE_OUTPUT"
 fi
 
 echo ""

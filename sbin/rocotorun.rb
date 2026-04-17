@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/apps/ruby/3.2.3/bin/ruby
 
 # Get the base directory of the WFM installation
 __WFMDIR__=File.expand_path("../../",__FILE__)
