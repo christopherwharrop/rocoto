@@ -28,6 +28,11 @@ If you need to specify a custom Ruby installation or libxml2 location, use these
 ./INSTALL --with-ruby=/path/to/ruby --with-xml2-dir=/path/to/libxml2
 ```
 
+**Tip for NCAR Derecho users:**
+```bash
+./INSTALL --with-xml2-dir=/glade/u/apps/derecho/25.10/spack/opt/spack/libxml2/2.13.5/gcc/12.5.0/fog4
+```
+
 Available options:
 - `--with-ruby=/path/to/ruby` - Specify Ruby installation directory
 - `--with-xml2-dir=/path/to/libxml2` - Specify libxml2 installation directory
