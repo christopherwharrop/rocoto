@@ -18,6 +18,7 @@ Options:
     --with-ruby=PATH         Path to Ruby installation directory
     --with-xml2-dir=PATH     Path to libxml2 installation directory
     --with-xml2-include=PATH Path to libxml2 include directory
+                             (Script will auto-detect libxml2 subdirectory)
     --with-xml2-lib=PATH     Path to libxml2 library directory
     --with-xml2-config=PATH  Path to xml2-config executable
     -h, --help               Show this help message
@@ -26,6 +27,10 @@ Examples:
     ./INSTALL
     ./INSTALL --with-ruby=/opt/ruby/3.2.0
     ./INSTALL --with-xml2-dir=/usr/local
+    ./INSTALL --with-xml2-include=/opt/libxml2/include --with-xml2-lib=/opt/libxml2/lib
+
+Note: The script will automatically append 'libxml2' to include paths if needed,
+      so both /path/include and /path/include/libxml2 will work.
 
 EOF
     exit 0
@@ -150,7 +155,14 @@ if [[ -n "$xml2dir" ]]; then
     else
         BUNDLE_BUILD_ARGS+=" --with-xml2-dir=${xml2dir}"
         # Auto-detect subdirectories if not explicitly set
-        [[ -z "$xml2include" && -d "${xml2dir}/include" ]] && xml2include="${xml2dir}/include"
+        if [[ -z "$xml2include" ]]; then
+            # Try include/libxml2 first, then include
+            if [[ -d "${xml2dir}/include/libxml2" ]]; then
+                xml2include="${xml2dir}/include/libxml2"
+            elif [[ -d "${xml2dir}/include" ]]; then
+                xml2include="${xml2dir}/include"
+            fi
+        fi
         [[ -z "$xml2lib" && -d "${xml2dir}/lib" ]] && xml2lib="${xml2dir}/lib"
         [[ -z "$xml2config" && -x "${xml2dir}/bin/xml2-config" ]] && xml2config="${xml2dir}/bin/xml2-config"
     fi
@@ -159,6 +171,11 @@ fi
 # Add individual configuration options if set
 if [[ -n "$xml2include" ]]; then
     if [[ -d "$xml2include" ]]; then
+        # If path doesn't end with libxml2, check if libxml2 subdir exists
+        if [[ ! "$xml2include" =~ libxml2$ ]] && [[ -d "${xml2include}/libxml2" ]]; then
+            xml2include="${xml2include}/libxml2"
+            echo "==> Auto-detected libxml2 headers at: $xml2include"
+        fi
         BUNDLE_BUILD_ARGS+=" --with-xml2-include=${xml2include}"
     else
         echo "Warning: Specified xml2include directory does not exist: $xml2include" >&2
@@ -184,7 +201,7 @@ fi
 # Configure bundler build options for libxml-ruby if needed
 if [[ -n "$BUNDLE_BUILD_ARGS" ]]; then
     echo "==> Configuring bundler build options for libxml-ruby:${BUNDLE_BUILD_ARGS}"
-    bundle config build.libxml-ruby "${BUNDLE_BUILD_ARGS}"
+    bundle config set --local build.libxml-ruby "${BUNDLE_BUILD_ARGS}"
 fi
 
 # Install gem dependencies using Bundler in standalone mode

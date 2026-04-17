@@ -46,6 +46,9 @@ Available options:
 - `--with-xml2-lib=/path/to/lib` - Specify libxml2 library directory
 - `--with-xml2-config=/path/to/xml2-config` - Specify xml2-config path
 
+**Note**: The INSTALL script will automatically detect and append the `libxml2` subdirectory to include paths if needed.
+For example, if you specify `--with-xml2-include=/opt/include`, the script will check for and use `/opt/include/libxml2` if it exists.
+
 The installation script will:
 1. Verify Ruby version (≥ 3.0.0)
 2. Install Bundler if not already available
@@ -54,7 +57,8 @@ The installation script will:
 
 ### Managing Dependencies
 
-Rocoto uses Bundler to manage gem dependencies. The required gems are specified in the `Gemfile`. If you need to update or add dependencies in the future, you can use standard Bundler commands:
+Rocoto uses Bundler to manage gem dependencies. The required gems are specified in the `Gemfile`. If you need to update or add dependencies
+in the future, you can use standard Bundler commands:
 
 ```bash
 # Update all gems to latest compatible versions
