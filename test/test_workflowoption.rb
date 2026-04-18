@@ -1,7 +1,3 @@
-if RUBY_VERSION < "1.9.0"
-  require 'require_relative'
-end
-
 require 'test/unit'
 require_relative '../lib/workflowmgr/workflowoption'
 

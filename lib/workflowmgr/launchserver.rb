@@ -33,12 +33,8 @@ module WorkflowMgr
       # This is the child process, so exec the server command
       # Pass the server the pid of the process that is launching it, the verbosity level, 
       # and the file descriptor to use for sending the URI back to the parent
-      if RUBY_VERSION < "1.9.0"
-        exec("#{server} #{parent_pid} #{WorkflowMgr::VERBOSE} #{WorkflowMgr::WORKFLOW_ID} #{wr.fileno}")
-      else
-        # Make sure wr file descriptor is inherited by child processes
-        exec("#{server} #{parent_pid} #{WorkflowMgr::VERBOSE} #{WorkflowMgr::WORKFLOW_ID} #{wr.fileno}", {wr=>wr})
-      end
+      # Make sure wr file descriptor is inherited by child processes
+      exec("#{server} #{parent_pid} #{WorkflowMgr::VERBOSE} #{WorkflowMgr::WORKFLOW_ID} #{wr.fileno}", {wr=>wr})
 
     end
 
