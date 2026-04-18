@@ -77,22 +77,22 @@ jobs:
           docker exec frontend bash -c "sudo apt-get update && sudo apt-get install -y build-essential libssl-dev libreadline-dev zlib1g-dev libxml2-dev curl git"
           docker exec frontend bash -c "git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build"
           docker exec frontend bash -c "sudo /tmp/ruby-build/install.sh"
-          docker exec frontend bash -c "
-            VERSION='${{ matrix.ruby-version }}';
-            if [[ \$VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          docker exec frontend bash -c '
+            VERSION="${{ matrix.ruby-version }}";
+            if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               # Full version specified (e.g., 3.2.0)
-              RUBY_VERSION=\$VERSION;
-              INSTALL_DIR=/usr/local/ruby-\${VERSION%.*};
+              RUBY_VERSION=$VERSION;
+              INSTALL_DIR=/usr/local/ruby-${VERSION%.*};
             else
               # Minor version specified (e.g., 3.2), find latest patch
-              RUBY_VERSION=\$(ruby-build --definitions | grep -E '^\${VERSION}\.[0-9]+\$' | tail -1);
-              INSTALL_DIR=/usr/local/ruby-\$VERSION;
+              RUBY_VERSION=$(ruby-build --definitions | grep -E "^${VERSION}\.[0-9]+$" | tail -1);
+              INSTALL_DIR=/usr/local/ruby-$VERSION;
             fi;
-            echo \"Installing Ruby \$RUBY_VERSION to \$INSTALL_DIR\";
-            sudo ruby-build \$RUBY_VERSION \$INSTALL_DIR;
-            sudo ln -sf \$INSTALL_DIR/bin/ruby /usr/local/bin/ruby;
-            sudo ln -sf \$INSTALL_DIR/bin/gem /usr/local/bin/gem;
-          "
+            echo "Installing Ruby $RUBY_VERSION to $INSTALL_DIR";
+            sudo ruby-build $RUBY_VERSION $INSTALL_DIR;
+            sudo ln -sf $INSTALL_DIR/bin/ruby /usr/local/bin/ruby;
+            sudo ln -sf $INSTALL_DIR/bin/gem /usr/local/bin/gem;
+          '
           docker exec frontend bash -c "ruby --version"
       -
         name: Copy test files to work directory
