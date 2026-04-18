@@ -99,8 +99,9 @@ echo "==> Using Ruby: $RUBY"
 RUBY_VERSION=$("$RUBY" -e "puts RUBY_VERSION")
 echo "==> Ruby version: $RUBY_VERSION"
 
-if ! "$RUBY" -e "exit(RUBY_VERSION >= '3.0.0' ? 0 : 1)"; then
-    echo "Error: Ruby 3.0.0 or higher is required (found $RUBY_VERSION)" >&2
+if ! "$RUBY" -e "exit(RUBY_VERSION >= '3.2.0' ? 0 : 1)"; then
+    echo "Error: Ruby 3.2.0 or higher is required (found $RUBY_VERSION)" >&2
+    echo "Note: Ruby 3.0 and 3.1 are no longer supported and do not receive security updates." >&2
     exit 1
 fi
 
@@ -133,6 +134,14 @@ if ! "$RUBY" -e "require 'bundler'" 2>/dev/null; then
 else
     echo "==> Bundler already installed"
 fi
+
+# Get the bundle command path
+BUNDLE_CMD=$("$RUBY" -e "require 'rubygems'; puts Gem.bin_path('bundler', 'bundle')")
+if [[ ! -f "$BUNDLE_CMD" ]]; then
+    echo "Error: Cannot find bundle executable" >&2
+    exit 1
+fi
+echo "==> Using Bundler: $BUNDLE_CMD"
 
 # Update Ruby shebangs in scripts
 echo "==> Updating Ruby shebangs in scripts..."
@@ -207,13 +216,13 @@ fi
 # Configure bundler build options for libxml-ruby if needed
 if [[ -n "$BUNDLE_BUILD_ARGS" ]]; then
     echo "==> Configuring bundler build options for libxml-ruby:${BUNDLE_BUILD_ARGS}"
-    bundle config set --local build.libxml-ruby "${BUNDLE_BUILD_ARGS}"
+    "$BUNDLE_CMD" config set --local build.libxml-ruby "${BUNDLE_BUILD_ARGS}"
 fi
 
 # Configure bundler to use local installation directory
 echo "==> Configuring bundler for local gem installation..."
-bundle config set --local path 'bundle'
-bundle config set --local disable_shared_gems 'true'
+"$BUNDLE_CMD" config set --local path 'bundle'
+"$BUNDLE_CMD" config set --local disable_shared_gems 'true'
 
 # Install gem dependencies using Bundler in standalone mode
 echo "==> Installing gem dependencies with Bundler (standalone mode)..."
@@ -231,14 +240,14 @@ if [[ "$LOCAL_INSTALL" == "true" ]]; then
         echo "  git add vendor/cache/" >&2
         exit 1
     fi
-    if ! bundle install --local --standalone; then
+    if ! "$BUNDLE_CMD" install --local --standalone; then
         echo ""
         echo "Error: Local installation failed." >&2
         echo "The cached gems may be incompatible with this system." >&2
         exit 1
     fi
 else
-    if ! bundle install --standalone; then
+    if ! "$BUNDLE_CMD" install --standalone; then
         echo ""
         echo "Error: Bundler installation failed." >&2
         echo "This is often due to missing system dependencies or network issues." >&2

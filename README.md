@@ -6,7 +6,7 @@ Workflow Management is a concept that originated in the 1970's to handle busines
 ## Installation
 
 ### Requirements
-- Ruby 3.0.0 or higher
+- Ruby 3.2.0 or higher (Ruby 3.0 and 3.1 are no longer supported)
 - libxml2 development headers (for the libxml-ruby gem)
 
 ### Quick Start
@@ -45,7 +45,7 @@ Available options:
 For example, if you specify `--with-xml2-include=/opt/include`, the script will check for and use `/opt/include/libxml2` if it exists.
 
 The installation script will:
-1. Verify Ruby version (≥ 3.0.0)
+1. Verify Ruby version (≥ 3.2.0)
 2. Install Bundler if not already available
 3. Update script shebangs to use the specified Ruby
 4. Install all gem dependencies to `vendor/bundle`
