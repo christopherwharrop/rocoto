@@ -11,7 +11,7 @@ on:
 
 jobs:
   test-rocoto-amd64:
-    name: Test with Ruby ${{ matrix.ruby-version }}
+    name: Ruby ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
@@ -21,7 +21,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3']
+        include:
+          - ruby-version: '3.2.0'
+            label: '3.2.0 (minimum supported)'
+          - ruby-version: '3.2'
+            label: '3.2 (latest patch)'
+          - ruby-version: '3.3.0'
+            label: '3.3.0 (first release)'
+          - ruby-version: '3.3'
+            label: '3.3 (latest patch)'
     steps:
       -
         name: Checkout repository
@@ -69,9 +77,22 @@ jobs:
           docker exec frontend bash -c "sudo apt-get update && sudo apt-get install -y build-essential libssl-dev libreadline-dev zlib1g-dev libxml2-dev curl git"
           docker exec frontend bash -c "git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build"
           docker exec frontend bash -c "sudo /tmp/ruby-build/install.sh"
-          docker exec frontend bash -c "LATEST=\$(ruby-build --definitions | grep -E '^${{ matrix.ruby-version }}\.[0-9]+\$' | tail -1); sudo ruby-build \$LATEST /usr/local/ruby-${{ matrix.ruby-version }}"
-          docker exec frontend bash -c "sudo ln -sf /usr/local/ruby-${{ matrix.ruby-version }}/bin/ruby /usr/local/bin/ruby"
-          docker exec frontend bash -c "sudo ln -sf /usr/local/ruby-${{ matrix.ruby-version }}/bin/gem /usr/local/bin/gem"
+          docker exec frontend bash -c "
+            VERSION='${{ matrix.ruby-version }}';
+            if [[ \$VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              # Full version specified (e.g., 3.2.0)
+              RUBY_VERSION=\$VERSION;
+              INSTALL_DIR=/usr/local/ruby-\${VERSION%.*};
+            else
+              # Minor version specified (e.g., 3.2), find latest patch
+              RUBY_VERSION=\$(ruby-build --definitions | grep -E '^\${VERSION}\.[0-9]+\$' | tail -1);
+              INSTALL_DIR=/usr/local/ruby-\$VERSION;
+            fi;
+            echo \"Installing Ruby \$RUBY_VERSION to \$INSTALL_DIR\";
+            sudo ruby-build \$RUBY_VERSION \$INSTALL_DIR;
+            sudo ln -sf \$INSTALL_DIR/bin/ruby /usr/local/bin/ruby;
+            sudo ln -sf \$INSTALL_DIR/bin/gem /usr/local/bin/gem;
+          "
           docker exec frontend bash -c "ruby --version"
       -
         name: Copy test files to work directory
@@ -80,9 +101,11 @@ jobs:
       -
         name: Install rocoto
         run: |
-          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${{ matrix.ruby-version }} --local"
+          # Extract minor version (X.Y) from matrix version for directory path
+          MINOR_VERSION=$(echo "${{ matrix.ruby-version }}" | cut -d. -f1,2)
+          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${MINOR_VERSION} --local"
           docker exec frontend bash -l -c "cd work; ./UNINSTALL"
-          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${{ matrix.ruby-version }}"
+          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${MINOR_VERSION}"
       -
         name: Run test suite
         run: |
