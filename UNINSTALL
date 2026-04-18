@@ -12,7 +12,7 @@ echo ""
 
 # Remove bundler directories and files
 echo "==> Removing gem dependencies..."
-rm -rf "${ROCOTO_DIR}/bundle" "${ROCOTO_DIR}/.bundle" "${ROCOTO_DIR}/Gemfile.lock"
+rm -rf "${ROCOTO_DIR}/bundle" "${ROCOTO_DIR}/.bundle"
 
 # Reset Ruby shebangs to generic form
 echo "==> Resetting Ruby shebangs..."
@@ -33,7 +33,6 @@ echo ""
 echo "Removed:"
 echo "  - ${ROCOTO_DIR}/bundle/"
 echo "  - ${ROCOTO_DIR}/.bundle/"
-echo "  - ${ROCOTO_DIR}/Gemfile.lock"
 echo ""
 echo "Reset all script shebangs to #!/usr/bin/env ruby"
 echo ""
