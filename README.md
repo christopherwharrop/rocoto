@@ -3,6 +3,100 @@
 ## Introduction
 Workflow Management is a concept that originated in the 1970's to handle business process management. Workflow management systems were developed to manage complex collections of business processes that need to be carried out in a certain way with complex interdependencies and requirements. Scientific Workflow Management is much newer, and is very much like its business counterpart, except that it is usually data oriented instead of process oriented. That is, scientific workflows are driven by the scientific data that "flows" through them. Scientific workflow tasks are usually triggered by the availability of some kind of input data, and a task's result is usually some kind of data that is fed as input to another task in the workflow. The individual tasks themselves are scientific codes that perform some kind of computation or retrieve or store some type of data for a computation. So, whereas a business workflow is comprised of a diverse set of processes that have to be completed in a certain way, sometimes carried out by a machine, sometimes carried out by a human being, a scientific workflow is usually comprised of a set of computations that are driven by the availability of input data.
 
+## Installation
+
+### Requirements
+- Ruby 3.0.0 or higher
+- libxml2 development headers (for the libxml-ruby gem)
+
+### Quick Start
+1. Clone or download Rocoto to your desired installation directory
+2. Run the installation script:
+   ```bash
+   ./INSTALL
+   ```
+3. Add Rocoto's bin directory to your PATH:
+   ```bash
+   export PATH="/path/to/rocoto/bin:${PATH}"
+   ```
+
+### Installation Options
+
+If you need to specify a custom Ruby installation or libxml2 location, use these options:
+
+```bash
+./INSTALL --with-ruby=/path/to/ruby --with-xml2-dir=/path/to/libxml2
+```
+
+**Tip for NCAR Derecho users:**
+```bash
+./INSTALL --with-xml2-dir=/glade/u/apps/derecho/25.10/spack/opt/spack/libxml2/2.13.5/gcc/12.5.0/fog4
+```
+
+Available options:
+- `--with-ruby=/path/to/ruby` - Specify Ruby installation directory
+- `--with-xml2-dir=/path/to/libxml2` - Specify libxml2 installation directory
+- `--with-xml2-include=/path/to/include` - Specify libxml2 include directory
+- `--with-xml2-lib=/path/to/lib` - Specify libxml2 library directory
+- `--with-xml2-config=/path/to/xml2-config` - Specify xml2-config path
+- `--local` - Install from cached gems in vendor/cache/ (air-gapped mode)
+
+**Note**: The INSTALL script will automatically detect and append the `libxml2` subdirectory to include paths if needed.
+For example, if you specify `--with-xml2-include=/opt/include`, the script will check for and use `/opt/include/libxml2` if it exists.
+
+The installation script will:
+1. Verify Ruby version (≥ 3.0.0)
+2. Install Bundler if not already available
+3. Update script shebangs to use the specified Ruby
+4. Install all gem dependencies to `vendor/bundle`
+
+### Managing Dependencies
+
+Rocoto uses Bundler to manage gem dependencies. The required gems are specified in the `Gemfile`. If you need to update or add dependencies
+in the future, you can use standard Bundler commands:
+
+```bash
+# Update all gems to latest compatible versions
+bundle update
+
+# Install a specific gem
+bundle add <gem-name>
+
+# Check for outdated gems
+bundle outdated
+```
+
+### Air-Gapped Installation
+
+For systems without internet access, Rocoto supports installation from cached gem files using the `--local` option.
+
+**For maintainers:** To create/update the gem cache:
+```bash
+# First, install normally (requires internet)
+./INSTALL
+
+# Configure bundler to cache all dependencies
+bundle config set cache_all true
+
+# Package the gems into vendor/cache/
+bundle cache
+
+# Commit the cache to the repository
+git add vendor/cache/
+git commit -m "Update gem cache"
+```
+
+**For users on air-gapped systems:**
+```bash
+# Use the --local option to install from cached gems
+./INSTALL --local
+
+# Can combine with other options as needed
+./INSTALL --local --with-xml2-dir=/path/to/libxml2
+```
+
+The cached gems are stored in `vendor/cache/` and can be committed to version control (they're small, ~3.5MB total).
+
 ## Why Workflow Management?
 The day when a scientist could conduct his or her numerical modeling and simulation research by writing, running, and monitoring the progress of a modest Fortran code or two, is quickly becoming a distant memory. It is a fact that researchers now often have to make hundreds or thousands of runs of a numerical model to get a single result. In addition, each end-to-end "run" of the model often entails running many different codes for pre- and post-processing in addition to the model itself. And, in some cases, multiple models and their associated pre- and post-processing tasks are coupled together to build a larger, more complex model. The codes that comprise the end-to-end modeling systems often have complex interdependencies that dictate the order in which they can be run. And, in order to run the end-to-end system efficiently, concurrency must be used when dependencies allow it. The problem of scale and complexity is exacerbated by the fact that these codes are usually run on high performance machines that are notoriously difficult for scientists to use, and which tend to exhibit frequent failures. As machines get larger and larger, the failure rate of hardware and software components increases commensurately. Ad-hoc management of the execution of a complex modeling system is often difficult even for a single end-to-end run on a machine that never fails. Multiply that by the thousands of runs needed to perform a scientific experiment, in a hostile computing environment where hardware and facility outages are not uncommon, and you have a very challenging situation. For simulations that must run reliably in realtime, the situation is almost hopeless. The traditional ad-hoc techniques for automating the execution of modeling systems (e.g. driver scripts, batch job chains or trees) do not provide sufficient fault tolerance for the scale and complexity of current and future workflows, nor are they reusable; each modeling system requires a custom automation system.
 

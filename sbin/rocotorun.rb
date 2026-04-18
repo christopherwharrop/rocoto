@@ -1,17 +1,13 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
 __WFMDIR__=File.expand_path("../../",__FILE__)
 
-# Add include paths for WFM and libxml-ruby libraries
+# Set up standalone bundle (no bundler gem required at runtime)
+require_relative '../bundle/bundler/setup'
+
+# Add include path for WFM libraries
 $:.unshift("#{__WFMDIR__}/lib")
-$:.unshift("#{__WFMDIR__}/lib/rubysl-date/lib")
-$:.unshift("#{__WFMDIR__}/lib/rubysl-parsedate/lib")
-$:.unshift("#{__WFMDIR__}/lib/libxml-ruby")
-$:.unshift("#{__WFMDIR__}/lib/sqlite3-ruby")
-$:.unshift("#{__WFMDIR__}/lib/SystemTimer")
-$:.unshift("#{__WFMDIR__}/lib/open4/lib")
-$:.unshift("#{__WFMDIR__}/lib/thread/lib")
 
 # Load workflow engine library
 require 'workflowmgr/workflowengine'
