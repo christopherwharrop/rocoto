@@ -2,6 +2,7 @@
 bundle/
 vendor/bundle/
 gems/
+.bundle/
 
 # Allow vendor/cache/ (contains .gem files for air-gapped installations)
 !vendor/cache/
@@ -9,6 +10,11 @@ gems/
 # Ignore test files
 test/log
 test/test.db
+*.db
+
+# RSpec
+.rspec_status
+coverage/
 
 # Ignore emacs backup files
 *~
