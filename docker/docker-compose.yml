@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: Apache-2.0
+
+services:
+  slurmfrontend:
+        image: ghcr.io/noaa-gsl/dockerslurmcluster/frontend:latest
+        container_name: frontend
+        hostname: slurmfrontend
+        user: admin
+        volumes:
+                - home-vol:/home/admin
+                - opt-vol:/opt
+                - ..:/home/admin/rocoto
+        ports:
+                - 8888:8888
+  slurmmaster:
+        image: ghcr.io/noaa-gsl/dockerslurmcluster/master:latest
+        container_name: master
+        hostname: slurmmaster
+        user: admin
+        volumes:
+                - home-vol:/home/admin:nocopy
+                - opt-vol:/opt:ro
+                - ..:/home/admin/rocoto
+        environment:
+                - SLURM_CPUS_ON_NODE=8
+        ports:
+                - 6817:6817
+                - 6818:6818
+                - 6819:6819
+  slurmnode1:
+        image: ghcr.io/noaa-gsl/dockerslurmcluster/node:latest
+        container_name: node1
+        hostname: slurmnode1
+        user: admin
+        volumes:
+                - home-vol:/home/admin:nocopy
+                - opt-vol:/opt:ro
+                - ..:/home/admin/rocoto
+        environment:
+                - SLURM_NODENAME=slurmnode1
+                - SLURM_CPUS_ON_NODE=8
+        links:
+                - slurmmaster
+  slurmnode2:
+        image: ghcr.io/noaa-gsl/dockerslurmcluster/node:latest
+        container_name: node2
+        hostname: slurmnode2
+        user: admin
+        volumes:
+                - home-vol:/home/admin:nocopy
+                - opt-vol:/opt:ro
+                - ..:/home/admin/rocoto
+        environment:
+                - SLURM_NODENAME=slurmnode2
+                - SLURM_CPUS_ON_NODE=8
+        links:
+                - slurmmaster
+  slurmnode3:
+        image: ghcr.io/noaa-gsl/dockerslurmcluster/node:latest
+        container_name: node3
+        hostname: slurmnode3
+        user: admin
+        volumes:
+                - home-vol:/home/admin:nocopy
+                - opt-vol:/opt:ro
+                - ..:/home/admin/rocoto
+        environment:
+                - SLURM_NODENAME=slurmnode3
+                - SLURM_CPUS_ON_NODE=8
+        links:
+                - slurmmaster
+  slurmnode4:
+        image: ghcr.io/noaa-gsl/dockerslurmcluster/node:latest
+        container_name: node4
+        hostname: slurmnode4
+        user: admin
+        volumes:
+                - home-vol:/home/admin:nocopy
+                - opt-vol:/opt:ro
+                - ..:/home/admin/rocoto
+        environment:
+                - SLURM_NODENAME=slurmnode4
+                - SLURM_CPUS_ON_NODE=8
+        links:
+                - slurmmaster
+  slurmnode5:
+        image: ghcr.io/noaa-gsl/dockerslurmcluster/node:latest
+        container_name: node5
+        hostname: slurmnode5
+        user: admin
+        volumes:
+                - home-vol:/home/admin:nocopy
+                - opt-vol:/opt:ro
+                - ..:/home/admin/rocoto
+        environment:
+                - SLURM_NODENAME=slurmnode5
+                - SLURM_CPUS_ON_NODE=8
+        links:
+                - slurmmaster
+volumes:
+        home-vol:
+        opt-vol:
