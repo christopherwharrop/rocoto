@@ -66,10 +66,13 @@ jobs:
       -
         name: Install Ruby ${{ matrix.ruby-version }} and dependencies
         run: |
-          docker exec frontend bash -c "sudo apt-get update && sudo apt-get install -y software-properties-common"
-          docker exec frontend bash -c "sudo add-apt-repository -y ppa:brightbox/ruby-ng"
-          docker exec frontend bash -c "sudo apt-get update"
-          docker exec frontend bash -c "sudo apt-get install -y ruby${{ matrix.ruby-version }} ruby${{ matrix.ruby-version }}-dev libxml2-dev"
+          docker exec frontend bash -c "sudo apt-get update && sudo apt-get install -y build-essential libssl-dev libreadline-dev zlib1g-dev libxml2-dev curl git"
+          docker exec frontend bash -c "git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build"
+          docker exec frontend bash -c "sudo /tmp/ruby-build/install.sh"
+          docker exec frontend bash -c "LATEST=\$(ruby-build --definitions | grep -E '^${{ matrix.ruby-version }}\.[0-9]+\$' | tail -1); sudo ruby-build \$LATEST /usr/local/ruby-${{ matrix.ruby-version }}"
+          docker exec frontend bash -c "sudo ln -sf /usr/local/ruby-${{ matrix.ruby-version }}/bin/ruby /usr/local/bin/ruby"
+          docker exec frontend bash -c "sudo ln -sf /usr/local/ruby-${{ matrix.ruby-version }}/bin/gem /usr/local/bin/gem"
+          docker exec frontend bash -c "ruby --version"
       -
         name: Copy test files to work directory
         run: |
@@ -77,9 +80,9 @@ jobs:
       -
         name: Install rocoto
         run: |
-          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr --local"
+          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${{ matrix.ruby-version }} --local"
           docker exec frontend bash -l -c "cd work; ./UNINSTALL"
-          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr"
+          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${{ matrix.ruby-version }}"
       -
         name: Run test suite
         run: |
