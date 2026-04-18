@@ -1,7 +1,3 @@
-if RUBY_VERSION < "1.9.0"
-  require 'require_relative'
-end
-
 # Get the base directory of the WFM installation
 if File.symlink?(__FILE__)
   __WFMDIR__=File.dirname(File.dirname(File.expand_path(File.readlink(__FILE__),File.dirname(__FILE__))))
