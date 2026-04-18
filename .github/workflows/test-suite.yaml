@@ -110,3 +110,7 @@ jobs:
         name: Run test suite
         run: |
           docker exec frontend bash -l -c "cd work; bin/rocotorun -h"
+      -
+        name: Run RSpec tests
+        run: |
+          docker exec frontend bash -l -c "cd work; bundle exec rake spec"

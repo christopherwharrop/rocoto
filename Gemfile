@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-ruby ">= 3.0.0"
+ruby ">= 3.2.0"
 
 gem "libxml-ruby", "~> 5.0"
 gem "open4", "~> 1.3"
@@ -13,3 +13,12 @@ gem "thread", "~> 0.2"
 # TODO: These can likely be removed after refactoring parsedate usage to use Date.parse
 gem "rubysl-date", "~> 1.0"
 gem "rubysl-parsedate", "~> 1.0"
+
+group :development, :test do
+  gem "rspec", "~> 3.13"
+  gem "rake", "~> 13.0"
+end
+
+group :test do
+  gem "simplecov", "~> 0.22", require: false
+end
