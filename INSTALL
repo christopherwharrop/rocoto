@@ -21,6 +21,7 @@ Options:
                              (Script will auto-detect libxml2 subdirectory)
     --with-xml2-lib=PATH     Path to libxml2 library directory
     --with-xml2-config=PATH  Path to xml2-config executable
+    --local                  Use cached gems from vendor/cache/ (air-gapped mode)
     -h, --help               Show this help message
 
 Examples:
@@ -28,6 +29,7 @@ Examples:
     ./INSTALL --with-ruby=/opt/ruby/3.2.0
     ./INSTALL --with-xml2-dir=/usr/local
     ./INSTALL --with-xml2-include=/opt/libxml2/include --with-xml2-lib=/opt/libxml2/lib
+    ./INSTALL --local  # Air-gapped installation using vendor/cache/
 
 Note: The script will automatically append 'libxml2' to include paths if needed,
       so both /path/include and /path/include/libxml2 will work.
@@ -42,6 +44,7 @@ xml2dir=""
 xml2include=""
 xml2config=""
 xml2lib=""
+LOCAL_INSTALL=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -59,6 +62,9 @@ for arg in "$@"; do
             ;;
         --with-xml2-lib=*)
             xml2lib="${arg#*=}"
+            ;;
+        --local)
+            LOCAL_INSTALL=true
             ;;
         -h|--help)
             usage
@@ -204,60 +210,50 @@ if [[ -n "$BUNDLE_BUILD_ARGS" ]]; then
     bundle config set --local build.libxml-ruby "${BUNDLE_BUILD_ARGS}"
 fi
 
+# Configure bundler to use local installation directory
+echo "==> Configuring bundler for local gem installation..."
+bundle config set --local path 'bundle'
+bundle config set --local disable_shared_gems 'true'
+
 # Install gem dependencies using Bundler in standalone mode
 echo "==> Installing gem dependencies with Bundler (standalone mode)..."
 echo "==> Standalone mode removes runtime dependency on Bundler gem"
 
-# Capture output and error from bundle install
-BUNDLE_OUTPUT=$(mktemp)
-if ! bundle install --standalone 2>&1 | tee "$BUNDLE_OUTPUT"; then
-    # Installation failed - check if it was a network issue
-    NETWORK_ERROR=false
-    if grep -qiE '(could not (fetch|reach|download|connect)|network|timeout|connection (refused|reset)|no route to host|name resolution|rubygems.org)' "$BUNDLE_OUTPUT"; then
-        NETWORK_ERROR=true
+if [[ "$LOCAL_INSTALL" == "true" ]]; then
+    echo "==> Using local (air-gapped) installation from vendor/cache/"
+    if [[ ! -d "vendor/cache" ]] || [[ -z "$(ls -A vendor/cache 2>/dev/null)" ]]; then
+        echo ""
+        echo "Error: --local option specified but vendor/cache/ is missing or empty." >&2
+        echo ""
+        echo "To create the gem cache, run these commands on a system with internet access:" >&2
+        echo "  bundle config set cache_all true" >&2
+        echo "  bundle cache" >&2
+        echo "  git add vendor/cache/" >&2
+        exit 1
     fi
-
-    rm -f "$BUNDLE_OUTPUT"
-
-    # If network error and cache exists, try air-gapped install
-    if [[ "$NETWORK_ERROR" == "true" ]] && [[ -d "vendor/cache" ]] && [[ -n "$(ls -A vendor/cache 2>/dev/null)" ]]; then
+    if ! bundle install --local --standalone; then
         echo ""
-        echo "==> Network issue detected. Attempting air-gapped installation using cached gems..." >&2
-        echo ""
-        if ! bundle install --local --standalone; then
-            echo ""
-            echo "Error: Air-gapped installation also failed." >&2
-            echo "The cached gems may be incompatible with this system." >&2
-            exit 1
-        fi
-        echo ""
-        echo "==> Successfully installed using cached gems (air-gapped mode)"
-    else
-        # Not a network error, or no cache available
-        echo ""
-        echo "Error: Bundler installation failed." >&2
-
-        if [[ "$NETWORK_ERROR" == "true" ]]; then
-            echo "Network connectivity issue detected, but no gem cache is available." >&2
-            echo ""
-            echo "If you're on an air-gapped system, the repository may be missing cached gems." >&2
-            echo "Run these commands on a system with internet to create the cache:" >&2
-            echo "  bundle config set cache_all true" >&2
-            echo "  bundle cache" >&2
-        else
-            echo "This is often due to missing system dependencies." >&2
-            echo ""
-            echo "For libxml-ruby, you may need to install libxml2 development files:" >&2
-            echo "  - Ubuntu/Debian: sudo apt-get install libxml2-dev" >&2
-            echo "  - RHEL/CentOS: sudo yum install libxml2-devel" >&2
-            echo "  - macOS: brew install libxml2" >&2
-            echo ""
-            echo "Or specify a custom location with --with-xml2-dir" >&2
-        fi
+        echo "Error: Local installation failed." >&2
+        echo "The cached gems may be incompatible with this system." >&2
         exit 1
     fi
 else
-    rm -f "$BUNDLE_OUTPUT"
+    if ! bundle install --standalone; then
+        echo ""
+        echo "Error: Bundler installation failed." >&2
+        echo "This is often due to missing system dependencies or network issues." >&2
+        echo ""
+        echo "For libxml-ruby, you may need to install libxml2 development files:" >&2
+        echo "  - Ubuntu/Debian: sudo apt-get install libxml2-dev" >&2
+        echo "  - RHEL/CentOS: sudo yum install libxml2-devel" >&2
+        echo "  - macOS: brew install libxml2" >&2
+        echo ""
+        echo "Or specify a custom location with --with-xml2-dir" >&2
+        echo ""
+        echo "For air-gapped systems, use the --local option to install from cached gems." >&2
+        echo "See README.md for details on creating the gem cache." >&2
+        exit 1
+    fi
 fi
 
 echo ""

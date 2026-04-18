@@ -39,6 +39,7 @@ Available options:
 - `--with-xml2-include=/path/to/include` - Specify libxml2 include directory
 - `--with-xml2-lib=/path/to/lib` - Specify libxml2 library directory
 - `--with-xml2-config=/path/to/xml2-config` - Specify xml2-config path
+- `--local` - Install from cached gems in vendor/cache/ (air-gapped mode)
 
 **Note**: The INSTALL script will automatically detect and append the `libxml2` subdirectory to include paths if needed.
 For example, if you specify `--with-xml2-include=/opt/include`, the script will check for and use `/opt/include/libxml2` if it exists.
@@ -67,7 +68,7 @@ bundle outdated
 
 ### Air-Gapped Installation
 
-For systems without internet access, Rocoto can use cached gem files. The INSTALL script will automatically detect and use the cache as a fallback if the normal installation fails.
+For systems without internet access, Rocoto supports installation from cached gem files using the `--local` option.
 
 **For maintainers:** To create/update the gem cache:
 ```bash
@@ -80,12 +81,21 @@ bundle config set cache_all true
 # Package the gems into vendor/cache/
 bundle cache
 
-# Commit the cache
+# Commit the cache to the repository
 git add vendor/cache/
 git commit -m "Update gem cache"
 ```
 
-**For users:** The installation process is the same. If internet is unavailable, the INSTALL script will automatically use cached gems from `vendor/cache/` if available.
+**For users on air-gapped systems:**
+```bash
+# Use the --local option to install from cached gems
+./INSTALL --local
+
+# Can combine with other options as needed
+./INSTALL --local --with-xml2-dir=/path/to/libxml2
+```
+
+The cached gems are stored in `vendor/cache/` and can be committed to version control (they're small, ~3.5MB total).
 
 ## Why Workflow Management?
 The day when a scientist could conduct his or her numerical modeling and simulation research by writing, running, and monitoring the progress of a modest Fortran code or two, is quickly becoming a distant memory. It is a fact that researchers now often have to make hundreds or thousands of runs of a numerical model to get a single result. In addition, each end-to-end "run" of the model often entails running many different codes for pre- and post-processing in addition to the model itself. And, in some cases, multiple models and their associated pre- and post-processing tasks are coupled together to build a larger, more complex model. The codes that comprise the end-to-end modeling systems often have complex interdependencies that dictate the order in which they can be run. And, in order to run the end-to-end system efficiently, concurrency must be used when dependencies allow it. The problem of scale and complexity is exacerbated by the fact that these codes are usually run on high performance machines that are notoriously difficult for scientists to use, and which tend to exhibit frequent failures. As machines get larger and larger, the failure rate of hardware and software components increases commensurately. Ad-hoc management of the execution of a complex modeling system is often difficult even for a single end-to-end run on a machine that never fails. Multiply that by the thousands of runs needed to perform a scientific experiment, in a hostile computing environment where hardware and facility outages are not uncommon, and you have a very challenging situation. For simulations that must run reliably in realtime, the situation is almost hopeless. The traditional ad-hoc techniques for automating the execution of modeling systems (e.g. driver scripts, batch job chains or trees) do not provide sufficient fault tolerance for the scale and complexity of current and future workflows, nor are they reusable; each modeling system requires a custom automation system.
