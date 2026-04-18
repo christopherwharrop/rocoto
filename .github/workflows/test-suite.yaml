@@ -113,4 +113,4 @@ jobs:
       -
         name: Run RSpec tests
         run: |
-          docker exec frontend bash -l -c "cd work; bundle exec rake spec"
+          docker exec frontend bash -l -c "BUNDLE_CMD=\$(ruby -e \"require 'rubygems'; puts Gem.bin_path('bundler', 'bundle')\"); cd work; \$BUNDLE_CMD exec rake spec"
