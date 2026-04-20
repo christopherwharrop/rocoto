@@ -188,8 +188,8 @@ module WorkflowMgr
 
       # Run the submit command script
       if WorkflowMgr.dryrun_mode?
-        WorkflowMgr.log("Dryrun: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
-        WorkflowMgr.stderr("Dryrun: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}",4)
+        WorkflowMgr.log("Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
+        WorkflowMgr.stderr("Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}",4)
         return nil,"This is a dryrun"
       end
 

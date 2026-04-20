@@ -262,6 +262,9 @@ module WorkflowMgr
     #
     ##########################################
     def run
+      if WorkflowMgr.dryrun_mode?
+        puts "Dryrun Mode: no new jobs would be submitted"
+      end
       with_locked_db {
 
         # Build the workflow objects from the contents of the workflow document
@@ -320,6 +323,10 @@ module WorkflowMgr
     #
     ##########################################
     def boot
+
+      if WorkflowMgr.dryrun_mode?
+        puts "Dryrun Mode: no new jobs would be submitted"
+      end
 
       with_locked_db {
 
@@ -525,7 +532,9 @@ module WorkflowMgr
 
             # Submit the task
             @bqServer.submit(task.localize(boot_cycle_time),boot_cycle_time)
-            @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
+            unless WorkflowMgr.dryrun_mode?
+              @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
+            end
 
             # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
             # Skip thread join in dryrun mode - thread pool workers sleep indefinitely waiting for work and cause deadlock
@@ -541,7 +550,7 @@ module WorkflowMgr
             # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
             # checking output.nil? first would mis-classify dryrun as failure.
             if WorkflowMgr.dryrun_mode?
-              @logServer.log(job.cycle,"Dryrun: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
+              @logServer.log(job.cycle,"Dryrun Mode: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
             elsif output.nil?
               @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
             elsif jobid.nil?
@@ -1932,7 +1941,12 @@ module WorkflowMgr
 
           # Submit the task
           @bqServer.submit(localtask,cycletime)
-          @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
+          # In dryrun mode the per-job "Dryrun Mode: would submit ..." line below
+          # is the single source of truth; suppress this "Submitting" line so the
+          # workflow log is not ambiguous about whether a job was actually submitted.
+          unless WorkflowMgr.dryrun_mode?
+            @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
+          end
 
         end
 
@@ -1952,7 +1966,7 @@ module WorkflowMgr
         # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
         # checking output.nil? first would mis-classify dryrun as failure.
         if WorkflowMgr.dryrun_mode?
-          @logServer.log(job.cycle,"Dryrun: would submit #{job.task}")
+          @logServer.log(job.cycle,"Dryrun Mode: would submit #{job.task}")
         elsif output.nil?
           @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
         elsif jobid.nil?

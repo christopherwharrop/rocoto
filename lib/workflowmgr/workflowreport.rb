@@ -884,7 +884,7 @@ module WorkflowMgr
         uri=job[:jobid]
         jobid,output=@bqServer.get_submit_status(job[:taskname],job[:cycle])
         if WorkflowMgr.dryrun_mode?
-          @logServer.log(job[:cycle],"Dryrun: would submit #{job[:taskname]}")
+          @logServer.log(job[:cycle],"Dryrun Mode: would submit #{job[:taskname]}")
         elsif output.nil?
           @logServer.log(job[:cycle],"Submitted #{job[:taskname]}.  Submission status is pending at #{job[:jobid]}")
         elsif jobid.nil?
