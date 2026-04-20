@@ -561,16 +561,29 @@ module WorkflowMgr
 
     require 'workflowmgr/utilities'
 
+    attr_reader :exclude_hours, :valid_hours
+
     ##########################################
     #
     # initialize
     #
     ##########################################
-    def initialize(cycledef,group,activation_offset,position=nil)
+    def initialize(cycledef,group,activation_offset=0,position=nil,exclude_hours=nil,valid_hours=nil)
 
       @cycledef=cycledef
       @group=group
       @activation_offset=activation_offset
+
+      # Parse exclude_hours - hours to exclude from the cycle
+      @exclude_hours = parse_hours(exclude_hours)
+
+      # Parse valid_hours - only these hours are valid in the cycle
+      @valid_hours = parse_hours(valid_hours)
+
+      # Validate that exclude_hours and valid_hours are not both specified
+      if @exclude_hours && @valid_hours
+        raise "Invalid <cycledef>: Cannot specify both exclude_hours and valid_hours"
+      end
 
       fields=@cycledef.split
       @start=Time.gm(fields[0][0..3],
@@ -601,6 +614,48 @@ module WorkflowMgr
 
     ##########################################
     #
+    # parse_hours
+    #
+    ##########################################
+    def parse_hours(hours_str)
+      return nil if hours_str.nil? || hours_str.strip.empty?
+
+      hours = hours_str.strip.split.map(&:to_i)
+
+      # Validate that all hours are in the range 0-23
+      hours.each do |hour|
+        unless hour >= 0 && hour <= 23
+          raise "Invalid hour value '#{hour}' in cycledef. Hours must be in the range 0-23."
+        end
+      end
+
+      hours.uniq.sort
+    end
+
+
+    ##########################################
+    #
+    # hour_valid?
+    #
+    ##########################################
+    def hour_valid?(time)
+      hour = time.getgm.hour  # always use UTC hour
+
+      if @valid_hours
+        # Only valid_hours are valid
+        return @valid_hours.include?(hour)
+      elsif @exclude_hours
+        # All hours except exclude_hours are valid
+        return !@exclude_hours.include?(hour)
+      else
+        # No filtering, all hours are valid
+        return true
+      end
+    end
+
+
+    ##########################################
+    #
     # next
     #
     ##########################################
@@ -614,18 +669,27 @@ module WorkflowMgr
       end
 
       if reftime > @finish
-        return nil
+        return nil, nil
       elsif reftime <= @start
-        return @start.getgm,@start.getgm + @activation_offset
+        candidate = @start
       else
         offset=(reftime.to_i - @start.to_i) % @interval
         if offset==0
-          localnext=reftime
+          candidate=reftime
         else
-          localnext=Time.at(reftime - offset + @interval)
+          candidate=Time.at(reftime - offset + @interval)
         end
-        return localnext.getgm,localnext.getgm + @activation_offset
       end
+
+      # Apply hour filtering if exclude_hours or valid_hours is specified
+      while candidate <= @finish
+        if hour_valid?(candidate)
+          return candidate.getgm, candidate.getgm + @activation_offset
+        end
+        candidate = Time.at(candidate.to_i + @interval)
+      end
+
+      return nil, nil
 
     end  # next
 
@@ -644,14 +708,23 @@ module WorkflowMgr
       end
 
       if reftime < @start
-        return nil
+        return nil, nil
       elsif reftime >= @finish
-        return @finish,@finish + @activation_offset
+        candidate = @finish
       else
         offset=(reftime.to_i - @start.to_i) % @interval
-        localprev=Time.at(reftime - offset)
-        return localprev.getgm,localprev.getgm + @activation_offset
+        candidate=Time.at(reftime - offset)
       end
+
+      # Apply hour filtering if exclude_hours or valid_hours is specified
+      while candidate >= @start
+        if hour_valid?(candidate)
+          return candidate.getgm, candidate.getgm + @activation_offset
+        end
+        candidate = Time.at(candidate.to_i - @interval)
+      end
+
+      return nil, nil
     end
 
     ##########################################
@@ -662,7 +735,10 @@ module WorkflowMgr
     def member?(reftime)
 
       return false if reftime < @start || reftime > @finish
-      return ((reftime.to_i - @start.to_i) % @interval) == 0
+      return false unless ((reftime.to_i - @start.to_i) % @interval) == 0
+
+      # Apply hour filtering
+      return hour_valid?(reftime)
 
     end
 

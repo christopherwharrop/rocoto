@@ -14,7 +14,7 @@ module WorkflowMgr
 
     require 'time'
 
-    require 'libxml-ruby/libxml'
+    require 'libxml'
     require 'workflowmgr/utilities'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/workflowlog'
@@ -309,9 +309,14 @@ module WorkflowMgr
         else
           activation_offset=0
         end
+        exclude_hours=cyclenode.attributes['exclude_hours']
+        valid_hours=cyclenode.attributes['valid_hours']
         if nfields==3
-          cycles << CycleInterval.new(cyclefields,group,activation_offset)
+          cycles << CycleInterval.new(cyclefields,group,activation_offset,nil,exclude_hours,valid_hours)
         elsif nfields==6
+          if exclude_hours || valid_hours
+            raise "ERROR: 'exclude_hours' or 'valid_hours' not supported in cron-style <cycledef>."
+          end
           cycles << CycleCron.new(cyclefields,group,activation_offset)
         else
           raise "ERROR: Unsupported <cycle> type!"

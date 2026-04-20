@@ -1,18 +1,20 @@
-# Ignore directories where external libraries get built and installed.
-build/
-lib/SystemTimer/
-lib/libxml-ruby/
-lib/libxml2/
-lib/open4/
-lib/sqlite3-ruby/
-lib/sqlite3/
-lib/rubysl-date/
-lib/rubysl-parsedate/
-lib/thread/
+# Ignore directories where gems are installed
+bundle/
+vendor/bundle/
+gems/
+.bundle/
+
+# Allow vendor/cache/ (contains .gem files for air-gapped installations)
+!vendor/cache/
 
 # Ignore test files
 test/log
 test/test.db
+*.db
+
+# RSpec
+.rspec_status
+coverage/
 
 # Ignore emacs backup files
 *~

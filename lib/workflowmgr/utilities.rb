@@ -18,11 +18,7 @@ module WorkflowMgr
     DRYRUN.to_i > 0
   end
 
-  if RUBY_VERSION < "1.9.0"
-    require 'system_timer'
-  else
-    require 'timeout'
-  end
+  require 'timeout'
   require 'open4'
 
   ##########################################
@@ -62,14 +58,8 @@ module WorkflowMgr
   ##########################################
   def WorkflowMgr.timeout(s)
 
-    if RUBY_VERSION < "1.9.0"
-      SystemTimer.timeout(s) do
-        yield
-      end
-    else
-      Timeout::timeout(s) do
-        yield
-      end
+    Timeout::timeout(s) do
+      yield
     end
 
   end
@@ -257,42 +247,6 @@ module WorkflowMgr
       end  # if got_lock
 
     end  # open
-
-  end
-
-
-  ##########################################
-  #
-  # WorkflowMgr.run
-  #
-  ##########################################
-  def WorkflowMgr.run(command,timeout=30)
-
-    begin
-      pipe = IO.popen(command)
-    rescue Exception
-      WorkflowMgr.log("WARNING! Could not run'#{command}': #{$!}")
-      raise "Execution of command #{command} unsuccessful"
-    end
-
-    output = ""
-    exit_status=0
-    begin
-      SystemTimer.timeout(timeout) do
-        while (!pipe.eof?)  do
-          output += pipe.gets(nil)
-        end
-        status=Process.waitpid2(pipe.pid)
-        exit_status=status[1].exitstatus
-      end
-    rescue Timeout::Error
-      Process.kill('KILL', pipe.pid)
-      pipe.close
-      WorkflowMgr.log("WARNING! The command '#{command}' timed out after #{timeout} seconds.")
-      raise Timeout::Error
-    end
-    pipe.close
-    [output,exit_status]
 
   end
 
