@@ -263,7 +263,7 @@ module WorkflowMgr
     ##########################################
     def run
       if WorkflowMgr.dryrun_mode?
-        puts "Dryrun Mode: no new jobs would be submitted"
+        WorkflowMgr.stderr("Dryrun Mode: no new jobs would be submitted", 1)
       end
       with_locked_db {
 
@@ -325,7 +325,7 @@ module WorkflowMgr
     def boot
 
       if WorkflowMgr.dryrun_mode?
-        puts "Dryrun Mode: no new jobs would be submitted"
+        WorkflowMgr.stderr("Dryrun Mode: no new jobs would be submitted", 1)
       end
 
       with_locked_db {

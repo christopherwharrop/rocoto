@@ -309,14 +309,14 @@ module WorkflowMgr
       tf.write(input)
       tf.flush()
 
-      WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input\n{{\n#{input}\n}}", 4)
-
       # Run the submit command
       if WorkflowMgr.dryrun_mode?
         # Return dryrun marker directly — do not fall through to regex parsing
         # which would mis-classify this as a submission failure
+        WorkflowMgr.stderr("Dryrun Mode: #{task.attributes[:name]} would be submitted using #{cmd} < #{tf.path} with input\n{{\n#{input}\n}}", 4)
         return nil,"This is a dryrun"
       else
+        WorkflowMgr.stderr("Submitting #{task.attributes[:name]} using #{cmd} < #{tf.path} with input\n{{\n#{input}\n}}", 4)
         output=`#{cmd} < #{tf.path} 2>&1`.chomp()
       end
 
