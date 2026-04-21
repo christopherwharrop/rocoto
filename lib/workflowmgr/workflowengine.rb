@@ -264,6 +264,7 @@ module WorkflowMgr
     def run
       if WorkflowMgr.dryrun_mode?
         puts "Dryrun Mode: no new jobs would be submitted"
+        return
       end
       with_locked_db {
 
