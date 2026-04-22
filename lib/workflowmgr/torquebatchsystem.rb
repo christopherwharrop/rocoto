@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   require 'workflowmgr/batchsystem'
 
@@ -50,9 +51,7 @@ module WorkflowMgr
       jobStatuses = {}
       jobids.each do |jobid|
         jobStatuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
-      end
 
-      jobids.each do |jobid|
         jobStatuses[jobid] = status(jobid)
       end
     rescue WorkflowMgr::SchedulerDown
@@ -73,7 +72,7 @@ module WorkflowMgr
       refresh_jobqueue if @jobqueue.empty?
 
       # Return the jobqueue record if there is one
-      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+      return @jobqueue[jobid] if @jobqueue.key?(jobid)
 
       # We didn't find the job, so return an uknown status record
       { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
@@ -208,8 +207,8 @@ module WorkflowMgr
         # Parse the XML output of showq, building job status records for each job
         queued_jobs_doc = LibXML::XML::Parser.string(queued_jobs, options: LibXML::XML::Parser::Options::HUGE).parse
       rescue LibXML::XML::Error, Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}", 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -261,7 +260,7 @@ module WorkflowMgr
             record[:exit_status] = jobstat.content.to_i
           else
             record[jobstat.name] = jobstat.content
-          end # case jobstat
+          end
         end
         # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
         if record[:state] == "UNKNOWN" && !record[:exit_status].nil?
@@ -279,6 +278,6 @@ module WorkflowMgr
         end
       end
       nil
-    end # job_queue
-  end # class
-end # module
+    end
+  end
+end

@@ -7,7 +7,7 @@ __WFMDIR__ = File.expand_path('..', __dir__)
 require_relative '../bundle/bundler/setup'
 
 # Add include path for WFM libraries
-$:.unshift("#{__WFMDIR__}/lib")
+$LOAD_PATH.unshift("#{__WFMDIR__}/lib")
 
 # Load workflow status library
 require 'workflowmgr/workflowengine'

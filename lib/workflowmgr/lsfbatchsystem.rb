@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   require 'workflowmgr/batchsystem'
 
@@ -67,9 +68,7 @@ module WorkflowMgr
       jobStatuses = {}
       jobids.each do |jobid|
         jobStatuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
-      end
 
-      jobids.each do |jobid|
         jobStatuses[jobid] = status(jobid)
       end
     rescue WorkflowMgr::SchedulerDown
@@ -91,27 +90,27 @@ module WorkflowMgr
         refresh_jobqueue if @jobqueue.empty?
 
         # Return the jobqueue record if there is one
-        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+        return @jobqueue[jobid] if @jobqueue.key?(jobid)
 
         # If we didn't find the job in the jobqueue, look for it in the accounting records
       end
 
       refresh_bjobs if @bjobs.empty?
       vanquish_undead(@bjobs, jobid) if @should_vanquish_undead
-      return unhold_job(@bjobs, jobid) if @bjobs.has_key?(jobid)
+      return unhold_job(@bjobs, jobid) if @bjobs.key?(jobid)
 
       # Populate the job accounting log table if it is empty
       refresh_jobacct if @bhist.empty?
 
       # Return the jobacct record if there is one
       vanquish_undead(@bhist, jobid) if @should_vanquish_undead
-      return unhold_job(@bhist, jobid) if @bhist.has_key?(jobid)
+      return unhold_job(@bhist, jobid) if @bhist.key?(jobid)
 
       # If we still didn't find the job, look at all accounting files if we haven't already
       if @nacctfiles != 25
         refresh_jobacct(25)
         vanquish_undead(@bhist, jobid) if @should_vanquish_undead
-        return unhold_job(@bhist, jobid) if @bhist.has_key?(jobid)
+        return unhold_job(@bhist, jobid) if @bhist.key?(jobid)
       end
 
       # We didn't find the job, so return an uknown status record
@@ -183,12 +182,12 @@ module WorkflowMgr
                      end
               task_geometry = '{'
               iproc = 0
-              for inode in (0..(bignodes - 1))
-                task_geometry += '(' + (iproc..(iproc + lowcores)).to_a.join(',') + ')'
+              (0..(bignodes - 1)).each do |inode|
+                task_geometry += "(#{(iproc..(iproc + lowcores)).to_a.join(',')})"
                 iproc += lowcores + 1
               end
-              for inode in (0..(littlenodes - 1))
-                task_geometry += '(' + (iproc..(iproc + lowcores - 1)).to_a.join(',') + ')'
+              (0..(littlenodes - 1)).each do |inode|
+                task_geometry += "(#{(iproc..(iproc + lowcores - 1)).to_a.join(',')})"
                 iproc += lowcores
               end
               task_geometry += '}'
@@ -337,7 +336,7 @@ module WorkflowMgr
 
 
 
-      if !job[:reservation_time].nil? and !job[:lsf_runlimit].nil?
+      if !job[:reservation_time].nil? && !job[:lsf_runlimit].nil?
         now = Time.now
         reservation_age = now - job[:reservation_time]
         runlimit = job[:lsf_runlimit]
@@ -395,8 +394,8 @@ module WorkflowMgr
         # Return if the bjobs output is empty
         return if queued_jobs.empty? || queued_jobs =~ /^No unfinished job found$/
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("error running bjobs: #{$!}", 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
+        WorkflowMgr.stderr("error running bjobs: #{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -433,7 +432,7 @@ module WorkflowMgr
           record[:queue] = jobattributes[3]
           record[:jobname] = jobattributes[6]
           record[:cores] = nil
-          submit_time = ParseDate.parsedate(jobattributes[-3..-1].join(" "), true)
+          submit_time = ParseDate.parsedate(jobattributes[-3..].join(" "), true)
           if submit_time[0].nil?
             now = Time.now
             submit_time[0] = now.year
@@ -563,8 +562,8 @@ module WorkflowMgr
           raise WorkflowMgr::SchedulerDown, errors
         end
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("Error running bhist or bjobs: #{$!}")
-        WorkflowMgr.stderr("Error running bhist or bjobs: #{$!}", 3)
+        WorkflowMgr.log("Error running bhist or bjobs: #{$ERROR_INFO}")
+        WorkflowMgr.stderr("Error running bhist or bjobs: #{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end
       # Build job records from output of bhist
@@ -647,9 +646,9 @@ module WorkflowMgr
 
         final_update_record(record, jobacct)
 
-        next if jobacct.has_key?(record[:jobid])
+        next if jobacct.key?(record[:jobid])
 
-        if record.has_key?(:state) and record[:state] != 'UNKNOWN'
+        if record.key?(:state) && (record[:state] != 'UNKNOWN')
           jobacct[record[:jobid]] = record
         end
       end

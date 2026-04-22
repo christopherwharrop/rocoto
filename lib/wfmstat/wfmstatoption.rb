@@ -28,7 +28,7 @@ module WFMStat
       @summary = false
       @taskfirst = false
       super(args, name, action, true)
-    end # initialize
+    end
 
     private
 
@@ -52,7 +52,7 @@ module WFMStat
       opts.on("-T", "--task-sort", "Sort by task") do
         @taskfirst = true
       end
-    end # add_opts
+    end
 
     public
 
@@ -67,5 +67,5 @@ module WFMStat
       end
       @selection
     end
-  end # Class StatusOption
-end # Module WFMStat
+  end
+end

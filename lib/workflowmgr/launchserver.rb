@@ -52,9 +52,9 @@ module WorkflowMgr
       # Read the URI and pid of the server from the read end of the pipe we just created
       WorkflowMgr.timeout(10) do
         uri_str = rd.gets
-        uri_str.chomp! unless uri_str.nil?
+        uri_str&.chomp!
         server_pid = rd.gets
-        server_pid.chomp! unless server_pid.nil?
+        server_pid&.chomp!
         rd.close
       end
     rescue Timeout::Error

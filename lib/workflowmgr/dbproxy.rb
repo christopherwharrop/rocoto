@@ -131,5 +131,5 @@ module WorkflowMgr
         raise "ERROR! Could not launch database server process."
       end
     end
-  end # Class DBProxy
-end # Module WorkflowMgr
+  end
+end

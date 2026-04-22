@@ -25,7 +25,7 @@ module WorkflowMgr
       @verbose = 1
       @dryrun = 0
       @more_args = parse(args)
-    end # initialize
+    end
 
     ##########################################
     #
@@ -150,6 +150,6 @@ module WorkflowMgr
           Process.exit(-1)
         end
       end
-    end # parse
-  end # Class WorkflowOption
-end # Module WorkflowMgr
+    end
+  end
+end

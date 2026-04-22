@@ -85,7 +85,7 @@ module WorkflowMgr
     ##########################################
     def inactive?
       @state == :inactive
-    end # active?
+    end
 
     ##########################################
     #
@@ -94,7 +94,7 @@ module WorkflowMgr
     ##########################################
     def active?
       @state == :active
-    end # active?
+    end
 
     ##########################################
     #
@@ -103,7 +103,7 @@ module WorkflowMgr
     ##########################################
     def expired?
       @state == :expired
-    end # expired?
+    end
 
     ##########################################
     #
@@ -112,7 +112,7 @@ module WorkflowMgr
     ##########################################
     def draining?
       @state == :draining
-    end # draining?
+    end
 
     ##########################################
     #
@@ -121,7 +121,7 @@ module WorkflowMgr
     ##########################################
     def done?
       @state == :done
-    end # done?
+    end
 
     ##########################################
     #
@@ -136,7 +136,7 @@ module WorkflowMgr
 
       @activated = Time.now.getgm
       @state = :active
-    end # activate!
+    end
 
     ##########################################
     #
@@ -151,7 +151,7 @@ module WorkflowMgr
       @done = Time.at(0)
       @draining = Time.at(0)
       @state = :active
-    end # activate!
+    end
 
     ##########################################
     #
@@ -164,7 +164,7 @@ module WorkflowMgr
       @expired = Time.at(0)
       @activated = Time.at(0)
       @state = :inactive
-    end # activate!
+    end
 
     ##########################################
     #
@@ -178,7 +178,7 @@ module WorkflowMgr
 
       @draining = Time.now.getgm
       @state = :draining
-    end # expire!
+    end
 
     ##########################################
     #
@@ -191,7 +191,7 @@ module WorkflowMgr
 
       @expired = Time.now.getgm
       @state = :expired
-    end # expire!
+    end
 
     ##########################################
     #
@@ -204,7 +204,7 @@ module WorkflowMgr
 
       @done = Time.now.getgm
       @state = :done
-    end # done!
+    end
 
     ##########################################
     #
@@ -241,5 +241,5 @@ module WorkflowMgr
       end
       deactivated
     end
-  end # Class Cycle
-end # Module WorkflowMgr
+  end
+end

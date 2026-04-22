@@ -3,6 +3,7 @@
 # module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -76,7 +77,7 @@ module WorkflowMgr
 
                 # Check to see if the process that previously hung is still alive
                 system("ssh -o StrictHostKeyChecking=no #{downpath[:host]} kill -0 #{downpath[:pid]} 2>&1 > /dev/null")
-                if $?.exitstatus == 0
+                if $CHILD_STATUS.exitstatus == 0
 
                   # The process is still hung, so don't try to access the path because it's still bad.  Raise exception.
                   raise WorkflowIOHang,
@@ -95,9 +96,9 @@ module WorkflowMgr
                 end
 
                 # if downpath
-              end # @downpaths.each
+              end
 
-            end # unless @downpaths.empty?
+            end
 
             retries = 0
             begin
@@ -132,7 +133,7 @@ module WorkflowMgr
                   downpathmatch = path
                   break
                 end
-              end # @downpaths.each
+              end
 
               # If we found a known down path that matches the current arg path
               if commonpath.size > 3
@@ -150,24 +151,22 @@ module WorkflowMgr
                 # Add the common portion of the paths to the database
                 newdownpath = { path: commonpath.join("/"), downtime: downtime, host: @workflowIOHost,
                                 pid: @workflowIOPID }
-                @dbServer.add_downpaths([newdownpath])
-                @newdownpaths << newdownpath
 
               # Otherwise the arg path is a new down path
               else
 
                 newdownpath = { path: argpath.join("/"), downtime: downtime, host: @workflowIOHost,
                                 pid: @workflowIOPID }
-                @dbServer.add_downpaths([newdownpath])
-                @newdownpaths << newdownpath
 
-              end # if commonpath.size
+              end
+              @dbServer.add_downpaths([newdownpath])
+              @newdownpaths << newdownpath
 
               # Restart the workflowIO server
               msg = "WARNING! The rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} is unresponsive while accessing #{args[0]} and is probably wedged."
               workflowIO_init
               raise WorkflowIOHang, msg
-            end # begin
+            end
           end
         end
       end
@@ -221,5 +220,5 @@ module WorkflowMgr
         raise "Could not launch IO server process."
       end
     end
-  end # Class WorkflowIOProxy
-end # Module WorkflowMgr
+  end
+end

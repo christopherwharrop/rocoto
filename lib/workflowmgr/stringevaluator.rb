@@ -43,22 +43,22 @@ module WorkflowMgr
 
     def [](var)
       svar = var.to_s
-      if @vars.has_key?(svar)
+      if @vars.key?(svar)
         @vars[svar]
-      elsif @defaults.has_key?(svar)
+      elsif @defaults.key?(svar)
         @defaults[svar]
       end
     end
 
     def has_var?(var)
       svar = var.to_s
-      @vars.has_key?(svar) || @defaults.has_key?(svar)
+      @vars.key?(svar) || @defaults.key?(svar)
     end
 
     def each_var(&block)
       @vars.each(&block)
       @defaults.each do |k, v|
-        unless @vars.has_key?(k)
+        unless @vars.key?(k)
           yield k, v
         end
       end
@@ -77,7 +77,7 @@ module WorkflowMgr
       # this StringEvaluator's defaults, unless other defaults or
       # variables are already set.
       strev.each_var do |k, v|
-        next if @defaults.has_key?(k)
+        next if @defaults.key?(k)
         raise 'key must be a string in defaults_from' unless k.is_a?(String)
         raise 'value must be a string in defaults_from' unless v.is_a?(String)
 
@@ -104,7 +104,8 @@ module WorkflowMgr
     # set_* -- Add Groups of Variables
     #
     ##########################################
-    def set_task(name, task = nil) # Add a Task and its name
+    # Add a Task and its name
+    def set_task(name, task = nil)
       @defaults['taskname'] = name.to_s # taskname = task name
       unless task.nil?
         @defaults['taskobj'] = task # taskobj = the Task
@@ -114,11 +115,13 @@ module WorkflowMgr
       self
     end
 
-    def set_doc(doc) # Add a WorkflowXMLDoc
+    # Add a WorkflowXMLDoc
+    def set_doc(doc)
       @defaults['doc'] = doc # doc = the WorkflowXMLDoc
     end
 
-    def set_cycle(cycle) # Add a Cycle
+    # Add a Cycle
+    def set_cycle(cycle)
       @defaults['cycle'] = cycle # cycle = the cycle time
 
       @defaults['evalcycle'] = cycle # evalcycle = the Cycle object again
@@ -146,17 +149,20 @@ module WorkflowMgr
     # Execution
     #
     ##########################################
-    def run_bool(evalstr) # execute, return a boolean
+    # execute, return a boolean
+    def run_bool(evalstr)
       return true if run(evalstr)
 
       false
     end
 
-    def run_str(evalstr) # execute, return a string
+    # execute, return a string
+    def run_str(evalstr)
       run(evalstr).to_s
     end
 
-    def run(evalstr) # execute, return result of eval
+    # execute, return result of eval
+    def run(evalstr)
       evalstr = evalstr.to_s
 
       # Get a binding within the get_binding() subroutine of a copy of
@@ -208,9 +214,10 @@ module WorkflowMgr
       end
       begin
         each_var do |k, v|
-          if v.is_a?(CompoundTimeString)
+          case v
+          when CompoundTimeString
             ENV[k.to_s] = v.to_s(cycle)
-          elsif v.is_a?(Hash)
+          when Hash
             if k == 'env'
               v.each do |k2, v2|
                 if v2.is_a?(CompoundTimeString)
@@ -223,11 +230,11 @@ module WorkflowMgr
             else
               # Skip other hashes.
             end
-          elsif v.is_a?(Array)
+          when Array
             # Skip arrays
-          elsif v.is_a?(Task)
+          when Task
             # Skip task objects
-          elsif v.is_a?(WorkflowIOProxy)
+          when WorkflowIOProxy
             # Skip IO proxy objects
           else
             ENV[k.to_s] = v.to_s

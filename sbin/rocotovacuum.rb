@@ -7,7 +7,7 @@ __WFMDIR__ = File.expand_path('..', __dir__)
 require_relative '../bundle/bundler/setup'
 
 # Add include path for WFM libraries
-$:.unshift("#{__WFMDIR__}/lib")
+$LOAD_PATH.unshift("#{__WFMDIR__}/lib")
 
 # Load workflow status library
 require 'workflowmgr/workflowengine'
@@ -24,7 +24,7 @@ opt = WorkflowMgr::WorkflowVacuumOption.new(ARGV)
 # Are you sure?
 printf "About to delete all jobs for cycles that completed or expired more than #{opt.age / 3600 / 24} days ago.\n\n"
 printf "This is irreversible.  Are you sure? (y/n) "
-reply = STDIN.gets
+reply = $stdin.gets
 unless reply =~ /^[Yy]/
   Process.exit(0)
 end

@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -42,9 +43,9 @@ module WorkflowMgr
       # Initialize the workflow lock
       @locked = false
     rescue StandardError
-      puts $!
+      puts $ERROR_INFO
       Process.exit(1)
-    end # initialize
+    end
 
     ##########################################
     #
@@ -91,7 +92,7 @@ module WorkflowMgr
       # Submit new tasks where possible
       submit_new_jobs
     rescue StandardError
-      puts $!
+      puts $ERROR_INFO
       Process.exit(1)
     ensure
       # Shut down the batch queue server if it is no longer needed
@@ -112,7 +113,7 @@ module WorkflowMgr
       if !@workflowIOServer.nil? && @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
         @workflowIOServer.stop!
       end
-    end # run
+    end
 
     private
 
@@ -202,7 +203,7 @@ module WorkflowMgr
       latest_activation_time = nil
       latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now, true) }.compact
       unless latest_cycle_candidates.empty?
-        latest_cycle_time, latest_activation_time = latest_cycle_candidates.sort { |c1, c2| c1[1] <=> c2[1] }.last
+        latest_cycle_time, latest_activation_time = latest_cycle_candidates.max { |c1, c2| c1[1] <=> c2[1] }
       end
 
       # Create a new cycle if a cycle <= now is defined in cycle specs
@@ -258,7 +259,7 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset = @dbServer.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
+      cycleset = @dbServer.get_cycles(@cycledefs.collect(&:position).compact.min)
 
       # Sort the cycleset
       cycleset.sort { |a, b| a[:cycle] <=> b[:cycle] }
@@ -288,7 +289,7 @@ module WorkflowMgr
 
           # Update cycledef position
           cycledef.seek(next_cycle)
-        end # cycledefs.each
+        end
 
         if cyclepool.empty?
 
@@ -306,8 +307,8 @@ module WorkflowMgr
           # Add the new cycle to the cycleset so that we don't try to add it again
           cycleset << { cycle: newcycle }
 
-        end # if cyclepool.empty?
-      end # .times do
+        end
+      end
 
       # Save the workflowdoc cycledefs with their updated positions to the database
       @dbServer.set_cycledefs(@cycledefs.collect do |cycledef|
@@ -315,7 +316,7 @@ module WorkflowMgr
       end)
 
       newcycles
-    end # get_new_retro_cycles
+    end
 
     ##########################################
     #
@@ -358,7 +359,7 @@ module WorkflowMgr
           # We are only interested in old bqserver processes
           next if uri == @bqServer.__drburi
 
-          bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+          bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.key?(uri)
 
         # The bqserver has died!
         rescue DRb::DRbConnError
@@ -366,14 +367,14 @@ module WorkflowMgr
           @dbServer.delete_bqservers([uri])
 
           # Remove the bqserver uri from the bqservers list if needed
-          bqservers.delete(uri) if bqservers.has_key?(uri)
+          bqservers.delete(uri) if bqservers.key?(uri)
         end
       end
 
       begin
         # Loop over active jobs looking for ones with pending submissions
-        @active_jobs.keys.each do |taskname|
-          @active_jobs[taskname].keys.each do |cycle|
+        @active_jobs.each_key do |taskname|
+          @active_jobs[taskname].each_key do |cycle|
             # Skip jobs that are not in the submiting state
             next unless @active_jobs[taskname][cycle][:state] == "SUBMITTING"
 
@@ -385,7 +386,7 @@ module WorkflowMgr
 
             begin
               # Query the workflowbqserver for the status of the job submission
-              jobid, output = bqservers[uri].get_submit_status(taskname, cycle) if bqservers.has_key?(uri)
+              jobid, output = bqservers[uri].get_submit_status(taskname, cycle) if bqservers.key?(uri)
 
             # Catch exceptions for bqservers that have died unexpectedly
             rescue DRb::DRbConnError
@@ -393,11 +394,11 @@ module WorkflowMgr
               @dbServer.delete_bqservers([uri])
 
               # Remove the bqserver uri from the bqservers list if needed
-              bqservers.delete(uri) if bqservers.has_key?(uri)
+              bqservers.delete(uri) if bqservers.key?(uri)
             end
 
             # If the bqserver died, warn user, resubmit job
-            if !bqservers.has_key?(uri)
+            if !bqservers.key?(uri)
 
               # Log the fact that the submission status could not be retrieved
               puts "Submission status of #{taskname} could not be retrieved because the server process at #{uri} died"
@@ -434,14 +435,14 @@ module WorkflowMgr
               @logServer.log(cycle,
                              "Submission status of previously pending #{taskname} is success, jobid=#{jobid}")
 
-            end # if output.nil?
+            end
 
             # Update the job in the database
             @dbServer.update_jobs([@active_jobs[taskname][cycle]])
 
             # if jobid matches /^druby:/
-          end # each active_job cycle
-        end # each active_job task
+          end
+        end
       ensure
         # Make sure we always terminate all workflowbqservers that we no longer need
         bqservers.each do |uri, bqserver|
@@ -454,7 +455,7 @@ module WorkflowMgr
           puts "WARNING: BQS Server process at #{uri} died unexpectedly.  Submission status of some jobs may have been lost"
           @dbServer.delete_bqservers([uri])
         end
-      end # begin
+      end
     end
 
     ##########################################
@@ -478,7 +479,7 @@ module WorkflowMgr
           taskname = task.attributes[:name]
           next if @active_jobs[taskname].nil?
 
-          @active_jobs[taskname].keys.each do |cycle|
+          @active_jobs[taskname].each_key do |cycle|
             # No need to query or update the status of jobs that we already know are done successfully or that remain failed
             # If a job is failed at this point, it could only be because the WFM crashed before a resubmit or state update could occur
             next if ["SUCCEEDED", "FAILED"].include?(@active_jobs[taskname][cycle][:state])
@@ -561,8 +562,8 @@ module WorkflowMgr
 
             # Log the state of the job
             @logServer.log(cycle, statemsg + runmsg + unknownmsg + triesmsg)
-          end # @active_jobs[taskname].keys.each
-        end # @active_jobs.keys.each
+          end
+        end
       end
     end
 
@@ -600,7 +601,7 @@ module WorkflowMgr
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle[:cycle]) }
 
-            end # unless
+            end
 
             # The cycle is not done if this task has not been submitted yet for any of the active cycles
             throw :not_done if @active_jobs[task.attributes[:name]].nil?
@@ -620,10 +621,10 @@ module WorkflowMgr
             #            else
             #              throw :not_done if @active_jobs[task.attributes[:name]][cycle[:cycle]][:exit_status] != 0
             #            end
-          end # tasks.each
+          end
 
           cycle_done = true
-        end # catch
+        end
 
         # If the cycle is done, record the time and update active cycle list
         if cycle_done
@@ -648,7 +649,7 @@ module WorkflowMgr
         else
           active_cycles << cycle
         end
-      end # active_cycles.each
+      end
 
       # Update the active cycle list
       @active_cycles = active_cycles
@@ -682,7 +683,7 @@ module WorkflowMgr
 
       # Delete any jobs for the expired cycles
       expired_cycles.each do |cycle|
-        @active_jobs.keys.each do |taskname|
+        @active_jobs.each_key do |taskname|
           next if @active_jobs[taskname][cycle[:cycle]].nil?
 
           next if ["SUCCEEDED", "FAILED", "DEAD"].include?(@active_jobs[taskname][cycle[:cycle]][:state])
@@ -864,5 +865,5 @@ module WorkflowMgr
 
       lt
     end
-  end # Class WorkflowEngine
-end # Module WorkflowMgr
+  end
+end

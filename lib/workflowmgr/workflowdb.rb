@@ -3,6 +3,7 @@
 # module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -78,7 +79,7 @@ module WorkflowMgr
         # Open the lock database
         open_lock_db
       end
-    end # dbopen
+    end
 
     ##########################################
     #
@@ -119,7 +120,7 @@ module WorkflowMgr
               begin
                 WorkflowMgr.timeout(10) do
                   system("ssh -o StrictHostKeyChecking=no #{lock[0][1]} kill -0 #{lock[0][0]} 2>&1 > /dev/null")
-                  stale = $?.exitstatus != 0
+                  stale = $CHILD_STATUS.exitstatus != 0
                 end
               rescue Timeout::Error
                 stale = true
@@ -140,7 +141,7 @@ module WorkflowMgr
               raise WorkflowMgr::WorkflowLockedException, msg
             end
           end
-        end # database transaction
+        end
 
         # If an exception wasn't thrown, we got the lock
         # So, open the workflow database and, if that
@@ -148,8 +149,8 @@ module WorkflowMgr
         open_workflow_db
         true
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$!}", 3)
-        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
         false
       rescue SQLite3::BusyException
         if tries < 3
@@ -160,7 +161,7 @@ module WorkflowMgr
           msg = "WARNING: WorkflowSQLite3DB.lock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite."
           raise WorkflowMgr::WorkflowDBLockedException, msg
         end
-      end # begin
+      end
     end
 
     ##########################################
@@ -186,10 +187,10 @@ module WorkflowMgr
             msg = "ERROR: Process #{Process.pid} cannot unlock the workflow because it is locked locked by pid #{lock[0][0]} on host #{lock[0][1]} since #{Time.at(lock[0][2])}."
             raise WorkflowMgr::WorkflowLockedException, msg
           end
-        end # database transaction
+        end
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$!}", 3)
-        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
         Process.exit(1)
       rescue SQLite3::BusyException
         if tries < 3
@@ -200,7 +201,7 @@ module WorkflowMgr
           msg = "ERROR: WorkflowSQLite3DB.unlock_workflow: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite"
           raise WorkflowMgr::WorkflowDBLockedException, msg
         end
-      end # begin
+      end
     end
 
     ##########################################
@@ -246,14 +247,14 @@ module WorkflowMgr
           # Add new cycledefs to the database
           cycledefs.each do |cycledef|
             if cycledef[:position].nil?
-              stmt.execute("#{cycledef[:group]}", "#{cycledef[:cycledef]}", nil, cycledef[:activation_offset])
+              stmt.execute(cycledef[:group].to_s, cycledef[:cycledef].to_s, nil, cycledef[:activation_offset])
             else
-              stmt.execute("#{cycledef[:group]}", "#{cycledef[:cycledef]}", cycledef[:position].to_i,
+              stmt.execute(cycledef[:group].to_s, cycledef[:cycledef].to_s, cycledef[:position].to_i,
                            cycledef[:activation_offset])
             end
           end
-        end # prepare
-      end # database transaction
+        end
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.set_cycledefs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -370,7 +371,7 @@ module WorkflowMgr
         cycles.each do |newcycle|
           db.execute("UPDATE cycles SET activated=#{newcycle.activated.to_i},expired=#{newcycle.expired.to_i},done=#{newcycle.done.to_i},draining=#{newcycle.draining.to_i} WHERE cycle=#{newcycle.cycle.to_i};")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.update_cycles: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -390,7 +391,7 @@ module WorkflowMgr
       @database.transaction do |db|
         db.execute("DELETE FROM cycles WHERE cycle=#{cycletime.to_i};")
         db.execute("DELETE FROM jobs WHERE cycle=#{cycletime.to_i};")
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.update_cycles: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -412,7 +413,7 @@ module WorkflowMgr
         cycles.each do |newcycle|
           db.execute("INSERT INTO cycles VALUES (NULL,#{newcycle.cycle.to_i},#{newcycle.activated.to_i},#{newcycle.expired.to_i},#{newcycle.done.to_i},#{newcycle.draining.to_i});")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.add_cycles: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -487,7 +488,7 @@ module WorkflowMgr
         jobs.each do |job|
           db.execute("INSERT INTO jobs VALUES (NULL,'#{job.id}','#{job.task}',#{job.cycle.to_i},#{job.cores},'#{job.state}','#{job.native_state}',#{job.exit_status},#{job.tries},#{job.nunknowns},#{job.duration});")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.add_jobs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -509,7 +510,7 @@ module WorkflowMgr
         jobs.each do |job|
           db.execute("UPDATE jobs SET jobid='#{job.id}',state='#{job.state}',native_state='#{job.native_state}',exit_status=#{job.exit_status},tries=#{job.tries},nunknowns=#{job.nunknowns},duration=#{job.duration} WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.update_jobs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -531,7 +532,7 @@ module WorkflowMgr
         jobs.each do |job|
           db.execute("UPDATE jobs SET jobid='#{job.jobid}' WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.update_jobids: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -553,7 +554,7 @@ module WorkflowMgr
         jobs.each do |job|
           db.execute("DELETE FROM jobs WHERE cycle=#{job.cycle.to_i} AND taskname='#{job.task}';")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.delete_jobs: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -591,7 +592,7 @@ module WorkflowMgr
         bqservers.each do |bqserver|
           db.execute("INSERT INTO bqservers VALUES (NULL,'#{bqserver}');")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.add_bqservers: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -613,7 +614,7 @@ module WorkflowMgr
         bqservers.each do |bqserver|
           db.execute("DELETE FROM bqservers WHERE uri='#{bqserver}';")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.delete_bqservers: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -654,7 +655,7 @@ module WorkflowMgr
         downpaths.each do |downpath|
           db.execute("INSERT INTO downpaths VALUES (NULL,'#{downpath[:path]}',#{downpath[:downtime].to_i},'#{downpath[:host]}',#{downpath[:pid]});")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.add_downpaths: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -676,7 +677,7 @@ module WorkflowMgr
         downpaths.each do |downpath|
           db.execute("DELETE FROM downpaths WHERE path='#{downpath[:path]}';")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.delete_downpaths: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -701,7 +702,7 @@ module WorkflowMgr
           # Return the last vacuum time
           return Time.at(vacuum[0][0]).getgm
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.get_vacuum_time: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -722,7 +723,7 @@ module WorkflowMgr
         # Remove the old vacuum time
         db.execute("DELETE FROM vacuum;")
         db.execute("INSERT INTO vacuum VALUES (#{vacuum_time.to_i});")
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "ERROR: WorkflowSQLite3DB.set_vacuum_time: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -757,7 +758,7 @@ module WorkflowMgr
 
           # Get the number of jobs removed from completed cycles
           njobs_removed += db.changes
-        end # database transaction
+        end
 
         # Recover the empty space
         @database.execute("VACUUM;")
@@ -767,7 +768,7 @@ module WorkflowMgr
       rescue SQLite3::BusyException
         msg = "ERROR: WorkflowSQLite3DB.vacuum: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
         raise WorkflowMgr::WorkflowDBLockedException, msg
-      end # begin
+      end
     end
 
     ##########################################
@@ -805,7 +806,7 @@ module WorkflowMgr
           # Add the hash representing this row to the array of rows for this table
           tables[table.to_sym] << rowdata
         end
-      end # dbtables.each
+      end
 
       # Return the tables
       tables
@@ -894,7 +895,7 @@ module WorkflowMgr
         unless tables.flatten.member?("lock")
           db.execute("CREATE TABLE lock (pid INTEGER, host VARCHAR(64), time DATETIME);")
         end
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "WorkflowSQLite3DB.open_lock_db: Could not open workflow database file '#{@database_lock_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -929,7 +930,7 @@ module WorkflowMgr
 
         # Update the tables if needed
         update_tables(db)
-      end # database transaction
+      end
     rescue SQLite3::BusyException
       msg = "WorkflowSQLite3DB.dbopen: Could not open workflow database file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
@@ -976,7 +977,7 @@ module WorkflowMgr
       unless tables.member?("vacuum")
         db.execute("CREATE TABLE vacuum (last_vacuum DATETIME);")
       end
-    end # create_tables
+    end
 
     ##########################################
     #
@@ -1012,6 +1013,6 @@ module WorkflowMgr
       unless cycledefscrt =~ /activation_offset INTEGER/
         db.execute("ALTER TABLE cycledef ADD COLUMN activation_offset INTEGER;")
       end
-    end # update_tables
-  end # Class WorkflowSQLite3DB
-end # Module WorkflowMgr
+    end
+  end
+end

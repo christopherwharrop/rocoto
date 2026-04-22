@@ -1,13 +1,14 @@
 #!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
+require 'English'
 __WFMDIR__ = File.expand_path('..', __dir__)
 
 # Set up standalone bundle (no bundler gem required at runtime)
 require_relative '../bundle/bundler/setup'
 
 # Add include path for WFM libraries
-$:.unshift("#{__WFMDIR__}/lib")
+$LOAD_PATH.unshift("#{__WFMDIR__}/lib")
 
 # Load workflow engine library
 require 'tmpdir'
@@ -40,8 +41,8 @@ LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 exit if fork
 Process.setsid
 exit if fork
-STDIN.reopen "/dev/null"
-STDOUT.reopen "/dev/null", "a"
+$stdin.reopen "/dev/null"
+$stdout.reopen "/dev/null", "a"
 # STDERR.reopen "/dev/null", "a"
 
 # Start a Drb Server that will serve the workflow server object
@@ -55,15 +56,14 @@ begin
   uri_io.close                 # Close the write end of the pipe, the read end has already been closed
 rescue StandardError
   # If we can't write the URI file, shut down the server because nothing is going to be able to talk to it
-  WorkflowMgr.log("#{$!}")
-  WorkflowMgr.stderr("#{$!}", 1)
+  WorkflowMgr.log($ERROR_INFO.to_s)
+  WorkflowMgr.stderr($ERROR_INFO.to_s, 1)
   DRb.stop_service
   Process.exit(1)
 end
 
 Thread.new do
-  while true
-
+  loop do
     begin
       # Test if the rocoto process that launched this server process has become a zombie
       isZombie = false
@@ -72,25 +72,24 @@ Thread.new do
         isZombie = state == "Z"
       else
         system("ps -eo pid,stat | grep Z | grep #{ARGV[0].to_i} 2>&1 > /dev/null")
-        isZombie = $?.exitstatus == 0
+        isZombie = $CHILD_STATUS.exitstatus == 0
       end
 
       # If our parent has become a zombie, it's time to close STDERR so that the zombie parent can go away
       if isZombie
-        STDERR.reopen "/dev/null", "a"
+        $stderr.reopen "/dev/null", "a"
         break
       end
     rescue Errno::ENOENT
     rescue StandardError
-      WorkflowMgr.log("#{$!}")
-      WorkflowMgr.stderr("#{$!}", 1)
+      WorkflowMgr.log($ERROR_INFO.to_s)
+      WorkflowMgr.stderr($ERROR_INFO.to_s, 1)
       # Close STDERR on an excepttion to detatch from crond and ensure the process shuts down
-      STDERR.reopen "/dev/null", "a"
+      $stderr.reopen "/dev/null", "a"
       break
     end
 
     sleep 30
-
   end
 end
 
@@ -103,26 +102,24 @@ Thread.new do
   # If the user runs Rocoto manually, and then goes home for the weekend, the status might
   # not get retrieved until the following week.  This is not ideal, but until a better
   # solution is found, should catch those bqserver processes that get accidentally abandoned
-  if $0 =~ /bqserver$/
+  if $PROGRAM_NAME =~ /bqserver$/
     sleep 3600 * 24 * 4
-    WorkflowMgr.log("Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it appears to be abandoned")
+    WorkflowMgr.log("Shutting down #{$PROGRAM_NAME} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it appears to be abandoned")
     DRb.stop_service
 
   # Shutdown the ioserver and dbserver processes as soon as they are orphaned (that should never happen unless rocotorun/rocotoboot dies uncleanly)
   else
-    while true
-      begin
-        # Test if the rocoto process that launched this server process is still alive
-        Process.getpgid(ARGV[0].to_i)
-        sleep 30
-      rescue Errno::ESRCH
-        # If the process that launched this server is dead, shutdown this process
-        WorkflowMgr.log("Shutting down #{$0} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown.")
-        DRb.stop_service
-      end
-    end # while true
-  end # unless $0
-end # Thread.new
+    loop do
+      # Test if the rocoto process that launched this server process is still alive
+      Process.getpgid(ARGV[0].to_i)
+      sleep 30
+    rescue Errno::ESRCH
+      # If the process that launched this server is dead, shutdown this process
+      WorkflowMgr.log("Shutting down #{$PROGRAM_NAME} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown.")
+      DRb.stop_service
+    end
+  end
+end
 
 # Wait forever for the server to quit
 DRb.thread.join

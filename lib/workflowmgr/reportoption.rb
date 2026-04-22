@@ -25,7 +25,7 @@ module WorkflowMgr
       @verbose = 0
       @dryrun = 0
       parse(args)
-    end # initialize
+    end
 
     private
 
@@ -105,6 +105,6 @@ module WorkflowMgr
           exit(-1)
         end
       end
-    end # parse
-  end # Class WorkflowOption
-end # Module WorkflowMgr
+    end
+  end
+end

@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   # DRYRUN controls whether workflow operations are executed or just logged.
   # It defaults to 0 (off), but can be overridden via the WORKFLOWMGR_DRYRUN
@@ -138,7 +139,7 @@ module WorkflowMgr
     return if message.nil?
     return if message.empty?
 
-    if VERBOSE >= level
+    if level <= VERBOSE
       warn "#{Time.now.strftime('%x %X %Z')} :: #{WORKFLOW_ID} :: #{message}"
     end
   end
@@ -190,15 +191,15 @@ module WorkflowMgr
               maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/rocotorc")[:MaxLogDays]
 
               # Remove files last modified more than MaxAge days ago
-              Dir[rocotolog + ".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each do |logfile|
+              Dir["#{rocotolog}.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each do |logfile|
                 if (Time.now - File.mtime(logfile)) > (maxAge * 24 * 3600)
                   FileUtils.rm_f(logfile)
                 end
               end
 
-            end # if rotate?
+            end
 
-          end # if File.exist?
+          end
 
           # Log the message
           File.open(rocotolog, "a") do |f|
@@ -212,8 +213,8 @@ module WorkflowMgr
       else
         warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} :: WARNING! Could not acquire lock to write log the following message"
         warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} ::          #{message}"
-      end # if got_lock
-    end # open
+      end
+    end
   end
 
   ##########################################
@@ -231,7 +232,7 @@ module WorkflowMgr
       pid, stdin, stdout, stderr = Open4.popen4(command)
       stdin.close
     rescue Exception
-      raise "Execution of '#{command}' unsuccessful: #{$!}"
+      raise "Execution of '#{command}' unsuccessful: #{$ERROR_INFO}"
     end
 
     error = ""
@@ -257,4 +258,4 @@ module WorkflowMgr
     end
     [output, error, exit_status]
   end
-end # module workflowmgr
+end

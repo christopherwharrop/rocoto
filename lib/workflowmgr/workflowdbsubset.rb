@@ -76,5 +76,5 @@ module WorkflowMgr
     def collect_xml_cycles(&block) = @xml_cycles_array.collect(&block)
     def collect_db_cycles(&block) = @db_cycles_array.collect(&block)
     def collect_undef_cycles(&block) = @undef_cycles_array.collect(&block)
-  end # class WorkflowDBSubset
-end # module WorkflowMgr
+  end
+end

@@ -21,7 +21,7 @@ module WorkflowMgr
     def initialize(name)
       @name = name
     end
-  end # class CycleDefSelection
+  end
 
   ##########################################
   #
@@ -33,7 +33,7 @@ module WorkflowMgr
     attr_reader :arg
 
     def initialize(arg) = @arg = arg
-  end # class TaskSelection
+  end
 
   ##########################################
   #
@@ -45,5 +45,5 @@ module WorkflowMgr
     attr_reader :arg
 
     def initialize(arg) = @arg = arg
-  end # class MetataskSelection
-end # module WorkflowMgr
+  end
+end
