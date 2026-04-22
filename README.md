@@ -83,6 +83,9 @@ bundle exec rake spec
 # Run specs with coverage report
 bundle exec rake coverage
 
+# Run with coverage shown in terminal
+bundle exec rake coverage_terminal
+
 # Run a specific spec file
 bundle exec rspec spec/workflowmgr/cycledef_spec.rb
 
@@ -146,3 +149,35 @@ Each workflow task must correctly check for its successful completion, and must 
 
 ## Documentation
 Detailed documentation is provided at http://christopherwharrop.github.io/rocoto/
+
+## Code Linting and Style (RuboCop)
+
+Rocoto uses [RuboCop](https://github.com/rubocop/rubocop) for Ruby code linting and style enforcement. RuboCop checks for code quality, formatting, and common errors.
+
+### Running RuboCop
+
+To check the codebase for style and lint issues:
+
+```bash
+# Lint all Ruby files in lib/ and bin/
+bundle exec rubocop
+
+# Lint a specific file
+bundle exec rubocop lib/workflowmgr/workflowengine.rb
+```
+
+### Auto-correcting Offenses
+
+RuboCop can automatically fix many issues:
+
+```bash
+# Safe auto-corrections only
+bundle exec rubocop -a
+
+# Safe and unsafe auto-corrections (use with caution)
+bundle exec rubocop -A
+```
+
+See `.rubocop.yml` for the current configuration. Some legacy code may not be fully auto-correctable; review changes before committing.
+
+For more details, see the [RuboCop documentation](https://docs.rubocop.org/rubocop/).
