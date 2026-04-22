@@ -58,13 +58,21 @@ module WorkflowMgr
     ##########################################
     def submit(task,cycle)
 
-      # Initialize a thread pool for multithreaded job submission if we don't have one yet
-      @pool = Thread.pool(@poolSize) if @pool.nil?
-
       # Initialize hashes for this task
       @harvested[task.attributes[:name]] = Hash.new if @harvested[task.attributes[:name]].nil?
       @running[task.attributes[:name]] = Hash.new if @status[task.attributes[:name]].nil?
       @status[task.attributes[:name]] = Hash.new if @status[task.attributes[:name]].nil?
+
+      # Dryrun: record status without spawning thread pool workers
+      if WorkflowMgr.dryrun_mode?
+        @harvested[task.attributes[:name]][cycle.to_i]=false
+        @running[task.attributes[:name]][cycle.to_i]=false
+        @status[task.attributes[:name]][cycle.to_i]=@batchsystem.submit(task)
+        return
+      end
+
+      # Initialize a thread pool for multithreaded job submission if we don't have one yet
+      @pool = Thread.pool(@poolSize) if @pool.nil?
 
       # Spawn a thread to submit the job
       @pool.process do

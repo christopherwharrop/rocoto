@@ -5,6 +5,19 @@
 ##########################################
 module WorkflowMgr
 
+  # DRYRUN controls whether workflow operations are executed or just logged.
+  # It defaults to 0 (off), but can be overridden via the WORKFLOWMGR_DRYRUN
+  # or DRYRUN environment variables, or by explicit assignment in an
+  # entrypoint script before this file is loaded.
+  DRYRUN = (ENV['WORKFLOWMGR_DRYRUN'] || ENV['DRYRUN'] || '0').to_i unless const_defined?(:DRYRUN)
+
+  #####################################################
+  # Helper method to check if we're in dry run mode
+  #####################################################
+  def self.dryrun_mode?
+    DRYRUN.to_i > 0
+  end
+
   require 'timeout'
   require 'open4'
 

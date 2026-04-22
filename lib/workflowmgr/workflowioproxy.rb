@@ -199,7 +199,8 @@ module WorkflowMgr
         workflowIO=WorkflowIO.new
 
         # Set up an object to serve requests for batch queue system services
-        if @config.WorkflowIOServer
+        # Skip launching daemon in dryrun mode - no I/O operations needed
+        if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
 
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)
@@ -217,8 +218,9 @@ module WorkflowMgr
       rescue => crash
 
         # Try to stop the log server if something went wrong
-        if @config.WorkflowIOServer
-          @workflowIOServer.stop! unless @workflowIOServer.nil?
+        # Only attempt daemon shutdown when a daemon was actually launched (not in dryrun)
+        if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
+          @workflowIOServer.stop! unless @workflowIOServer.nil? || !@workflowIOServer.respond_to?(:stop!)
         end
 
         # Raise fatal exception

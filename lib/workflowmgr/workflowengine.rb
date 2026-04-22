@@ -262,6 +262,9 @@ module WorkflowMgr
     #
     ##########################################
     def run
+      if WorkflowMgr.dryrun_mode?
+        WorkflowMgr.stderr("Dryrun Mode: no new jobs would be submitted", 1)
+      end
       with_locked_db {
 
         # Build the workflow objects from the contents of the workflow document
@@ -320,6 +323,10 @@ module WorkflowMgr
     #
     ##########################################
     def boot
+
+      if WorkflowMgr.dryrun_mode?
+        WorkflowMgr.stderr("Dryrun Mode: no new jobs would be submitted", 1)
+      end
 
       with_locked_db {
 
@@ -410,7 +417,9 @@ module WorkflowMgr
               if reply=~/^[Yy]/
                 boot_cycle=Cycle.new(boot_cycle_time)
                 boot_cycle.activate!
-                @dbServer.add_cycles([boot_cycle])
+                unless WorkflowMgr.dryrun_mode?
+                  @dbServer.add_cycles([boot_cycle])
+                end
                 boot_job=nil
               else
                 puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' will not be booted"
@@ -421,7 +430,9 @@ module WorkflowMgr
               # Reactivate the cycle if it is done (but not expired)
               if boot_cycle.done? or boot_cycle.draining?
                 boot_cycle.reactivate!
-                @dbServer.update_cycles([boot_cycle])
+                unless WorkflowMgr.dryrun_mode?
+                  @dbServer.update_cycles([boot_cycle])
+                end
               end
 
               # Retrieve the boot job from the database
@@ -465,7 +476,8 @@ module WorkflowMgr
             end
 
             # Initialize jobid of the new job
-            if @config.BatchQueueServer
+            # In dryrun mode, no DRb server is launched, so use 0 as placeholder
+            if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
               newjobid=@bqServer.__drburi
             else
               newjobid=0
@@ -485,7 +497,9 @@ module WorkflowMgr
                          )
 
             # Add the new job to the database
-            @dbServer.add_jobs([job])
+            unless WorkflowMgr.dryrun_mode?
+              @dbServer.add_jobs([job])
+            end
 
             # Localize all <cyclestr> to current cycle
             localtask=task.localize(boot_cycle_time)
@@ -518,33 +532,46 @@ module WorkflowMgr
 
             # Submit the task
             @bqServer.submit(task.localize(boot_cycle_time),boot_cycle_time)
-            @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
+            unless WorkflowMgr.dryrun_mode?
+              @logServer.log(boot_cycle_time,"Forcibly submitting #{task.attributes[:name]}")
+            end
 
             # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
-            Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+            # Skip thread join in dryrun mode - thread pool workers sleep indefinitely waiting for work and cause deadlock
+            unless @config.BatchQueueServer || WorkflowMgr.dryrun_mode?
+              Thread.list.each { |t| t.join unless t==Thread.main }
+            end
 
             # Harvest job ids for submitted tasks
             uri=job.id
             jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
-            if output.nil?
+
+            # Classify submission outcome: dryrun first, then pending, failure, success
+            # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
+            # checking output.nil? first would mis-classify dryrun as failure.
+            if WorkflowMgr.dryrun_mode?
+              @logServer.log(job.cycle,"Dryrun Mode: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
+            elsif output.nil?
               @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+            elsif jobid.nil?
+              # Delete the job from the database since it failed to submit.  It will be retried next time around.
+              @dbServer.delete_jobs([job])
+              WorkflowMgr.stderr(output,1)
+              @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
             else
-              if jobid.nil?
-                # Delete the job from the database since it failed to submit.  It will be retried next time around.
-                @dbServer.delete_jobs([job])
-                WorkflowMgr.stderr(output,1)
-                @logServer.log(job.cycle,"Submission of #{job.task} failed!  #{output}")
-              else
-                job.id=jobid
-                job.state="QUEUED"
-                job.native_state="queued"
-                @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
-                # Update the jobid for the job in the database
-                @dbServer.update_jobs([job])
-              end
+              job.id=jobid
+              job.state="QUEUED"
+              job.native_state="queued"
+              @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
+              # Update the jobid for the job in the database
+              @dbServer.update_jobs([job])
             end
 
-            puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
+            if WorkflowMgr.dryrun_mode?
+              puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' would be booted (dryrun mode)"
+            else
+              puts "task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime("%Y%m%d%H%M")}' has been booted"
+            end
 
           } # boot_tasks.each
         } # boot_cycles.each
@@ -791,7 +818,8 @@ module WorkflowMgr
       ensure
 
         # Shut down the batch queue server if it is no longer needed
-        unless @bqServer.nil? || !@config.BatchQueueServer
+        # Skip if in dryrun mode since no server was launched
+        unless @bqServer.nil? || !@config.BatchQueueServer || WorkflowMgr.dryrun_mode?
           unless @bqServer.running?
             uri=@bqServer.__drburi
             @bqServer.stop!
@@ -800,14 +828,16 @@ module WorkflowMgr
         end
 
         # Make sure we release the workflow lock in the database and shutdown the dbserver
+        # Skip server shutdown if in dryrun mode since no server was launched
         unless @dbServer.nil?
           @dbServer.unlock_workflow if @locked
-          @dbServer.stop! if @config.DatabaseServer
+          @dbServer.stop! if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
         end
 
         # Make sure to shut down the workflow file stat server
+        # Skip if in dryrun mode since no server was launched
         unless @workflowIOServer.nil?
-          @workflowIOServer.stop! if @config.WorkflowIOServer
+          @workflowIOServer.stop! if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
         end
 
       end
@@ -872,8 +902,8 @@ module WorkflowMgr
       # Get the scheduler
       @bqServer=BQSProxy.new(workflowdoc.scheduler,@config,@options)
 
-      # Add this scheduler to the bqserver database if needed
-      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer
+      # Add this scheduler to the bqserver database if needed (skip in dryrun mode)
+      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
 
       # Get the log parameters
       @logServer=workflowdoc.log
@@ -1170,6 +1200,10 @@ module WorkflowMgr
     ##########################################
     def harvest_pending_jobids
 
+      # In dryrun mode, no DRb-backed BQServers exist and no real submissions
+      # were made, so skip all pending-job harvesting and DB mutations.
+      return if WorkflowMgr.dryrun_mode?
+
       # Initialize hash of old bqserver processes from the database and establish connections to them
       bqservers={}
       @dbServer.get_bqservers.each do |uri|
@@ -1177,7 +1211,8 @@ module WorkflowMgr
         begin
 
           # We are only interested in old bqserver processes
-          next if uri==@bqServer.__drburi
+          # In dryrun mode, no DRb server is launched, so skip this check
+          next if !WorkflowMgr.dryrun_mode? && uri==@bqServer.__drburi
 
           bqservers[uri]=DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
 
@@ -1833,7 +1868,8 @@ module WorkflowMgr
           end
 
           # If we are resubmitting the job, initialize the new job to the old job
-          if @config.BatchQueueServer
+          # In dryrun mode, no DRb server is launched, so use 0 as placeholder
+          if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
             newjobid=@bqServer.__drburi
           else
             newjobid=0
@@ -1869,8 +1905,8 @@ module WorkflowMgr
           # Append the new job to the list of new jobs that were submitted
           newjobs << newjob
 
-          # Add the new job to the database
-          @dbServer.add_jobs([newjob])
+          # Add the new job to the database (skip in dryrun to avoid persistent side effects)
+          @dbServer.add_jobs([newjob]) unless WorkflowMgr.dryrun_mode?
 
           # Localize all <cyclestr> to current cycle
           localtask=task.localize(cycletime)
@@ -1905,36 +1941,47 @@ module WorkflowMgr
 
           # Submit the task
           @bqServer.submit(localtask,cycletime)
-          @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
+          # In dryrun mode the per-job "Dryrun Mode: would submit ..." line below
+          # is the single source of truth; suppress this "Submitting" line so the
+          # workflow log is not ambiguous about whether a job was actually submitted.
+          unless WorkflowMgr.dryrun_mode?
+            @logServer.log(cycletime,"Submitting #{task.attributes[:name]}")
+          end
 
         end
 
       end
 
       # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
-      Thread.list.each { |t| t.join unless t==Thread.main } unless @config.BatchQueueServer
+      # Skip thread join in dryrun mode - thread pool workers sleep indefinitely waiting for work and cause deadlock
+      unless @config.BatchQueueServer || WorkflowMgr.dryrun_mode?
+        Thread.list.each { |t| t.join unless t==Thread.main }
+      end
 
       # Harvest job ids for submitted tasks
       newjobs.each do |job|
         uri=job.id
         jobid,output=@bqServer.get_submit_status(job.task,job.cycle)
-        if output.nil?
+        # Classify submission outcome: dryrun first, then pending, failure, success
+        # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
+        # checking output.nil? first would mis-classify dryrun as failure.
+        if WorkflowMgr.dryrun_mode?
+          @logServer.log(job.cycle,"Dryrun Mode: would submit #{job.task}")
+        elsif output.nil?
           @logServer.log(job.cycle,"Submission status of #{job.task} is pending at #{job.id}")
+        elsif jobid.nil?
+          # Delete the job from the database since it failed to submit.  It will be retried next time around.
+          @dbServer.delete_jobs([job])
+          msg="Submission of #{job.task} failed!  #{output}"
+          @logServer.log(job.cycle,msg)
+          WorkflowMgr.stderr(msg,1)
         else
-          if jobid.nil?
-            # Delete the job from the database since it failed to submit.  It will be retried next time around.
-            @dbServer.delete_jobs([job])
-            msg="Submission of #{job.task} failed!  #{output}"
-            @logServer.log(job.cycle,msg)
-            WorkflowMgr.stderr(msg,1)
-          else
-            job.id=jobid
-            job.state="QUEUED"
-            job.native_state="queued"
-            @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
-            # Update the jobid for the job in the database
-            @dbServer.update_jobs([job])
-          end
+          job.id=jobid
+          job.state="QUEUED"
+          job.native_state="queued"
+          @logServer.log(job.cycle,"Submission of #{job.task} succeeded, jobid=#{job.id}")
+          # Update the jobid for the job in the database
+          @dbServer.update_jobs([job])
         end
       end
 

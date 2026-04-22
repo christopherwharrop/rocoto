@@ -107,7 +107,8 @@ module WorkflowMgr
 
         # Initialize the database but do not open it (call dbopen to open it)
         database=WorkflowMgr::const_get("Workflow#{@config.DatabaseType}DB").new(@options.database)
-        if @config.DatabaseServer
+        # Skip launching daemon in dryrun mode - no database writes needed
+        if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
 
           # Ignore SIGINT while launching server process
           Signal.trap("INT",nil)
@@ -126,8 +127,9 @@ module WorkflowMgr
       rescue => crash
 
         # Try to stop the dbserver if something went wrong
-        if @config.DatabaseServer
-          @dbServer.stop! unless @dbServer.nil?
+        # Only attempt daemon shutdown when a daemon was actually launched (not in dryrun)
+        if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
+          @dbServer.stop! unless @dbServer.nil? || !@dbServer.respond_to?(:stop!)
         end
 
         # Raise fatal exception

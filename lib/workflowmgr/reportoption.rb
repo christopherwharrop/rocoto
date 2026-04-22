@@ -17,6 +17,7 @@ module WorkflowMgr
     attr_reader :database
     attr_reader :workflowdoc
     attr_reader :verbose
+    attr_reader :dryrun
 
     ##########################################
     #
@@ -28,6 +29,7 @@ module WorkflowMgr
       @database=nil
       @workflowdoc=nil
       @verbose=0
+      @dryrun=0
       parse(args)
 
     end  # initialize
@@ -72,6 +74,13 @@ module WorkflowMgr
           WorkflowMgr.const_set("VERBOSE",@verbose)
         end
 
+        # Handle option for dryrun
+        opts.on("-n","--dryrun","Show Workflow Manager commands, but do not execute") do |dryrun|
+          @dryrun=1
+          WorkflowMgr.send(:remove_const, :DRYRUN) if WorkflowMgr.const_defined?(:DRYRUN)
+          WorkflowMgr.const_set("DRYRUN",@dryrun)
+        end
+
         # Handle option for version
         opts.on("--version","Show Workflow Manager version") do
           puts "Workflow Manager Version #{WorkflowMgr.version}"
@@ -93,6 +102,9 @@ module WorkflowMgr
 
           # Set verbose to 0 if not set by options
           WorkflowMgr.const_set("VERBOSE",0) unless WorkflowMgr.const_defined?("VERBOSE")
+
+          # Set dryrun to 0 if not set by options
+          WorkflowMgr.const_set("DRYRUN",0) unless WorkflowMgr.const_defined?("DRYRUN")
 
           # The -d and -w options are mandatory
           raise OptionParser::ParseError,"A database file must be specified" if @database.nil?
