@@ -28,7 +28,7 @@ module WorkflowMgr
       SubmitThreads: 8,
       JobQueueTimeout: 45,
       JobAcctTimeout: 45
-    }.freeze
+    }
 
     ##########################################
     #
@@ -61,8 +61,8 @@ module WorkflowMgr
           config = YAML.load_file(@config_file)
           if config.is_a?(Hash)
             # Merge default config into rocotorc config if there are unspecified config options
-            if config.keys.collect(&:to_s).sort != DEFAULT_CONFIG.keys.collect(&:to_s).sort
-              config = DEFAULT_CONFIG.merge(config).delete_if { |k, v| !DEFAULT_CONFIG.key?(k) }
+            if config.keys.collect { |c| c.to_s }.sort != DEFAULT_CONFIG.keys.collect { |c| c.to_s }.sort
+              config = DEFAULT_CONFIG.merge(config).delete_if { |k, v| !DEFAULT_CONFIG.has_key?(k) }
               File.open("#{@config_file}.#{Process.pid}", "w") { |f| YAML.dump(config, f) }
             end
             @config = config
@@ -85,7 +85,7 @@ module WorkflowMgr
         # Update the config file in a quasi-atomic way.
         FileUtils.mv("#{@config_file}.#{Process.pid}", @config_file) if File.exist?("#{@config_file}.#{Process.pid}")
       end
-    end
+    end # initialize
 
     ##########################################
     #
@@ -94,11 +94,11 @@ module WorkflowMgr
     ##########################################
     def method_missing(name, *args)
       configkey = name.to_sym
-      if @config.key?(configkey)
+      if @config.has_key?(configkey)
         @config[configkey]
       else
         super
       end
     end
-  end
-end
+  end # Class WorkflowYAMLConfig
+end # Module WorkflowMgr

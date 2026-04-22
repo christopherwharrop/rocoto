@@ -3,7 +3,6 @@
 # Module WorkflowMgr
 #
 ##########################################
-require 'English'
 module WorkflowMgr
   require 'workflowmgr/batchsystem'
 
@@ -57,7 +56,9 @@ module WorkflowMgr
       jobStatuses = {}
       jobids.each do |jobid|
         jobStatuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
+      end
 
+      jobids.each do |jobid|
         jobStatuses[jobid] = status(jobid)
       end
     rescue WorkflowMgr::SchedulerDown
@@ -78,13 +79,13 @@ module WorkflowMgr
       refresh_jobqueue if @jobqueue.empty?
 
       # Return the jobqueue record if there is one
-      return @jobqueue[jobid] if @jobqueue.key?(jobid)
+      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
       # Populate the job accounting log table if it is empty
       refresh_jobacct if @jobacct.empty?
 
       # Return the jobacct record if there is one
-      return @jobacct[jobid] if @jobacct.key?(jobid)
+      return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
       # The state is unavailable since Moab doesn't have the state
       { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
@@ -221,8 +222,8 @@ module WorkflowMgr
         # Parse the XML output of showq, building job status records for each job
         queued_jobs_doc = LibXML::XML::Parser.string(queued_jobs, options: LibXML::XML::Parser::Options::HUGE).parse
       rescue LibXML::XML::Error, Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -265,7 +266,7 @@ module WorkflowMgr
             record[:priority] = jobstat.value.to_i
           else
             record[jobstat.name] = jobstat.value
-          end
+          end # case jobstat
         end
         # Put the job record in the jobqueue
         @jobqueue[record[:jobid]] = record
@@ -300,8 +301,8 @@ module WorkflowMgr
         # Parse the XML output of showq, building job status records for each job
         recordxmldoc = LibXML::XML::Parser.string(completed_jobs, options: LibXML::XML::Parser::Options::HUGE).parse
       rescue LibXML::XML::Error, Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -332,7 +333,7 @@ module WorkflowMgr
                          end
 
         # Add the record if it hasn't already been added
-        @jobacct[record[:jobid]] = record unless @jobacct.key?(record[:jobid])
+        @jobacct[record[:jobid]] = record unless @jobacct.has_key?(record[:jobid])
       end
 
       nil

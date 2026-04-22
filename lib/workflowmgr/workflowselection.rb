@@ -22,9 +22,9 @@ module WorkflowMgr
       all_tasks = default_all if all_tasks.nil?
 
       # Flags:
-      @default_all = !default_all.nil?    # select all tasks and cycles if none are specified
-      @all_tasks = !all_tasks.nil?        # from the -a option
-      @allow_empty = !allow_empty.nil?    # allow no task or cycle specifications
+      @default_all = !!default_all    # select all tasks and cycles if none are specified
+      @all_tasks = !!all_tasks        # from the -a option
+      @allow_empty = !!allow_empty    # allow no task or cycle specifications
 
       # Enumerables:
       @task_options = task_options.to_a
@@ -43,7 +43,7 @@ module WorkflowMgr
     def add_options(all_tasks = nil, all_cycles = nil, task_options = [], cycle_selection = [])
       @task_options.concat task_options
       @cycles.concat cycle_selection
-      @all_tasks = !all_tasks.nil? unless all_tasks.nil?
+      @all_tasks = !!all_tasks unless all_tasks.nil?
       @all_cycles = !!all_cycles unless all_cycles.nil?
     end
 
@@ -76,7 +76,7 @@ module WorkflowMgr
           reftime = cycledefs.collect do |cdef|
             cdef.next(cycopt.first, false)
           end.compact.collect { |c| c[0] }.min
-          loop do
+          while true
             break if reftime.nil?
             break if reftime > cycopt.last
 
@@ -114,12 +114,12 @@ module WorkflowMgr
         negate = false
         if metaopt.start_with? '-'
           negate = true
-          metaopt = metaopt[1..]
+          metaopt = metaopt[1..-1]
         end
         optspec << [metaopt, negate]
-      end
+      end # each option
 
-      tasks.each_value do |task|
+      tasks.values.each do |task|
         next if task.attributes[:metatasks].nil?
 
         metatasks = task.attributes[:metatasks].split(',')
@@ -132,8 +132,8 @@ module WorkflowMgr
               selection.add(task.attributes[:name])
             end
           end
-        end
-      end
+        end # each option
+      end # each task
     end
 
     ##########################################
@@ -146,11 +146,11 @@ module WorkflowMgr
         negate = false
         if item.start_with? '-'
           negate = true
-          item = item[1..]
+          item = item[1..-1]
         end
 
         if item.start_with? ':'
-          attribute_name = item[1..]
+          attribute_name = item[1..-1]
 
           case attribute_name
           when 'final'     then attribute = :final
@@ -162,7 +162,7 @@ module WorkflowMgr
           else
             raise "Unknown attribute '#{attribute_name}' is not one of: final, shared, exclusive, metatasks, cores, nodes"
           end
-          tasks.each_value do |task|
+          tasks.values.each do |task|
             if (negate && !task.attributes[attribute]) || (!negate && task.attributes[attribute])
               if negate
                 selection.delete(task.attributes[:name])
@@ -171,9 +171,9 @@ module WorkflowMgr
               end
             end
           end
-        elsif item.start_with?('/') && item.end_with?('/')
+        elsif item.start_with? '/' and item.end_with? '/'
           regex = Regexp.new item[1..-2]
-          tasks.each_value do |task|
+          tasks.values.each do |task|
             if regex =~ task.attributes[:name]
               if negate
                 selection.delete(task.attributes[:name])
@@ -183,8 +183,8 @@ module WorkflowMgr
             end
           end
         elsif item.start_with? '@'
-          cycledef = item[1..]
-          tasks.each_value do |task|
+          cycledef = item[1..-1]
+          tasks.values.each do |task|
             next if task.attributes[:cycledefs].nil?
 
             cycledefs = task.attributes[:cycledefs].split(',')
@@ -201,7 +201,7 @@ module WorkflowMgr
         else
           selection.add(item)
         end
-      end
+      end # each option
     end
 
     ##########################################
@@ -226,5 +226,5 @@ module WorkflowMgr
       tasks.sort!
       tasks
     end
-  end
-end
+  end # class WorkflowSelection
+end # module WorkflowMgr

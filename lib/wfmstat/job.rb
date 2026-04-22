@@ -46,5 +46,5 @@ module WFMStat
       end
       ret
     end
-  end
-end
+  end # Job
+end # Module WorkflowMgr

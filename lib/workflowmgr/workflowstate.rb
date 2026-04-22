@@ -52,7 +52,9 @@ module WorkflowMgr
     ##########################################
     def set_cycle(cycle)
       @cycle = cycle
-      @se&.set_cycle(cycle)
+      unless @se.nil?
+        @se.set_cycle(cycle)
+      end
     end
 
     def set_task(name, task = nil)
@@ -62,12 +64,16 @@ module WorkflowMgr
 
       @task = task
       @taskname = name
-      @se&.set_task(name, task)
+      unless @se.nil?
+        @se.set_task(name, task)
+      end
     end
 
     def set_doc(workflowdoc)
       @doc = workflowdoc
-      @se&.set_doc(workflowdoc)
+      unless @se.nil?
+        @se.set_doc(workflowdoc)
+      end
     end
 
     ##########################################

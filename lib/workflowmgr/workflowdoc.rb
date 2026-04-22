@@ -3,7 +3,6 @@
 # Module WorkflowMgr
 #
 ##########################################
-require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -17,6 +16,7 @@ module WorkflowMgr
     require 'workflowmgr/utilities'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/workflowlog'
+    require 'workflowmgr/cycledef'
     require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
@@ -81,8 +81,8 @@ module WorkflowMgr
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
       rescue WorkflowIOHang
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 2)
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}", 2)
         raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
 
@@ -100,7 +100,7 @@ module WorkflowMgr
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
       validate_without_metatasks(@workflowdoc)
-    end
+    end # initialize
 
     ##########################################
     #
@@ -217,7 +217,7 @@ module WorkflowMgr
         unless sched.nil?
           clazz = WorkflowMgr.const_get("#{sched.upcase}BatchSystem")
           supported = true
-          @featuresUsed.each_key do |feature|
+          @featuresUsed.each do |feature, ignore|
             next if clazz.feature?(feature)
 
             supported = false
@@ -555,9 +555,9 @@ module WorkflowMgr
       ia = a.inspect
       ib = b.inspect
       cmp = cmp.to_s
-      ia = "#{ia[0..37]}..." if ia.size > 40
-      ib = "#{ib[0..37]}..." if ib.size > 40
-      cmp = "#{cmp[0..37]}..." if cmp.size > 40
+      ia = ia[0..37] + '...' if ia.size > 40
+      ib = ib[0..37] + '...' if ib.size > 40
+      cmp = cmp[0..37] + '...' if cmp.size > 40
       "'#{ia}'#{cmp}'#{ib}'"
     end
 
@@ -761,7 +761,7 @@ module WorkflowMgr
         end
 
         # Remove the metataskdep elements
-        metataskelements.each(&:remove!)
+        metataskelements.each { |metataskelement| metataskelement.remove! }
       end
     end
 
@@ -789,7 +789,7 @@ module WorkflowMgr
 
           # Find the seqnum for the tasks on which this task depends
           seqdeplist = ch.attributes["seqnum"]
-          seqdeps = seqdeplist.split(",")[0..idx].collect(&:to_i)
+          seqdeps = seqdeplist.split(",")[0..idx].collect { |s| s.to_i }
           seqdeps[idx] -= 1
 
           # Unless this is the first task in the sequence, it has a dependency for this metatask
@@ -836,7 +836,7 @@ module WorkflowMgr
           # if seqdeps[idx]
 
           # if @metatask_modes
-        end
+        end # metatasklist.split.each
 
         # if ch.name
       end
@@ -866,7 +866,7 @@ module WorkflowMgr
         pre_parse(ch, metatask_name)
         metatasks << ch
       end
-      metatasks.each(&:remove!)
+      metatasks.each { |ch| ch.remove! }
     end
 
     #####################################################
@@ -878,16 +878,16 @@ module WorkflowMgr
       if node.node_type_name == "text"
         node.output_escaping = false
         cont = unescape(node.content)
-        id_table.each_key do |id|
-          next while cont.sub!("##{id}#", id_table[id][index])
+        id_table.each do |id, value|
+          next while cont.sub!("#" + id + "#", id_table[id][index])
         end
         node.content = cont
 
       else
         node.attributes.each do |attr|
           val = attr.value
-          id_table.each_key do |id|
-            next while val.sub!("##{id}#", id_table[id][index])
+          id_table.each do |id, value|
+            next while val.sub!("#" + id + "#", id_table[id][index])
           end
           attr.value = val
         end
@@ -916,11 +916,11 @@ module WorkflowMgr
           e.attributes["metatasks"] = metatask_list
           e.attributes["seqnum"] = metatask["seqnum"]
           seqnum += 1
-          e.attributes["seqnum"] += seqnum.to_s
+          e.attributes["seqnum"] += "#{seqnum}"
         elsif e.name == "metatask"
           e.attributes["seqnum"] = metatask.attributes["seqnum"]
           seqnum += 1
-          e.attributes["seqnum"] += seqnum.to_s
+          e.attributes["seqnum"] += "#{seqnum}"
         end
       end
 
@@ -978,5 +978,5 @@ module WorkflowMgr
       # Insert the expanded tasks into the XML tree
       (task_list.length - 1).downto(0) { |x| metatask.next = task_list[x] }
     end
-  end
-end
+  end # Class WorkflowXMLDoc
+end # Module WorkflowMgr

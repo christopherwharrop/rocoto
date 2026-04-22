@@ -3,7 +3,6 @@
 # Module WorkflowMgr
 #
 ##########################################
-require 'English'
 module WorkflowMgr
   require 'workflowmgr/batchsystem'
   require 'date'
@@ -62,25 +61,25 @@ module WorkflowMgr
       refresh_jobqueue if @jobqueue.empty?
 
       # Return the jobqueue record if there is one
-      return @jobqueue[jobid] if @jobqueue.key?(jobid)
+      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
 
       # Load from the cached sacct if available:
       refresh_jobacct(-1) if @jobacct_duration < 1
 
       # Return the jobacct record if there is one
-      return @jobacct[jobid] if @jobacct.key?(jobid)
+      return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
       # Populate the job accounting log table if it is empty
       refresh_jobacct(1) if @jobacct_duration < 1
 
       # Return the jobacct record if there is one
-      return @jobacct[jobid] if @jobacct.key?(jobid)
+      return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
       # Now re-populate over a longer history:
       refresh_jobacct(5) if @jobacct_duration < 5
 
       # Return the jobacct record if there is one
-      return @jobacct[jobid] if @jobacct.key?(jobid)
+      return @jobacct[jobid] if @jobacct.has_key?(jobid)
 
       # We didn't find the job, so return an uknown status record
       { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
@@ -107,19 +106,19 @@ module WorkflowMgr
       refresh_jobqueue(jobids) if @jobqueue.empty?
 
       # Check to see if status info is missing for any job
-      if jobids.any? { |jobid| !@jobqueue.key?(jobid) }
+      if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) }
 
         # Some job information is missing from squeue output, look in sacct cache next
         refresh_jobacct(-1) if @jobacct_duration < 1
 
         # Check to see if status info is still missing for any job
-        if jobids.any? { |jobid| !@jobqueue.key?(jobid) && !@jobacct.key?(jobid) }
+        if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) }
 
           # Some job information is still missing, look in sacct records going 24hrs back
           refresh_jobacct(1) if @jobacct_duration < 1
 
           # Check to see if status info is still missing for any job
-          if jobids.any? { |jobid| !@jobqueue.key?(jobid) && !@jobacct.key?(jobid) } && (@jobacct_duration < 5)
+          if jobids.any? { |jobid| !@jobqueue.has_key?(jobid) && !@jobacct.has_key?(jobid) } && (@jobacct_duration < 5)
 
             # Some job information is still missing, look in sacct records going 120hrs back
             refresh_jobacct(5)
@@ -129,9 +128,9 @@ module WorkflowMgr
 
       # Collect the statuses of the jobs
       jobids.each do |jobid|
-        jobStatuses[jobid] = if @jobqueue.key?(jobid)
+        jobStatuses[jobid] = if @jobqueue.has_key?(jobid)
                                @jobqueue[jobid]
-                             elsif @jobacct.key?(jobid)
+                             elsif @jobacct.has_key?(jobid)
                                @jobacct[jobid]
                              else
                                # We didn't find the job, so return an uknown status record
@@ -162,7 +161,7 @@ module WorkflowMgr
         end
         case option
         when :exclusive
-          if task.attributes[:shared].nil? || !task.attributes[:shared]
+          if task.attributes[:shared].nil? or !task.attributes[:shared]
             input += "#SBATCH --exclusive\n"
           end
         when :account
@@ -341,8 +340,8 @@ module WorkflowMgr
           # Return if the output is empty
           return nil, output if queued_jobs.empty?
         rescue Timeout::Error
-          WorkflowMgr.log($ERROR_INFO.to_s)
-          WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+          WorkflowMgr.log("#{$!}")
+          WorkflowMgr.stderr("#{$!}", 3)
           raise WorkflowMgr::SchedulerDown
         end
 
@@ -408,7 +407,7 @@ module WorkflowMgr
         # Run qstat to obtain the current status of queued jobs
         queued_jobs = ""
 
-        if jobids.nil? || (jobids.join(',').length > 64)
+        if jobids.nil? or jobids.join(',').length > 64
           queued_jobs, = WorkflowMgr.run4(
             "squeue -u #{username} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200", @squeue_timeout
           )
@@ -425,8 +424,8 @@ module WorkflowMgr
         # Return if the output is empty
         return if queued_jobs.empty?
       rescue Timeout::Error
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -482,7 +481,7 @@ module WorkflowMgr
         code_signal = job[230..239].strip
         if code_signal =~ /:/
 
-          code, signal = code_signal.split(":").collect(&:to_i)
+          code, signal = code_signal.split(":").collect { |i| i.to_i }
           record[:exit_status] = if code == 0
                                    signal
                                  else
@@ -514,7 +513,7 @@ module WorkflowMgr
         # Add record to job queue
         @jobqueue[record[:jobid]] = record
       end
-    end
+    end # job_queue
 
     #####################################################
     #
@@ -536,7 +535,7 @@ module WorkflowMgr
 
         if delta_days < 0
           sacct_cache = ENV["ROCOTO_SACCT_CACHE"]
-          if (sacct_cache.nil? || sacct_cache.empty?) && !ENV["HOME"].nil?
+          if (sacct_cache.nil? or sacct_cache.empty?) && !ENV["HOME"].nil?
             sacct_cache = "#{ENV['HOME']}/sacct-cache/sacct.txt"
           end
           return unless File.exist? sacct_cache
@@ -561,8 +560,8 @@ module WorkflowMgr
         # Return if the output is empty
         return if completed_jobs.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$!}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -612,7 +611,7 @@ module WorkflowMgr
         record[:priority] = jobfields[4]
 
         # Extract the exit status
-        code, signal = jobfields[9].split(":").collect(&:to_i)
+        code, signal = jobfields[9].split(":").collect { |i| i.to_i }
         record[:exit_status] = if code == 0
                                  signal
                                else
@@ -642,6 +641,6 @@ module WorkflowMgr
         # Add record to job queue
         @jobacct[record[:jobid]] = record
       end
-    end
-  end
-end
+    end # job_acct
+  end # class
+end # module

@@ -25,7 +25,7 @@ module WorkflowMgr
     def initialize(args, name, action, default_all = false)
       @cycles = nil
       @task_options = []
-      @default_all = !default_all.nil? # true => command defaults to all tasks and cycles
+      @default_all = !!default_all # true => command defaults to all tasks and cycles
       @name = name # ie.: rocotoboot
       @action = action # ie.: boot
       @all_tasks = false
@@ -79,7 +79,7 @@ module WorkflowMgr
         end
       end
 
-      @cycles = nil if !@cycles.nil? && @cycles.empty?
+      @cycles = nil if !@cycles.nil? and @cycles.empty?
 
       # Tasks of interest
       opts.on("-t", "--tasks 'a,b,c'", Array, "List of tasks") do |tasklist|
@@ -174,4 +174,4 @@ module WorkflowMgr
       @selection
     end
   end
-end
+end # module WorkflowMgr

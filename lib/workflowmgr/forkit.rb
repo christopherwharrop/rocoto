@@ -3,7 +3,6 @@
 # Module WorkflowMgr
 #
 ##########################################
-require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -39,7 +38,7 @@ module WorkflowMgr
       pwrite.close
     rescue StandardError
       # Write the exception to the write end of the pipe
-      pwrite.write Marshal.dump($ERROR_INFO)
+      pwrite.write Marshal.dump($!)
 
       # Close the write end of the pipe
       pwrite.close
@@ -75,5 +74,5 @@ module WorkflowMgr
       # The block took too long, exit with an error
       raise WorkflowMgr::ForkitTimeoutException, "The block timed out"
     end
-  end
-end
+  end # def forkit
+end # module workflowmgr

@@ -39,9 +39,9 @@ module WorkflowMgr
       lower_case_month_full = reftime.strftime("%B").downcase
 
       # Take care of non-standard flags first
-      str = @str.gsub("%n", days_in_month.to_s)
-      str = str.gsub("%o", lower_case_month_abbr.to_s)
-      str = str.gsub("%O", lower_case_month_full.to_s)
+      str = @str.gsub("%n", "#{days_in_month}")
+      str = str.gsub("%o", "#{lower_case_month_abbr}")
+      str = str.gsub("%O", "#{lower_case_month_full}")
 
       # Process standard flags
       reftime.strftime(str)

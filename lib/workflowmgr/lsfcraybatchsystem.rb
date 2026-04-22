@@ -98,7 +98,7 @@ module WorkflowMgr
             amount = (value.to_i / 1024.0 / 1024.0).ceil
           end
           if amount > 0
-            memoryoption = amount.to_s
+            memoryoption = "#{amount}"
           end
         when :stdout
           cmd += " -o #{value}"
@@ -125,7 +125,7 @@ module WorkflowMgr
           end
 
           totalcores += value.to_i
-          nodes += (value.to_f / nodesize).ceil.to_i
+          nodes += (value.to_f / nodesize.to_f).ceil.to_i
 
         when :nodes
           value.split('+').each do |nodespec|
@@ -143,7 +143,7 @@ module WorkflowMgr
 
       begin
         taskattrs = task.attributes
-        if !taskattrs[:shared].nil? && taskattrs[:shared]
+        if !taskattrs[:shared].nil? and taskattrs[:shared]
           cmd += " -n #{totalcores}"
           if totalcores > 1
             cmd += " '-R span[ptile=#{spanguess}]'"
@@ -163,7 +163,7 @@ module WorkflowMgr
                  end
         end
       rescue Exception => e
-        warn e
+        warn "#{e}"
         raise
       end
 
@@ -221,7 +221,7 @@ module WorkflowMgr
       # WorkflowMgr.stderr("#{record[:jobid]}: running with no extsched; return",1)
       elsif !record[:extsched].include? 'CRAYLINUX'
         # WorkflowMgr.stderr("#{record[:jobid]}: extsched=\"#{record[:extsched]}\"",1)
-      elsif record[:reservation_id].nil? || (record[:reservation_id] == '')
+      elsif record[:reservation_id].nil? or record[:reservation_id] == ''
         # WorkflowMgr.stderr("#{record[:jobid]}: (#{record[:jobname]} #{record[:state]} ) RUNNING, CRAYLINUX but no reservation.  Is actually queued.",1)
         record[:state] = 'QUEUED'
         record[:native_state] = 'QUEUED'

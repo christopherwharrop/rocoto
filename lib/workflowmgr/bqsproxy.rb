@@ -126,5 +126,5 @@ module WorkflowMgr
         raise "Could not launch batch queue server process."
       end
     end
-  end
-end
+  end # Class BQSProxy
+end # Module WorkflowMgr

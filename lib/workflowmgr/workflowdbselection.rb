@@ -22,14 +22,13 @@ module WorkflowMgr
       undefcycles = []
 
       # Get the cycles of interest that are in the database
-      if @cycles.nil? || @cycles.empty?
+      if @cycles.nil? or @cycles.empty?
         # Get the latest cycle
         last_cycle = dbServer.get_last_cycle
         dbcycles << last_cycle unless last_cycle.nil?
       else
         @cycles.each do |cycopt|
-          case cycopt
-          when Range
+          if cycopt.is_a?(Range)
             # Get all cycles within the range
             dbcycles += dbServer.get_cycles({ start: cycopt.first, end: cycopt.last })
 
@@ -38,7 +37,7 @@ module WorkflowMgr
             reftime = cycledefs.collect do |cdef|
               cdef.next(cycopt.first, false)
             end.compact.collect { |c| c[0] }.min
-            loop do
+            while true
               break if reftime.nil?
               break if reftime > cycopt.last
 
@@ -49,15 +48,15 @@ module WorkflowMgr
             end
 
             # Add the cycles that are in the XML but not in the DB
-            xmlcycles = (xml_cycle_times - dbcycles.collect(&:cycle)).collect { |c| WorkflowMgr::Cycle.new(c) }
-          when Time
+            xmlcycles = (xml_cycle_times - dbcycles.collect { |c| c.cycle }).collect { |c| WorkflowMgr::Cycle.new(c) }
+          elsif cycopt.is_a?(Time)
             cycle = dbServer.get_cycles({ start: cycopt, end: cycopt })
             if cycle.empty?
               undefcycles << WorkflowMgr::Cycle.new(cycopt)
             else
               dbcycles += cycle
             end
-          when Array
+          elsif cycopt.is_a?(Array)
             # Get the specific cycles asked for
             cycopt.each do |c|
               cycle = dbServer.get_cycles({ start: c, end: c })
@@ -67,7 +66,7 @@ module WorkflowMgr
                 dbcycles += cycle
               end
             end
-          when WorkflowMgr::CycleDefSelection
+          elsif cycopt.is_a? WorkflowMgr::CycleDefSelection
             these_cycles = []
             cycledefs.each do |cdef|
               next unless cycopt.name == cdef.group
@@ -88,7 +87,7 @@ module WorkflowMgr
 
             xml_set.each { |c| xmlcycles << WorkflowMgr::Cycle.new(c) }
 
-          when ALL_POSSIBLE_CYCLES
+          elsif cycopt == ALL_POSSIBLE_CYCLES
             dbcycles += dbServer.get_cycles
           else
             raise "Invalid cycle specification type=#{cycopt.class.name} value=#{cycopt.inspect}"
@@ -121,4 +120,4 @@ module WorkflowMgr
       WorkflowDBSubset.new(@all_cycles, @all_tasks, xml_cycles, db_cycles, undef_cycles, selected_tasks)
     end
   end
-end
+end # module WorkflowMgr

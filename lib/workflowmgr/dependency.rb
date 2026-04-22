@@ -3,7 +3,6 @@
 # Module WorkflowMgr
 #
 ##########################################
-require 'English'
 module WorkflowMgr
   # NOTE: in all of these classes and functions, the variable "d" is a
   # WorkflowMgr::WorkflowState which contains all needed input to the
@@ -34,8 +33,8 @@ module WorkflowMgr
     def resolved?(d)
       @root.resolved?(d)
     rescue WorkflowIOHang
-      WorkflowMgr.stderr($ERROR_INFO.to_s, 2)
-      WorkflowMgr.log($ERROR_INFO.to_s)
+      WorkflowMgr.stderr("#{$!}", 2)
+      WorkflowMgr.log("#{$!}")
       false
     end
 
@@ -47,8 +46,8 @@ module WorkflowMgr
     def query(d)
       @root.query(d)
     rescue WorkflowIOHang
-      WorkflowMgr.stderr($ERROR_INFO.to_s, 2)
-      WorkflowMgr.log($ERROR_INFO.to_s)
+      WorkflowMgr.stderr("#{$!}", 2)
+      WorkflowMgr.log("#{$!}")
       false
     end
   end
@@ -129,7 +128,7 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(value, name)
-      @value = !value.nil?
+      @value = !!value
       begin
         @name = name.to_s(Time.new)
       rescue StandardError
@@ -183,7 +182,7 @@ module WorkflowMgr
       if name.nil?
         name = script.to_s(Time.new)
         if name.size > 40
-          name = "#{name[0..37]}..."
+          name = name[0..37] + '...'
         end
       end
       @name = name
@@ -253,7 +252,7 @@ module WorkflowMgr
       if name.nil?
         name = shellexpr.to_s(Time.new)
         if name.size > 40
-          name = "#{name[0..37]}..."
+          name = name[0..37] + '...'
         end
       end
       @name = name
@@ -751,7 +750,7 @@ module WorkflowMgr
         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
           cycle_is_valid = false
         end
-      end
+      end # unless
 
       cycle_is_valid
     end
@@ -765,7 +764,7 @@ module WorkflowMgr
       # Set the job to check
 
       # Get the jobs for this cycle
-      return [{ dep: @task.to_s, msg: "is not valid", resolved: false }] if d.tasks[@task].nil?
+      return [{ dep: "#{@task}", msg: "is not valid", resolved: false }] if d.tasks[@task].nil?
 
       checkjob = d.tasks[@task]
 
@@ -778,12 +777,12 @@ module WorkflowMgr
         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
           cycle_is_valid = false
         end
-      end
+      end # unless
 
       if cycle_is_valid
-        [{ dep: @task.to_s, msg: "is valid", resolved: true }]
+        [{ dep: "#{@task}", msg: "is valid", resolved: true }]
       else
-        [{ dep: @task.to_s, msg: "is not valid", resolved: false }]
+        [{ dep: "#{@task}", msg: "is not valid", resolved: false }]
       end
     end
   end

@@ -16,6 +16,7 @@ module WorkflowMgr
     require 'workflowmgr/workflowstate'
     require 'workflowmgr/launchserver'
     require 'workflowmgr/workflowdoc'
+    require 'workflowmgr/workflowstate'
     require 'workflowmgr/dbproxy'
     require 'workflowmgr/workflowioproxy'
     require 'workflowmgr/cycledef'
@@ -74,7 +75,7 @@ module WorkflowMgr
         WorkflowMgr.log(e.backtrace.join("\n"))
       end
       Process.exit(1)
-    end
+    end # initialize
 
     ##########################################
     #
@@ -115,7 +116,7 @@ module WorkflowMgr
         if all_tasks
           puts "Rewinding all tasks will set the cycle to \"inactive\" status, as if Rocoto had never started it."
           printf "Are you sure you want to proceed? (y/n) "
-          reply = $stdin.gets
+          reply = STDIN.gets
           unless reply =~ /^[Yy]/
             Process.exit(0)
           end
@@ -125,7 +126,7 @@ module WorkflowMgr
         if nrewind_cycles > 10 || nrewind_tasks > 10
           printf "Preparing to rewind #{nrewind_tasks} tasks for #{nrewind_cycles} cycles.  A total of #{nrewind_tasks * nrewind_cycles} tasks will be rewound.\n"
           printf "Are you sure you want to proceed? (y/n) "
-          reply = $stdin.gets
+          reply = STDIN.gets
           unless reply =~ /^[Yy]/
             Process.exit(0)
           end
@@ -200,7 +201,7 @@ module WorkflowMgr
             rewind_job.tries = 0
             @dbServer.delete_jobs([rewind_job])
             did_something = true
-          end
+          end # task loop
 
           unless did_something
             puts "#{strcyc}: No tasks to rewind."
@@ -216,7 +217,7 @@ module WorkflowMgr
 
             @dbServer.remove_cycle(rewind_cycle.cycle)
           elsif did_something
-            if rewind_cycle.done? || rewind_cycle.draining?
+            if rewind_cycle.done? or rewind_cycle.draining?
               if rewind_cycle.done?
                 puts "#{strcyc}: WARNING: Cycle is done.  Setting its tasks' tries to 0 may start other tasks."
               else
@@ -231,9 +232,9 @@ module WorkflowMgr
               return
             end
           end
-        end
+        end # cycle loop
       end
-    end
+    end # rewind
 
     ##########################################
     #
@@ -273,7 +274,7 @@ module WorkflowMgr
         # Auto vacuum if necessary, but only for realtime mode
         auto_vacuum if @config.AutoVacuum && @realtime
       end
-    end
+    end # run
 
     ##########################################
     #
@@ -340,7 +341,7 @@ module WorkflowMgr
         if nboot_cycles > 10 || nboot_tasks > 10
           printf "Preparing to boot #{nboot_tasks} tasks for #{nboot_cycles} cycles.  A total of #{nboot_tasks * nboot_cycles} tasks will be booted.  This may take a while.\n"
           printf "Are you sure you want to proceed? (y/n) "
-          reply = $stdin.gets
+          reply = STDIN.gets
           unless reply =~ /^[Yy]/
             Process.exit(0)
           end
@@ -376,7 +377,7 @@ module WorkflowMgr
                 puts "Can not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime('%Y%m%d%H%M')}' because the cycle is not defined for that task"
                 next
               end
-            end
+            end # unless
 
             # Find the requested cycle
             boot_cycle = find_cycle(boot_cycle_time)
@@ -390,7 +391,7 @@ module WorkflowMgr
                 printf "Booting task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime('%Y%m%d%H%M')}' will activate cycle '#{boot_cycle_time.strftime('%Y%m%d%H%M')}' for the first time.\n"
                 printf "This may trigger submission of other tasks for cycle '#{boot_cycle_time.strftime('%Y%m%d%H%M')}' in addition to '#{boot_task_name}'\n"
                 printf "Are you sure you want to boot '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime('%Y%m%d%H%M')}' ? (y/n) "
-                reply = $stdin.gets
+                reply = STDIN.gets
               end
               if reply =~ /^[Yy]/
                 boot_cycle = Cycle.new(boot_cycle_time)
@@ -406,7 +407,7 @@ module WorkflowMgr
             else
 
               # Reactivate the cycle if it is done (but not expired)
-              if boot_cycle.done? || boot_cycle.draining?
+              if boot_cycle.done? or boot_cycle.draining?
                 boot_cycle.reactivate!
                 unless WorkflowMgr.dryrun_mode?
                   @dbServer.update_cycles([boot_cycle])
@@ -422,7 +423,7 @@ module WorkflowMgr
                            end
               else
                 print "WARNING: Cycle #{boot_cycle_time.strftime('%Y%m%d%H%M')} state is #{boot_cycle.state}.  I can boot task #{boot_task_name}, but this cycle might not complete again unless you boot the final task.  Proceed anyway (y/n)?"
-                reply = $stdin.gets
+                reply = STDIN.gets
                 if reply =~ /^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
                   boot_job = nil
@@ -442,7 +443,7 @@ module WorkflowMgr
               end
               if boot_job.expired?
                 puts "I should not boot task '#{boot_task_name}' for cycle '#{boot_cycle_time.strftime('%Y%m%d%H%M')}' because the task has expired.  Are you sure you want to boot this task anyway? (y/n)"
-                reply = $stdin.gets
+                reply = STDIN.gets
                 if reply =~ /^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
                   boot_job = nil
@@ -555,7 +556,7 @@ module WorkflowMgr
           end
         end
       end
-    end
+    end # boot
 
     ##########################################
     #
@@ -589,7 +590,7 @@ module WorkflowMgr
         if @options.all_tasks
           puts "Will complete all tasks in specified cycles.  This mark cycles as \"done\" and all tasks within the cycles as \"succeeded.\"  Running \"rocotorun\" will have no more impacts on cycles completed in this manner unless you \"rocotorewind\" them."
           printf "Are you sure you want to proceed? (y/n) "
-          reply = $stdin.gets
+          reply = STDIN.gets
           unless reply =~ /^[Yy]/
             Process.exit(0)
           end
@@ -599,7 +600,7 @@ module WorkflowMgr
         if ncomplete_cycles > 10 || ncomplete_tasks > 10
           printf "Preparing to complete #{ncomplete_tasks} tasks for #{ncomplete_cycles} cycles.  A total of #{ncomplete_tasks * ncomplete_cycles} tasks will be completed.  This may take a while.\n"
           printf "Are you sure you want to proceed? (y/n) "
-          reply = $stdin.gets
+          reply = STDIN.gets
           unless reply =~ /^[Yy]/
             Process.exit(0)
           end
@@ -638,7 +639,7 @@ module WorkflowMgr
                 puts "Can not complete task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime('%Y%m%d%H%M')}' because the cycle is not defined for that task"
                 next
               end
-            end
+            end # unless
 
             # Activate a new cycle if necessary and add it to the database
             if complete_cycle.nil?
@@ -646,7 +647,7 @@ module WorkflowMgr
                 printf "Completing task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime('%Y%m%d%H%M')}' will activate cycle '#{complete_cycle_time.strftime('%Y%m%d%H%M')}' for the first time.\n"
                 printf "This may trigger submission of other tasks for cycle '#{complete_cycle_time.strftime('%Y%m%d%H%M')}' in addition to '#{complete_task_name}'\n"
                 printf "Are you sure you want to complete '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime('%Y%m%d%H%M')}' ? (y/n) "
-                reply = $stdin.gets
+                reply = STDIN.gets
               else
                 puts "Starting cycle '#{complete_cycle_time.strftime('%Y%m%d%H%M')}' so I can complete task '#{complete_task_name}'.  I will set the cycle to \"done\" shortly."
                 reply = 'y'
@@ -677,7 +678,7 @@ module WorkflowMgr
                                end
               else
                 print "WARNING: Cycle #{complete_cycle_time.strftime('%Y%m%d%H%M')} state is #{complete_cycle.state}.  Completing task #{complete_task_name} may have unintended consequences. Proceed anyway (y/n)?"
-                reply = $stdin.gets
+                reply = STDIN.gets
                 if reply =~ /^[Yy]/
                   puts "Okay, but don't say I didn't warn you."
                   complete_job = nil
@@ -726,7 +727,7 @@ module WorkflowMgr
         # Expire active cycles that have exceeded the cycle life span
         expire_cycles
       end
-    end
+    end # complete
 
     ##########################################
     #
@@ -738,7 +739,7 @@ module WorkflowMgr
       with_locked_db do
         @dbServer.vacuum(seconds)
       end
-    end
+    end # vacuum!
 
     private
 
@@ -799,7 +800,7 @@ module WorkflowMgr
       if !@workflowIOServer.nil? && @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
         @workflowIOServer.stop!
       end
-    end
+    end # with_locked_db
 
     ##########################################
     #
@@ -975,7 +976,7 @@ module WorkflowMgr
       latest_activation_time = nil
       latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now, true) }.compact
       unless latest_cycle_candidates.empty?
-        latest_cycle_time, latest_activation_time = latest_cycle_candidates.max { |c1, c2| c1[1] <=> c2[1] }
+        latest_cycle_time, latest_activation_time = latest_cycle_candidates.sort { |c1, c2| c1[1] <=> c2[1] }.last
       end
 
       # Create a new cycle if a cycle <= now is defined in cycle specs
@@ -1031,7 +1032,7 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset = @dbServer.get_cycles({ start: @cycledefs.collect(&:position).compact.min })
+      cycleset = @dbServer.get_cycles({ start: @cycledefs.collect { |cycledef| cycledef.position }.compact.min })
 
       # Sort the cycleset
       cycleset.sort!
@@ -1061,7 +1062,7 @@ module WorkflowMgr
 
           # Update cycledef position
           cycledef.seek(next_cycle)
-        end
+        end # cycledefs.each
 
         if cyclepool.empty?
 
@@ -1079,8 +1080,8 @@ module WorkflowMgr
           # Add the new cycle to the cycleset so that we don't try to add it again
           cycleset << newcycle
 
-        end
-      end
+        end # if cyclepool.empty?
+      end # .times do
 
       # Save the workflowdoc cycledefs with their updated positions to the database
       @dbServer.set_cycledefs(@cycledefs.collect do |cycledef|
@@ -1089,7 +1090,7 @@ module WorkflowMgr
       end)
 
       newcycles
-    end
+    end # get_new_retro_cycles
 
     ##########################################
     #
@@ -1138,7 +1139,7 @@ module WorkflowMgr
         # In dryrun mode, no DRb server is launched, so skip this check
         next if !WorkflowMgr.dryrun_mode? && uri == @bqServer.__drburi
 
-        bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.key?(uri)
+        bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
 
       # The bqserver has died!
       rescue DRb::DRbConnError
@@ -1146,12 +1147,14 @@ module WorkflowMgr
         @dbServer.delete_bqservers([uri])
 
         # Remove the bqserver uri from the bqservers list if needed
-        bqservers.delete(uri) if bqservers.key?(uri)
+        bqservers.delete(uri) if bqservers.has_key?(uri)
       end
 
       begin
         # Loop over active jobs looking for ones with pending submissions
-        @active_jobs.values.collect(&:values).flatten.sort_by do |job|
+        @active_jobs.values.collect do |cyclehash|
+          cyclehash.values
+        end.flatten.sort_by do |job|
           [job.cycle,
            @tasks[job.task].nil? ? 999_999_999 : @tasks[job.task].seq]
         end.each do |job|
@@ -1163,7 +1166,7 @@ module WorkflowMgr
 
           begin
             # Query the workflowbqserver for the status of the job submission
-            jobid, output = bqservers[uri].get_submit_status(job.task, job.cycle) if bqservers.key?(uri)
+            jobid, output = bqservers[uri].get_submit_status(job.task, job.cycle) if bqservers.has_key?(uri)
 
           # Catch exceptions for bqservers that have died unexpectedly
           rescue DRb::DRbConnError
@@ -1171,11 +1174,11 @@ module WorkflowMgr
             @dbServer.delete_bqservers([uri])
 
             # Remove the bqserver uri from the bqservers list if needed
-            bqservers.delete(uri) if bqservers.key?(uri)
+            bqservers.delete(uri) if bqservers.has_key?(uri)
           end
 
           # If the bqserver died, warn user, resubmit job
-          if !bqservers.key?(uri)
+          if !bqservers.has_key?(uri)
 
             # Log the fact that the submission status could not be retrieved
             msg = "Submission status of #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')} could not be retrieved because the server process at #{uri} died"
@@ -1222,11 +1225,11 @@ module WorkflowMgr
             @logServer.log(job.cycle,
                            "Submission status of previously pending #{job.task} is success, jobid=#{jobid}")
 
-          end
+          end # if output.nil?
 
           # Update the job in the database
           @dbServer.update_jobs([job])
-        end
+        end # each job
       ensure
         # Make sure we always terminate all workflowbqservers that we no longer need
         bqservers.each do |uri, bqserver|
@@ -1241,7 +1244,7 @@ module WorkflowMgr
           WorkflowMgr.log(msg)
           @dbServer.delete_bqservers([uri])
         end
-      end
+      end # begin
     end
 
     ##########################################
@@ -1265,9 +1268,9 @@ module WorkflowMgr
         @active_metatask_instance_count = {}
 
         # Get a sorted list of active jobs
-        active_jobs_sorted = @active_jobs.values.collect(&:values).flatten.sort_by do |job|
-          [job.cycle, @tasks[job.task].nil? ? 999_999_999 : @tasks[job.task].seq]
-        end
+        active_jobs_sorted = @active_jobs.values.collect do |cyclehash|
+          cyclehash.values
+        end.flatten.sort_by { |job| [job.cycle, @tasks[job.task].nil? ? 999_999_999 : @tasks[job.task].seq] }
 
         # Reject jobs whose state is "SUCCEEDED", "FAILED", "EXPIRED", or "LOST" or are awaiting submit status results
         # No need to query or update the status of jobs that we already know are done successfully or that remain failed
@@ -1300,14 +1303,14 @@ module WorkflowMgr
 
           # No need for more updates to this job
           next
-        end
+        end # active_jobs_sorted
 
         # Reject jobs whose state was just changed from "DEAD" to "FAILED" because they were resurrected, they don't require further updating here
         # Reject all "DEAD" jobs that were not resurrected
         active_jobs_sorted.reject! { |job| ["FAILED", "DEAD"].include?(job.state) }
 
         # Get the status of ALL active jobs from the batch system
-        statuses = @bqServer.statuses(active_jobs_sorted.collect(&:id))
+        statuses = @bqServer.statuses(active_jobs_sorted.collect { |job| job.id })
 
         # Loop over all active jobs and retrieve and update their current status
         active_jobs_sorted.each do |job|
@@ -1364,7 +1367,7 @@ module WorkflowMgr
             end
 
             # Check for job expiration
-            if job.state != "SUCCEEDED" && @tasks[job.task].expired?(job.cycle)
+            if !(job.state == "SUCCEEDED") && @tasks[job.task].expired?(job.cycle)
               job.state = "EXPIRED"
               runmsg = "#{runmsg}.  This task has expired.  It will be killed and will not be retried"
               @bqServer.delete(job.id)
@@ -1418,7 +1421,7 @@ module WorkflowMgr
               "Cycle #{job.cycle.strftime('%Y%m%d%H%M')}, #{statemsg + runmsg + unknownmsg + triesmsg}", 3
             )
           end
-        end
+        end # @active_jobs.each
       end
     end
 
@@ -1466,7 +1469,7 @@ module WorkflowMgr
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle.cycle) }
 
-            end
+            end # unless
 
             # Skip to next final task if this task has not been submitted yet for any cycle
             next if @active_jobs[task.attributes[:name]].nil?
@@ -1484,9 +1487,9 @@ module WorkflowMgr
             @dbServer.update_cycles([cycle])
 
             break
-          end
+          end # final_tasks.each
 
-        end
+        end # if !cycle.draining?
 
         # Initialize done flag to false for this cycle
         cycle_done = false
@@ -1508,7 +1511,7 @@ module WorkflowMgr
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle.cycle) }
 
-            end
+            end # unless
 
             if cycle.draining?
 
@@ -1539,11 +1542,11 @@ module WorkflowMgr
               #              throw :not_done if @active_jobs[task.attributes[:name]][cycle.cycle].exit_status != 0
               #            end
 
-            end
-          end
+            end # if cycle.draining?
+          end # tasks.each
 
           cycle_done = true
-        end
+        end # catch :not_done
 
         # If the cycle is done, record the time and update active cycle list
         if cycle_done
@@ -1568,7 +1571,7 @@ module WorkflowMgr
         else
           active_cycles << cycle
         end
-      end
+      end # active_cycles.each
 
       # Update the active cycle list
       @active_cycles = active_cycles
@@ -1602,7 +1605,7 @@ module WorkflowMgr
 
       # Delete any jobs for the expired cycles
       expired_cycles.each do |cycle|
-        @active_jobs.each_key do |taskname|
+        @active_jobs.keys.each do |taskname|
           next if @active_jobs[taskname][cycle.cycle].nil?
 
           next if ["SUCCEEDED", "FAILED", "DEAD", "EXPIRED",
@@ -1637,7 +1640,7 @@ module WorkflowMgr
 
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.sort { |c1, c2| c1.cycle <=> c2.cycle }.each do |cycle|
-        if !@options.all_cycles && !subset.is_selected?(cycle)
+        if !@options.all_cycles and !subset.is_selected? cycle
           WorkflowMgr.stderr("#{cycle.cycle.strftime('%Y%m%d%H%M')}: cycle is not selected by -c; skip", 4)
           next
         end
@@ -1647,7 +1650,7 @@ module WorkflowMgr
 
         cycletime = cycle.cycle
         @tasks.values.sort { |t1, t2| t1.seq <=> t2.seq }.each do |task|
-          if !@options.all_tasks && !subset.is_selected?(task)
+          if !@options.all_tasks and !subset.is_selected? task
             WorkflowMgr.stderr("#{task.attributes[:name]}: task is not selected by -m, -t, or -a; skip", 9)
             next
           end
@@ -1735,7 +1738,7 @@ module WorkflowMgr
               task.attributes[:metatasks].split(",").each do |metatask|
                 @active_metatask_instance_count[metatask] = 0 if @active_metatask_instance_count[metatask].nil?
                 mthrottle = @metatask_throttles[metatask]
-                next unless !mthrottle.nil? && (@active_metatask_instance_count[metatask] + 1 > mthrottle)
+                next unless !mthrottle.nil? and @active_metatask_instance_count[metatask] + 1 > mthrottle
 
                 violation = true
                 @logServer.log(cycletime,
@@ -1758,8 +1761,10 @@ module WorkflowMgr
           @active_core_count += task.attributes[:cores]
           @active_task_count += 1
           @active_task_instance_count[task.attributes[:name]] += 1
-          task.attributes[:metatasks]&.split(",")&.each do |metatask|
-            @active_metatask_instance_count[metatask] += 1
+          unless task.attributes[:metatasks].nil?
+            task.attributes[:metatasks].split(",").each do |metatask|
+              @active_metatask_instance_count[metatask] += 1
+            end
           end
 
           # If we are resubmitting the job, initialize the new job to the old job
@@ -1874,5 +1879,5 @@ module WorkflowMgr
         end
       end
     end
-  end
-end
+  end # Class WorkflowEngine
+end # Module WorkflowMgr

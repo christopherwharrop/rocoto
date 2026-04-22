@@ -64,7 +64,7 @@ module WFMStat
         WorkflowMgr.log(e.backtrace.join("\n"))
       end
       Process.exit(1)
-    end
+    end # initialize
 
     ##########################################
     #
@@ -112,7 +112,7 @@ module WFMStat
         @workflowIOServer.stop!
       end
       # ensure
-    end
+    end # wfmstat
 
     ##########################################
     #
@@ -249,10 +249,10 @@ module WFMStat
 
       # Print the cycle date/times
       (dbcycles + xmlcycles).sort.each do |cycle|
-        printf "%12s    %8s    %20s    %20s\n", cycle.cycle.strftime('%Y%m%d%H%M').to_s,
-               cycle.state.to_s.capitalize.to_s,
-               cycle.activated_time_string.center(20).to_s,
-               cycle.deactivated_time_string.center(20).to_s
+        printf "%12s    %8s    %20s    %20s\n", "#{cycle.cycle.strftime('%Y%m%d%H%M')}",
+               "#{cycle.state.to_s.capitalize}",
+               "#{cycle.activated_time_string.center(20)}",
+               "#{cycle.deactivated_time_string.center(20)}"
       end
     end
 
@@ -266,7 +266,7 @@ module WFMStat
       dbcycles, xmlcycles, = getCycles
 
       # Get the jobs from the database for the cycles of interest
-      jobs = @dbServer.get_jobs(dbcycles.collect(&:cycle))
+      jobs = @dbServer.get_jobs(dbcycles.collect { |c| c.cycle })
 
       # Get the list of tasks from the workflow definition
       definedTasks = @workflowdoc.tasks
@@ -300,7 +300,7 @@ module WFMStat
           printf "================================================================================================================================\n"
 
           # Print status of all jobs for this task
-          cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
+          cyclelist = (dbcycles | xmlcycles).collect { |c| c.cycle }.sort
           cyclelist.each do |cycle|
             next unless @subset.is_selected? cycle
 
@@ -341,7 +341,7 @@ module WFMStat
         puts format % header
 
         # Print status of jobs for each cycle
-        cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
+        cyclelist = (dbcycles | xmlcycles).collect { |c| c.cycle }.sort
         cyclelist.each do |cycle|
           unless @subset.is_selected? cycle
             # puts "#{cycle.class.name} #{cycle.inspect}: not selected"
@@ -364,7 +364,7 @@ module WFMStat
             end
 
             # Only print info if the task is defined for this cycle
-            unless definedTasks[task].nil? || definedTasks[task].attributes[:cycledefs].nil?
+            unless definedTasks[task].nil? or definedTasks[task].attributes[:cycledefs].nil?
               # Get the cycledefs associated with this task
               taskcycledefs[task] = cycledefs.find_all do |cycledef|
                 definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
@@ -421,7 +421,7 @@ module WFMStat
     #
     ##########################################
     def print_cycleinfo(cycle, cycledefs, task)
-      return if task.nil? || task.attributes.nil?
+      return if task.nil? or task.attributes.nil?
 
       # Make sure the cycle is valid for this task
       cycle_is_valid = true
@@ -433,7 +433,7 @@ module WFMStat
         unless taskcycledefs.any? { |cycledef| cycledef.member?(cycle.cycle) }
           cycle_is_valid = false
         end
-      end
+      end # unless
 
       puts
       puts "Cycle: #{cycle.cycle.strftime('%Y%m%d%H%M')}"
@@ -496,11 +496,11 @@ module WFMStat
 
       # Check for throttle violations
       active_cycles = @dbServer.get_active_cycles
-      active_jobs = @dbServer.get_jobs(active_cycles.collect(&:cycle))
+      active_jobs = @dbServer.get_jobs(active_cycles.collect { |c| c.cycle })
       ncores = 0
       ntasks = 0
-      active_jobs.each_key do |jobtask|
-        active_jobs[jobtask].each_key do |jobcycle|
+      active_jobs.keys.each do |jobtask|
+        active_jobs[jobtask].keys.each do |jobcycle|
           unless active_jobs[jobtask][jobcycle].done?
             ntasks += 1
             ncores += active_jobs[jobtask][jobcycle].cores
@@ -531,5 +531,5 @@ module WFMStat
         end
       end
     end
-  end
-end
+  end # Class StatusEngine
+end # Module WorkflowMgr
