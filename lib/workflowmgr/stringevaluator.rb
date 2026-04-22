@@ -6,7 +6,6 @@
 #
 ##########################################
 module WorkflowMgr
-
   require 'workflowmgr/compoundtimestring'
 
   ##########################################
@@ -15,16 +14,14 @@ module WorkflowMgr
   #
   ##########################################
   class StringEvaluator
-    require 'set'
-
     ##########################################
     #
     # initialize
     #
     ##########################################
-    def initialize()
-      @vars=Hash.new
-      @defaults=Hash.new
+    def initialize
+      @vars = {}
+      @defaults = {}
     end
 
     ##########################################
@@ -34,38 +31,35 @@ module WorkflowMgr
     # []= [] has_var? each_var
     #
     ##########################################
-    def []=(var,value)
+    def []=(var, value)
       raise 'var must be a string' unless var.is_a?(String)
       raise 'value must be a string' unless value.is_a?(String)
-      svar=var.to_s
+
+      svar = var.to_s
       var_name_ok?(var)
-      @vars[svar]=value
-      return value
+      @vars[svar] = value
+      value
     end
 
     def [](var)
-      svar=var.to_s
+      svar = var.to_s
       if @vars.has_key?(svar)
-        return @vars[svar]
+        @vars[svar]
       elsif @defaults.has_key?(svar)
-        return @defaults[svar]
-      else
-        return nil
+        @defaults[svar]
       end
     end
 
     def has_var?(var)
-      svar=var.to_s
-      return @vars.has_key?(svar) || @defaults.has_key?(svar)
+      svar = var.to_s
+      @vars.has_key?(svar) || @defaults.has_key?(svar)
     end
 
-    def each_var()
-      @vars.each do |k,v|
-        yield k,v
-      end
-      @defaults.each do |k,v|
-        if ! @vars.has_key?(k)
-          yield k,v
+    def each_var(&block)
+      @vars.each(&block)
+      @defaults.each do |k, v|
+        unless @vars.has_key?(k)
+          yield k, v
         end
       end
     end
@@ -82,26 +76,27 @@ module WorkflowMgr
       # Sets the other StringEvaluator's variables and defaults to be
       # this StringEvaluator's defaults, unless other defaults or
       # variables are already set.
-      strev.each_var do |k,v|
-        if not @defaults.has_key?(k)
-          raise 'key must be a string in defaults_from' unless k.is_a?(String)
-          raise 'value must be a string in defaults_from' unless v.is_a?(String)
-          setdef(k,v)
-        end
+      strev.each_var do |k, v|
+        next if @defaults.has_key?(k)
+        raise 'key must be a string in defaults_from' unless k.is_a?(String)
+        raise 'value must be a string in defaults_from' unless v.is_a?(String)
+
+        setdef(k, v)
       end
     end
 
-    def setdef(var,value)
+    def setdef(var, value)
       raise 'var must be a string in setdef' unless var.is_a?(String)
-      svar=var.to_s
+
+      svar = var.to_s
       var_name_ok?(var)
-      @defaults[svar]=value
-      return value
+      @defaults[svar] = value
+      value
     end
 
     def getdef(var)
-      svar=var.to_s
-      return defaults[svar]
+      svar = var.to_s
+      defaults[svar]
     end
 
     ##########################################
@@ -109,41 +104,41 @@ module WorkflowMgr
     # set_* -- Add Groups of Variables
     #
     ##########################################
-    def set_task(name,task=nil)  # Add a Task and its name
-      @defaults['taskname']=name.to_s   # taskname = task name
-      if ! task.nil?
-        @defaults['taskobj']=task   # taskobj = the Task
-        @defaults['env']=task.envars # env = the Task's env vars
-        @defaults['seq']=task.seq   # seq = Task's index location
+    def set_task(name, task = nil) # Add a Task and its name
+      @defaults['taskname'] = name.to_s # taskname = task name
+      unless task.nil?
+        @defaults['taskobj'] = task # taskobj = the Task
+        @defaults['env'] = task.envars # env = the Task's env vars
+        @defaults['seq'] = task.seq # seq = Task's index location
       end
-      return self
+      self
     end
 
     def set_doc(doc) # Add a WorkflowXMLDoc
-      @defaults['doc']=doc          # doc = the WorkflowXMLDoc
+      @defaults['doc'] = doc # doc = the WorkflowXMLDoc
     end
 
     def set_cycle(cycle) # Add a Cycle
-      @defaults['cycle']=cycle # cycle = the cycle time
+      @defaults['cycle'] = cycle # cycle = the cycle time
 
-      @defaults['evalcycle']=cycle # evalcycle = the Cycle object again
+      @defaults['evalcycle'] = cycle # evalcycle = the Cycle object again
       # (User cannot set "evalcycle" in XML.)
 
       # Various common aliases for portions of the time:
-      @defaults['ymd']=cycle.strftime('%Y%m%d')
-      @defaults['ymdh']=cycle.strftime('%Y%m%d%H')
-      @defaults['ymdhm']=cycle.strftime('%Y%m%d%H%M')
-      @defaults['ymdhms']=cycle.strftime('%Y%m%d%H%M%S')
-      @defaults['hms']=cycle.strftime('%H%M%S')
-      @defaults['century']=cycle.strftime('%C')
-      @defaults['year']=cycle.strftime('%Y')
-      @defaults['month']=cycle.strftime('%m')
-      @defaults['day']=cycle.strftime('%d')
-      @defaults['hour']=cycle.strftime('%H')
-      @defaults['minute']=cycle.strftime('%M')
-      @defaults['second']=cycle.strftime('%S')
-      @defaults['doy']=cycle.strftime('%j')
-      @defaults['cycleepoch']=cycle.to_i
+      @defaults['ymd'] = cycle.strftime('%Y%m%d')
+      @defaults['ymdh'] = cycle.strftime('%Y%m%d%H')
+      @defaults['ymdhm'] = cycle.strftime('%Y%m%d%H%M')
+      @defaults['ymdhms'] = cycle.strftime('%Y%m%d%H%M%S')
+      @defaults['hms'] = cycle.strftime('%H%M%S')
+      @defaults['century'] = cycle.strftime('%C')
+      @defaults['year'] = cycle.strftime('%Y')
+      @defaults['month'] = cycle.strftime('%m')
+      @defaults['day'] = cycle.strftime('%d')
+      @defaults['hour'] = cycle.strftime('%H')
+      @defaults['minute'] = cycle.strftime('%M')
+      @defaults['second'] = cycle.strftime('%S')
+      @defaults['doy'] = cycle.strftime('%j')
+      @defaults['cycleepoch'] = cycle.to_i
     end
 
     ##########################################
@@ -153,50 +148,49 @@ module WorkflowMgr
     ##########################################
     def run_bool(evalstr) # execute, return a boolean
       return true if run(evalstr)
-      return false
+
+      false
     end
 
     def run_str(evalstr) # execute, return a string
-      return run(evalstr).to_s
+      run(evalstr).to_s
     end
 
     def run(evalstr) # execute, return result of eval
-      evalstr=evalstr.to_s
+      evalstr = evalstr.to_s
 
       # Get a binding within the get_binding() subroutine of a copy of
       # this object.  Using a clone shields us from permanent
       # modifications of @vars or @defaults.
-      evalbind=clone.get_binding
+      evalbind = clone.get_binding
 
       # Construct a new command to evaluate, which first defines the
       # requested variables and functions.
-      evalcmd=''
-      evalline=1
-      each_var do |k,v|
-        evalcmd += "#{k.to_s} = self['#{k.to_s}']\n"
+      evalcmd = ''
+      evalline = 1
+      each_var do |k, v|
+        evalcmd += "#{k} = self['#{k}']\n"
         evalline -= 1
-        if k=='evalcycle'
-          # If a cycle is present, define a new cyclestr function that
-          # acts like the <cyclestr> tag.
-          #evalcmd+="def cyclestr(s) ; evalcycle.cycle.strftime(s.gsub('%','@')) ; end"
-          #evalline -= 1
-          # (DOES NOT WORK -- KEEP COMMENTED FOR NOW)
-        end
+        next unless k == 'evalcycle'
+        # If a cycle is present, define a new cyclestr function that
+        # acts like the <cyclestr> tag.
+        # evalcmd+="def cyclestr(s) ; evalcycle.cycle.strftime(s.gsub('%','@')) ; end"
+        # evalline -= 1
+        # (DOES NOT WORK -- KEEP COMMENTED FOR NOW)
       end
 
       # Append the requested string to that comand:
-      evalcmd+=evalstr
+      evalcmd += evalstr
 
       # The string to print when listing error messages:
-      if evalstr.size>20
-        errstr="<rb>#{evalstr[0..17]}...</rb>"
-      else
-        errstr="<rb>#{evalstr}</rb>"
-      end
+      errstr = if evalstr.size > 20
+                 "<rb>#{evalstr[0..17]}...</rb>"
+               else
+                 "<rb>#{evalstr}</rb>"
+               end
 
       # Evaluate the command in the Binding we made earlier:
-      result= evalbind.eval(evalcmd,errstr,evalline)
-      return result
+      evalbind.eval(evalcmd, errstr, evalline)
     end
 
     ##########################################
@@ -204,23 +198,23 @@ module WorkflowMgr
     # shell_bool
     #
     ##########################################
-    def shell_bool(shell,runopt,evalexpr,cycle)
+    def shell_bool(shell, runopt, evalexpr, cycle)
       # shell     -->  "/bin/sh"
       # runopt    -->  "-c"
       # evalexpr  -->  "echo hello world"
-      save_env=Hash.new
-      ENV.each do |k,v|
-        save_env[k]=v
+      save_env = {}
+      ENV.each do |k, v|
+        save_env[k] = v
       end
       begin
-        each_var do |k,v|
+        each_var do |k, v|
           if v.is_a?(CompoundTimeString)
-            ENV[k.to_s]=v.to_s(cycle)
+            ENV[k.to_s] = v.to_s(cycle)
           elsif v.is_a?(Hash)
-            if k=='env'
-              v.each do |k2,v2|
+            if k == 'env'
+              v.each do |k2, v2|
                 if v2.is_a?(CompoundTimeString)
-                  v2s=v2.to_s(cycle)
+                  v2s = v2.to_s(cycle)
                   ENV[k2.to_s] = v2s
                 elsif v.is_a?(String)
                   ENV[k2.to_s] = v2
@@ -236,19 +230,19 @@ module WorkflowMgr
           elsif v.is_a?(WorkflowIOProxy)
             # Skip IO proxy objects
           else
-            ENV[k.to_s]=v.to_s
+            ENV[k.to_s] = v.to_s
           end
         end
-        result=system(shell,runopt,evalexpr)
-        if(result)
-          return true
+        result = system(shell, runopt, evalexpr)
+        if result
+          true
         else
-          return false
+          false
         end
       ensure
         ENV.clear
-        save_env.each do |k,v|
-          ENV[k]=v
+        save_env.each do |k, v|
+          ENV[k] = v
         end
       end
     end
@@ -259,23 +253,23 @@ module WorkflowMgr
     # Binding generation
     #
     ##########################################
-    def get_binding()
+    def get_binding
       # This function lets us do clone.get_binding to make a binding
       # in a clone of ourself.  That is used to prevent user scripts
       # from accidentally making permanent changes to @vars or
       # @defaults.
-      return binding()
+      binding
     end
 
-    @@reserved_words=Set.new \
-    [ 'BEGIN', 'END', 'alias', 'and', 'begin', 'break', 'case',
-      'class', 'def', 'defined', 'do', 'else', 'elsif', 'end',
-      'ensure', 'false', 'for', 'if', 'module', 'next', 'nil', 'not',
-      'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
-      'then', 'true', 'undef', 'unless', 'until', 'when', 'while',
-      'yield', '__LINE__', '__FILE__' ]
+    @@reserved_words = Set.new \
+      ['BEGIN', 'END', 'alias', 'and', 'begin', 'break', 'case',
+       'class', 'def', 'defined', 'do', 'else', 'elsif', 'end',
+       'ensure', 'false', 'for', 'if', 'module', 'next', 'nil', 'not',
+       'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
+       'then', 'true', 'undef', 'unless', 'until', 'when', 'while',
+       'yield', '__LINE__', '__FILE__']
 
-    @@reserved_vars=Set.new [ 'evalstr', 'evalbind', 'evalcycle' ]
+    @@reserved_vars = Set.new ['evalstr', 'evalbind', 'evalcycle']
 
     ##########################################
     #
@@ -285,15 +279,16 @@ module WorkflowMgr
     #
     ##########################################
     def var_name_ok?(varname)
-      svar=varname.to_s
+      svar = varname.to_s
       if @@reserved_words.include?(svar)
         raise ArgumentError, "Name \"#{svar}\" is a reserved word in Ruby."
       elsif @@reserved_vars.include?(svar)
         raise ArgumentError, "Cannot override the #{svar} variable."
       elsif /\A[a-zA-Z][a-zA-Z0-9_]*\z/.match(svar)
-        return svar
+        svar
       else
-        raise ArgumentError, "Invalid variable name \"#{var}\": it must be a letter followed by any number of letters, numbers and underscores."
+        raise ArgumentError,
+              "Invalid variable name \"#{var}\": it must be a letter followed by any number of letters, numbers and underscores."
       end
     end
   end

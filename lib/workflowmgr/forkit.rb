@@ -4,7 +4,6 @@
 #
 ##########################################
 module WorkflowMgr
-
   ##########################################
   #
   # Class ForkitTimeoutException
@@ -18,53 +17,42 @@ module WorkflowMgr
   # WorkflowMgr.forkit
   #
   ##########################################
-  def WorkflowMgr.forkit(timelimit,&fblock)
-
+  def self.forkit(timelimit, &fblock)
     require 'workflowmgr/utilities'
 
     # Create a pair of pipe endpoints
-    pread,pwrite=IO.pipe
+    pread, pwrite = IO.pipe
 
     # Fork a child process to run the block
-    pid=Process.fork do
+    pid = Process.fork do
+      # Close the read end of the pipe in the child
+      pread.close
 
-      begin
+      # Attempt to run the block
+      result = fblock.call
 
-        # Close the read end of the pipe in the child
-        pread.close
+      # Write the result of the block to the write end of the pipe
+      pwrite.write Marshal.dump(result)
 
-        # Attempt to run the block
-        result=fblock.call
+      # Close the write end of the pipe
+      pwrite.close
+    rescue StandardError
+      # Write the exception to the write end of the pipe
+      pwrite.write Marshal.dump($!)
 
-        # Write the result of the block to the write end of the pipe
-        pwrite.write Marshal.dump(result)
-
-        # Close the write end of the pipe
-        pwrite.close
-
-      rescue
-
-        # Write the exception to the write end of the pipe
-        pwrite.write Marshal.dump($!)
-
-        # Close the write end of the pipe
-        pwrite.close
-
-      end
-
+      # Close the write end of the pipe
+      pwrite.close
     end
 
     # Wait for the block to run in the child process
     begin
-
       # Timeout after timelimit seconds
       WorkflowMgr.timeout(timelimit) do
-
         # Close the write end of the pipe
         pwrite.close
 
         # Read the result of the block from the pipe
-        result=Marshal.load(pread.read)
+        result = Marshal.load(pread.read)
 
         # Close the read end of the pipe
         pread.close
@@ -78,18 +66,13 @@ module WorkflowMgr
         else
           return result
         end
-
       end
-
     rescue Timeout::Error
-
       # Kill the block
-      Process.kill(:KILL,pid)
+      Process.kill(:KILL, pid)
 
       # The block took too long, exit with an error
       raise WorkflowMgr::ForkitTimeoutException, "The block timed out"
     end
-
-  end  # def forkit
-
-end  # module workflowmgr
+  end # def forkit
+end # module workflowmgr

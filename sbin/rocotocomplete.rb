@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
-__WFMDIR__=File.expand_path("../../",__FILE__)
+__WFMDIR__ = File.expand_path('..', __dir__)
 
 # Set up standalone bundle (no bundler gem required at runtime)
 require_relative '../bundle/bundler/setup'
@@ -19,10 +19,9 @@ require 'libxml'
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
-opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
-      name='rocotocomplete', # command name (used for messages)
-      action='completion',   # what the command does (used for messages)
-      default_all=true)      # default task and cycle selection is everything
-workflowEngine=WorkflowMgr::WorkflowEngine.new(opt)
+opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
+                                             'rocotocomplete', # command name (used for messages)
+                                             'completion', # what the command does (used for messages)
+                                             true) # default task and cycle selection is everything
+workflowEngine = WorkflowMgr::WorkflowEngine.new(opt)
 workflowEngine.complete!
-

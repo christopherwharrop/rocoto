@@ -4,7 +4,6 @@
 #
 ##########################################
 module WorkflowMgr
-
   ##########################################
   #
   # Class BatchSystem
@@ -16,7 +15,7 @@ module WorkflowMgr
   ##########################################
   class BatchSystem
     def self.feature?(flag)
-      return false
+      false
     end
   end
 end

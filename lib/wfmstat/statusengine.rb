@@ -4,14 +4,12 @@
 #
 ##########################################
 module WFMStat
-
   ##########################################
   #
   # Class StatusEngine
   #
   ##########################################
   class StatusEngine
-
     require 'workflowmgr/workflowdoc'
     require 'workflowmgr/workflowstate'
     require 'workflowmgr/workflowdb'
@@ -29,52 +27,44 @@ module WFMStat
     #
     ##########################################
     def initialize(options)
+      # Disable garbage collection
+      GC.disable
 
-      begin
+      # Turn on full program tracing for verbosity 1000+
+      if WorkflowMgr::VERBOSE > 999
+        set_trace_func proc { |event, file, line, id, binding, classname|
+          printf "%10s %s:%-2d %10s %8s\n", event, file, line, id, classname
+        }
 
-        # Disable garbage collection
-        GC.disable
-
-        # Turn on full program tracing for verbosity 1000+
-        if WorkflowMgr::VERBOSE > 999
-          set_trace_func proc { |event,file,line,id,binding,classname| printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname }
-
-        # Turn on program tracing for Rocoto code only for verbosity 100+
-        elsif WorkflowMgr::VERBOSE > 99
-          set_trace_func proc { |event,file,line,id,binding,classname|
-            case event
-              when "call","return","line"
-                if file=~/\/lib\/workflowmgr\/|\/lib\/wfmstat\//
-                  printf "%10s %s:%-2d %10s %8s\n",event,file,line,id,classname
-                end
-              else
+      # Turn on program tracing for Rocoto code only for verbosity 100+
+      elsif WorkflowMgr::VERBOSE > 99
+        set_trace_func proc { |event, file, line, id, binding, classname|
+          case event
+          when "call", "return", "line"
+            if file =~ /\/lib\/workflowmgr\/|\/lib\/wfmstat\//
+              printf "%10s %s:%-2d %10s %8s\n", event, file, line, id, classname
             end
-          }
-        end
-
-        # Get configuration file options
-        @config=WorkflowMgr::WorkflowYAMLConfig.new
-
-        # Get command line options
-        @options=options
-
-        # Set up an object to serve the workflow database (but do not open the database)
-        @dbServer=WorkflowMgr::DBProxy.new(@config,@options)
-
-      rescue => crash
-        WorkflowMgr.stderr(crash.message,1)
-        WorkflowMgr.log(crash.message)
-        case
-          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
-            WorkflowMgr.log(crash.backtrace.join("\n"))
-          else
-        end
-        Process.exit(1)
+          end
+        }
       end
 
-    end  # initialize
+      # Get configuration file options
+      @config = WorkflowMgr::WorkflowYAMLConfig.new
 
+      # Get command line options
+      @options = options
+
+      # Set up an object to serve the workflow database (but do not open the database)
+      @dbServer = WorkflowMgr::DBProxy.new(@config, @options)
+    rescue StandardError => e
+      WorkflowMgr.stderr(e.message, 1)
+      WorkflowMgr.log(e.message)
+      if e.is_a?(ArgumentError) || e.is_a?(NameError) || e.is_a?(TypeError)
+        WorkflowMgr.stderr(e.backtrace.join("\n"), 1)
+        WorkflowMgr.log(e.backtrace.join("\n"))
+      end
+      Process.exit(1)
+    end # initialize
 
     ##########################################
     #
@@ -82,112 +72,104 @@ module WFMStat
     #
     ##########################################
     def wfmstat
+      # Open/Create the database
+      @dbServer.dbopen({ readonly: true })
 
-      begin
+      # Set up an object to serve file stat info
+      @workflowIOServer = WorkflowMgr::WorkflowIOProxy.new(@dbServer, @config, @options)
 
-        # Open/Create the database
-        @dbServer.dbopen({:readonly=>true})
+      # Open the workflow document
+      @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer, @config)
 
-        # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
+      @workflowdoc.features_supported?
 
-        # Open the workflow document
-        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer,@config)
+      # Get the task and cycle subsets
+      @subset = @options.selection.make_subset(@workflowdoc.tasks, @workflowdoc.cycledefs,
+                                               @dbServer)
 
-        @workflowdoc.features_supported?
+      # Print a cycle summary report if requested
+      if @options.summary
+        print_summary
+      else
+        print_status
+      end
+    rescue StandardError => e
+      WorkflowMgr.stderr(e.message, 1)
+      WorkflowMgr.log(e.message)
+      if e.is_a?(ArgumentError) || e.is_a?(NameError) || e.is_a?(TypeError)
+        WorkflowMgr.stderr(e.backtrace.join("\n"), 1)
+        WorkflowMgr.log(e.backtrace.join("\n"))
+      end
+      Process.exit(1)
+    ensure
+      # Make sure we release the workflow lock in the database and shutdown the dbserver
+      if !@dbServer.nil? && @config.DatabaseServer
+        @dbServer.stop!
+      end
 
-        # Get the task and cycle subsets
-        @subset=@options.selection.make_subset(tasks=@workflowdoc.tasks,cycledefs=@workflowdoc.cycledefs,dbServer=@dbServer)
-
-        # Print a cycle summary report if requested
-        if @options.summary
-          print_summary
-        else
-          print_status
-        end
-
-      rescue => crash
-        WorkflowMgr.stderr(crash.message,1)
-        WorkflowMgr.log(crash.message)
-        case
-          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
-            WorkflowMgr.log(crash.backtrace.join("\n"))
-          else
-        end
-        Process.exit(1)
-
-      ensure
-
-        # Make sure we release the workflow lock in the database and shutdown the dbserver
-        unless @dbServer.nil?
-          @dbServer.stop! if @config.DatabaseServer
-        end
-
-        # Make sure to shut down the workflow file stat server
-        unless @workflowIOServer.nil?
-          @workflowIOServer.stop! if @config.WorkflowIOServer
-        end
-
-      end  # ensure
-
-    end  # wfmstat
+      # Make sure to shut down the workflow file stat server
+      if !@workflowIOServer.nil? && @config.WorkflowIOServer
+        @workflowIOServer.stop!
+      end
+      # ensure
+    end # wfmstat
 
     ##########################################
     #
     # checkOneTask
     #
     ##########################################
-    def checkOneTask(cycletime,taskname,cycledefs)
+    def checkOneTask(cycletime, taskname, cycledefs)
       # Get the cycle
-      cycle=@dbServer.get_cycles( {:start=>cycletime, :end=>cycletime } ).first || WorkflowMgr::Cycle.new(cycletime)
+      cycle = @dbServer.get_cycles({ start: cycletime, end: cycletime }).first || WorkflowMgr::Cycle.new(cycletime)
 
       # Get the task
-      task=@workflowdoc.tasks[taskname]
-      task=task.localize(cycletime) unless task.nil?
+      task = @workflowdoc.tasks[taskname]
+      task = task.localize(cycletime) unless task.nil?
 
       # Get the job (if there is one)
-      jobcycles=[cycletime]
+      jobcycles = [cycletime]
       @workflowdoc.taskdep_cycle_offsets.each do |offset|
         jobcycles << cycletime + offset
       end
-      jobs=@dbServer.get_jobs(jobcycles)
-      if jobs[taskname].nil?
-        job=nil
-      else
-        job=jobs[taskname][cycletime]
-      end
+      jobs = @dbServer.get_jobs(jobcycles)
+      job = if jobs[taskname].nil?
+              nil
+            else
+              jobs[taskname][cycletime]
+            end
 
       # Print the task information
       print_taskinfo(task)
 
       # Query and print task dependency info
-      dependencies=nil
-      hangdependencies=nil
+      dependencies = nil
+      nil
       unless task.nil?
         unless task.dependency.nil?
-          wstate=WorkflowMgr::WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
-          dependencies=task.dependency.query(wstate)
-          printf "%2s%s\n", "","dependencies"
-          print_deps(dependencies,0)
+          wstate = WorkflowMgr::WorkflowState.new(cycle.cycle, jobs, @workflowIOServer, @workflowdoc.cycledefs,
+                                                  task.attributes[:name], task, @workflowdoc.tasks)
+          dependencies = task.dependency.query(wstate)
+          printf "%2s%s\n", "", "dependencies"
+          print_deps(dependencies, 0)
         end
         unless task.hangdependency.nil?
-          wstate=WorkflowState.new(cycle.cycle,jobs,@workflowIOServer,@workflowdoc.cycledefs,task.attributes[:name],task,tasks=@workflowdoc.tasks)
-          hangdependencies=task.hangdependency.query(wstate)
-          printf "%2s%s\n", "","hang dependencies"
-          print_deps(hangdependencies,0)
+          wstate = WorkflowState.new(cycle.cycle, jobs, @workflowIOServer, @workflowdoc.cycledefs, task.attributes[:name],
+                                     task, @workflowdoc.tasks)
+          hangdependencies = task.hangdependency.query(wstate)
+          printf "%2s%s\n", "", "hang dependencies"
+          print_deps(hangdependencies, 0)
         end
       end
 
       # Print the cycle information
-      print_cycleinfo(cycle,cycledefs,task)
+      print_cycleinfo(cycle, cycledefs, task)
 
       # Print the job information
       print_jobinfo(job)
 
       # Print throttling violations
-      print_violations(task,cycle,dependencies) if job.nil?
-
+      print_violations(task, cycle, dependencies) if job.nil?
     end
 
     ##########################################
@@ -196,53 +178,44 @@ module WFMStat
     #
     ##########################################
     def checkTasks
+      # Open/Create the database
+      @dbServer.dbopen({ readonly: true })
 
-      begin
+      # Set up an object to serve file stat info
+      @workflowIOServer = WorkflowMgr::WorkflowIOProxy.new(@dbServer, @config, @options)
 
-        # Open/Create the database
-        @dbServer.dbopen({:readonly=>true})
+      # Open the workflow document
+      @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer, @config)
 
-        # Set up an object to serve file stat info
-        @workflowIOServer=WorkflowMgr::WorkflowIOProxy.new(@dbServer,@config,@options)
+      @subset = @options.selection.make_subset(@workflowdoc.tasks, cycledefs = @workflowdoc.cycledefs,
+                                               @dbServer)
 
-        # Open the workflow document
-        @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc,@workflowIOServer,@config)
+      cycledefs = @workflowdoc.cycledefs
 
-        @subset=@options.selection.make_subset(tasks=@workflowdoc.tasks,cycledefs=@workflowdoc.cycledefs,dbServer=@dbServer)
-
-        cycledefs=@workflowdoc.cycledefs
-
-        @subset.each_cycle do |cycletime|
-          @subset.each_task do |taskname|
-            checkOneTask(cycletime,taskname,cycledefs)
-          end
+      @subset.each_cycle do |cycletime|
+        @subset.each_task do |taskname|
+          checkOneTask(cycletime, taskname, cycledefs)
         end
+      end
+    rescue StandardError => e
+      WorkflowMgr.stderr(e.message, 1)
+      WorkflowMgr.log(e.message)
+      if e.is_a?(ArgumentError) || e.is_a?(NameError) || e.is_a?(TypeError)
+        WorkflowMgr.stderr(e.backtrace.join("\n"), 1)
+        WorkflowMgr.log(e.backtrace.join("\n"))
+      end
+      Process.exit(1)
+    ensure
+      # Make sure we release the workflow lock in the database and shutdown the dbserver
+      if !@dbServer.nil? && @config.DatabaseServer
+        @dbServer.stop!
+      end
 
-      rescue => crash
-        WorkflowMgr.stderr(crash.message,1)
-        WorkflowMgr.log(crash.message)
-        case
-          when crash.is_a?(ArgumentError),crash.is_a?(NameError),crash.is_a?(TypeError)
-            WorkflowMgr.stderr(crash.backtrace.join("\n"),1)
-            WorkflowMgr.log(crash.backtrace.join("\n"))
-          else
-        end
-        Process.exit(1)
-
-      ensure
-
-        # Make sure we release the workflow lock in the database and shutdown the dbserver
-        unless @dbServer.nil?
-          @dbServer.stop! if @config.DatabaseServer
-        end
-
-        # Make sure to shut down the workflow file stat server
-        unless @workflowIOServer.nil?
-          @workflowIOServer.stop! if @config.WorkflowIOServer
-        end
-
-      end  # ensure
-
+      # Make sure to shut down the workflow file stat server
+      if !@workflowIOServer.nil? && @config.WorkflowIOServer
+        @workflowIOServer.stop!
+      end
+      # ensure
     end
 
     ##########################################
@@ -251,15 +224,13 @@ module WFMStat
     #
     ##########################################
     def getCycles
-
       # Turn the db, xml, and undef iterators into arrays:
-      dbcycles=@subset.collect_db_cycles(){|c|c}
-      xmlcycles=@subset.collect_xml_cycles(){|c|c}
-      undefcycles=@subset.collect_undef_cycles(){|c|c}
+      dbcycles = @subset.collect_db_cycles { |c| c }
+      xmlcycles = @subset.collect_xml_cycles { |c| c }
+      undefcycles = @subset.collect_undef_cycles { |c| c }
 
-      return [dbcycles,xmlcycles,undefcycles]
+      [dbcycles, xmlcycles, undefcycles]
     end
-
 
     ##########################################
     #
@@ -267,24 +238,22 @@ module WFMStat
     #
     ##########################################
     def print_summary
-
       # Get cycles of interest
-      dbcycles,xmlcycles,undefcycles=getCycles
+      dbcycles, xmlcycles, = getCycles
 
       # Print the header
-      printf "%12s    %8s    %20s    %20s\n","CYCLE".center(12),
-                                             "STATE".center(8),
-                                             "ACTIVATED".center(20),
-                                             "DEACTIVATED".center(20)
+      printf "%12s    %8s    %20s    %20s\n", "CYCLE".center(12),
+             "STATE".center(8),
+             "ACTIVATED".center(20),
+             "DEACTIVATED".center(20)
 
       # Print the cycle date/times
-      (dbcycles+xmlcycles).sort.each do |cycle|
-        printf "%12s    %8s    %20s    %20s\n","#{cycle.cycle.strftime("%Y%m%d%H%M")}",
-                                               "#{cycle.state.to_s.capitalize}",
-                                               "#{cycle.activated_time_string.center(20)}",
-                                               "#{cycle.deactivated_time_string.center(20)}"
+      (dbcycles + xmlcycles).sort.each do |cycle|
+        printf "%12s    %8s    %20s    %20s\n", "#{cycle.cycle.strftime('%Y%m%d%H%M')}",
+               "#{cycle.state.to_s.capitalize}",
+               "#{cycle.activated_time_string.center(20)}",
+               "#{cycle.deactivated_time_string.center(20)}"
       end
-
     end
 
     ##########################################
@@ -293,128 +262,137 @@ module WFMStat
     #
     ##########################################
     def print_status
-
       # Get cycles of interest
-      dbcycles,xmlcycles,undefcycles=getCycles
+      dbcycles, xmlcycles, = getCycles
 
       # Get the jobs from the database for the cycles of interest
-      jobs=@dbServer.get_jobs(dbcycles.collect {|c| c.cycle})
+      jobs = @dbServer.get_jobs(dbcycles.collect { |c| c.cycle })
 
       # Get the list of tasks from the workflow definition
-      definedTasks=@workflowdoc.tasks
+      definedTasks = @workflowdoc.tasks
 
       # Get the cycle defs
-      cycledefs=@workflowdoc.cycledefs
+      cycledefs = @workflowdoc.cycledefs
 
       # Initialize empty hash of task cycledefs
-      taskcycledefs={}
+      taskcycledefs = {}
 
       # Print the job status info
       if @options.taskfirst
 
         format = "%20s    %12s    %24s    %16s    %16s    %6s    %10s\n"
-        header = "TASK".rjust(20),"CYCLE".rjust(12),"JOBID".rjust(24),
-                 "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6),
+        header = "TASK".rjust(20), "CYCLE".rjust(12), "JOBID".rjust(24),
+                 "STATE".rjust(16), "EXIT STATUS".rjust(16), "TRIES".rjust(6),
                  "DURATION".rjust(10)
         puts format % header
 
         # Sort the task list in sequence order
-        tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
-        tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
+        tasklist = jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
+        tasklist = tasklist.sort_by do |t|
+          [definedTasks[t].nil? ? 999_999_999 : definedTasks[t].seq, t.split(/(\d+)/).map do |i|
+            i =~ /\d+/ ? i.to_i : i
+          end].flatten
+        end
 
         tasklist.each do |task|
-
           next unless @subset.is_selected? task
 
           printf "================================================================================================================================\n"
 
           # Print status of all jobs for this task
-          cyclelist=(dbcycles | xmlcycles).collect { |c| c.cycle }.sort
+          cyclelist = (dbcycles | xmlcycles).collect { |c| c.cycle }.sort
           cyclelist.each do |cycle|
-
             next unless @subset.is_selected? cycle
 
             # Only print info if the cycle is defined for this task
             unless definedTasks[task].attributes[:cycledefs].nil?
               # Get the cycledefs associated with this task
-              taskcycledefs[task]=cycledefs.find_all { |cycledef| definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              taskcycledefs[task] = cycledefs.find_all do |cycledef|
+                definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
+              end
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
             end
 
-            if jobs[task].nil?
-              jobdata=["-","-","-","-","-"]
-            elsif jobs[task][cycle].nil?
-              jobdata=["-","-","-","-","-"]
-            else
-              case jobs[task][cycle].state
-                when "SUCCEEDED","DEAD","FAILED"
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries,jobs[task][cycle].duration]
-                else
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries,jobs[task][cycle].duration]
-              end
-            end
-            puts format % ([task,cycle.strftime("%Y%m%d%H%M")] + jobdata)
+            jobdata = if jobs[task].nil?
+                        ["-", "-", "-", "-", "-"]
+                      elsif jobs[task][cycle].nil?
+                        ["-", "-", "-", "-", "-"]
+                      else
+                        case jobs[task][cycle].state
+                        when "SUCCEEDED", "DEAD", "FAILED"
+                          [jobs[task][cycle].id, jobs[task][cycle].state, jobs[task][cycle].exit_status,
+                           jobs[task][cycle].tries, jobs[task][cycle].duration]
+                        else
+                          [jobs[task][cycle].id, jobs[task][cycle].state, "-", jobs[task][cycle].tries,
+                           jobs[task][cycle].duration]
+                        end
+                      end
+            puts format % ([task, cycle.strftime("%Y%m%d%H%M")] + jobdata)
           end
         end
 
-     else
+      else
 
         format = "%12s    %20s    %24s    %16s    %16s    %6s    %10s\n"
-        header = "CYCLE".rjust(12),"TASK".rjust(20),"JOBID".rjust(24),
-                 "STATE".rjust(16),"EXIT STATUS".rjust(16),"TRIES".rjust(6),
+        header = "CYCLE".rjust(12), "TASK".rjust(20), "JOBID".rjust(24),
+                 "STATE".rjust(16), "EXIT STATUS".rjust(16), "TRIES".rjust(6),
                  "DURATION".rjust(10)
         puts format % header
 
         # Print status of jobs for each cycle
-        cyclelist=(dbcycles | xmlcycles).collect { |c| c.cycle }.sort
+        cyclelist = (dbcycles | xmlcycles).collect { |c| c.cycle }.sort
         cyclelist.each do |cycle|
-
-          if ! @subset.is_selected? cycle
-            #puts "#{cycle.class.name} #{cycle.inspect}: not selected"
+          unless @subset.is_selected? cycle
+            # puts "#{cycle.class.name} #{cycle.inspect}: not selected"
             next
           end
 
           printf "================================================================================================================================\n"
 
           # Sort the task list in sequence order
-          tasklist=jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
-          tasklist=tasklist.sort_by { |t| [definedTasks[t].nil? ? 999999999 : definedTasks[t].seq, t.split(/(\d+)/).map { |i| i=~/\d+/ ? i.to_i : i }].flatten }
+          tasklist = jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
+          tasklist = tasklist.sort_by do |t|
+            [definedTasks[t].nil? ? 999_999_999 : definedTasks[t].seq, t.split(/(\d+)/).map do |i|
+              i =~ /\d+/ ? i.to_i : i
+            end].flatten
+          end
           tasklist.each do |task|
-
-            if ! @subset.is_selected? task
-              #puts "#{task}: not selected"
+            unless @subset.is_selected? task
+              # puts "#{task}: not selected"
               next
             end
 
             # Only print info if the task is defined for this cycle
             unless definedTasks[task].nil? or definedTasks[task].attributes[:cycledefs].nil?
               # Get the cycledefs associated with this task
-              taskcycledefs[task]=cycledefs.find_all { |cycledef| definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+              taskcycledefs[task] = cycledefs.find_all do |cycledef|
+                definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
+              end
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
             end
 
-            if jobs[task].nil?
-              jobdata=["-","-","-","-","-"]
-            elsif jobs[task][cycle].nil?
-              jobdata=["-","-","-","-","-"]
-            else
-              case jobs[task][cycle].state
-                when "SUCCEEDED","DEAD","FAILED"
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,jobs[task][cycle].exit_status,jobs[task][cycle].tries,jobs[task][cycle].duration]
-                else
-                  jobdata=[jobs[task][cycle].id,jobs[task][cycle].state,"-",jobs[task][cycle].tries,jobs[task][cycle].duration]
-              end
-            end
-            puts format % ([cycle.strftime("%Y%m%d%H%M"),task] + jobdata)
+            jobdata = if jobs[task].nil?
+                        ["-", "-", "-", "-", "-"]
+                      elsif jobs[task][cycle].nil?
+                        ["-", "-", "-", "-", "-"]
+                      else
+                        case jobs[task][cycle].state
+                        when "SUCCEEDED", "DEAD", "FAILED"
+                          [jobs[task][cycle].id, jobs[task][cycle].state, jobs[task][cycle].exit_status,
+                           jobs[task][cycle].tries, jobs[task][cycle].duration]
+                        else
+                          [jobs[task][cycle].id, jobs[task][cycle].state, "-", jobs[task][cycle].tries,
+                           jobs[task][cycle].duration]
+                        end
+                      end
+            puts format % ([cycle.strftime("%Y%m%d%H%M"), task] + jobdata)
           end
         end
 
       end
-
     end
-
 
     ##########################################
     #
@@ -422,57 +400,53 @@ module WFMStat
     #
     ##########################################
     def print_taskinfo(task)
-
       puts
       if task.nil?
         puts "Task: Not defined in current workflow definition"
       else
         puts "Task: #{task.attributes[:name]}"
-        task.attributes.keys.sort { |a1,a2| a1.to_s <=> a2.to_s }.each { |attr|
+        task.attributes.keys.sort { |a1, a2| a1.to_s <=> a2.to_s }.each do |attr|
           puts "  #{attr}: #{task.attributes[attr]}"
-        }
+        end
         puts "  environment"
-        task.envars.keys.sort.each { |envar|
+        task.envars.keys.sort.each do |envar|
           puts "    #{envar} ==> #{task.envars[envar]}"
-        }
+        end
       end
-
     end
-
 
     ##########################################
     #
     # print_cycleinfo
     #
     ##########################################
-    def print_cycleinfo(cycle,cycledefs,task)
-
+    def print_cycleinfo(cycle, cycledefs, task)
       return if task.nil? or task.attributes.nil?
 
       # Make sure the cycle is valid for this task
-      cycle_is_valid=true
+      cycle_is_valid = true
       unless task.attributes[:cycledefs].nil?
-        taskcycledefs=cycledefs.find_all { |cycledef| task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
+        taskcycledefs = cycledefs.find_all do |cycledef|
+          task.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
+        end
         # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
         unless taskcycledefs.any? { |cycledef| cycledef.member?(cycle.cycle) }
-          cycle_is_valid=false
+          cycle_is_valid = false
         end
-      end  # unless
+      end # unless
 
       puts
-      puts "Cycle: #{cycle.cycle.strftime("%Y%m%d%H%M")}"
+      puts "Cycle: #{cycle.cycle.strftime('%Y%m%d%H%M')}"
       if cycle_is_valid
         puts "  Valid for this task: YES"
       else
         puts "  Valid for this task: NO"
       end
       puts "  State: #{cycle.state}"
-      puts "  Activated: #{cycle.activated != Time.at(0) ? cycle.activated : "-"}"
-      puts "  Completed: #{cycle.done? ? cycle.done : "-"}"
-      puts "  Expired: #{cycle.expired? ? cycle.expired : "-"}"
-
+      puts "  Activated: #{cycle.activated != Time.at(0) ? cycle.activated : '-'}"
+      puts "  Completed: #{cycle.done? ? cycle.done : '-'}"
+      puts "  Expired: #{cycle.expired? ? cycle.expired : '-'}"
     end
-
 
     ##########################################
     #
@@ -480,29 +454,25 @@ module WFMStat
     #
     ##########################################
     def print_jobinfo(job)
-
       puts
       if job.nil?
         puts "Job: This task has not been submitted for this cycle"
       else
         puts "Job: #{job.id}"
         puts "  State:  #{job.state} (#{job.native_state})"
-        puts "  Exit Status:  #{job.done? ? job.exit_status : "-"}"
+        puts "  Exit Status:  #{job.done? ? job.exit_status : '-'}"
         puts "  Tries:  #{job.tries}"
         puts "  Unknown count:  #{job.nunknowns}"
         puts "  Duration:  #{job.duration}"
       end
-
     end
-
 
     ##########################################
     #
     # print_violations
     #
     ##########################################
-    def print_violations(task,cycle,dependencies)
-
+    def print_violations(task, cycle, dependencies)
       puts
       puts "Task can not be submitted because:"
 
@@ -519,59 +489,47 @@ module WFMStat
       end
 
       # Check for unsatisfied dependencies
-      unless dependencies.nil?
-        unless dependencies.first[:resolved]
-          puts "  Dependencies are not satisfied"
-          return
-        end
+      if !dependencies.nil? && !dependencies.first[:resolved]
+        puts "  Dependencies are not satisfied"
+        return
       end
 
       # Check for throttle violations
-      active_cycles=@dbServer.get_active_cycles
-      active_jobs=@dbServer.get_jobs(active_cycles.collect { |c| c.cycle })
-      ncores=0
-      ntasks=0
+      active_cycles = @dbServer.get_active_cycles
+      active_jobs = @dbServer.get_jobs(active_cycles.collect { |c| c.cycle })
+      ncores = 0
+      ntasks = 0
       active_jobs.keys.each do |jobtask|
         active_jobs[jobtask].keys.each do |jobcycle|
-           if !active_jobs[jobtask][jobcycle].done?
+          unless active_jobs[jobtask][jobcycle].done?
             ntasks += 1
             ncores += active_jobs[jobtask][jobcycle].cores
           end
         end
       end
-      unless @workflowdoc.taskthrottle.nil?
-        if ntasks + 1 > @workflowdoc.taskthrottle
-          puts "  Task throttle violation (#{ntasks} of #{@workflowdoc.taskthrottle} tasks are already active)"
-        end
+      if !@workflowdoc.taskthrottle.nil? && (ntasks + 1 > @workflowdoc.taskthrottle)
+        puts "  Task throttle violation (#{ntasks} of #{@workflowdoc.taskthrottle} tasks are already active)"
       end
-      unless @workflowdoc.corethrottle.nil?
-        if ncores + task.attributes[:cores] > @workflowdoc.corethrottle
-          puts "  Core throttle violation (#{ncores} of #{@workflowdoc.corethrottle} cores are already in use)"
-        end
+      if !@workflowdoc.corethrottle.nil? && (ncores + task.attributes[:cores] > @workflowdoc.corethrottle)
+        puts "  Core throttle violation (#{ncores} of #{@workflowdoc.corethrottle} cores are already in use)"
       end
-
     end
-
 
     ##########################################
     #
     # print_deps
     #
     ##########################################
-    def print_deps(deps,n)
-
+    def print_deps(deps, n)
       return if deps.nil?
+
       deps.each do |d|
         if d.is_a?(Array)
-          print_deps(d,n+1) if d.is_a?(Array)
+          print_deps(d, n + 1) if d.is_a?(Array)
         else
-          printf "%#{2*n+4}s%s %s\n","",d[:dep],d[:msg]
+          printf "%#{2 * n + 4}s%s %s\n", "", d[:dep], d[:msg]
         end
       end
-
     end
-
-
-  end  # Class StatusEngine
-
-end  # Module WorkflowMgr
+  end # Class StatusEngine
+end # Module WorkflowMgr

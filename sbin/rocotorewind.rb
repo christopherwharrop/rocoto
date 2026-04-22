@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
-__WFMDIR__=File.expand_path("../../",__FILE__)
+__WFMDIR__ = File.expand_path('..', __dir__)
 
 # Set up standalone bundle (no bundler gem required at runtime)
 require_relative '../bundle/bundler/setup'
@@ -23,6 +23,6 @@ LibXML::XML::Error.set_handler do |error|
 end
 
 # Create workflow engine and run it
-opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,'rocotorewind','rewind')
-workflowengine=WorkflowMgr::WorkflowEngine.new(opt)
+opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV, 'rocotorewind', 'rewind')
+workflowengine = WorkflowMgr::WorkflowEngine.new(opt)
 workflowengine.rewind!

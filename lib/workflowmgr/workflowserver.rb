@@ -4,14 +4,12 @@
 #
 ##########################################
 module WorkflowMgr
-
   ##########################################
   #
   # WorkflowServer
   #
   ##########################################
   class WorkflowServer
-
     require 'drb'
 
     require 'workflowmgr/workflowlog'
@@ -34,12 +32,9 @@ module WorkflowMgr
     #
     #####################################################
     def initialize
-
-      @server=nil
-      @setup=false
-
+      @server = nil
+      @setup = false
     end
-
 
     #####################################################
     #
@@ -47,12 +42,9 @@ module WorkflowMgr
     #
     #####################################################
     def setup(serveobj)
-
-      @server=serveobj
-      @setup=true
-
+      @server = serveobj
+      @setup = true
     end
-
 
     ##########################################
     #
@@ -60,25 +52,20 @@ module WorkflowMgr
     #
     ##########################################
     def stop!
-
       DRb.stop_service
-
     end
-
 
     ##########################################
     #
     # respond_to?
     #
     ##########################################
-    def respond_to?(name, priv=false)
-
+    def respond_to?(name, priv = false)
       if @setup
-        return @server.respond_to?(name,priv)
+        @server.respond_to?(name, priv)
       else
         super
       end
-
     end
 
     ##########################################
@@ -86,26 +73,20 @@ module WorkflowMgr
     # method_missing
     #
     ##########################################
-    def method_missing(name,*args,&block)
-
+    def method_missing(name, *args, &block)
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
 
       begin
         WorkflowMgr.timeout(150) do
-          return @server.send(name,*args,&block)
+          return @server.send(name, *args, &block)
         end
       rescue Timeout::Error
-        localhostinfo=Socket::getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0]
-        msg="WARNING! #{File.basename($0)} process #{Process.pid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) timed out while calling #{@server.class}.#{name}"
+        localhostinfo = Socket.getaddrinfo(Socket.gethostname, nil, nil, Socket::SOCK_STREAM)[0]
+        msg = "WARNING! #{File.basename($0)} process #{Process.pid} on host #{localhostinfo[2]} (#{localhostinfo[3]}) timed out while calling #{@server.class}.#{name}"
         WorkflowMgr.log(msg)
-        WorkflowMgr.stderr(msg,2)
+        WorkflowMgr.stderr(msg, 2)
         raise
       end
-
     end
-
-  end  # class WorkflowServer
-
-end  # module WorkflowMgr
-
-
+  end # class WorkflowServer
+end # module WorkflowMgr

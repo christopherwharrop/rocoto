@@ -4,50 +4,41 @@
 #
 ##########################################
 module WorkflowMgr
-
   ##########################################
   #
   # Class Cycle
   #
   ##########################################
   class Cycle
-
     include Comparable
 
-    attr_reader :cycle
-    attr_reader :activated
-    attr_reader :expired
-    attr_reader :draining
-    attr_reader :done
-    attr_reader :state
+    attr_reader :cycle, :activated, :expired, :draining, :done, :state
 
     ##########################################
     #
     # init
     #
     ##########################################
-    def initialize(cycle,params={ :activated=>Time.at(0), :expired=>Time.at(0), :done=>Time.at(0), :draining=>Time.at(0) })
+    def initialize(cycle,
+                   params = { activated: Time.at(0), expired: Time.at(0), done: Time.at(0), draining: Time.at(0) })
+      @cycle = cycle
+      @activated = params[:activated] || Time.at(0)
+      @expired = params[:expired] || Time.at(0)
+      @draining = params[:draining] || Time.at(0)
+      @done = params[:done] || Time.at(0)
 
-      @cycle=cycle
-      @activated=params[:activated] || Time.at(0)
-      @expired=params[:expired] || Time.at(0)
-      @draining=params[:draining] || Time.at(0)
-      @done=params[:done] || Time.at(0)
-
-      if @done != Time.at(0)
-        @state=:done
-      elsif @expired != Time.at(0)
-        @state=:expired
-      elsif @draining != Time.at(0)
-        @state=:draining
-      elsif @activated != Time.at(0)
-        @state=:active
-      else
-        @state=:inactive
-      end
-
+      @state = if @done != Time.at(0)
+                 :done
+               elsif @expired != Time.at(0)
+                 :expired
+               elsif @draining != Time.at(0)
+                 :draining
+               elsif @activated != Time.at(0)
+                 :active
+               else
+                 :inactive
+               end
     end
-
 
     ##########################################
     #
@@ -55,30 +46,28 @@ module WorkflowMgr
     #
     ##########################################
     def to_s
-      strcyc=@cycle.strftime("%Y%m%d%H%M")
+      strcyc = @cycle.strftime("%Y%m%d%H%M")
       if done?
-        return "#{strcyc} in state \"done\" since #{@done.strftime('%Y-%m-%d %H:%M:%S')}"
+        "#{strcyc} in state \"done\" since #{@done.strftime('%Y-%m-%d %H:%M:%S')}"
       elsif draining?
-        return "#{strcyc} in state \"drained\" since @#{@draining.strftime('%Y-%m-%d %H:%M:%S')}"
+        "#{strcyc} in state \"drained\" since @#{@draining.strftime('%Y-%m-%d %H:%M:%S')}"
       elsif expired?
-        return "#{strcyc} in state \"expired\" since #{@expired.strftime('%Y-%m-%d %H:%M:%S')}"
+        "#{strcyc} in state \"expired\" since #{@expired.strftime('%Y-%m-%d %H:%M:%S')}"
       elsif active?
-        return "#{strcyc} in state \"activated\" since #{@activated.strftime('%Y-%m-%d %H:%M:%S')}"
+        "#{strcyc} in state \"activated\" since #{@activated.strftime('%Y-%m-%d %H:%M:%S')}"
       else
-        return "#{strcyc} in state \"inactive\""
+        "#{strcyc} in state \"inactive\""
       end
     end
-
 
     ##########################################
     #
     # hash
     #
     ##########################################
-    def hash()
-      return @cycle.hash
+    def hash
+      @cycle.hash
     end
-
 
     ##########################################
     #
@@ -89,18 +78,14 @@ module WorkflowMgr
       @cycle.getgm.to_i <=> other.cycle.getgm.to_i
     end
 
-
     ##########################################
     #
     # inactive?
     #
     ##########################################
     def inactive?
-
-      return @state==:inactive
-
-    end  # active?
-
+      @state == :inactive
+    end # active?
 
     ##########################################
     #
@@ -108,11 +93,8 @@ module WorkflowMgr
     #
     ##########################################
     def active?
-
-      return @state==:active
-
-    end  # active?
-
+      @state == :active
+    end # active?
 
     ##########################################
     #
@@ -120,11 +102,8 @@ module WorkflowMgr
     #
     ##########################################
     def expired?
-
-      return @state==:expired
-
-    end  # expired?
-
+      @state == :expired
+    end # expired?
 
     ##########################################
     #
@@ -132,11 +111,8 @@ module WorkflowMgr
     #
     ##########################################
     def draining?
-
-      return @state==:draining
-
-    end  # draining?
-
+      @state == :draining
+    end # draining?
 
     ##########################################
     #
@@ -144,11 +120,8 @@ module WorkflowMgr
     #
     ##########################################
     def done?
-
-      return @state==:done
-
-    end  # done?
-
+      @state == :done
+    end # done?
 
     ##########################################
     #
@@ -156,16 +129,14 @@ module WorkflowMgr
     #
     ##########################################
     def activate!
+      return if @state == :active
+      raise "Expired cycle cannot be activated!" if @state == :expired
+      raise "Done cycle cannot be activated!  Use reactivate!" if @state == :done
+      raise "Draining cycle cannot be activated!" if @state == :draining
 
-      return if @state==:active
-      raise "Expired cycle cannot be activated!" if @state==:expired
-      raise "Done cycle cannot be activated!  Use reactivate!" if @state==:done
-      raise "Draining cycle cannot be activated!" if @state==:draining
-      @activated=Time.now.getgm
-      @state=:active
-
-    end  # activate!
-
+      @activated = Time.now.getgm
+      @state = :active
+    end # activate!
 
     ##########################################
     #
@@ -173,17 +144,14 @@ module WorkflowMgr
     #
     ##########################################
     def reactivate!
+      return if @state == :active
+      raise "Expired cycle cannot be reactivated!" if @state == :expired
+      raise "Draining cycle cannot be reactivated!" if @state == :draining
 
-      return if @state==:active
-      raise "Expired cycle cannot be reactivated!" if @state==:expired
-      raise "Draining cycle cannot be reactivated!" if @state==:draining
-
-      @done=Time.at(0)
-      @draining=Time.at(0)
-      @state=:active
-
-    end  # activate!
-
+      @done = Time.at(0)
+      @draining = Time.at(0)
+      @state = :active
+    end # activate!
 
     ##########################################
     #
@@ -191,15 +159,12 @@ module WorkflowMgr
     #
     ##########################################
     def rewind!
-
-      @done=Time.at(0)
-      @draining=Time.at(0)
-      @expired=Time.at(0)
-      @activated=Time.at(0)
-      @state=:inactive
-
-    end  # activate!
-
+      @done = Time.at(0)
+      @draining = Time.at(0)
+      @expired = Time.at(0)
+      @activated = Time.at(0)
+      @state = :inactive
+    end # activate!
 
     ##########################################
     #
@@ -207,15 +172,13 @@ module WorkflowMgr
     #
     ##########################################
     def drain!
+      return if @state == :draining
+      raise "Done cycle cannot be drained!" if @state == :done
+      raise "Expired cycle cannot be drained!" if @state == :expired
 
-      return if @state==:draining
-      raise "Done cycle cannot be drained!" if @state==:done
-      raise "Expired cycle cannot be drained!" if @state==:expired
-      @draining=Time.now.getgm
-      @state=:draining
-
-    end  # expire!
-
+      @draining = Time.now.getgm
+      @state = :draining
+    end # expire!
 
     ##########################################
     #
@@ -223,14 +186,12 @@ module WorkflowMgr
     #
     ##########################################
     def expire!
+      return if @state == :expired
+      raise "Done cycle cannot be expired!" if @state == :done
 
-      return if @state==:expired
-      raise "Done cycle cannot be expired!" if @state==:done
-      @expired=Time.now.getgm
-      @state=:expired
-
-    end  # expire!
-
+      @expired = Time.now.getgm
+      @state = :expired
+    end # expire!
 
     ##########################################
     #
@@ -238,14 +199,12 @@ module WorkflowMgr
     #
     ##########################################
     def done!
+      return if @state == :done
+      raise "Expired cycle cannot be completed!" if @state == :expired
 
-      return if @state==:done
-      raise "Expired cycle cannot be completed!" if @state==:expired
-      @done=Time.now.getgm
-      @state=:done
-
-    end  # done!
-
+      @done = Time.now.getgm
+      @state = :done
+    end # done!
 
     ##########################################
     #
@@ -254,13 +213,12 @@ module WorkflowMgr
     # sets activated time based on state  [mon dd, YYYY HH:MM:SS]
     #
     ##########################################
-    def activated_time_string(fmt="%b %d %Y %H:%M:%S")
-
+    def activated_time_string(fmt = "%b %d %Y %H:%M:%S")
       case @state
-        when :inactive
-          activated="-"
-        when :active, :done, :expired, :draining
-          activated=@activated.strftime(fmt)
+      when :inactive
+        activated = "-"
+      when :active, :done, :expired, :draining
+        activated = @activated.strftime(fmt)
       end
       activated
     end
@@ -272,19 +230,16 @@ module WorkflowMgr
     # sets deactivated time based on state
     #
     ##########################################
-    def deactivated_time_string(fmt="%b %d %Y %H:%M:%S")
-
+    def deactivated_time_string(fmt = "%b %d %Y %H:%M:%S")
       case @state
-        when :inactive, :active, :draining
-          deactivated="-"
-        when :done
-          deactivated=@done.strftime(fmt)
-        when :expired
-          deactivated=@expired.strftime(fmt)
+      when :inactive, :active, :draining
+        deactivated = "-"
+      when :done
+        deactivated = @done.strftime(fmt)
+      when :expired
+        deactivated = @expired.strftime(fmt)
       end
       deactivated
     end
-
-  end  # Class Cycle
-
-end  # Module WorkflowMgr
+  end # Class Cycle
+end # Module WorkflowMgr

@@ -4,14 +4,12 @@
 #
 ##########################################
 module WorkflowMgr
-
   ##########################################
   #
   # WorkflowLog
   #
   ##########################################
   class WorkflowLog
-
     require 'socket'
     require 'workflowmgr/compoundtimestring'
     require 'workflowmgr/utilities'
@@ -21,35 +19,28 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(path,verbosity,workflowIOServer)
-
-      @path=path
-      @verbosity=verbosity || 0
-      @workflowIOServer=workflowIOServer
-
+    def initialize(path, verbosity, workflowIOServer)
+      @path = path
+      @verbosity = verbosity || 0
+      @workflowIOServer = workflowIOServer
     end
-
 
     #####################################################
     #
     # log
     #
     #####################################################
-    def log(cycle,msg,level=0)
-
+    def log(cycle, msg, level = 0)
       if level <= @verbosity
-        logname=@path.to_s(cycle)
+        logname = @path.to_s(cycle)
         begin
-          @workflowIOServer.log(logname,msg)
+          @workflowIOServer.log(logname, msg)
         rescue WorkflowIOHang
-          err="WARNING! Cannot write the following log message to #{logname} because it resides on an unresponsive file system!"
-          WorkflowMgr.stderr(err,2)
-          WorkflowMgr.stderr("#{Socket.gethostname} :: #{msg}",2)
+          err = "WARNING! Cannot write the following log message to #{logname} because it resides on an unresponsive file system!"
+          WorkflowMgr.stderr(err, 2)
+          WorkflowMgr.stderr("#{Socket.gethostname} :: #{msg}", 2)
         end
       end
-
     end
-
-  end  # class WorkflowLog
-
-end  # module WorkflowMgr
+  end # class WorkflowLog
+end # module WorkflowMgr

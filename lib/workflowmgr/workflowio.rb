@@ -4,14 +4,12 @@
 #
 ##########################################
 module WorkflowMgr
-
   ##########################################
   #
   # Class WorkflowIO
   #
   ##########################################
   class WorkflowIO
-
     require 'fileutils'
     require 'libxml'
 
@@ -21,10 +19,7 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize
-
-    end
-
+    def initialize; end
 
     ##########################################
     #
@@ -32,12 +27,9 @@ module WorkflowMgr
     #
     ##########################################
     def parseXMLFile(filename)
-
-      document= LibXML::XML::Parser.file(filename,:options => LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
-      return document.to_s
-
+      document = LibXML::XML::Parser.file(filename, options: LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
+      document.to_s
     end
-
 
     ##########################################
     #
@@ -45,11 +37,8 @@ module WorkflowMgr
     #
     ##########################################
     def ioreadlines(filename)
-
-      return IO.readlines(filename,nil)[0]
-
+      IO.readlines(filename, nil)[0]
     end
-
 
     ##########################################
     #
@@ -57,11 +46,8 @@ module WorkflowMgr
     #
     ##########################################
     def exist?(filename)
-
-      return File.exist?(filename)
-
+      File.exist?(filename)
     end
-
 
     ##########################################
     #
@@ -69,11 +55,8 @@ module WorkflowMgr
     #
     ##########################################
     def mtime(filename)
-
-      return File.mtime(filename)
-
+      File.mtime(filename)
     end
-
 
     ##########################################
     #
@@ -81,11 +64,8 @@ module WorkflowMgr
     #
     ##########################################
     def size(filename)
-
-      return File.size(filename)
-
+      File.size(filename)
     end
-
 
     ##########################################
     #
@@ -93,11 +73,8 @@ module WorkflowMgr
     #
     ##########################################
     def dirname(filename)
-
-      return File.dirname(filename)
-
+      File.dirname(filename)
     end
-
 
     ##########################################
     #
@@ -105,44 +82,37 @@ module WorkflowMgr
     #
     ##########################################
     def mkdir_p(dirname)
-
       FileUtils.mkdir_p(dirname)
-
     end
-
 
     ##########################################
     #
     # filescan
     #
     ##########################################
-    def grep(filename,pattern)
-      File.open(filename,'rt') { |f|
+    def grep(filename, pattern)
+      File.open(filename, 'rt') do |f|
         f.each_line do |line|
           if line =~ /#{pattern}/
             return true
           end
         end
-      }
+      end
     end
-
 
     ##########################################
     #
     # log
     #
     ##########################################
-    def log(logname,msg)
-
-      host=Socket.gethostname
-      logdir=File.dirname(logname)
+    def log(logname, msg)
+      host = Socket.gethostname
+      logdir = File.dirname(logname)
       FileUtils.mkdir_p(logdir)
-      File.open(logname,"a+") { |logfile|
+      File.open(logname, "a+") do |logfile|
         logfile.puts("#{Time.now} :: #{host} :: #{msg}")
-      }
-
+      end
     end
-
 
     ##########################################
     #
@@ -150,23 +120,19 @@ module WorkflowMgr
     #
     ##########################################
     def roll_log(logname)
-
       # If the log file exists, roll it
       if File.exist?(logname)
 
         Dir["#{logname}*"].sort.reverse.each do |f|
-          if f=~/#{logname}\.(\d+)$/ then
-            ext=$1.to_i
-            FileUtils.mv(f,"#{logname}.#{ext+1}")
+          if f =~ /#{logname}\.(\d+)$/
+            ext = ::Regexp.last_match(1).to_i
+            FileUtils.mv(f, "#{logname}.#{ext + 1}")
           else
-            FileUtils.mv(f,"#{logname}.0")
+            FileUtils.mv(f, "#{logname}.0")
           end
         end
 
       end
-
     end
-
   end
-
 end

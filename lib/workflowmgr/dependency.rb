@@ -4,7 +4,6 @@
 #
 ##########################################
 module WorkflowMgr
-
   # NOTE: in all of these classes and functions, the variable "d" is a
   # WorkflowMgr::WorkflowState which contains all needed input to the
   # Dependency classes.
@@ -15,7 +14,6 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency
-
     require 'workflowmgr/utilities'
 
     #####################################################
@@ -24,9 +22,7 @@ module WorkflowMgr
     #
     #####################################################
     def initialize(root)
-
-      @root=root
-
+      @root = root
     end
 
     #####################################################
@@ -35,15 +31,11 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      begin
-        return(@root.resolved?(d))
-      rescue WorkflowIOHang
-        WorkflowMgr.stderr("#{$!}",2)
-        WorkflowMgr.log("#{$!}")
-        return false
-      end
-
+      @root.resolved?(d)
+    rescue WorkflowIOHang
+      WorkflowMgr.stderr("#{$!}", 2)
+      WorkflowMgr.log("#{$!}")
+      false
     end
 
     #####################################################
@@ -52,19 +44,13 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      begin
-        return(@root.query(d))
-      rescue WorkflowIOHang
-        WorkflowMgr.stderr("#{$!}",2)
-        WorkflowMgr.log("#{$!}")
-        return false
-      end
-
+      @root.query(d)
+    rescue WorkflowIOHang
+      WorkflowMgr.stderr("#{$!}", 2)
+      WorkflowMgr.log("#{$!}")
+      false
     end
-
   end
-
 
   ##########################################
   #
@@ -72,7 +58,6 @@ module WorkflowMgr
   #
   ##########################################
   class StringDependency
-
     # This class represents a string equality or inequality
     # comparison.  The dependency is met if the comparison matches the
     # requirements.  The @compare is the requirement: "==" for
@@ -87,11 +72,11 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(left,right,name,compare)
-      @left=left
-      @right=right
-      @name=name
-      @compare=compare
+    def initialize(left, right, name, compare)
+      @left = left
+      @right = right
+      @name = name
+      @compare = compare
     end
 
     ##########################################
@@ -100,12 +85,12 @@ module WorkflowMgr
     #
     ##########################################
     def resolved?(d)
-      sleft=left.to_s(d.cycle)
-      sright=right.to_s(d.cycle)
-      if compare=='=='
-          return sleft==sright
+      sleft = left.to_s(d.cycle)
+      sright = right.to_s(d.cycle)
+      if compare == '=='
+        sleft == sright
       else
-          return sleft!=sright
+        sleft != sright
       end
     end
 
@@ -115,14 +100,14 @@ module WorkflowMgr
     #
     ##########################################
     def query(d)
-      sleft=left.to_s(d.cycle)
-      sright=right.to_s(d.cycle)
-      if compare=='=='
-          result=(sleft==sright)
-      else
-          result=(sleft!=sright)
-      end
-      return [{:dep=>@name, :msg=>"is #{result}", :resolved=>result}]
+      sleft = left.to_s(d.cycle)
+      sright = right.to_s(d.cycle)
+      result = if compare == '=='
+                 (sleft == sright)
+               else
+                 (sleft != sright)
+               end
+      [{ dep: @name, msg: "is #{result}", resolved: result }]
     end
   end
 
@@ -142,12 +127,12 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(value,name)
-      @value=!!value
+    def initialize(value, name)
+      @value = !!value
       begin
-        @name=name.to_s(Time.new)
-      rescue
-        @name=name.to_s
+        @name = name.to_s(Time.new)
+      rescue StandardError
+        @name = name.to_s
       end
     end
 
@@ -157,7 +142,7 @@ module WorkflowMgr
     #
     ##########################################
     def resolved?(d)
-      return @value
+      @value
     end
 
     ##########################################
@@ -166,7 +151,7 @@ module WorkflowMgr
     #
     ##########################################
     def query(d)
-      return [{:dep=>@name, :msg=>"is #{value}", :resolved=>@value}]
+      [{ dep: @name, msg: "is #{value}", resolved: @value }]
     end
   end
 
@@ -176,7 +161,6 @@ module WorkflowMgr
   #
   ##########################################
   class RubyDependency
-
     # This class evaluates a Ruby expression in a boolean context.
     # The true/false value is used to decide whether the dependency is
     # met.  The @name is the name of the dependency, and the @script
@@ -193,15 +177,15 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(script,name=nil)
-      @script=script
+    def initialize(script, name = nil)
+      @script = script
       if name.nil?
-        name=script.to_s(Time.new)
-        if name.size>40
-          name=name[0..37]+'...'
+        name = script.to_s(Time.new)
+        if name.size > 40
+          name = name[0..37] + '...'
         end
       end
-      @name=name
+      @name = name
     end
 
     ##########################################
@@ -211,9 +195,9 @@ module WorkflowMgr
     ##########################################
     def query(d)
       if resolved?(d)
-        return [{:dep=>@name, :msg=>"returned true", :resolved=>true }]
+        [{ dep: @name, msg: "returned true", resolved: true }]
       else
-        return [{:dep=>@name, :msg=>"returned false", :resolved=>false }]
+        [{ dep: @name, msg: "returned false", resolved: false }]
       end
     end
 
@@ -223,7 +207,7 @@ module WorkflowMgr
     #
     ##########################################
     def resolved?(d)
-      return d.ruby_bool(@script.to_s(d.cycle),d.cycle)
+      d.ruby_bool(@script.to_s(d.cycle), d.cycle)
     end
 
     ##########################################
@@ -232,10 +216,9 @@ module WorkflowMgr
     #
     ##########################################
     def rewind!(d)
-      d.ruby_bool(@script.to_s(d.cycle),d.cycle)
+      d.ruby_bool(@script.to_s(d.cycle), d.cycle)
     end
   end
-
 
   ##########################################
   #
@@ -243,7 +226,6 @@ module WorkflowMgr
   #
   ##########################################
   class ShellDependency
-
     # This class executes a shell expression, by sending it to sh -c
     # (or some other interpreter, if requested).  A successful
     # execution with a 0 return value is treated as true, and anything
@@ -258,21 +240,22 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(shell,runopt,shellexpr,name=nil)
+    def initialize(shell, runopt, shellexpr, name = nil)
       raise 'In ShellDependency, runopt must not be nil' if runopt.nil?
       raise 'In ShellDependency, shell must not be nil' if shell.nil?
       raise 'In ShellDependency, shellexpr must not be nil' if shellexpr.nil?
       raise 'In ShellDependency, shellexpr must be a CompoundTimeString' unless shellexpr.is_a?(CompoundTimeString)
-      @shellexpr=shellexpr
-      @runopt=runopt
-      @shell=shell
+
+      @shellexpr = shellexpr
+      @runopt = runopt
+      @shell = shell
       if name.nil?
-        name=shellexpr.to_s(Time.new)
-        if name.size>40
-          name=name[0..37]+'...'
+        name = shellexpr.to_s(Time.new)
+        if name.size > 40
+          name = name[0..37] + '...'
         end
       end
-      @name=name
+      @name = name
     end
 
     ##########################################
@@ -282,9 +265,9 @@ module WorkflowMgr
     ##########################################
     def query(d)
       if resolved?(d)
-        return [{:dep=>@name, :msg=>"returned true", :resolved=>true }]
+        [{ dep: @name, msg: "returned true", resolved: true }]
       else
-        return [{:dep=>@name, :msg=>"returned false", :resolved=>false }]
+        [{ dep: @name, msg: "returned false", resolved: false }]
       end
     end
 
@@ -294,8 +277,8 @@ module WorkflowMgr
     #
     ##########################################
     def resolved?(d)
-      ex=@shellexpr.to_s(d.cycle)
-      return d.shell_bool(@shell,@runopt,ex,d.cycle)
+      ex = @shellexpr.to_s(d.cycle)
+      d.shell_bool(@shell, @runopt, ex, d.cycle)
     end
 
     ##########################################
@@ -304,11 +287,10 @@ module WorkflowMgr
     #
     ##########################################
     def rewind!(d)
-      ex=@shellexpr.to_s(d.cycle)
-      d.shell_bool(@shell,@runopt,ex,d.cycle)
+      ex = @shellexpr.to_s(d.cycle)
+      d.shell_bool(@shell, @runopt, ex, d.cycle)
     end
   end
-
 
   ##########################################
   #
@@ -316,18 +298,15 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency_NOT_Operator
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(operand)
+      raise "Not operator contains more than one operand!" if operand.size > 1
 
-      raise "Not operator contains more than one operand!" if operand.size > 1      
-
-      @operand=operand.first
-
+      @operand = operand.first
     end
 
     #####################################################
@@ -336,9 +315,7 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      return !@operand.resolved?(d)
-
+      !@operand.resolved?(d)
     end
 
     #####################################################
@@ -347,15 +324,14 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-      query=@operand.query(d)
+      query = @operand.query(d)
       if query.first[:resolved]
-        return [{:dep=>"NOT", :msg=>"is not satisfied", :resolved=>false }, query]
+        [{ dep: "NOT", msg: "is not satisfied", resolved: false }, query]
       else
-        return [{:dep=>"NOT", :msg=>"is satisfied", :resolved=>true }, query]
+        [{ dep: "NOT", msg: "is satisfied", resolved: true }, query]
       end
     end
   end
-
 
   ##########################################
   #
@@ -363,16 +339,13 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency_AND_Operator
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(operands)
-
-      @operands=operands
-
+      @operands = operands
     end
 
     #####################################################
@@ -381,14 +354,11 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      @operands.each { |operand|
+      @operands.each do |operand|
         return false unless operand.resolved?(d)
-      }
-      return true
-
+      end
+      true
     end
-
 
     #####################################################
     #
@@ -396,20 +366,18 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      queries=[]
-      @operands.each { |operand|
+      queries = []
+      @operands.each do |operand|
         query = operand.query(d)
         queries += query
-        return [{:dep=>"AND", :msg=>"is not satisfied", :resolved=>false }, queries] unless query.first[:resolved]
-      }
-      return [{:dep=>"AND", :msg=>"is satisfied", :resolved=>true }, queries]
-
+        unless query.first[:resolved]
+          return [{ dep: "AND", msg: "is not satisfied", resolved: false },
+                  queries]
+        end
+      end
+      [{ dep: "AND", msg: "is satisfied", resolved: true }, queries]
     end
-
-
   end
-
 
   ##########################################
   #
@@ -417,16 +385,13 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency_OR_Operator
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(operands)
-
-      @operands=operands
-
+      @operands = operands
     end
 
     #####################################################
@@ -435,14 +400,11 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      @operands.each { |operand|
+      @operands.each do |operand|
         return true if operand.resolved?(d)
-      }
-      return false
-
+      end
+      false
     end
-
 
     #####################################################
     #
@@ -450,20 +412,15 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      queries=[]
-      @operands.each { |operand|
+      queries = []
+      @operands.each do |operand|
         query = operand.query(d)
         queries += query
-        return [{:dep=>"OR", :msg=>"is satisfied", :resolved=>true }, queries] if query.first[:resolved]
-      }
-      return [{:dep=>"OR", :msg=>"is not satisfied", :resolved=>false }, queries]
-
+        return [{ dep: "OR", msg: "is satisfied", resolved: true }, queries] if query.first[:resolved]
+      end
+      [{ dep: "OR", msg: "is not satisfied", resolved: false }, queries]
     end
-
-
   end
-
 
   ##########################################
   #
@@ -471,16 +428,13 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency_NAND_Operator
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(operands)
-
-      @operands=operands
-
+      @operands = operands
     end
 
     #####################################################
@@ -489,12 +443,10 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      @operands.each { |operand|
-        return true if !operand.resolved?(d)
-      }
-      return false
-
+      @operands.each do |operand|
+        return true unless operand.resolved?(d)
+      end
+      false
     end
 
     #####################################################
@@ -503,17 +455,14 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      queries=[]
-      @operands.each { |operand|
+      queries = []
+      @operands.each do |operand|
         query = operand.query(d)
         queries += query
-        return [{:dep=>"<nand>", :msg=>"is satisfied", :resolved=>true }, queries] if !query.first[:resolved]
-      }
-      return [{:dep=>"<nand>", :msg=>"is not satisfied", :resolved=>false }, queries]
-
+        return [{ dep: "<nand>", msg: "is satisfied", resolved: true }, queries] unless query.first[:resolved]
+      end
+      [{ dep: "<nand>", msg: "is not satisfied", resolved: false }, queries]
     end
-
   end
 
   ##########################################
@@ -522,16 +471,13 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency_NOR_Operator
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(operands)
-
-      @operands=operands
-
+      @operands = operands
     end
 
     #####################################################
@@ -540,12 +486,10 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      @operands.each { |operand|
+      @operands.each do |operand|
         return false if operand.resolved?(d)
-      }
-      return true
-
+      end
+      true
     end
 
     #####################################################
@@ -554,17 +498,14 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      queries=[]
-      @operands.each { |operand|
-        query=operand.query(d)
+      queries = []
+      @operands.each do |operand|
+        query = operand.query(d)
         queries += query
-        return [{:dep=>"NOR", :msg=>"is not satisfied", :resolved=>false }, queries] if query.first[:resolved]
-      }
-      return [{:dep=>"NOR", :msg=>"is satisfied", :resolved=>true }, queries]
-
+        return [{ dep: "NOR", msg: "is not satisfied", resolved: false }, queries] if query.first[:resolved]
+      end
+      [{ dep: "NOR", msg: "is satisfied", resolved: true }, queries]
     end
-
   end
 
   ##########################################
@@ -573,16 +514,13 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency_XOR_Operator
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(operands)
-
-      @operands=operands
-
+      @operands = operands
     end
 
     #####################################################
@@ -591,14 +529,12 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      ntrue=0
-      @operands.each { |operand|
+      ntrue = 0
+      @operands.each do |operand|
         ntrue += 1 if operand.resolved?(d)
         return false if ntrue > 1
-      }
-      return ntrue==1
-
+      end
+      ntrue == 1
     end
 
     #####################################################
@@ -607,23 +543,20 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      queries=[]
-      ntrue=0
-      @operands.each { |operand|
+      queries = []
+      ntrue = 0
+      @operands.each do |operand|
         query = operand.query(d)
         queries += query
         ntrue += 1 if query.first.resolved?(d)
-        return [{:dep=>"XOR", :msg=>"is not satisfied", :resolved=>false }, queries] if ntrue > 1
-      }
-      if ntrue==1
-        return [{:dep=>"XOR", :msg=>"is satisfied", :resolved=>true }, queries]
-      else
-        return [{:dep=>"XOR", :msg=>"is not satisfied", :resolved=>false }, queries]
+        return [{ dep: "XOR", msg: "is not satisfied", resolved: false }, queries] if ntrue > 1
       end
-
+      if ntrue == 1
+        [{ dep: "XOR", msg: "is satisfied", resolved: true }, queries]
+      else
+        [{ dep: "XOR", msg: "is not satisfied", resolved: false }, queries]
+      end
     end
-
   end
 
   ##########################################
@@ -632,17 +565,14 @@ module WorkflowMgr
   #
   ##########################################
   class Dependency_SOME_Operator
-
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(operands,threshold=1.0)
-
-      @operands=operands
-      @threshold=threshold
-
+    def initialize(operands, threshold = 1.0)
+      @operands = operands
+      @threshold = threshold
     end
 
     #####################################################
@@ -651,14 +581,12 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      ntrue=0.0
-      @operands.each { |operand|
+      ntrue = 0.0
+      @operands.each do |operand|
         ntrue += 1.0 if operand.resolved?(d)
-        return true if ntrue/@operands.size >= @threshold
-      }
-      return false
-
+        return true if ntrue / @operands.size >= @threshold
+      end
+      false
     end
 
     #####################################################
@@ -667,22 +595,20 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      queries=[]
-      ntrue=0.0
-      @operands.each { |operand|
+      queries = []
+      ntrue = 0.0
+      @operands.each do |operand|
         query = operand.query(d)
         queries += query
         ntrue += 1.0 if query.first[:resolved]
-        return [{:dep=>"SOME", :msg=>"is satisfied", :resolved=>true }, queries] if ntrue/@operands.size >= @threshold
-
-      }
-      return [{:dep=>"SOME", :msg=>"is not satisfied", :resolved=>false }, queries]
-
+        if ntrue / @operands.size >= @threshold
+          return [{ dep: "SOME", msg: "is satisfied", resolved: true },
+                  queries]
+        end
+      end
+      [{ dep: "SOME", msg: "is not satisfied", resolved: false }, queries]
     end
-
   end
-
 
   ##########################################
   #
@@ -690,18 +616,15 @@ module WorkflowMgr
   #
   ##########################################
   class TaskDependency
-
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(task,state,cycle_offset)
-
-      @task=task
-      @state=state.upcase
-      @cycle_offset=cycle_offset
-
+    def initialize(task, state, cycle_offset)
+      @task = task
+      @state = state.upcase
+      @cycle_offset = cycle_offset
     end
 
     #####################################################
@@ -710,12 +633,11 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
       return false if d.jobList.nil?
       return false if d.jobList[@task].nil?
-      return false if d.jobList[@task][d.cycle.getgm+@cycle_offset].nil?
-      return d.jobList[@task][d.cycle.getgm+@cycle_offset].state==@state
+      return false if d.jobList[@task][d.cycle.getgm + @cycle_offset].nil?
 
+      d.jobList[@task][d.cycle.getgm + @cycle_offset].state == @state
     end
 
     #####################################################
@@ -724,20 +646,27 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      return [{:dep=>"#{@task} of cycle #{(d.cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if d.jobList.nil?
-      return [{:dep=>"#{@task} of cycle #{(d.cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if d.jobList[@task].nil?
-      return [{:dep=>"#{@task} of cycle #{(d.cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }] if d.jobList[@task][d.cycle.getgm+@cycle_offset].nil?
-      if d.jobList[@task][d.cycle.getgm+@cycle_offset].state==@state
-        return [{:dep=>"#{@task} of cycle #{(d.cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is #{@state}", :resolved=>true }]
+      if d.jobList.nil?
+        return [{ dep: "#{@task} of cycle #{(d.cycle.getgm + @cycle_offset).strftime('%Y%m%d%H%M')}",
+                  msg: "is not #{@state}", resolved: false }]
+      end
+      if d.jobList[@task].nil?
+        return [{ dep: "#{@task} of cycle #{(d.cycle.getgm + @cycle_offset).strftime('%Y%m%d%H%M')}",
+                  msg: "is not #{@state}", resolved: false }]
+      end
+      if d.jobList[@task][d.cycle.getgm + @cycle_offset].nil?
+        return [{ dep: "#{@task} of cycle #{(d.cycle.getgm + @cycle_offset).strftime('%Y%m%d%H%M')}",
+                  msg: "is not #{@state}", resolved: false }]
+      end
+      if d.jobList[@task][d.cycle.getgm + @cycle_offset].state == @state
+        [{ dep: "#{@task} of cycle #{(d.cycle.getgm + @cycle_offset).strftime('%Y%m%d%H%M')}",
+           msg: "is #{@state}", resolved: true }]
       else
-        return [{:dep=>"#{@task} of cycle #{(d.cycle.getgm+@cycle_offset).strftime("%Y%m%d%H%M")}", :msg=>"is not #{@state}", :resolved=>false }]
+        [{ dep: "#{@task} of cycle #{(d.cycle.getgm + @cycle_offset).strftime('%Y%m%d%H%M')}",
+           msg: "is not #{@state}", resolved: false }]
       end
     end
-
   end
-
-
 
   ##########################################
   #
@@ -745,14 +674,13 @@ module WorkflowMgr
   #
   ##########################################
   class CycleExistDependency
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(cycle_offset)
-      @cycle_offset=cycle_offset
+      @cycle_offset = cycle_offset
     end
 
     #####################################################
@@ -761,13 +689,13 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-      relcycle=d.cycle.getgm+@cycle_offset
+      relcycle = d.cycle.getgm + @cycle_offset
       d.cycledefs.each do |cycledef|
         if cycledef.member?(relcycle)
-              return true
+          return true
         end
       end
-      return false
+      false
     end
 
     #####################################################
@@ -776,15 +704,14 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-      relcycle=d.cycle.getgm+@cycle_offset
+      relcycle = d.cycle.getgm + @cycle_offset
       d.cycledefs.each do |cycledef|
         if cycledef.member?(relcycle)
-          return [{:dep=>"cycle #{relcycle.strftime("%Y%m%d%H%M")}", :msg=>"exists", :resolved=>true }]
+          return [{ dep: "cycle #{relcycle.strftime('%Y%m%d%H%M')}", msg: "exists", resolved: true }]
         end
       end
-      return [{:dep=>"cycle #{relcycle.strftime("%Y%m%d%H%M")}", :msg=>"does not exist", :resolved=>false }]
+      [{ dep: "cycle #{relcycle.strftime('%Y%m%d%H%M')}", msg: "does not exist", resolved: false }]
     end
-
   end
 
   ##########################################
@@ -793,14 +720,13 @@ module WorkflowMgr
   #
   ##########################################
   class TaskValidDependency
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(task)
-      @task=task
+      @task = task
     end
 
     #####################################################
@@ -809,23 +735,24 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
+      # Get the jobs for this cycle
+      return false if d.tasks[@task].nil?
 
-       # Get the jobs for this cycle
-       return false if d.tasks[@task].nil?
+      checkjob = d.tasks[@task]
 
-       checkjob=d.tasks[@task]
+      # Get the mandatory task attribute
+      cycle_is_valid = true
+      unless checkjob.attributes[:cycledefs].nil?
+        taskcycledefs = d.cycledefs.find_all do |cycledef|
+          checkjob.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
+        end
+        # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
+        unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
+          cycle_is_valid = false
+        end
+      end # unless
 
-       # Get the mandatory task attribute
-       cycle_is_valid=true
-       unless checkjob.attributes[:cycledefs].nil?
-         taskcycledefs=d.cycledefs.find_all { |cycledef| checkjob.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
-         # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
-         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
-           cycle_is_valid=false
-         end
-       end  # unless
-
-      return cycle_is_valid
+      cycle_is_valid
     end
 
     #####################################################
@@ -834,30 +761,30 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
+      # Set the job to check
 
-       # Set the job to check
+      # Get the jobs for this cycle
+      return [{ dep: "#{@task}", msg: "is not valid", resolved: false }] if d.tasks[@task].nil?
 
-       # Get the jobs for this cycle
-       return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }] if d.tasks[@task].nil?
+      checkjob = d.tasks[@task]
 
-       checkjob=d.tasks[@task]
-
-       cycle_is_valid=true
-       unless checkjob.attributes[:cycledefs].nil?
-         taskcycledefs=d.cycledefs.find_all { |cycledef| checkjob.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group) }
-         # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
-         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
-           cycle_is_valid=false
-         end
-       end  # unless
+      cycle_is_valid = true
+      unless checkjob.attributes[:cycledefs].nil?
+        taskcycledefs = d.cycledefs.find_all do |cycledef|
+          checkjob.attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
+        end
+        # Cycle is invalid for this task if the cycle is not a member of the tasks cycle list
+        unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
+          cycle_is_valid = false
+        end
+      end # unless
 
       if cycle_is_valid
-        return [{:dep=>"#{@task}", :msg=>"is valid", :resolved=>true }]
+        [{ dep: "#{@task}", msg: "is valid", resolved: true }]
       else
-        return [{:dep=>"#{@task}", :msg=>"is not valid", :resolved=>false }]
+        [{ dep: "#{@task}", msg: "is not valid", resolved: false }]
       end
     end
-
   end
 
   ##########################################
@@ -866,18 +793,14 @@ module WorkflowMgr
   #
   ##########################################
   class TimeDependency
-
     #####################################################
     #
     # initialize
     #
     #####################################################
     def initialize(timestr)
-
-      @timestr=timestr
-
+      @timestr = timestr
     end
-
 
     #####################################################
     #
@@ -885,18 +808,16 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
+      timestr = @timestr.to_s(d.cycle)
+      t = Time.gm(timestr[0..3],
+                  timestr[4..5],
+                  timestr[6..7],
+                  timestr[8..9],
+                  timestr[10..11],
+                  timestr[12..13])
 
-      timestr=@timestr.to_s(d.cycle)
-      t=Time.gm(timestr[0..3],
-                timestr[4..5],
-                timestr[6..7],
-                timestr[8..9],
-                timestr[10..11],
-                timestr[12..13])
-
-      return Time.now.getgm > t
-
-     end
+      Time.now.getgm > t
+    end
 
     #####################################################
     #
@@ -904,23 +825,20 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      timestr=@timestr.to_s(d.cycle)
-      t=Time.gm(timestr[0..3],
-                timestr[4..5],
-                timestr[6..7],
-                timestr[8..9],
-                timestr[10..11],
-                timestr[12..13])
+      timestr = @timestr.to_s(d.cycle)
+      t = Time.gm(timestr[0..3],
+                  timestr[4..5],
+                  timestr[6..7],
+                  timestr[8..9],
+                  timestr[10..11],
+                  timestr[12..13])
 
       if Time.now.getgm > t
-        return [{:dep=>"Walltime", :msg=>"is > #{t}", :resolved=>true }]
+        [{ dep: "Walltime", msg: "is > #{t}", resolved: true }]
       else
-        return [{:dep=>"Walltime", :msg=>"is <= #{t}", :resolved=>false }]
+        [{ dep: "Walltime", msg: "is <= #{t}", resolved: false }]
       end
-
     end
-
   end
 
   ##########################################
@@ -929,18 +847,15 @@ module WorkflowMgr
   #
   ##########################################
   class DataDependency
-
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(datapath,age,minsize)
-
-      @datapath=datapath
-      @age=age
-      @minsize=minsize
-
+    def initialize(datapath, age, minsize)
+      @datapath = datapath
+      @age = age
+      @minsize = minsize
     end
 
     #####################################################
@@ -949,18 +864,16 @@ module WorkflowMgr
     #
     #####################################################
     def resolved?(d)
-
-      filename=@datapath.to_s(d.cycle)
+      filename = @datapath.to_s(d.cycle)
       if d.workflowIOServer.exist?(filename)
         if d.workflowIOServer.size(filename) >= @minsize
-          return Time.now > (d.workflowIOServer.mtime(filename) + @age)
+          Time.now > (d.workflowIOServer.mtime(filename) + @age)
         else
-          return false
+          false
         end
       else
-        return false
+        false
       end
-
     end
 
     #####################################################
@@ -969,24 +882,20 @@ module WorkflowMgr
     #
     #####################################################
     def query(d)
-
-      filename=@datapath.to_s(d.cycle)
+      filename = @datapath.to_s(d.cycle)
       if d.workflowIOServer.exist?(filename)
         if Time.now > (d.workflowIOServer.mtime(filename) + @age)
           if d.workflowIOServer.size(filename) >= @minsize
-            return [{:dep=>filename, :msg=>"is available", :resolved=>true }]
+            [{ dep: filename, msg: "is available", resolved: true }]
           else
-            return [{:dep=>filename, :msg=>"is not large enough", :resolved=>false }]
+            [{ dep: filename, msg: "is not large enough", resolved: false }]
           end
         else
-          return [{:dep=>filename, :msg=>"is not old enough", :resolved=>false }]
+          [{ dep: filename, msg: "is not old enough", resolved: false }]
         end
       else
-        return [{:dep=>filename, :msg=>"does not exist", :resolved=>false }]
+        [{ dep: filename, msg: "does not exist", resolved: false }]
       end
-
     end
-
   end
-
 end
