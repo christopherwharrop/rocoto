@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   # NOTE: in all of these classes and functions, the variable "d" is a
   # WorkflowMgr::WorkflowState which contains all needed input to the
@@ -33,8 +34,8 @@ module WorkflowMgr
     def resolved?(d)
       @root.resolved?(d)
     rescue WorkflowIOHang
-      WorkflowMgr.stderr("#{$!}", 2)
-      WorkflowMgr.log("#{$!}")
+      WorkflowMgr.stderr("#{$ERROR_INFO}", 2)
+      WorkflowMgr.log("#{$ERROR_INFO}")
       false
     end
 
@@ -46,8 +47,8 @@ module WorkflowMgr
     def query(d)
       @root.query(d)
     rescue WorkflowIOHang
-      WorkflowMgr.stderr("#{$!}", 2)
-      WorkflowMgr.log("#{$!}")
+      WorkflowMgr.stderr("#{$ERROR_INFO}", 2)
+      WorkflowMgr.log("#{$ERROR_INFO}")
       false
     end
   end

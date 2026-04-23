@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   require 'workflowmgr/batchsystem'
 
@@ -53,7 +54,7 @@ module WorkflowMgr
 
       # Collect the statuses of the jobs
       jobids.each do |jobid|
-        jobStatuses[jobid] = if @jobacct.has_key?(jobid)
+        jobStatuses[jobid] = if @jobacct.key?(jobid)
                                @jobacct[jobid]
                              else
                                { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
@@ -268,8 +269,8 @@ module WorkflowMgr
         # Return if the qstat output is empty
         return if qstat.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}", 3)
+        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 

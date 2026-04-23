@@ -3,6 +3,7 @@
 # module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -119,7 +120,7 @@ module WorkflowMgr
               begin
                 WorkflowMgr.timeout(10) do
                   system("ssh -o StrictHostKeyChecking=no #{lock[0][1]} kill -0 #{lock[0][0]} 2>&1 > /dev/null")
-                  stale = $?.exitstatus != 0
+                  stale = $CHILD_STATUS.exitstatus != 0
                 end
               rescue Timeout::Error
                 stale = true
@@ -148,8 +149,8 @@ module WorkflowMgr
         open_workflow_db
         true
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$!}", 3)
-        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
+        WorkflowMgr.log("#{$ERROR_INFO}")
         false
       rescue SQLite3::BusyException
         if tries < 3
@@ -188,8 +189,8 @@ module WorkflowMgr
           end
         end
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$!}", 3)
-        WorkflowMgr.log("#{$!}")
+        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
+        WorkflowMgr.log("#{$ERROR_INFO}")
         Process.exit(1)
       rescue SQLite3::BusyException
         if tries < 3

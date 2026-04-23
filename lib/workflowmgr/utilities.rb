@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   # DRYRUN controls whether workflow operations are executed or just logged.
   # It defaults to 0 (off), but can be overridden via the WORKFLOWMGR_DRYRUN
@@ -231,7 +232,7 @@ module WorkflowMgr
       pid, stdin, stdout, stderr = Open4.popen4(command)
       stdin.close
     rescue Exception
-      raise "Execution of '#{command}' unsuccessful: #{$!}"
+      raise "Execution of '#{command}' unsuccessful: #{$ERROR_INFO}"
     end
 
     error = ""

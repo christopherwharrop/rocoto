@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   require 'workflowmgr/batchsystem'
   require 'workflowmgr/utilities'
@@ -73,13 +74,13 @@ module WorkflowMgr
       refresh_jobqueue if @jobqueue.empty?
 
       # Return the jobqueue record if there is one
-      return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+      return @jobqueue[jobid] if @jobqueue.key?(jobid)
 
       # Populate the job accounting log table
       refresh_jobacct(jobid)
 
       # Return the jobacct record if there is one
-      return @jobacct[jobid] if @jobacct.has_key?(jobid)
+      return @jobacct[jobid] if @jobacct.key?(jobid)
 
       # The state is unavailable since Moab doesn't have the state
       { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
@@ -218,8 +219,8 @@ module WorkflowMgr
         # Return if the showq output is empty
         return if queued_jobs.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}", 3)
+        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -293,8 +294,8 @@ module WorkflowMgr
         # Return if the joblog output is empty
         return if joblog.empty?
       rescue WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}", 3)
+        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -350,7 +351,7 @@ module WorkflowMgr
       end
 
       # Add the record if it hasn't already been added
-      unless @jobacct.has_key?(record[:jobid])
+      unless @jobacct.key?(record[:jobid])
         @jobacct[record[:jobid]] = record
         # Remove the temporary submit script
         FileUtils.rm(record[:command])

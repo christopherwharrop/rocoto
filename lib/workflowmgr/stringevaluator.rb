@@ -43,22 +43,22 @@ module WorkflowMgr
 
     def [](var)
       svar = var.to_s
-      if @vars.has_key?(svar)
+      if @vars.key?(svar)
         @vars[svar]
-      elsif @defaults.has_key?(svar)
+      elsif @defaults.key?(svar)
         @defaults[svar]
       end
     end
 
     def has_var?(var)
       svar = var.to_s
-      @vars.has_key?(svar) || @defaults.has_key?(svar)
+      @vars.key?(svar) || @defaults.key?(svar)
     end
 
     def each_var(&block)
       @vars.each(&block)
       @defaults.each do |k, v|
-        unless @vars.has_key?(k)
+        unless @vars.key?(k)
           yield k, v
         end
       end
@@ -77,7 +77,7 @@ module WorkflowMgr
       # this StringEvaluator's defaults, unless other defaults or
       # variables are already set.
       strev.each_var do |k, v|
-        next if @defaults.has_key?(k)
+        next if @defaults.key?(k)
         raise 'key must be a string in defaults_from' unless k.is_a?(String)
         raise 'value must be a string in defaults_from' unless v.is_a?(String)
 

@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   require 'workflowmgr/batchsystem'
 
@@ -91,27 +92,27 @@ module WorkflowMgr
         refresh_jobqueue if @jobqueue.empty?
 
         # Return the jobqueue record if there is one
-        return @jobqueue[jobid] if @jobqueue.has_key?(jobid)
+        return @jobqueue[jobid] if @jobqueue.key?(jobid)
 
         # If we didn't find the job in the jobqueue, look for it in the accounting records
       end
 
       refresh_bjobs if @bjobs.empty?
       vanquish_undead(@bjobs, jobid) if @should_vanquish_undead
-      return unhold_job(@bjobs, jobid) if @bjobs.has_key?(jobid)
+      return unhold_job(@bjobs, jobid) if @bjobs.key?(jobid)
 
       # Populate the job accounting log table if it is empty
       refresh_jobacct if @bhist.empty?
 
       # Return the jobacct record if there is one
       vanquish_undead(@bhist, jobid) if @should_vanquish_undead
-      return unhold_job(@bhist, jobid) if @bhist.has_key?(jobid)
+      return unhold_job(@bhist, jobid) if @bhist.key?(jobid)
 
       # If we still didn't find the job, look at all accounting files if we haven't already
       if @nacctfiles != 25
         refresh_jobacct(25)
         vanquish_undead(@bhist, jobid) if @should_vanquish_undead
-        return unhold_job(@bhist, jobid) if @bhist.has_key?(jobid)
+        return unhold_job(@bhist, jobid) if @bhist.key?(jobid)
       end
 
       # We didn't find the job, so return an uknown status record
@@ -395,8 +396,8 @@ module WorkflowMgr
         # Return if the bjobs output is empty
         return if queued_jobs.empty? || queued_jobs =~ /^No unfinished job found$/
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("error running bjobs: #{$!}", 3)
+        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.stderr("error running bjobs: #{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -563,8 +564,8 @@ module WorkflowMgr
           raise WorkflowMgr::SchedulerDown, errors
         end
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("Error running bhist or bjobs: #{$!}")
-        WorkflowMgr.stderr("Error running bhist or bjobs: #{$!}", 3)
+        WorkflowMgr.log("Error running bhist or bjobs: #{$ERROR_INFO}")
+        WorkflowMgr.stderr("Error running bhist or bjobs: #{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end
       # Build job records from output of bhist
@@ -647,9 +648,9 @@ module WorkflowMgr
 
         final_update_record(record, jobacct)
 
-        next if jobacct.has_key?(record[:jobid])
+        next if jobacct.key?(record[:jobid])
 
-        if record.has_key?(:state) && (record[:state] != 'UNKNOWN')
+        if record.key?(:state) && (record[:state] != 'UNKNOWN')
           jobacct[record[:jobid]] = record
         end
       end

@@ -3,6 +3,7 @@
 # module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -76,7 +77,7 @@ module WorkflowMgr
 
                 # Check to see if the process that previously hung is still alive
                 system("ssh -o StrictHostKeyChecking=no #{downpath[:host]} kill -0 #{downpath[:pid]} 2>&1 > /dev/null")
-                if $?.exitstatus == 0
+                if $CHILD_STATUS.exitstatus == 0
 
                   # The process is still hung, so don't try to access the path because it's still bad.  Raise exception.
                   raise WorkflowIOHang,

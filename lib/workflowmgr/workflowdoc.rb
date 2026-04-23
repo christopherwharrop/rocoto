@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -81,8 +82,8 @@ module WorkflowMgr
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
       rescue WorkflowIOHang
-        WorkflowMgr.log("#{$!}")
-        WorkflowMgr.stderr("#{$!}", 2)
+        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.stderr("#{$ERROR_INFO}", 2)
         raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
 

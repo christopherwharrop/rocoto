@@ -1139,7 +1139,7 @@ module WorkflowMgr
         # In dryrun mode, no DRb server is launched, so skip this check
         next if !WorkflowMgr.dryrun_mode? && uri == @bqServer.__drburi
 
-        bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+        bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.key?(uri)
 
       # The bqserver has died!
       rescue DRb::DRbConnError
@@ -1147,7 +1147,7 @@ module WorkflowMgr
         @dbServer.delete_bqservers([uri])
 
         # Remove the bqserver uri from the bqservers list if needed
-        bqservers.delete(uri) if bqservers.has_key?(uri)
+        bqservers.delete(uri) if bqservers.key?(uri)
       end
 
       begin
@@ -1166,7 +1166,7 @@ module WorkflowMgr
 
           begin
             # Query the workflowbqserver for the status of the job submission
-            jobid, output = bqservers[uri].get_submit_status(job.task, job.cycle) if bqservers.has_key?(uri)
+            jobid, output = bqservers[uri].get_submit_status(job.task, job.cycle) if bqservers.key?(uri)
 
           # Catch exceptions for bqservers that have died unexpectedly
           rescue DRb::DRbConnError
@@ -1174,11 +1174,11 @@ module WorkflowMgr
             @dbServer.delete_bqservers([uri])
 
             # Remove the bqserver uri from the bqservers list if needed
-            bqservers.delete(uri) if bqservers.has_key?(uri)
+            bqservers.delete(uri) if bqservers.key?(uri)
           end
 
           # If the bqserver died, warn user, resubmit job
-          if !bqservers.has_key?(uri)
+          if !bqservers.key?(uri)
 
             # Log the fact that the submission status could not be retrieved
             msg = "Submission status of #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')} could not be retrieved because the server process at #{uri} died"

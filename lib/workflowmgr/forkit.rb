@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -38,7 +39,7 @@ module WorkflowMgr
       pwrite.close
     rescue StandardError
       # Write the exception to the write end of the pipe
-      pwrite.write Marshal.dump($!)
+      pwrite.write Marshal.dump($ERROR_INFO)
 
       # Close the write end of the pipe
       pwrite.close

@@ -3,6 +3,7 @@
 # Module WorkflowMgr
 #
 ##########################################
+require 'English'
 module WorkflowMgr
   ##########################################
   #
@@ -42,7 +43,7 @@ module WorkflowMgr
       # Initialize the workflow lock
       @locked = false
     rescue StandardError
-      puts $!
+      puts $ERROR_INFO
       Process.exit(1)
     end
 
@@ -91,7 +92,7 @@ module WorkflowMgr
       # Submit new tasks where possible
       submit_new_jobs
     rescue StandardError
-      puts $!
+      puts $ERROR_INFO
       Process.exit(1)
     ensure
       # Shut down the batch queue server if it is no longer needed
@@ -358,7 +359,7 @@ module WorkflowMgr
           # We are only interested in old bqserver processes
           next if uri == @bqServer.__drburi
 
-          bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.has_key?(uri)
+          bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.key?(uri)
 
         # The bqserver has died!
         rescue DRb::DRbConnError
@@ -366,7 +367,7 @@ module WorkflowMgr
           @dbServer.delete_bqservers([uri])
 
           # Remove the bqserver uri from the bqservers list if needed
-          bqservers.delete(uri) if bqservers.has_key?(uri)
+          bqservers.delete(uri) if bqservers.key?(uri)
         end
       end
 
@@ -385,7 +386,7 @@ module WorkflowMgr
 
             begin
               # Query the workflowbqserver for the status of the job submission
-              jobid, output = bqservers[uri].get_submit_status(taskname, cycle) if bqservers.has_key?(uri)
+              jobid, output = bqservers[uri].get_submit_status(taskname, cycle) if bqservers.key?(uri)
 
             # Catch exceptions for bqservers that have died unexpectedly
             rescue DRb::DRbConnError
@@ -393,11 +394,11 @@ module WorkflowMgr
               @dbServer.delete_bqservers([uri])
 
               # Remove the bqserver uri from the bqservers list if needed
-              bqservers.delete(uri) if bqservers.has_key?(uri)
+              bqservers.delete(uri) if bqservers.key?(uri)
             end
 
             # If the bqserver died, warn user, resubmit job
-            if !bqservers.has_key?(uri)
+            if !bqservers.key?(uri)
 
               # Log the fact that the submission status could not be retrieved
               puts "Submission status of #{taskname} could not be retrieved because the server process at #{uri} died"

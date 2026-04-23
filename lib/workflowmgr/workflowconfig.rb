@@ -62,7 +62,7 @@ module WorkflowMgr
           if config.is_a?(Hash)
             # Merge default config into rocotorc config if there are unspecified config options
             if config.keys.collect { |c| c.to_s }.sort != DEFAULT_CONFIG.keys.collect { |c| c.to_s }.sort
-              config = DEFAULT_CONFIG.merge(config).delete_if { |k, v| !DEFAULT_CONFIG.has_key?(k) }
+              config = DEFAULT_CONFIG.merge(config).delete_if { |k, v| !DEFAULT_CONFIG.key?(k) }
               File.open("#{@config_file}.#{Process.pid}", "w") { |f| YAML.dump(config, f) }
             end
             @config = config
@@ -94,7 +94,7 @@ module WorkflowMgr
     ##########################################
     def method_missing(name, *args)
       configkey = name.to_sym
-      if @config.has_key?(configkey)
+      if @config.key?(configkey)
         @config[configkey]
       else
         super
