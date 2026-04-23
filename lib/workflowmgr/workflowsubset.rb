@@ -22,8 +22,8 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(all_cycles, all_tasks, cycles, tasks)
-      @all_cycles = !!all_cycles
-      @all_tasks = !!all_tasks
+      @all_cycles = all_cycles ? true : false
+      @all_tasks = all_tasks ? true : false
 
       @cycles_array = cycles.to_a
       @cycles_array.sort!

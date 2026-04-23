@@ -487,19 +487,19 @@ module WorkflowMgr
       element.each_element { |e| children << e }
       case element.name
       when "not"
-        Dependency_NOT_Operator.new(children.collect { |child| get_dependency_node(child) })
+        DependencyNotOperator.new(children.collect { |child| get_dependency_node(child) })
       when "and"
-        Dependency_AND_Operator.new(children.collect { |child| get_dependency_node(child) })
+        DependencyAndOperator.new(children.collect { |child| get_dependency_node(child) })
       when "or"
-        Dependency_OR_Operator.new(children.collect { |child|  get_dependency_node(child) })
+        DependencyOrOperator.new(children.collect { |child|  get_dependency_node(child) })
       when "nand"
-        Dependency_NAND_Operator.new(children.collect { |child| get_dependency_node(child) })
+        DependencyNandOperator.new(children.collect { |child| get_dependency_node(child) })
       when "nor"
-        Dependency_NOR_Operator.new(children.collect { |child|  get_dependency_node(child) })
+        DependencyNorOperator.new(children.collect { |child|  get_dependency_node(child) })
       when "xor"
-        Dependency_XOR_Operator.new(children.collect { |child|  get_dependency_node(child) })
+        DependencyXorOperator.new(children.collect { |child|  get_dependency_node(child) })
       when "some"
-        Dependency_SOME_Operator.new(children.collect do |child|
+        DependencySomeOperator.new(children.collect do |child|
           get_dependency_node(child)
         end, element.attributes["threshold"].to_f)
       when "taskdep"

@@ -25,7 +25,9 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(cobalt_root = nil, config)
+    def initialize(config, cobalt_root = nil)
+      super()
+
       # Get timeouts from the configuration
       @qstat_timeout = config.JobQueueTimeout
 
@@ -51,15 +53,11 @@ module WorkflowMgr
       job_statuses = {}
       jobids.each do |jobid|
         job_statuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
-      end
-
-      jobids.each do |jobid|
         job_statuses[jobid] = status(jobid)
       end
     rescue WorkflowMgr::SchedulerDown
       @schedup = false
-    ensure
-      return job_statuses
+      job_statuses
     end
 
     #####################################################

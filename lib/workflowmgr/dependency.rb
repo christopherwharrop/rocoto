@@ -129,7 +129,7 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(value, name)
-      @value = !!value
+      @value = value ? true : false
       begin
         @name = name.to_s(Time.new)
       rescue StandardError
@@ -295,10 +295,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_NOT_Operator
+  # Class DependencyNotOperator
   #
   ##########################################
-  class Dependency_NOT_Operator
+  class DependencyNotOperator
     #####################################################
     #
     # initialize
@@ -336,10 +336,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_AND_Operator
+  # Class DependencyAndOperator
   #
   ##########################################
-  class Dependency_AND_Operator
+  class DependencyAndOperator
     #####################################################
     #
     # initialize
@@ -382,10 +382,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_OR_Operator
+  # Class DependencyOrOperator
   #
   ##########################################
-  class Dependency_OR_Operator
+  class DependencyOrOperator
     #####################################################
     #
     # initialize
@@ -425,10 +425,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_NAND_Operator
+  # Class DependencyNandOperator
   #
   ##########################################
-  class Dependency_NAND_Operator
+  class DependencyNandOperator
     #####################################################
     #
     # initialize
@@ -468,10 +468,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_NOR_Operator
+  # Class DependencyNorOperator
   #
   ##########################################
-  class Dependency_NOR_Operator
+  class DependencyNorOperator
     #####################################################
     #
     # initialize
@@ -511,10 +511,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_XOR_Operator
+  # Class DependencyXorOperator
   #
   ##########################################
-  class Dependency_XOR_Operator
+  class DependencyXorOperator
     #####################################################
     #
     # initialize
@@ -562,10 +562,10 @@ module WorkflowMgr
 
   ##########################################
   #
-  # Class Dependency_SOME_Operator
+  # Class DependencySomeOperator
   #
   ##########################################
-  class Dependency_SOME_Operator
+  class DependencySomeOperator
     #####################################################
     #
     # initialize

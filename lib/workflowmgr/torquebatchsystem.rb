@@ -25,6 +25,8 @@ module WorkflowMgr
     #
     #####################################################
     def initialize(torque_root = nil, config)
+      super()
+
       # Get timeouts from the configuration
       @qstat_x_timeout = config.JobAcctTimeout
 

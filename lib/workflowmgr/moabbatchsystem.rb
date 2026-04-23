@@ -25,6 +25,8 @@ module WorkflowMgr
     #
     #####################################################
     def initialize(moab_root = nil, torque_root = nil, config)
+      super()
+
       # Get timeouts from the configuration
       @showq_timeout = JobQueueTimeout
       @showq_c_timeout = JobAcctTimeout

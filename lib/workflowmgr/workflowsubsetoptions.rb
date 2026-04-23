@@ -25,7 +25,7 @@ module WorkflowMgr
     def initialize(args, name, action, default_all = false)
       @cycles = nil
       @task_options = []
-      @default_all = !!default_all # true => command defaults to all tasks and cycles
+      @default_all = default_all ? true : false # true => command defaults to all tasks and cycles
       @name = name # ie.: rocotoboot
       @action = action # ie.: boot
       @all_tasks = false

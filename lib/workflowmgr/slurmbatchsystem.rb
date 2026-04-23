@@ -35,6 +35,8 @@ module WorkflowMgr
     #
     #####################################################
     def initialize(slurm_root = nil, config)
+      super()
+
       # Get timeouts from the configuration
       @squeue_timeout = config.JobQueueTimeout
       @sacct_timeout = config.JobAcctTimeout

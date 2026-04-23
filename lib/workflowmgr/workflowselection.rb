@@ -22,9 +22,9 @@ module WorkflowMgr
       all_tasks = default_all if all_tasks.nil?
 
       # Flags:
-      @default_all = !!default_all    # select all tasks and cycles if none are specified
-      @all_tasks = !!all_tasks        # from the -a option
-      @allow_empty = !!allow_empty    # allow no task or cycle specifications
+      @default_all = default_all ? true : false   # select all tasks and cycles if none are specified
+      @all_tasks = all_tasks ? true : false       # from the -a option
+      @allow_empty = allow_empty ? true : false   # allow no task or cycle specifications
 
       # Enumerables:
       @task_options = task_options.to_a
@@ -43,8 +43,8 @@ module WorkflowMgr
     def add_options(all_tasks = nil, all_cycles = nil, task_options = [], cycle_selection = [])
       @task_options.concat task_options
       @cycles.concat cycle_selection
-      @all_tasks = !!all_tasks unless all_tasks.nil?
-      @all_cycles = !!all_cycles unless all_cycles.nil?
+      @all_tasks = all_tasks ? true : false unless all_tasks.nil?
+      @all_cycles = all_cycles ? true : false unless all_cycles.nil?
     end
 
     ##########################################

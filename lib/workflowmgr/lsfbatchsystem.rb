@@ -29,6 +29,8 @@ module WorkflowMgr
     #
     #####################################################
     def initialize(unhold_jobs_default = false, should_vanquish_undead = false, config)
+      super()
+
       # Get timeouts from the configuration
       @bjobs_timeout = config.JobQueueTimeout
       @bhist_timeout = config.JobAcctTimeout

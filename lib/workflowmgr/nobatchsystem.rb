@@ -1,3 +1,4 @@
+require 'English'
 unless defined? $__nobatchsystem__
 
   ##########################################
@@ -19,6 +20,8 @@ unless defined? $__nobatchsystem__
     #
     #####################################################
     def initialize(qstat_refresh_rate = @@qstat_refresh_rate)
+      super()
+
       # Initialize hashes to store qstat output and exit records
       @qstat = {}
       @exit_records = {}
@@ -30,7 +33,7 @@ unless defined? $__nobatchsystem__
       # Initialize the qstat table with current data
       refresh_qstat
     rescue StandardError
-      raise "NoBatchSystem object could not be initialized\n\n#{$!}"
+      raise "NoBatchSystem object could not be initialized\n\n#{$ERROR_INFO}"
     end
 
     #####################################################
@@ -63,7 +66,7 @@ unless defined? $__nobatchsystem__
       end
     rescue StandardError
       @qstat_available = false
-      puts $!
+      puts $ERROR_INFO
       nil
     end
 
@@ -90,7 +93,7 @@ unless defined? $__nobatchsystem__
       state
     rescue StandardError
       puts "ERROR: The state of job '#{jid}' could not be determined"
-      puts $!
+      puts $ERROR_INFO
       "unknown"
     end
 
@@ -115,7 +118,7 @@ unless defined? $__nobatchsystem__
       end
       exit_status
     rescue StandardError
-      puts "Exit status for job #{jid} could not be found\n\n#{$!}"
+      puts "Exit status for job #{jid} could not be found\n\n#{$ERROR_INFO}"
       nil
     end
 
@@ -200,7 +203,7 @@ unless defined? $__nobatchsystem__
               throw :done
             end
             fd.close unless fd.closed?
-            if $? != 0
+            if $CHILD_STATUS != 0
               if error =~ /No such file or directory/
                 files = Dir["#{@acct_path}/accounting*"].sort! do |a, b|
                   File.stat(b).mtime <=> File.stat(a).mtime
@@ -218,7 +221,7 @@ unless defined? $__nobatchsystem__
 
       record
     rescue StandardError
-      puts "Accounting record for job #{jid} could not be found\n\n#{$!}"
+      puts "Accounting record for job #{jid} could not be found\n\n#{$ERROR_INFO}"
       nil
     end
 
@@ -392,7 +395,7 @@ unless defined? $__nobatchsystem__
         raise "#{output[0]}"
       end
     rescue StandardError
-      raise $!
+      raise $ERROR_INFO
     end
 
     #####################################################
@@ -413,7 +416,7 @@ unless defined? $__nobatchsystem__
       0
     rescue StandardError
       puts "ERROR: #{@sge_path}/qdel #{jid} failed"
-      puts $!
+      puts $ERROR_INFO
       1
     end
 
@@ -435,7 +438,7 @@ unless defined? $__nobatchsystem__
       output[0]
     rescue StandardError
       puts "ERROR: /usr/local/fsl/bin/sgeinfo failed"
-      puts $!
+      puts $ERROR_INFO
       nil
     end
 
@@ -457,7 +460,7 @@ unless defined? $__nobatchsystem__
       output[0]
     rescue StandardError
       puts "ERROR: /usr/local/fsl/bin/sgestat failed"
-      puts $!
+      puts $ERROR_INFO
       nil
     end
 
@@ -546,7 +549,7 @@ unless defined? $__nobatchsystem__
       0
     rescue StandardError
       puts "ERROR: Rollover failed"
-      puts $!
+      puts $ERROR_INFO
       1
     end
   end
