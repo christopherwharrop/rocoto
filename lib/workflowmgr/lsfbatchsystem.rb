@@ -396,7 +396,7 @@ module WorkflowMgr
         # Return if the bjobs output is empty
         return if queued_jobs.empty? || queued_jobs =~ /^No unfinished job found$/
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.log($ERROR_INFO.to_s)
         WorkflowMgr.stderr("error running bjobs: #{$ERROR_INFO}", 3)
         raise WorkflowMgr::SchedulerDown
       end

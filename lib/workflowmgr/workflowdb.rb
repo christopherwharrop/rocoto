@@ -149,8 +149,8 @@ module WorkflowMgr
         open_workflow_db
         true
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
-        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
         false
       rescue SQLite3::BusyException
         if tries < 3
@@ -189,8 +189,8 @@ module WorkflowMgr
           end
         end
       rescue WorkflowMgr::WorkflowLockedException
-        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
-        WorkflowMgr.log("#{$ERROR_INFO}")
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
         Process.exit(1)
       rescue SQLite3::BusyException
         if tries < 3
@@ -247,9 +247,9 @@ module WorkflowMgr
           # Add new cycledefs to the database
           cycledefs.each do |cycledef|
             if cycledef[:position].nil?
-              stmt.execute("#{cycledef[:group]}", "#{cycledef[:cycledef]}", nil, cycledef[:activation_offset])
+              stmt.execute(cycledef[:group].to_s, cycledef[:cycledef].to_s, nil, cycledef[:activation_offset])
             else
-              stmt.execute("#{cycledef[:group]}", "#{cycledef[:cycledef]}", cycledef[:position].to_i,
+              stmt.execute(cycledef[:group].to_s, cycledef[:cycledef].to_s, cycledef[:position].to_i,
                            cycledef[:activation_offset])
             end
           end

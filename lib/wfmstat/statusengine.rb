@@ -247,10 +247,10 @@ module WFMStat
 
       # Print the cycle date/times
       (dbcycles + xmlcycles).sort.each do |cycle|
-        printf "%12s    %8s    %20s    %20s\n", "#{cycle.cycle.strftime('%Y%m%d%H%M')}",
-               "#{cycle.state.to_s.capitalize}",
-               "#{cycle.activated_time_string.center(20)}",
-               "#{cycle.deactivated_time_string.center(20)}"
+        printf "%12s    %8s    %20s    %20s\n", cycle.cycle.strftime('%Y%m%d%H%M').to_s,
+               cycle.state.to_s.capitalize.to_s,
+               cycle.activated_time_string.center(20).to_s,
+               cycle.deactivated_time_string.center(20).to_s
       end
     end
 

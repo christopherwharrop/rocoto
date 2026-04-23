@@ -341,8 +341,8 @@ module WorkflowMgr
           # Return if the output is empty
           return nil, output if queued_jobs.empty?
         rescue Timeout::Error
-          WorkflowMgr.log("#{$ERROR_INFO}")
-          WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
+          WorkflowMgr.log($ERROR_INFO.to_s)
+          WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
           raise WorkflowMgr::SchedulerDown
         end
 
@@ -425,8 +425,8 @@ module WorkflowMgr
         # Return if the output is empty
         return if queued_jobs.empty?
       rescue Timeout::Error
-        WorkflowMgr.log("#{$ERROR_INFO}")
-        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
         raise WorkflowMgr::SchedulerDown
       end
 
@@ -561,8 +561,8 @@ module WorkflowMgr
         # Return if the output is empty
         return if completed_jobs.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$ERROR_INFO}")
-        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
         raise WorkflowMgr::SchedulerDown
       end
 

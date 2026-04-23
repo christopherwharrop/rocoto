@@ -34,8 +34,8 @@ module WorkflowMgr
     def resolved?(d)
       @root.resolved?(d)
     rescue WorkflowIOHang
-      WorkflowMgr.stderr("#{$ERROR_INFO}", 2)
-      WorkflowMgr.log("#{$ERROR_INFO}")
+      WorkflowMgr.stderr($ERROR_INFO.to_s, 2)
+      WorkflowMgr.log($ERROR_INFO.to_s)
       false
     end
 
@@ -47,8 +47,8 @@ module WorkflowMgr
     def query(d)
       @root.query(d)
     rescue WorkflowIOHang
-      WorkflowMgr.stderr("#{$ERROR_INFO}", 2)
-      WorkflowMgr.log("#{$ERROR_INFO}")
+      WorkflowMgr.stderr($ERROR_INFO.to_s, 2)
+      WorkflowMgr.log($ERROR_INFO.to_s)
       false
     end
   end
@@ -765,7 +765,7 @@ module WorkflowMgr
       # Set the job to check
 
       # Get the jobs for this cycle
-      return [{ dep: "#{@task}", msg: "is not valid", resolved: false }] if d.tasks[@task].nil?
+      return [{ dep: @task.to_s, msg: "is not valid", resolved: false }] if d.tasks[@task].nil?
 
       checkjob = d.tasks[@task]
 
@@ -781,9 +781,9 @@ module WorkflowMgr
       end
 
       if cycle_is_valid
-        [{ dep: "#{@task}", msg: "is valid", resolved: true }]
+        [{ dep: @task.to_s, msg: "is valid", resolved: true }]
       else
-        [{ dep: "#{@task}", msg: "is not valid", resolved: false }]
+        [{ dep: @task.to_s, msg: "is not valid", resolved: false }]
       end
     end
   end

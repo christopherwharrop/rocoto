@@ -269,8 +269,8 @@ module WorkflowMgr
         # Return if the qstat output is empty
         return if qstat.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$ERROR_INFO}")
-        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
         raise WorkflowMgr::SchedulerDown
       end
 

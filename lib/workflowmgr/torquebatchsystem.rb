@@ -209,8 +209,8 @@ module WorkflowMgr
         # Parse the XML output of showq, building job status records for each job
         queued_jobs_doc = LibXML::XML::Parser.string(queued_jobs, options: LibXML::XML::Parser::Options::HUGE).parse
       rescue LibXML::XML::Error, Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log("#{$ERROR_INFO}")
-        WorkflowMgr.stderr("#{$ERROR_INFO}", 3)
+        WorkflowMgr.log($ERROR_INFO.to_s)
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
         raise WorkflowMgr::SchedulerDown
       end
 

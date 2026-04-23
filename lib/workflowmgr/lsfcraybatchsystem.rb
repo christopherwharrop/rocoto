@@ -98,7 +98,7 @@ module WorkflowMgr
             amount = (value.to_i / 1024.0 / 1024.0).ceil
           end
           if amount > 0
-            memoryoption = "#{amount}"
+            memoryoption = amount.to_s
           end
         when :stdout
           cmd += " -o #{value}"
@@ -163,7 +163,7 @@ module WorkflowMgr
                  end
         end
       rescue Exception => e
-        warn "#{e}"
+        warn e
         raise
       end
 

@@ -82,8 +82,8 @@ module WorkflowMgr
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
       rescue WorkflowIOHang
-        WorkflowMgr.log("#{$ERROR_INFO}")
-        WorkflowMgr.stderr("#{$ERROR_INFO}", 2)
+        WorkflowMgr.log($ERROR_INFO.to_s)
+        WorkflowMgr.stderr($ERROR_INFO.to_s, 2)
         raise "ERROR! Cannot read file, #{workflowdoc}, because it resides on an unresponsive filesystem"
       end
 
@@ -917,11 +917,11 @@ module WorkflowMgr
           e.attributes["metatasks"] = metatask_list
           e.attributes["seqnum"] = metatask["seqnum"]
           seqnum += 1
-          e.attributes["seqnum"] += "#{seqnum}"
+          e.attributes["seqnum"] += seqnum.to_s
         elsif e.name == "metatask"
           e.attributes["seqnum"] = metatask.attributes["seqnum"]
           seqnum += 1
-          e.attributes["seqnum"] += "#{seqnum}"
+          e.attributes["seqnum"] += seqnum.to_s
         end
       end
 
