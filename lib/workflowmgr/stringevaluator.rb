@@ -105,7 +105,7 @@ module WorkflowMgr
     #
     ##########################################
     # Add a Task and its name
-    def set_task(name, task = nil)
+    def add_task(name, task = nil)
       @defaults['taskname'] = name.to_s # taskname = task name
       unless task.nil?
         @defaults['taskobj'] = task # taskobj = the Task
@@ -116,12 +116,12 @@ module WorkflowMgr
     end
 
     # Add a WorkflowXMLDoc
-    def set_doc(doc)
+    def add_doc(doc)
       @defaults['doc'] = doc # doc = the WorkflowXMLDoc
     end
 
     # Add a Cycle
-    def set_cycle(cycle)
+    def add_cycle(cycle)
       @defaults['cycle'] = cycle # cycle = the cycle time
 
       @defaults['evalcycle'] = cycle # evalcycle = the Cycle object again
@@ -165,10 +165,10 @@ module WorkflowMgr
     def run(evalstr)
       evalstr = evalstr.to_s
 
-      # Get a binding within the get_binding() subroutine of a copy of
+      # Get a binding within the make_binding() subroutine of a copy of
       # this object.  Using a clone shields us from permanent
       # modifications of @vars or @defaults.
-      evalbind = clone.get_binding
+      evalbind = clone.make_binding
 
       # Construct a new command to evaluate, which first defines the
       # requested variables and functions.
@@ -255,12 +255,12 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_binding
+    # make_binding
     # Binding generation
     #
     ##########################################
-    def get_binding
-      # This function lets us do clone.get_binding to make a binding
+    def make_binding
+      # This function lets us do clone.make_binding to make a binding
       # in a clone of ourself.  That is used to prevent user scripts
       # from accidentally making permanent changes to @vars or
       # @defaults.

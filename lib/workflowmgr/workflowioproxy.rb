@@ -27,7 +27,7 @@ module WorkflowMgr
       @options = options
 
       # Get the list of down file paths from the database
-      @downpaths = @db_server.get_downpaths
+      @downpaths = @db_server.load_downpaths
 
       # Initialize a list of newly detected down file paths
       @newdownpaths = []

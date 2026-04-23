@@ -46,9 +46,9 @@ module WorkflowMgr
     # set_* routines to modify the StringEvaluator
     #
     ##########################################
-    def set_cycle(cycle)
+    def assign_cycle(cycle)
       @cycle = cycle
-      @se&.set_cycle(cycle)
+      @se&.assign_cycle(cycle)
     end
 
     def set_task(name, task = nil)
@@ -58,12 +58,12 @@ module WorkflowMgr
 
       @task = task
       @taskname = name
-      @se&.set_task(name, task)
+      @se&.add_cycle(cycle)
     end
 
-    def set_doc(workflowdoc)
+    def assign_doc(workflowdoc)
       @doc = workflowdoc
-      @se&.set_doc(workflowdoc)
+      @se&.add_doc(workflowdoc)
     end
 
     ##########################################
@@ -107,7 +107,7 @@ module WorkflowMgr
           raise 'In WorkflowState, @taskname cannot be nil.'
         end
 
-        nse.set_task(@taskname, @task)
+        nse.add_task(@taskname, @task)
         if @cycle.nil?
           raise 'In WorkflowState, @cycle cannot be nil.'
         end

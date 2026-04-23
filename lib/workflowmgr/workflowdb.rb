@@ -213,10 +213,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_cycledefs
+    # load_cycledefs
     #
     ##########################################
-    def get_cycledefs
+    def load_cycledefs
       # Retrieve the cycle definitions from the database
       dbcycledefs = @database.execute("SELECT groupname,activation_offset,cycledef,dirty FROM cycledef;")
 
@@ -231,7 +231,7 @@ module WorkflowMgr
         end
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_cycledefs: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_cycledefs: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -239,10 +239,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # set_cycledefs
+    # store_cycledefs
     #
     ##########################################
-    def set_cycledefs(cycledefs)
+    def store_cycledefs(cycledefs)
       # Make sure write access is enabled
       verify_write_access
 
@@ -264,7 +264,7 @@ module WorkflowMgr
         end
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.set_cycledefs: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.store_cycledefs: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -272,10 +272,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_cycle
+    # load_cycle
     #
     ##########################################
-    def get_cycle(reftime = Time.gm(1900, 1, 1, 0, 0))
+    def load_cycle(reftime = Time.gm(1900, 1, 1, 0, 0))
       # Retrieve all cycles from the cycle table
       dbcycles = @database.execute(
         "SELECT cycle,activated,expired,done,draining FROM cycles WHERE cycle == #{reftime.getgm.to_i};"
@@ -288,7 +288,7 @@ module WorkflowMgr
                     draining: Time.at(cycle[4] || 0).getgm })
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_cycle: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_cycle: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -296,10 +296,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_cycles
+    # load_cycles
     #
     ##########################################
-    def get_cycles(reftime = { start: Time.gm(1900, 1, 1, 0, 0), end: Time.gm(9999, 12, 31, 23, 59) })
+    def load_cycles(reftime = { start: Time.gm(1900, 1, 1, 0, 0), end: Time.gm(9999, 12, 31, 23, 59) })
       # Get the starting and ending cycle times
       startcycle = reftime[:start].nil? ? Time.gm(1900, 1, 1, 0, 0) : reftime[:start].getgm
       endcycle = reftime[:end].nil? ? Time.gm(9999, 12, 31, 23, 59) : reftime[:end].getgm + 1
@@ -317,7 +317,7 @@ module WorkflowMgr
                     draining: Time.at(cycle[4] || 0).getgm })
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_cycles: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_cycles: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -325,10 +325,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_last_cycle
+    # load_last_cycle
     #
     ##########################################
-    def get_last_cycle
+    def load_last_cycle
       dbcycles = []
 
       # Get the maximum cycle time from the database
@@ -348,7 +348,7 @@ module WorkflowMgr
 
       last_cycle.first
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_last_cycle: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_last_cycle: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -356,10 +356,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_active_cycles
+    # load_active_cycles
     #
     ##########################################
-    def get_active_cycles
+    def load_active_cycles
       # Get the cycles that are neither done nor expired
       dbcycles = @database.execute(
         "SELECT cycle,activated,expired,done,draining FROM cycles WHERE done=0 and expired=0;"
@@ -372,7 +372,7 @@ module WorkflowMgr
                     draining: Time.at(cycle[4] || 0).getgm })
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_active_cycles: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_active_cycles: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -453,10 +453,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_jobs
+    # load_jobs
     #
     ##########################################
-    def get_jobs(cycles = nil)
+    def load_jobs(cycles = nil)
       jobs = {}
       dbjobs = []
 
@@ -497,7 +497,7 @@ module WorkflowMgr
       # Return jobs hash
       jobs
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_jobs: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_jobs: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
     ensure
@@ -607,16 +607,16 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_bqservers
+    # load_bqservers
     #
     ##########################################
-    def get_bqservers
+    def load_bqservers
       dbbqservers = @database.execute("SELECT uri FROM bqservers;")
 
       # Return jobs hash
       dbbqservers.flatten
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_bqservers: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_bqservers: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -670,10 +670,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_downpaths
+    # load_downpaths
     #
     ##########################################
-    def get_downpaths
+    def load_downpaths
       # Retrieve all downpaths from the job table
       dbdownpaths = @database.execute("SELECT path,downdate,host,pid FROM downpaths;")
 
@@ -682,7 +682,7 @@ module WorkflowMgr
         { path: downpath[0], downtime: Time.at(downpath[1]).getgm, host: downpath[2], pid: downpath[3] }
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_downpaths: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_downpaths: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -739,10 +739,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_vacuum_time
+    # load_vacuum_time
     #
     ##########################################
-    def get_vacuum_time
+    def load_vacuum_time
       # Start a transaction so that the database will be locked
       @database.transaction do |db|
         # Access the vacuum table
@@ -757,7 +757,7 @@ module WorkflowMgr
         end
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_vacuum_time: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_vacuum_time: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -765,10 +765,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # set_vacuum_time
+    # store_vacuum_time
     #
     ##########################################
-    def set_vacuum_time(vacuum_time)
+    def store_vacuum_time(vacuum_time)
       # Make sure write access is enabled
       verify_write_access
 
@@ -779,7 +779,7 @@ module WorkflowMgr
         db.execute("INSERT INTO vacuum VALUES (#{vacuum_time.to_i});")
       end
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.set_vacuum_time: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.store_vacuum_time: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin
@@ -835,10 +835,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_tables
+    # load_tables
     #
     ##########################################
-    def get_tables(tablelist = nil)
+    def load_tables(tablelist = nil)
       tables = {}
 
       # Get a listing of the database tables
@@ -873,7 +873,7 @@ module WorkflowMgr
       # Return the tables
       tables
     rescue SQLite3::BusyException
-      msg = "ERROR: WorkflowSQLite3DB.get_tables: Could not open workflow database " \
+      msg = "ERROR: WorkflowSQLite3DB.load_tables: Could not open workflow database " \
             "file '#{@database_file}' because it is locked by SQLite"
       raise WorkflowMgr::WorkflowDBLockedException, msg
       # begin

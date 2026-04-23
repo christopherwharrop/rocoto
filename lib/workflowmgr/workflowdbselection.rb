@@ -24,13 +24,13 @@ module WorkflowMgr
       # Get the cycles of interest that are in the database
       if @cycles.nil? || @cycles.empty?
         # Get the latest cycle
-        last_cycle = db_server.get_last_cycle
+        last_cycle = db_server.load_last_cycle
         dbcycles << last_cycle unless last_cycle.nil?
       else
         @cycles.each do |cycopt|
           if cycopt.is_a?(Range)
             # Get all cycles within the range
-            dbcycles += db_server.get_cycles({ start: cycopt.first, end: cycopt.last })
+            dbcycles += db_server.load_cycles({ start: cycopt.first, end: cycopt.last })
 
             # Find every XML cycle in the range
             xml_cycle_times = []
@@ -50,7 +50,7 @@ module WorkflowMgr
             # Add the cycles that are in the XML but not in the DB
             xmlcycles = (xml_cycle_times - dbcycles.collect(&:cycle)).collect { |c| WorkflowMgr::Cycle.new(c) }
           elsif cycopt.is_a?(Time)
-            cycle = db_server.get_cycles({ start: cycopt, end: cycopt })
+            cycle = db_server.load_cycles({ start: cycopt, end: cycopt })
             if cycle.empty?
               undefcycles << WorkflowMgr::Cycle.new(cycopt)
             else
@@ -59,7 +59,7 @@ module WorkflowMgr
           elsif cycopt.is_a?(Array)
             # Get the specific cycles asked for
             cycopt.each do |c|
-              cycle = db_server.get_cycles({ start: c, end: c })
+              cycle = db_server.load_cycles({ start: c, end: c })
               if cycle.empty?
                 undefcycles << WorkflowMgr::Cycle.new(c)
               else
@@ -78,7 +78,7 @@ module WorkflowMgr
             this_set = Set.new these_cycles
             cyc_first = these_cycles.min
             cyc_last = these_cycles.max
-            db_cycles_for_this = db_server.get_cycles(reftime = { start: cyc_first, last: cyc_last })
+            db_cycles_for_this = db_server.load_cycles(reftime = { start: cyc_first, last: cyc_last })
             db_set = Set.new db_cycles_for_this
 
             xml_set = this_set - db_set
@@ -88,7 +88,7 @@ module WorkflowMgr
             xml_set.each { |c| xmlcycles << WorkflowMgr::Cycle.new(c) }
 
           elsif cycopt == ALL_POSSIBLE_CYCLES
-            dbcycles += db_server.get_cycles
+            dbcycles += db_server.load_cycles
           else
             raise "Invalid cycle specification type=#{cycopt.class.name} value=#{cycopt.inspect}"
           end

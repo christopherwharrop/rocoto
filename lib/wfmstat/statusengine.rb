@@ -120,7 +120,7 @@ module WFMStat
     ##########################################
     def check_one_task(cycletime, taskname, cycledefs)
       # Get the cycle
-      cycle = @db_server.get_cycles({ start: cycletime, end: cycletime }).first || WorkflowMgr::Cycle.new(cycletime)
+      cycle = @db_server.load_cycles({ start: cycletime, end: cycletime }).first || WorkflowMgr::Cycle.new(cycletime)
 
       # Get the task
       task = @workflowdoc.tasks[taskname]
@@ -131,7 +131,7 @@ module WFMStat
       @workflowdoc.taskdep_cycle_offsets.each do |offset|
         jobcycles << cycletime + offset
       end
-      jobs = @db_server.get_jobs(jobcycles)
+      jobs = @db_server.load_jobs(jobcycles)
       job = if jobs[taskname].nil?
               nil
             else
@@ -218,10 +218,10 @@ module WFMStat
 
     ##########################################
     #
-    # get_cycles
+    # cycle_sets
     #
     ##########################################
-    def get_cycles
+    def cycle_sets
       # Turn the db, xml, and undef iterators into arrays:
       dbcycles = @subset.collect_db_cycles { |c| c }
       xmlcycles = @subset.collect_xml_cycles { |c| c }
@@ -237,7 +237,7 @@ module WFMStat
     ##########################################
     def print_summary
       # Get cycles of interest
-      dbcycles, xmlcycles, = get_cycles
+      dbcycles, xmlcycles, = cycle_sets
 
       # Print the header
       printf "%12s    %8s    %20s    %20s\n", "CYCLE".center(12),
@@ -261,10 +261,10 @@ module WFMStat
     ##########################################
     def print_status
       # Get cycles of interest
-      dbcycles, xmlcycles, = get_cycles
+      dbcycles, xmlcycles, = cycle_sets
 
       # Get the jobs from the database for the cycles of interest
-      jobs = @db_server.get_jobs(dbcycles.collect(&:cycle))
+      jobs = @db_server.load_jobs(dbcycles.collect(&:cycle))
 
       # Get the list of tasks from the workflow definition
       defined_tasks = @workflowdoc.tasks
@@ -491,8 +491,8 @@ module WFMStat
       end
 
       # Check for throttle violations
-      active_cycles = @db_server.get_active_cycles
-      active_jobs = @db_server.get_jobs(active_cycles.collect(&:cycle))
+      active_cycles = @db_server.load_active_cycles
+      active_jobs = @db_server.load_jobs(active_cycles.collect(&:cycle))
       ncores = 0
       ntasks = 0
       active_jobs.each_key do |jobtask|

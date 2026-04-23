@@ -89,11 +89,11 @@ module WorkflowMgr
         build_workflow
 
         # Get the active cycles
-        get_active_cycles
+        load_active_cycles
 
         # Get the active jobs, which may include jobs from cycles that have just expired
         # as well as jobs needed for evaluating inter cycle dependencies
-        get_active_jobs
+        fetch_active_jobs
 
         # Update the status of all active jobs
         update_active_jobs
@@ -254,14 +254,14 @@ module WorkflowMgr
         build_workflow
 
         # Get the active cycles
-        get_active_cycles
+        load_active_cycles
 
         # Get new cycles that need to be activated now
-        get_new_cycles
+        fetch_new_cycles
 
         # Get the active jobs, which may include jobs from cycles that have just expired
         # as well as jobs needed for evaluating inter cycle dependencies
-        get_active_jobs
+        fetch_active_jobs
 
         # Update the status of all active jobs
         update_active_jobs
@@ -293,8 +293,8 @@ module WorkflowMgr
       # database and add the jobs for that cycle to the active job
       # list as well
       if boot_cycle.nil?
-        boot_cycle = @db_server.get_cycle(cycle_time).first
-        @active_jobs.merge!(@db_server.get_jobs([cycle_time]))
+        boot_cycle = @db_server.load_cycle(cycle_time).first
+        @active_jobs.merge!(@db_server.load_jobs([cycle_time]))
       end
       boot_cycle
     end
@@ -315,11 +315,11 @@ module WorkflowMgr
         build_workflow
 
         # Get the active cycles
-        get_active_cycles
+        load_active_cycles
 
         # Get the active jobs, which may include jobs from cycles that have just expired
         # as well as jobs needed for evaluating inter cycle dependencies
-        get_active_jobs
+        fetch_active_jobs
 
         # Update the status of all active jobs
         update_active_jobs
@@ -596,11 +596,11 @@ module WorkflowMgr
         build_workflow
 
         # Get the active cycles
-        get_active_cycles
+        load_active_cycles
 
         # Get the active jobs, which may include jobs from cycles that have just expired
         # as well as jobs needed for evaluating inter cycle dependencies
-        get_active_jobs
+        fetch_active_jobs
 
         # Initialize a task cycledef hash
         taskcycledefs = {}
@@ -862,12 +862,12 @@ module WorkflowMgr
       end
 
       # Get the previous vacuum time
-      last_vacuum = @db_server.get_vacuum_time
+      last_vacuum = @db_server.load_vacuum_time
 
       # Vacuum if we haven't done so in the last 24 hours
       if (Time.now - last_vacuum) > 24 * 3600
         @db_server.vacuum(@config.VacuumPurgeDays * 24 * 3600)
-        @db_server.set_vacuum_time(Time.now)
+        @db_server.store_vacuum_time(Time.now)
       end
     end
 
@@ -971,28 +971,28 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_active_cycles
+    # load_active_cycles
     #
     ##########################################
-    def get_active_cycles
+    def load_active_cycles
       # Get active cycles from the database
-      @active_cycles = @db_server.get_active_cycles
+      @active_cycles = @db_server.load_active_cycles
     end
 
     ##########################################
     #
-    # get_new_cycles
+    # fetch_new_cycles
     #
     ##########################################
-    def get_new_cycles
+    def fetch_new_cycles
       # Don't look for new cycles if the cyclethrottle is already satisfied
       return unless @cyclethrottle > @active_cycles.size
 
       # Activate new cycles
       newcycles = if @realtime
-                    get_new_realtime_cycle
+                    fetch_new_realtime_cycle
                   else
-                    get_new_retro_cycles
+                    fetch_new_retro_cycles
                   end
 
       # Add new cycles to active cycle list and database
@@ -1009,10 +1009,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_new_realtime_cycle
+    # fetch_new_realtime_cycle
     #
     ##########################################
-    def get_new_realtime_cycle
+    def fetch_new_realtime_cycle
       # For realtime workflows, find the most recent cycle less than or equal to
       # the current time and activate it if it has not already been activated
 
@@ -1033,7 +1033,7 @@ module WorkflowMgr
       end
 
       # Look for the lastest cycle in the database
-      db_cycle = @db_server.get_cycle(latest_cycle_time)[0]
+      db_cycle = @db_server.load_cycle(latest_cycle_time)[0]
 
       # Return the new cycle if it hasn't already been activated
       if db_cycle.nil?
@@ -1045,17 +1045,17 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_new_retro_cycles
+    # fetch_new_retro_cycles
     #
     ##########################################
-    def get_new_retro_cycles
+    def fetch_new_retro_cycles
       # For retrospective workflows, find the next N cycles in chronological
       # order that have never been activated.  If any cycledefs have changed,
       # cycles may be returned that are older than previously activated cycles.
       # N is the cyclethrottle minus the number of currently active cycles.
 
       # Get the cycledefs from the database so that we can get their last known positions
-      dbcycledefs = @db_server.get_cycledefs.collect do |dbcycledef|
+      dbcycledefs = @db_server.load_cycledefs.collect do |dbcycledef|
         case dbcycledef[:cycledef].split.size
         when 6
           CycleCron.new(dbcycledef[:cycledef], dbcycledef[:group], dbcycledef[:activation_offset],
@@ -1078,7 +1078,7 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset = @db_server.get_cycles({ start: @cycledefs.collect(&:position).compact.min })
+      cycleset = @db_server.load_cycles({ start: @cycledefs.collect(&:position).compact.min })
 
       # Sort the cycleset
       cycleset.sort!
@@ -1130,7 +1130,7 @@ module WorkflowMgr
       end
 
       # Save the workflowdoc cycledefs with their updated positions to the database
-      @db_server.set_cycledefs(@cycledefs.collect do |cycledef|
+      @db_server.store_cycledefs(@cycledefs.collect do |cycledef|
         { group: cycledef.group, cycledef: cycledef.cycledef, activation_offset: cycledef.activation_offset,
           position: cycledef.position }
       end)
@@ -1140,10 +1140,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # get_active_jobs
+    # fetch_active_jobs
     #
     ##########################################
-    def get_active_jobs
+    def fetch_active_jobs
       # Initialize a list of job cycles corresponding to the set of active jobs
       job_cycles = []
 
@@ -1165,7 +1165,7 @@ module WorkflowMgr
       job_cycles.uniq!
 
       # Get all jobs whose cycle is in the job_cycle list
-      @active_jobs = @db_server.get_jobs(job_cycles)
+      @active_jobs = @db_server.load_jobs(job_cycles)
     end
 
     ##########################################
@@ -1180,7 +1180,7 @@ module WorkflowMgr
 
       # Initialize hash of old bqserver processes from the database and establish connections to them
       bqservers = {}
-      @db_server.get_bqservers.each do |uri|
+      @db_server.load_bqservers.each do |uri|
         # We are only interested in old bqserver processes
         # In dryrun mode, no DRb server is launched, so skip this check
         next if !WorkflowMgr.dryrun_mode? && uri == @bq_server.__drburi
