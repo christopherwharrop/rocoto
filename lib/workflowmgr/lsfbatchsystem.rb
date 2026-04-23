@@ -28,7 +28,7 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(unhold_jobs_default = false, should_vanquish_undead = false, config)
+    def initialize(config, unhold_jobs_default: false, should_vanquish_undead: false)
       super()
 
       # Get timeouts from the configuration
@@ -514,7 +514,7 @@ module WorkflowMgr
     #
     #####################################################
     def refresh_bjobs
-      j = run_bhist_bjobs(0, true)
+      j = run_bhist_bjobs(0, bjobs: true)
       @bjobs = j
     end
 
@@ -524,7 +524,7 @@ module WorkflowMgr
     #
     #####################################################
     def refresh_jobacct(nacctfiles = 1)
-      j = run_bhist_bjobs(nacctfiles, false)
+      j = run_bhist_bjobs(nacctfiles, bjobs: false)
       @bhist = j
       @nacctfiles = nacctfiles
     end
@@ -538,7 +538,7 @@ module WorkflowMgr
     # j is a hash of the results.
     #
     #####################################################
-    def run_bhist_bjobs(nacctfiles = 1, bjobs = true)
+    def run_bhist_bjobs(nacctfiles = 1, bjobs: true)
       # Get the username of this process
       Etc.getpwuid(Process.uid).name
 

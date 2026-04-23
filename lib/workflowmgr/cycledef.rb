@@ -27,7 +27,7 @@ module WorkflowMgr
     #
     ##########################################
     def first
-      self.next(Time.gm(1900, 1, 1, 0, 0), false)[0]
+      self.next(Time.gm(1900, 1, 1, 0, 0), by_activation_time: false)[0]
     end
 
     ##########################################
@@ -36,7 +36,7 @@ module WorkflowMgr
     #
     ##########################################
     def last
-      previous(Time.gm(9999, 12, 31, 59, 59), false)[0]
+      previous(Time.gm(9999, 12, 31, 59, 59), by_activation_time: false)[0]
     end
 
     ##########################################
@@ -47,7 +47,7 @@ module WorkflowMgr
     def each(rawreftime, by_activation_time)
       now = rawreftime
       until now.nil?
-        ret = self.next(now - 1, by_activation_time)
+        ret = self.next(now - 1, by_activation_time: by_activation_time)
         return if ret.nil?
 
         yield ret[0]
@@ -70,6 +70,8 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(cycledef, group, activation_offset, position = nil)
+      super()
+
       @cycledef = cycledef
       @group = group
       @activation_offset = activation_offset
@@ -87,7 +89,7 @@ module WorkflowMgr
     # next
     #
     ##########################################
-    def next(rawreftime, by_activation_time = false)
+    def next(rawreftime, by_activation_time: false)
       # Take the activation offset into account
       reftime = if by_activation_time
                   rawreftime - @activation_offset
@@ -256,13 +258,9 @@ module WorkflowMgr
     # previous
     #
     ##########################################
-    def previous(rawreftime, by_activation_time = false)
+    def previous(rawreftime, by_activation_time: false)
       # Take the activation offset into account
-      reftime = if by_activation_time
-                  rawreftime - @activation_offset
-                else
-                  rawreftime
-                end
+      reftime = by_activation_time ? rawreftime - @activation_offset : rawreftime
 
       # Get date/time components for the reference time
       prevmin = reftime.min
@@ -618,13 +616,9 @@ module WorkflowMgr
     # next
     #
     ##########################################
-    def next(rawreftime, by_activation_time = false)
+    def next(rawreftime, by_activation_time: false)
       # Take the activation offset into account
-      reftime = if by_activation_time
-                  rawreftime - @activation_offset
-                else
-                  rawreftime
-                end
+      reftime = by_activation_time ? rawreftime - @activation_offset : rawreftime
 
       if reftime > @finish
         return nil, nil
@@ -656,13 +650,9 @@ module WorkflowMgr
     # previous
     #
     ##########################################
-    def previous(rawreftime, by_activation_time = false)
+    def previous(rawreftime, by_activation_time: false)
       # Take the activation offset into account
-      reftime = if by_activation_time
-                  rawreftime - @activation_offset
-                else
-                  rawreftime
-                end
+      reftime = by_activation_time ? rawreftime - @activation_offset : rawreftime
 
       if reftime < @start
         return nil, nil

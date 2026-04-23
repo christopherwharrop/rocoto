@@ -22,7 +22,7 @@ module WorkflowMgr
     # Initialize
     #
     ##########################################
-    def initialize(args, name, action, default_all = false)
+    def initialize(args, name, action, default_all: false)
       @cycles = nil
       @task_options = []
       @default_all = default_all ? true : false # true => command defaults to all tasks and cycles
@@ -175,7 +175,7 @@ module WorkflowMgr
     ##########################################
     def selection
       if @selection.nil?
-        @selection = WorkflowSelection.new(@all_tasks, @task_options, @cycles, @default_all)
+        @selection = WorkflowSelection.new(@all_tasks, @task_options, @cycles, default_all: @default_all)
       end
       @selection
     end

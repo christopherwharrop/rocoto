@@ -18,7 +18,7 @@ module WorkflowMgr
     # Initialize
     #
     ##########################################
-    def initialize(all_tasks = nil, task_options = [], cycle_selection = [], default_all = false, allow_empty = false)
+    def initialize(all_tasks = nil, task_options = [], cycle_selection = [], default_all: false, allow_empty: false)
       all_tasks = default_all if all_tasks.nil?
 
       # Flags:

@@ -22,6 +22,6 @@ LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
                                              'rocotocheck', # command name (used for messages)
                                              'check', # what the command does (used for messages)
-                                             false) # task and cycle are required
+                                             default_all: false) # task and cycle are required
 status_engine = WFMStat::StatusEngine.new(opt)
 status_engine.check_tasks

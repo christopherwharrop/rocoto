@@ -27,7 +27,7 @@ module WFMStat
     def initialize(args, name, action)
       @summary = false
       @taskfirst = false
-      super(args, name, action, true)
+      super(args, name, action, default_all: true)
     end
 
     private
@@ -64,7 +64,7 @@ module WFMStat
     ##########################################
     def selection
       if @selection.nil?
-        @selection = WorkflowMgr::WorkflowDBSelection.new(@all_tasks, @task_options, @cycles, @default_all)
+        @selection = WorkflowMgr::WorkflowDBSelection.new(@all_tasks, @task_options, @cycles, default_all: @default_all)
       end
       @selection
     end

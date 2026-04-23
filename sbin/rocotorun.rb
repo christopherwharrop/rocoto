@@ -26,6 +26,6 @@ end
 opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
                                              'rocotorun', # command name (used for messages)
                                              'run', # what the command does (used for messages)
-                                             true) # default task and cycle selection is everything
+                                             default_all: true) # default task and cycle selection is everything
 workflow_engine = WorkflowMgr::WorkflowEngine.new(opt)
 workflow_engine.run

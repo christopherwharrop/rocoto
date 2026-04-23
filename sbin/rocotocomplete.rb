@@ -22,6 +22,6 @@ LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
                                              'rocotocomplete', # command name (used for messages)
                                              'completion', # what the command does (used for messages)
-                                             true) # default task and cycle selection is everything
+                                             default_all: true) # default task and cycle selection is everything
 workflow_engine = WorkflowMgr::WorkflowEngine.new(opt)
 workflow_engine.complete!
