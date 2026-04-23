@@ -14,7 +14,7 @@ module WorkflowMgr
   # initialize
   #
   ##########################################
-  def self.launchServer(server)
+  def self.launch_server(server)
     # Open a pipe for retrieving the URI and pid of the DRb server process
     rd, wr = IO.pipe
 

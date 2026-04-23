@@ -24,4 +24,4 @@ opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
                                              'check', # what the command does (used for messages)
                                              false) # task and cycle are required
 status_engine = WFMStat::StatusEngine.new(opt)
-status_engine.checkTasks
+status_engine.check_tasks

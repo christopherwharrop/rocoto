@@ -534,7 +534,7 @@ module WorkflowMgr
             @bq_server.submit(task.localize(boot_cycle_time), boot_cycle_time)
             unless WorkflowMgr.dryrun_mode?
               @log_server.log(boot_cycle_time,
-                             "Forcibly submitting #{task.attributes[:name]}")
+                              "Forcibly submitting #{task.attributes[:name]}")
             end
 
             # If we are not using a batch queue server, make sure all qsub threads are terminated before
@@ -554,10 +554,10 @@ module WorkflowMgr
             # checking output.nil? first would mis-classify dryrun as failure.
             if WorkflowMgr.dryrun_mode?
               @log_server.log(job.cycle,
-                             "Dryrun Mode: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
+                              "Dryrun Mode: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
             elsif output.nil?
               @log_server.log(job.cycle,
-                             "Submission status of #{job.task} is pending at #{job.id}")
+                              "Submission status of #{job.task} is pending at #{job.id}")
             elsif jobid.nil?
               # Delete the job from the database since it failed to submit.  It will be retried next time around.
               @db_server.delete_jobs([job])
@@ -568,7 +568,7 @@ module WorkflowMgr
               job.state = "QUEUED"
               job.native_state = "queued"
               @log_server.log(job.cycle,
-                             "Submission of #{job.task} succeeded, jobid=#{job.id}")
+                              "Submission of #{job.task} succeeded, jobid=#{job.id}")
               # Update the jobid for the job in the database
               @db_server.update_jobs([job])
             end
@@ -1246,8 +1246,8 @@ module WorkflowMgr
           # If there is no output from the submission, it means the submission is still pending
           elsif output.nil?
             @log_server.log(job.cycle,
-                           "Submission status of #{job.task} is still pending at #{uri}.  The batch system " \
-                           "server may be down, unresponsive, or under heavy load.")
+                            "Submission status of #{job.task} is still pending at #{uri}.  The batch system " \
+                            "server may be down, unresponsive, or under heavy load.")
 
           # Otherwise, the submission either succeeded or failed.
           elsif jobid.nil?
@@ -1270,7 +1270,7 @@ module WorkflowMgr
           else
             job.id = jobid
             @log_server.log(job.cycle,
-                           "Submission status of previously pending #{job.task} is success, jobid=#{jobid}")
+                            "Submission status of previously pending #{job.task} is success, jobid=#{jobid}")
 
           end
 
@@ -1349,8 +1349,8 @@ module WorkflowMgr
 
             # Log the fact that this job was resurrected
             @log_server.log(job.cycle,
-                           "Task #{job.task} has been resurrected.  " \
-                           "#{@tasks[job.task].attributes[:maxtries] - job.tries} more tries will be allowed")
+                            "Task #{job.task} has been resurrected.  " \
+                            "#{@tasks[job.task].attributes[:maxtries] - job.tries} more tries will be allowed")
           end
 
           # No need for more updates to this job
@@ -1669,8 +1669,8 @@ module WorkflowMgr
                    "SUBMITTING"].include?(@active_jobs[taskname][cycle.cycle].state)
 
           @log_server.log(cycle.cycle,
-                         "Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle].id} " \
-                         "because this cycle has expired!")
+                          "Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle].id} " \
+                          "because this cycle has expired!")
           @bq_server.delete(@active_jobs[taskname][cycle.cycle].id)
         end
 
@@ -1769,16 +1769,16 @@ module WorkflowMgr
           # Reject this task if core throttle will be exceeded
           if @active_core_count + task.attributes[:cores] > @corethrottle
             @log_server.log(cycletime,
-                           "Cannot submit #{task.attributes[:name]}, because maximum core throttle of " \
-                           "#{@corethrottle} will be violated.", 2)
+                            "Cannot submit #{task.attributes[:name]}, because maximum core throttle of " \
+                            "#{@corethrottle} will be violated.", 2)
             next
           end
 
           # Reject this task if task throttle will be exceeded
           if @active_task_count + 1 > @taskthrottle
             @log_server.log(cycletime,
-                           "Cannot submit #{task.attributes[:name]}, because maximum global task throttle of " \
-                           "#{@taskthrottle} will be violated.", 2)
+                            "Cannot submit #{task.attributes[:name]}, because maximum global task throttle of " \
+                            "#{@taskthrottle} will be violated.", 2)
             next
           end
 
@@ -1789,8 +1789,8 @@ module WorkflowMgr
           end
           if @active_task_instance_count[task.attributes[:name]] + 1 > task.attributes[:throttle]
             @log_server.log(cycletime,
-                           "Cannot submit #{task.attributes[:name]}, because maximum task instance throttle of " \
-                           "#{task.attributes[:throttle]} will be violated.", 2)
+                            "Cannot submit #{task.attributes[:name]}, because maximum task instance throttle of " \
+                            "#{task.attributes[:throttle]} will be violated.", 2)
             next
           end
 
@@ -1805,8 +1805,8 @@ module WorkflowMgr
 
                 violation = true
                 @log_server.log(cycletime,
-                               "Cannot submit #{task.attributes[:name]}, because maximum metatask throttle of " \
-                               "#{@metatask_throttles[metatask]} will be violated.", 2)
+                                "Cannot submit #{task.attributes[:name]}, because maximum metatask throttle of " \
+                                "#{@metatask_throttles[metatask]} will be violated.", 2)
                 throw :violation
               end
             end
@@ -1818,8 +1818,8 @@ module WorkflowMgr
           # we should never get here for a DEAD job
           if resubmit && (@active_jobs[task.attributes[:name]][cycletime].tries >= task.attributes[:maxtries])
             @log_server.log(cycletime,
-                           "Cannot resubmit #{task.attributes[:name]}, maximum retry count of " \
-                           "#{task.attributes[:maxtries]} has been reached")
+                            "Cannot resubmit #{task.attributes[:name]}, maximum retry count of " \
+                            "#{task.attributes[:maxtries]} has been reached")
             next
           end
 

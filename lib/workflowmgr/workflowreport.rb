@@ -405,16 +405,16 @@ module WorkflowMgr
               puts "Submission status of #{taskname} could not be retrieved because the server process at #{uri} died"
               puts "Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted"
               @log_server.log(cycle,
-                             "Submission status of #{taskname} could not be retrieved because " \
-                             "the server process at #{uri} died")
+                              "Submission status of #{taskname} could not be retrieved because " \
+                              "the server process at #{uri} died")
               @log_server.log(cycle,
-                             "Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted")
+                              "Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted")
 
             # If there is no output from the submission, it means the submission is still pending
             elsif output.nil?
               @log_server.log(cycle,
-                             "Submission status of #{taskname} is still pending at #{uri}.  The batch system " \
-                             "server may be down, unresponsive, or under heavy load.")
+                              "Submission status of #{taskname} is still pending at #{uri}.  The batch system " \
+                              "server may be down, unresponsive, or under heavy load.")
 
             # Otherwise, the submission either succeeded or failed.
             elsif jobid.nil?
@@ -437,7 +437,7 @@ module WorkflowMgr
             else
               @active_jobs[taskname][cycle][:jobid] = jobid
               @log_server.log(cycle,
-                             "Submission status of previously pending #{taskname} is success, jobid=#{jobid}")
+                              "Submission status of previously pending #{taskname} is success, jobid=#{jobid}")
 
             end
 
@@ -503,9 +503,9 @@ module WorkflowMgr
 
                 # Log the fact that this job was resurrected
                 @log_server.log(cycle,
-                               "Task #{taskname} has been resurrected.  " \
-                               "#{task.attributes[:maxtries] - @active_jobs[taskname][cycle][:tries]} " \
-                               "more tries will be allowed")
+                                "Task #{taskname} has been resurrected.  " \
+                                "#{task.attributes[:maxtries] - @active_jobs[taskname][cycle][:tries]} " \
+                                "more tries will be allowed")
               end
 
               # No need for more updates to this job
@@ -705,8 +705,8 @@ module WorkflowMgr
           next if ["SUCCEEDED", "FAILED", "DEAD"].include?(@active_jobs[taskname][cycle[:cycle]][:state])
 
           @log_server.log(cycle[:cycle],
-                         "Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} " \
-                         "because this cycle has expired!")
+                          "Deleting #{taskname} job #{@active_jobs[taskname][cycle[:cycle]][:jobid]} " \
+                          "because this cycle has expired!")
           @bq_server.delete(@active_jobs[taskname][cycle[:cycle]][:jobid])
         end
 
@@ -765,16 +765,16 @@ module WorkflowMgr
           # Reject this task if core throttle will be exceeded
           if @active_core_count + task.attributes[:cores] > @corethrottle
             @log_server.log(cycle,
-                           "Cannot submit #{task.attributes[:name]}, because maximum core throttle of " \
-                           "#{@corethrottle} will be violated.", 2)
+                            "Cannot submit #{task.attributes[:name]}, because maximum core throttle of " \
+                            "#{@corethrottle} will be violated.", 2)
             next
           end
 
           # Reject this task if task throttle will be exceeded
           if @active_task_count + 1 > @taskthrottle
             @log_server.log(cycle,
-                           "Cannot submit #{task.attributes[:name]}, because maximum task throttle of " \
-                           "#{@taskthrottle} will be violated.", 2)
+                            "Cannot submit #{task.attributes[:name]}, because maximum task throttle of " \
+                            "#{@taskthrottle} will be violated.", 2)
             next
           end
 
@@ -788,8 +788,8 @@ module WorkflowMgr
           # and we should never get here for a DEAD job
           if resubmit && (@active_jobs[task.attributes[:name]][cycle][:tries] >= task.attributes[:maxtries])
             @log_server.log(cycle,
-                           "Cannot resubmit #{task.attributes[:name]}, maximum retry count of " \
-                           "#{task.attributes[:maxtries]} has been reached")
+                            "Cannot resubmit #{task.attributes[:name]}, maximum retry count of " \
+                            "#{task.attributes[:maxtries]} has been reached")
             next
           end
 

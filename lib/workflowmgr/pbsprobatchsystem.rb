@@ -55,10 +55,10 @@ module WorkflowMgr
       # Collect the statuses of the jobs
       jobids.each do |jobid|
         job_statuses[jobid] = if @jobacct.key?(jobid)
-                               @jobacct[jobid]
-                             else
-                               { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
-                             end
+                                @jobacct[jobid]
+                              else
+                                { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
+                              end
       end
     rescue WorkflowMgr::SchedulerDown
       @schedup = false

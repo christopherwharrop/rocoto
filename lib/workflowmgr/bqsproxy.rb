@@ -105,7 +105,7 @@ module WorkflowMgr
           Signal.trap("INT", nil)
 
           # Launch server process
-          @bq_server, @bq_host, @bq_pid = WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotobqserver")
+          @bq_server, @bq_host, @bq_pid = WorkflowMgr.launch_server("#{wfmdir}/sbin/rocotobqserver")
           @bq_server.setup(bqs)
 
           # Restore default SIGINT handler

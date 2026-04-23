@@ -115,10 +115,10 @@ module WFMStat
 
     ##########################################
     #
-    # checkOneTask
+    # check_one_task
     #
     ##########################################
-    def checkOneTask(cycletime, taskname, cycledefs)
+    def check_one_task(cycletime, taskname, cycledefs)
       # Get the cycle
       cycle = @db_server.get_cycles({ start: cycletime, end: cycletime }).first || WorkflowMgr::Cycle.new(cycletime)
 
@@ -173,10 +173,10 @@ module WFMStat
 
     ##########################################
     #
-    # checkTasks
+    # check_tasks
     #
     ##########################################
-    def checkTasks
+    def check_tasks
       # Open/Create the database
       @db_server.dbopen({ readonly: true })
 
@@ -193,7 +193,7 @@ module WFMStat
 
       @subset.each_cycle do |cycletime|
         @subset.each_task do |taskname|
-          checkOneTask(cycletime, taskname, cycledefs)
+          check_one_task(cycletime, taskname, cycledefs)
         end
       end
     rescue StandardError => e
@@ -218,10 +218,10 @@ module WFMStat
 
     ##########################################
     #
-    # getCycles
+    # get_cycles
     #
     ##########################################
-    def getCycles
+    def get_cycles
       # Turn the db, xml, and undef iterators into arrays:
       dbcycles = @subset.collect_db_cycles { |c| c }
       xmlcycles = @subset.collect_xml_cycles { |c| c }
@@ -237,7 +237,7 @@ module WFMStat
     ##########################################
     def print_summary
       # Get cycles of interest
-      dbcycles, xmlcycles, = getCycles
+      dbcycles, xmlcycles, = get_cycles
 
       # Print the header
       printf "%12s    %8s    %20s    %20s\n", "CYCLE".center(12),
@@ -261,7 +261,7 @@ module WFMStat
     ##########################################
     def print_status
       # Get cycles of interest
-      dbcycles, xmlcycles, = getCycles
+      dbcycles, xmlcycles, = get_cycles
 
       # Get the jobs from the database for the cycles of interest
       jobs = @db_server.get_jobs(dbcycles.collect(&:cycle))
@@ -295,7 +295,7 @@ module WFMStat
         tasklist.each do |task|
           next unless @subset.is_selected? task
 
-          printf "#{'=' * 120}\n"
+          printf "#{'=' * 128}\n"
           cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
           cyclelist.each do |cycle|
             next unless @subset.is_selected? cycle
@@ -344,7 +344,7 @@ module WFMStat
             next
           end
 
-          printf "#{'=' * 120}\n"
+          printf "#{'=' * 128}\n"
 
           # Sort the task list in sequence order
           tasklist = jobs.keys | defined_tasks.values.collect { |t| t.attributes[:name] }

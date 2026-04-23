@@ -687,7 +687,7 @@ module WorkflowMgr
     ##########################################
     def validate_with_metatasks(doc)
       # Parse the Relax NG schema XML document
-      xmlstring = @workflow_io_server.parseXMLFile("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
+      xmlstring = @workflow_io_server.parse_xml_file("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
       relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
 
       # Prepare the Relax NG schemas for validation
@@ -704,7 +704,7 @@ module WorkflowMgr
     ##########################################
     def validate_without_metatasks(doc)
       # Parse the Relax NG schema XML document
-      xmlstring = @workflow_io_server.parseXMLFile("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
+      xmlstring = @workflow_io_server.parse_xml_file("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
       relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
 
       # Prepare the Relax NG schemas for validation

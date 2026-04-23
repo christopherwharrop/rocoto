@@ -20,10 +20,6 @@ module WorkflowMgr
     attr_reader :cycle, :job_list, :workflow_io_server, :cycledefs
     attr_reader :taskname, :task, :tasks
 
-    def taskName
-      @taskname
-    end
-
     ##########################################
     #
     # Initialize

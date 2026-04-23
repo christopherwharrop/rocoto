@@ -33,7 +33,7 @@ module WorkflowMgr
       @newdownpaths = []
 
       # Initialize the workflow_io server
-      workflowIO_init
+      workflow_io_init
 
       # Define the stop! method to increase performance by avoiding calls to method_missing
       (class << self; self; end).instance_eval do
@@ -118,7 +118,7 @@ module WorkflowMgr
                       "Attempting to restart and try again."
                 WorkflowMgr.stderr(msg, 2)
                 WorkflowMgr.log(msg)
-                workflowIO_init
+                workflow_io_init
                 retry
               else
                 msg = "WARNING! The rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} died.  " \
@@ -176,7 +176,7 @@ module WorkflowMgr
               # Restart the workflow_io server
               msg = "WARNING! The rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} " \
                     "is unresponsive while accessing #{args[0]} and is probably wedged."
-              workflowIO_init
+              workflow_io_init
               raise WorkflowIOHang, msg
             end
           end
@@ -189,10 +189,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # workflowIO_init
+    # workflow_io_init
     #
     ##########################################
-    def workflowIO_init
+    def workflow_io_init
       # Get the WFM install directory
       wfmdir = File.dirname(File.dirname(__dir__))
 
@@ -206,7 +206,7 @@ module WorkflowMgr
           # Ignore SIGINT while launching server process
           Signal.trap("INT", nil)
 
-          @workflow_io_server, @workflow_io_host, @workflow_io_pid = WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotoioserver")
+          @workflow_io_server, @workflow_io_host, @workflow_io_pid = WorkflowMgr.launch_server("#{wfmdir}/sbin/rocotoioserver")
           @workflow_io_server.setup(workflow_io)
 
           # Restore default SIGINT handler
