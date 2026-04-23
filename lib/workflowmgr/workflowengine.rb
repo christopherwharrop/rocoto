@@ -1761,10 +1761,8 @@ module WorkflowMgr
           @active_core_count += task.attributes[:cores]
           @active_task_count += 1
           @active_task_instance_count[task.attributes[:name]] += 1
-          unless task.attributes[:metatasks].nil?
-            task.attributes[:metatasks].split(",").each do |metatask|
-              @active_metatask_instance_count[metatask] += 1
-            end
+          task.attributes[:metatasks]&.split(",")&.each do |metatask|
+            @active_metatask_instance_count[metatask] += 1
           end
 
           # If we are resubmitting the job, initialize the new job to the old job

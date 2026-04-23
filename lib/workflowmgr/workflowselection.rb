@@ -114,7 +114,7 @@ module WorkflowMgr
         negate = false
         if metaopt.start_with? '-'
           negate = true
-          metaopt = metaopt[1..-1]
+          metaopt = metaopt[1..]
         end
         optspec << [metaopt, negate]
       end
@@ -146,11 +146,11 @@ module WorkflowMgr
         negate = false
         if item.start_with? '-'
           negate = true
-          item = item[1..-1]
+          item = item[1..]
         end
 
         if item.start_with? ':'
-          attribute_name = item[1..-1]
+          attribute_name = item[1..]
 
           case attribute_name
           when 'final'     then attribute = :final
@@ -183,7 +183,7 @@ module WorkflowMgr
             end
           end
         elsif item.start_with? '@'
-          cycledef = item[1..-1]
+          cycledef = item[1..]
           tasks.each_value do |task|
             next if task.attributes[:cycledefs].nil?
 

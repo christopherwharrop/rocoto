@@ -434,7 +434,7 @@ module WorkflowMgr
           record[:queue] = jobattributes[3]
           record[:jobname] = jobattributes[6]
           record[:cores] = nil
-          submit_time = ParseDate.parsedate(jobattributes[-3..-1].join(" "), true)
+          submit_time = ParseDate.parsedate(jobattributes[-3..].join(" "), true)
           if submit_time[0].nil?
             now = Time.now
             submit_time[0] = now.year
