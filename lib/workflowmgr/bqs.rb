@@ -33,7 +33,7 @@ module WorkflowMgr
       @batchsystem = batch_system
 
       # We can't create a thread pool yet because the DRb server hasn't been started yet
-      @poolSize = config.SubmitThreads
+      @pool_size = config.SubmitThreads
       @pool = nil
 
       # Initialize hash of job submit output
@@ -66,7 +66,7 @@ module WorkflowMgr
       end
 
       # Initialize a thread pool for multithreaded job submission if we don't have one yet
-      @pool = Thread.pool(@poolSize) if @pool.nil?
+      @pool = Thread.pool(@pool_size) if @pool.nil?
 
       # Spawn a thread to submit the job
       @pool.process do

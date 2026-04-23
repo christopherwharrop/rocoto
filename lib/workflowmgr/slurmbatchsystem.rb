@@ -98,9 +98,9 @@ module WorkflowMgr
       raise WorkflowMgr::SchedulerDown unless @schedup
 
       # Initialize statuses to UNAVAILABLE
-      jobStatuses = {}
+      job_statuses = {}
       jobids.each do |jobid|
-        jobStatuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
+        job_statuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
       end
 
       # Populate the job status table if it is empty
@@ -129,7 +129,7 @@ module WorkflowMgr
 
       # Collect the statuses of the jobs
       jobids.each do |jobid|
-        jobStatuses[jobid] = if @jobqueue.key?(jobid)
+        job_statuses[jobid] = if @jobqueue.key?(jobid)
                                @jobqueue[jobid]
                              elsif @jobacct.key?(jobid)
                                @jobacct[jobid]
@@ -141,7 +141,7 @@ module WorkflowMgr
     rescue WorkflowMgr::SchedulerDown
       @schedup = false
     ensure
-      return jobStatuses
+      return job_statuses
     end
 
     #####################################################
@@ -281,8 +281,8 @@ module WorkflowMgr
       end
 
       # Add secret identifier for later retrieval
-      randomID = SecureRandom.hex
-      input += "#SBATCH --comment=#{randomID}\n"
+      random_id = SecureRandom.hex
+      input += "#SBATCH --comment=#{random_id}\n"
 
       # Add export commands to pass environment vars to the job
       unless task.envars.empty?
@@ -353,7 +353,7 @@ module WorkflowMgr
                                            { invalid: :replace, undef: :replace, replace: '' })
         end
 
-        # Look for a job that matches the randomID we inserted into the comment
+        # Look for a job that matches the random_id we inserted into the comment
         queued_jobs.split("\n").each do |job|
           # Skip headings
           next if job[0..4] == 'JOBID'
@@ -362,8 +362,8 @@ module WorkflowMgr
           # Extract job id
           jobid = job[0..39].strip
 
-          # Extract randomID
-          next unless randomID == job[40..71].strip
+          # Extract random_id
+          next unless random_id == job[40..71].strip
 
           WorkflowMgr.log("WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} " \
                           "after sbatch failed with socket time out")

@@ -32,22 +32,22 @@ module WorkflowMgr
       # Initialize a list of newly detected down file paths
       @newdownpaths = []
 
-      # Initialize the workflowIO server
+      # Initialize the workflow_io server
       workflowIO_init
 
       # Define the stop! method to increase performance by avoiding calls to method_missing
       (class << self; self; end).instance_eval do
         define_method :stop! do |*args|
           WorkflowMgr.timeout(30) do
-            @workflowIOServer.send(:stop!, *args)
+            @workflow_io_server.send(:stop!, *args)
           end
         rescue DRb::DRbConnError
-          msg = "WARNING! Can't shut down rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} " \
+          msg = "WARNING! Can't shut down rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} " \
                 "because it is not running."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
         rescue Timeout::Error
-          msg = "WARNING! Can't shut down rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} " \
+          msg = "WARNING! Can't shut down rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} " \
                 "because it is unresponsive and is probably wedged."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
@@ -65,7 +65,7 @@ module WorkflowMgr
 
                 # Don't try to access the path because we just detected that accesses to it hang.  Raise exception.
                 raise WorkflowIOHang,
-                      "WARNING! rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} " \
+                      "WARNING! rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} " \
                       "cannot attempt to access #{args[0]}, because previous attempts to " \
                       "access the filesystem have hung."
               end
@@ -85,7 +85,7 @@ module WorkflowMgr
 
                   # The process is still hung, so don't try to access the path because it's still bad.  Raise exception.
                   raise WorkflowIOHang,
-                        "WARNING! rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} " \
+                        "WARNING! rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} " \
                         "cannot attempt to access #{args[0]}, because previous attempts to " \
                         "access the filesystem have hung."
 
@@ -109,19 +109,19 @@ module WorkflowMgr
             retries = 0
             begin
               WorkflowMgr.timeout(150) do
-                @workflowIOServer.send(m, *args)
+                @workflow_io_server.send(m, *args)
               end
             rescue DRb::DRbConnError
               if retries < 1
                 retries += 1
-                msg = "WARNING! The rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} died.  " \
+                msg = "WARNING! The rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} died.  " \
                       "Attempting to restart and try again."
                 WorkflowMgr.stderr(msg, 2)
                 WorkflowMgr.log(msg)
                 workflowIO_init
                 retry
               else
-                msg = "WARNING! The rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} died.  " \
+                msg = "WARNING! The rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} died.  " \
                       "#{retries} attempts to restart the server have failed, giving up."
                 raise msg
               end
@@ -158,23 +158,23 @@ module WorkflowMgr
                        "#{downpathmatch[:pid]} 2>&1 > /dev/null")
 
                 # Add the common portion of the paths to the database
-                newdownpath = { path: commonpath.join("/"), downtime: downtime, host: @workflowIOHost,
-                                pid: @workflowIOPID }
+                newdownpath = { path: commonpath.join("/"), downtime: downtime, host: @workflow_io_host,
+                                pid: @workflow_io_pid }
                 @db_server.add_downpaths([newdownpath])
                 @newdownpaths << newdownpath
 
               # Otherwise the arg path is a new down path
               else
 
-                newdownpath = { path: argpath.join("/"), downtime: downtime, host: @workflowIOHost,
-                                pid: @workflowIOPID }
+                newdownpath = { path: argpath.join("/"), downtime: downtime, host: @workflow_io_host,
+                                pid: @workflow_io_pid }
                 @db_server.add_downpaths([newdownpath])
                 @newdownpaths << newdownpath
 
               end
 
-              # Restart the workflowIO server
-              msg = "WARNING! The rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} " \
+              # Restart the workflow_io server
+              msg = "WARNING! The rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} " \
                     "is unresponsive while accessing #{args[0]} and is probably wedged."
               workflowIO_init
               raise WorkflowIOHang, msg
@@ -197,7 +197,7 @@ module WorkflowMgr
       wfmdir = File.dirname(File.dirname(__dir__))
 
       begin
-        workflowIO = WorkflowIO.new
+        workflow_io = WorkflowIO.new
 
         # Set up an object to serve requests for batch queue system services
         # Skip launching daemon in dryrun mode - no I/O operations needed
@@ -206,21 +206,21 @@ module WorkflowMgr
           # Ignore SIGINT while launching server process
           Signal.trap("INT", nil)
 
-          @workflowIOServer, @workflowIOHost, @workflowIOPID = WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotoioserver")
-          @workflowIOServer.setup(workflowIO)
+          @workflow_io_server, @workflow_io_host, @workflow_io_pid = WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotoioserver")
+          @workflow_io_server.setup(workflow_io)
 
           # Restore default SIGINT handler
           Signal.trap("INT", "DEFAULT")
 
         else
-          @workflowIOServer = workflowIO
+          @workflow_io_server = workflow_io
         end
       rescue StandardError => e
         # Try to stop the log server if something went wrong
         # Only attempt daemon shutdown when a daemon was actually launched (not in dryrun)
         if @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode? &&
-           !(@workflowIOServer.nil? || !@workflowIOServer.respond_to?(:stop!))
-          @workflowIOServer.stop!
+           !(@workflow_io_server.nil? || !@workflow_io_server.respond_to?(:stop!))
+          @workflow_io_server.stop!
         end
 
         # Raise fatal exception

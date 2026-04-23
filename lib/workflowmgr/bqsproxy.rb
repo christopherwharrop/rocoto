@@ -23,7 +23,7 @@ module WorkflowMgr
     ##########################################
     def initialize(batch_system, config, options)
       # Store the batch system proxy creation parameters
-      @batchSystem = batch_system
+      @batch_system = batch_system
       @config = config
       @options = options
 
@@ -34,15 +34,15 @@ module WorkflowMgr
       (class << self; self; end).instance_eval do
         define_method :stop! do |*args|
           WorkflowMgr.timeout(30) do
-            @bqServer.send(:stop!, *args)
+            @bq_server.send(:stop!, *args)
           end
         rescue DRb::DRbConnError
-          msg = "WARNING! Can't shut down rocotobqserver process #{@bqPID} on host #{@bqHost} " \
+          msg = "WARNING! Can't shut down rocotobqserver process #{@bq_pid} on host #{@bq_host} " \
                 "because it is not running."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
         rescue Timeout::Error
-          msg = "WARNING! Can't shut down rocotobqserver process #{@bqPID} on host #{@bqHost} " \
+          msg = "WARNING! Can't shut down rocotobqserver process #{@bq_pid} on host #{@bq_host} " \
                 "because it is unresponsive and is probably wedged."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
@@ -56,24 +56,24 @@ module WorkflowMgr
             retries = 0
             begin
               WorkflowMgr.timeout(150) do
-                @bqServer.send(m, *args)
+                @bq_server.send(m, *args)
               end
             rescue DRb::DRbConnError
               if retries < 1
                 retries += 1
-                msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} died.  " \
+                msg = "WARNING! The rocotobqserver process #{@bq_pid} on host #{@bq_host} died.  " \
                       "Attempting to restart and try again."
                 WorkflowMgr.stderr(msg, 2)
                 WorkflowMgr.log(msg)
                 initbqs
                 retry
               else
-                msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} died.  " \
+                msg = "WARNING! The rocotobqserver process #{@bq_pid} on host #{@bq_host} died.  " \
                       "#{retries} attempts to restart the server have failed, giving up."
                 raise msg
               end
             rescue Timeout::Error
-              msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} is unresponsive " \
+              msg = "WARNING! The rocotobqserver process #{@bq_pid} on host #{@bq_host} is unresponsive " \
                     "and is probably wedged."
               raise msg
             end
@@ -96,7 +96,7 @@ module WorkflowMgr
       # Create the batch queue system object
       begin
         # Initialize the
-        bqs = BQS.new(@batchSystem, @options.database, @config)
+        bqs = BQS.new(@batch_system, @options.database, @config)
 
         # Skip launching daemon in dryrun mode - no batch system interaction needed
         if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
@@ -105,20 +105,20 @@ module WorkflowMgr
           Signal.trap("INT", nil)
 
           # Launch server process
-          @bqServer, @bqHost, @bqPID = WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotobqserver")
-          @bqServer.setup(bqs)
+          @bq_server, @bq_host, @bq_pid = WorkflowMgr.launchServer("#{wfmdir}/sbin/rocotobqserver")
+          @bq_server.setup(bqs)
 
           # Restore default SIGINT handler
           Signal.trap("INT", "DEFAULT")
 
         else
-          @bqServer = bqs
+          @bq_server = bqs
         end
       rescue StandardError => e
         # Try to stop the bqserver if something went wrong
         # Only attempt daemon shutdown when a daemon was actually launched (not in dryrun)
-        if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode? && !(@bqServer.nil? || !@bqServer.respond_to?(:stop!))
-          @bqServer.stop!
+        if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode? && !(@bq_server.nil? || !@bq_server.respond_to?(:stop!))
+          @bq_server.stop!
         end
 
         # Raise fatal exception

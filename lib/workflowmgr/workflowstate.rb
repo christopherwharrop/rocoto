@@ -17,7 +17,7 @@ module WorkflowMgr
     # Readers
     #
     ##########################################
-    attr_reader :cycle, :job_list, :workflow_ioserver, :cycledefs
+    attr_reader :cycle, :job_list, :workflow_io_server, :cycledefs
     attr_reader :taskname, :task, :tasks
 
     def taskName
@@ -29,14 +29,14 @@ module WorkflowMgr
     # Initialize
     #
     ##########################################
-    def initialize(cycle, job_list, workflow_ioserver, cycledefs, taskname, task, tasks = nil, doc = nil)
+    def initialize(cycle, job_list, workflow_io_server, cycledefs, taskname, task, tasks = nil, doc = nil)
       if taskname.nil?
         raise 'In WorkflowState.new, taskname cannot be nil.'
       end
 
       @cycle = cycle
       @job_list = job_list
-      @workflow_ioserver = workflow_ioserver
+      @workflow_io_server = workflow_io_server
       @cycledefs = cycledefs
       @taskname = taskname
       @task = task
@@ -119,7 +119,7 @@ module WorkflowMgr
         nse.set_cycle(@cycle)
         nse.setdef('job_list', @job_list)
         nse.setdef('cycledefs', @cycledefs)
-        nse.setdef('workflow_ioserver', @workflow_ioserver)
+        nse.setdef('workflow_io_server', @workflow_io_server)
         @se = nse
       end
       @se

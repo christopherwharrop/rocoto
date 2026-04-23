@@ -55,7 +55,7 @@ module WFMStat
       @options = options
 
       # Set up an object to serve the workflow database (but do not open the database)
-      @dbServer = WorkflowMgr::DBProxy.new(@config, @options)
+      @db_server = WorkflowMgr::DBProxy.new(@config, @options)
     rescue StandardError => e
       WorkflowMgr.stderr(e.message, 1)
       WorkflowMgr.log(e.message)
@@ -73,19 +73,19 @@ module WFMStat
     ##########################################
     def wfmstat
       # Open/Create the database
-      @dbServer.dbopen({ readonly: true })
+      @db_server.dbopen({ readonly: true })
 
       # Set up an object to serve file stat info
-      @workflowIOServer = WorkflowMgr::WorkflowIOProxy.new(@dbServer, @config, @options)
+      @workflow_io_server = WorkflowMgr::WorkflowIOProxy.new(@db_server, @config, @options)
 
       # Open the workflow document
-      @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer, @config)
+      @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc, @workflow_io_server, @config)
 
       @workflowdoc.features_supported?
 
       # Get the task and cycle subsets
       @subset = @options.selection.make_subset(@workflowdoc.tasks, @workflowdoc.cycledefs,
-                                               @dbServer)
+                                               @db_server)
 
       # Print a cycle summary report if requested
       if @options.summary
@@ -102,14 +102,14 @@ module WFMStat
       end
       Process.exit(1)
     ensure
-      # Make sure we release the workflow lock in the database and shutdown the dbserver
-      if !@dbServer.nil? && @config.DatabaseServer
-        @dbServer.stop!
+      # Make sure we release the workflow lock in the database and shutdown the db_server
+      if !@db_server.nil? && @config.DatabaseServer
+        @db_server.stop!
       end
 
       # Make sure to shut down the workflow file stat server
-      if !@workflowIOServer.nil? && @config.WorkflowIOServer
-        @workflowIOServer.stop!
+      if !@workflow_io_server.nil? && @config.WorkflowIOServer
+        @workflow_io_server.stop!
       end
     end
 
@@ -120,7 +120,7 @@ module WFMStat
     ##########################################
     def checkOneTask(cycletime, taskname, cycledefs)
       # Get the cycle
-      cycle = @dbServer.get_cycles({ start: cycletime, end: cycletime }).first || WorkflowMgr::Cycle.new(cycletime)
+      cycle = @db_server.get_cycles({ start: cycletime, end: cycletime }).first || WorkflowMgr::Cycle.new(cycletime)
 
       # Get the task
       task = @workflowdoc.tasks[taskname]
@@ -131,7 +131,7 @@ module WFMStat
       @workflowdoc.taskdep_cycle_offsets.each do |offset|
         jobcycles << cycletime + offset
       end
-      jobs = @dbServer.get_jobs(jobcycles)
+      jobs = @db_server.get_jobs(jobcycles)
       job = if jobs[taskname].nil?
               nil
             else
@@ -146,14 +146,14 @@ module WFMStat
       nil
       unless task.nil?
         unless task.dependency.nil?
-          wstate = WorkflowMgr::WorkflowState.new(cycle.cycle, jobs, @workflowIOServer, @workflowdoc.cycledefs,
+          wstate = WorkflowMgr::WorkflowState.new(cycle.cycle, jobs, @workflow_io_server, @workflowdoc.cycledefs,
                                                   task.attributes[:name], task, @workflowdoc.tasks)
           dependencies = task.dependency.query(wstate)
           printf "%2s%s\n", "", "dependencies"
           print_deps(dependencies, 0)
         end
         unless task.hangdependency.nil?
-          wstate = WorkflowState.new(cycle.cycle, jobs, @workflowIOServer, @workflowdoc.cycledefs,
+          wstate = WorkflowState.new(cycle.cycle, jobs, @workflow_io_server, @workflowdoc.cycledefs,
                                      task.attributes[:name], task, @workflowdoc.tasks)
           hangdependencies = task.hangdependency.query(wstate)
           printf "%2s%s\n", "", "hang dependencies"
@@ -178,16 +178,16 @@ module WFMStat
     ##########################################
     def checkTasks
       # Open/Create the database
-      @dbServer.dbopen({ readonly: true })
+      @db_server.dbopen({ readonly: true })
 
       # Set up an object to serve file stat info
-      @workflowIOServer = WorkflowMgr::WorkflowIOProxy.new(@dbServer, @config, @options)
+      @workflow_io_server = WorkflowMgr::WorkflowIOProxy.new(@db_server, @config, @options)
 
       # Open the workflow document
-      @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc, @workflowIOServer, @config)
+      @workflowdoc = WorkflowMgr::WorkflowXMLDoc.new(@options.workflowdoc, @workflow_io_server, @config)
 
       @subset = @options.selection.make_subset(@workflowdoc.tasks, cycledefs = @workflowdoc.cycledefs,
-                                               @dbServer)
+                                               @db_server)
 
       cycledefs = @workflowdoc.cycledefs
 
@@ -205,14 +205,14 @@ module WFMStat
       end
       Process.exit(1)
     ensure
-      # Make sure we release the workflow lock in the database and shutdown the dbserver
-      if !@dbServer.nil? && @config.DatabaseServer
-        @dbServer.stop!
+      # Make sure we release the workflow lock in the database and shutdown the db_server
+      if !@db_server.nil? && @config.DatabaseServer
+        @db_server.stop!
       end
 
       # Make sure to shut down the workflow file stat server
-      if !@workflowIOServer.nil? && @config.WorkflowIOServer
-        @workflowIOServer.stop!
+      if !@workflow_io_server.nil? && @config.WorkflowIOServer
+        @workflow_io_server.stop!
       end
     end
 
@@ -264,10 +264,10 @@ module WFMStat
       dbcycles, xmlcycles, = getCycles
 
       # Get the jobs from the database for the cycles of interest
-      jobs = @dbServer.get_jobs(dbcycles.collect(&:cycle))
+      jobs = @db_server.get_jobs(dbcycles.collect(&:cycle))
 
       # Get the list of tasks from the workflow definition
-      definedTasks = @workflowdoc.tasks
+      defined_tasks = @workflowdoc.tasks
 
       # Get the cycle defs
       cycledefs = @workflowdoc.cycledefs
@@ -285,9 +285,9 @@ module WFMStat
         puts format % header
 
         # Sort the task list in sequence order
-        tasklist = jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
+        tasklist = jobs.keys | defined_tasks.values.collect { |t| t.attributes[:name] }
         tasklist = tasklist.sort_by do |t|
-          [definedTasks[t].nil? ? 999_999_999 : definedTasks[t].seq, t.split(/(\d+)/).map do |i|
+          [defined_tasks[t].nil? ? 999_999_999 : defined_tasks[t].seq, t.split(/(\d+)/).map do |i|
             i =~ /\d+/ ? i.to_i : i
           end].flatten
         end
@@ -301,10 +301,10 @@ module WFMStat
             next unless @subset.is_selected? cycle
 
             # Only print info if the cycle is defined for this task
-            unless definedTasks[task].attributes[:cycledefs].nil?
+            unless defined_tasks[task].attributes[:cycledefs].nil?
               # Get the cycledefs associated with this task
               taskcycledefs[task] = cycledefs.find_all do |cycledef|
-                definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
+                defined_tasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
               end
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
@@ -347,9 +347,9 @@ module WFMStat
           printf "#{'=' * 120}\n"
 
           # Sort the task list in sequence order
-          tasklist = jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }
+          tasklist = jobs.keys | defined_tasks.values.collect { |t| t.attributes[:name] }
           tasklist = tasklist.sort_by do |t|
-            [definedTasks[t].nil? ? 999_999_999 : definedTasks[t].seq, t.split(/(\d+)/).map do |i|
+            [defined_tasks[t].nil? ? 999_999_999 : defined_tasks[t].seq, t.split(/(\d+)/).map do |i|
               i =~ /\d+/ ? i.to_i : i
             end].flatten
           end
@@ -360,10 +360,10 @@ module WFMStat
             end
 
             # Only print info if the task is defined for this cycle
-            unless definedTasks[task].nil? || definedTasks[task].attributes[:cycledefs].nil?
+            unless defined_tasks[task].nil? || defined_tasks[task].attributes[:cycledefs].nil?
               # Get the cycledefs associated with this task
               taskcycledefs[task] = cycledefs.find_all do |cycledef|
-                definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
+                defined_tasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
               end
               # Reject this task if the cycle is not a member of the tasks cycle list
               next unless taskcycledefs[task].any? { |cycledef| cycledef.member?(cycle) }
@@ -491,8 +491,8 @@ module WFMStat
       end
 
       # Check for throttle violations
-      active_cycles = @dbServer.get_active_cycles
-      active_jobs = @dbServer.get_jobs(active_cycles.collect(&:cycle))
+      active_cycles = @db_server.get_active_cycles
+      active_jobs = @db_server.get_jobs(active_cycles.collect(&:cycle))
       ncores = 0
       ntasks = 0
       active_jobs.each_key do |jobtask|

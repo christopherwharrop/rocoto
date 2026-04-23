@@ -42,9 +42,9 @@ module WorkflowMgr
     #####################################################
     def statuses(jobids)
       # Initialize statuses to UNAVAILABLE
-      jobStatuses = {}
+      job_statuses = {}
       jobids.each do |jobid|
-        jobStatuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
+        job_statuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
       end
 
       raise WorkflowMgr::SchedulerDown unless @schedup
@@ -54,7 +54,7 @@ module WorkflowMgr
 
       # Collect the statuses of the jobs
       jobids.each do |jobid|
-        jobStatuses[jobid] = if @jobacct.key?(jobid)
+        job_statuses[jobid] = if @jobacct.key?(jobid)
                                @jobacct[jobid]
                              else
                                { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
@@ -63,7 +63,7 @@ module WorkflowMgr
     rescue WorkflowMgr::SchedulerDown
       @schedup = false
     ensure
-      return jobStatuses
+      return job_statuses
     end
 
     #####################################################

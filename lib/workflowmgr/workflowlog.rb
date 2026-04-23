@@ -19,10 +19,10 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(path, verbosity, workflow_ioserver)
+    def initialize(path, verbosity, workflow_io_server)
       @path = path
       @verbosity = verbosity || 0
-      @workflow_ioserver = workflow_ioserver
+      @workflow_io_server = workflow_io_server
     end
 
     #####################################################
@@ -34,7 +34,7 @@ module WorkflowMgr
       if level <= @verbosity
         logname = @path.to_s(cycle)
         begin
-          @workflow_ioserver.log(logname, msg)
+          @workflow_io_server.log(logname, msg)
         rescue WorkflowIOHang
           err = "WARNING! Cannot write the following log message to #{logname} " \
                 "because it resides on an unresponsive file system!"

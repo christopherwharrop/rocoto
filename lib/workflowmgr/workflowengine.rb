@@ -57,7 +57,7 @@ module WorkflowMgr
       @options = options
 
       # Set up an object to serve the workflow database (but do not open the database)
-      @dbServer = DBProxy.new(@config, @options)
+      @db_server = DBProxy.new(@config, @options)
 
       # Initialize the workflow lock
       @locked = false
@@ -186,7 +186,7 @@ module WorkflowMgr
             else
               strid = rewind_job.id.to_s
               puts "#{strcyc}: #{task_name}: killing job #{strid}..."
-              @bqServer.delete(strid)
+              @bq_server.delete(strid)
               puts "#{strcyc}: #{task_name}: will now rewind."
             end
 
@@ -195,13 +195,13 @@ module WorkflowMgr
               puts "#{strcyc}: #{task_name}: No entry in @tasks.  Task does not exist.  INTERNAL ERROR."
               raise
             end
-            wstate = WorkflowState.new(cycle, @active_jobs, @workflowIOServer, @cycledefs, task_name, task,
+            wstate = WorkflowState.new(cycle, @active_jobs, @workflow_io_server, @cycledefs, task_name, task,
                                        @tasks)
             task.rewind!(wstate)
 
             puts "#{strcyc}: #{task_name}: deleting all records of this job."
             rewind_job.tries = 0
-            @dbServer.delete_jobs([rewind_job])
+            @db_server.delete_jobs([rewind_job])
             did_something = true
           end
 
@@ -217,7 +217,7 @@ module WorkflowMgr
 
             puts "#{strcyc}: Deactivate cycle: #{rewind_cycle}"
 
-            @dbServer.remove_cycle(rewind_cycle.cycle)
+            @db_server.remove_cycle(rewind_cycle.cycle)
           elsif did_something
             if rewind_cycle.done? || rewind_cycle.draining?
               if rewind_cycle.done?
@@ -228,7 +228,7 @@ module WorkflowMgr
                      "as rocotorun is executed again."
               end
               rewind_cycle.reactivate!
-              @dbServer.update_cycles([rewind_cycle])
+              @db_server.update_cycles([rewind_cycle])
             end
 
             unless rewind_cycle.active?
@@ -293,8 +293,8 @@ module WorkflowMgr
       # database and add the jobs for that cycle to the active job
       # list as well
       if boot_cycle.nil?
-        boot_cycle = @dbServer.get_cycle(cycle_time).first
-        @active_jobs.merge!(@dbServer.get_jobs([cycle_time]))
+        boot_cycle = @db_server.get_cycle(cycle_time).first
+        @active_jobs.merge!(@db_server.get_jobs([cycle_time]))
       end
       boot_cycle
     end
@@ -411,7 +411,7 @@ module WorkflowMgr
                 boot_cycle = Cycle.new(boot_cycle_time)
                 boot_cycle.activate!
                 unless WorkflowMgr.dryrun_mode?
-                  @dbServer.add_cycles([boot_cycle])
+                  @db_server.add_cycles([boot_cycle])
                 end
                 boot_job = nil
               else
@@ -424,7 +424,7 @@ module WorkflowMgr
               if boot_cycle.done? || boot_cycle.draining?
                 boot_cycle.reactivate!
                 unless WorkflowMgr.dryrun_mode?
-                  @dbServer.update_cycles([boot_cycle])
+                  @db_server.update_cycles([boot_cycle])
                 end
               end
 
@@ -479,7 +479,7 @@ module WorkflowMgr
             # Initialize jobid of the new job
             # In dryrun mode, no DRb server is launched, so use 0 as placeholder
             newjobid = if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
-                         @bqServer.__drburi
+                         @bq_server.__drburi
                        else
                          0
                        end
@@ -498,7 +498,7 @@ module WorkflowMgr
 
             # Add the new job to the database
             unless WorkflowMgr.dryrun_mode?
-              @dbServer.add_jobs([job])
+              @db_server.add_jobs([job])
             end
 
             # Localize all <cyclestr> to current cycle
@@ -515,25 +515,25 @@ module WorkflowMgr
                   else
                     outdir = value.split("/")[0..-2].join("/")
                     # Roll the log file (if it already exists)
-                    @workflowIOServer.roll_log(value)
+                    @workflow_io_server.roll_log(value)
                   end
                   unless outdir.empty?
-                    @workflowIOServer.mkdir_p(outdir)
+                    @workflow_io_server.mkdir_p(outdir)
                   end
                 end
               end
             rescue WorkflowIOHang
               msg = "WARNING! Can not submit #{task.attributes[:name]} because output directory " \
                     "'#{outdir}' resides on an unresponsive file system!"
-              @logServer.log(boot_cycle_time, msg)
+              @log_server.log(boot_cycle_time, msg)
               WorkflowMgr.stderr(msg, 2)
               WorkflowMgr.log(msg)
             end
 
             # Submit the task
-            @bqServer.submit(task.localize(boot_cycle_time), boot_cycle_time)
+            @bq_server.submit(task.localize(boot_cycle_time), boot_cycle_time)
             unless WorkflowMgr.dryrun_mode?
-              @logServer.log(boot_cycle_time,
+              @log_server.log(boot_cycle_time,
                              "Forcibly submitting #{task.attributes[:name]}")
             end
 
@@ -547,30 +547,30 @@ module WorkflowMgr
 
             # Harvest job ids for submitted tasks
             job.id
-            jobid, output = @bqServer.get_submit_status(job.task, job.cycle)
+            jobid, output = @bq_server.get_submit_status(job.task, job.cycle)
 
             # Classify submission outcome: dryrun first, then pending, failure, success
             # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
             # checking output.nil? first would mis-classify dryrun as failure.
             if WorkflowMgr.dryrun_mode?
-              @logServer.log(job.cycle,
+              @log_server.log(job.cycle,
                              "Dryrun Mode: would submit #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')}")
             elsif output.nil?
-              @logServer.log(job.cycle,
+              @log_server.log(job.cycle,
                              "Submission status of #{job.task} is pending at #{job.id}")
             elsif jobid.nil?
               # Delete the job from the database since it failed to submit.  It will be retried next time around.
-              @dbServer.delete_jobs([job])
+              @db_server.delete_jobs([job])
               WorkflowMgr.stderr(output, 1)
-              @logServer.log(job.cycle, "Submission of #{job.task} failed!  #{output}")
+              @log_server.log(job.cycle, "Submission of #{job.task} failed!  #{output}")
             else
               job.id = jobid
               job.state = "QUEUED"
               job.native_state = "queued"
-              @logServer.log(job.cycle,
+              @log_server.log(job.cycle,
                              "Submission of #{job.task} succeeded, jobid=#{job.id}")
               # Update the jobid for the job in the database
-              @dbServer.update_jobs([job])
+              @db_server.update_jobs([job])
             end
 
             if WorkflowMgr.dryrun_mode?
@@ -694,7 +694,7 @@ module WorkflowMgr
               if reply =~ /^[Yy]/
                 complete_cycle = Cycle.new(complete_cycle_time)
                 complete_cycle.activate!
-                @dbServer.add_cycles([complete_cycle])
+                @db_server.add_cycles([complete_cycle])
                 complete_job = nil
               else
                 puts "task '#{complete_task_name}' for cycle '#{complete_cycle_time.strftime('%Y%m%d%H%M')}' " \
@@ -706,7 +706,7 @@ module WorkflowMgr
               # Reactivate the cycle if it is done (but not expired)
               if complete_cycle.done?
                 complete_cycle.reactivate!
-                @dbServer.update_cycles([complete_cycle])
+                @db_server.update_cycles([complete_cycle])
               end
 
               # Retrieve the complete job from the database
@@ -753,12 +753,12 @@ module WorkflowMgr
                             1,                                   # tries
                             0,                                   # nunknowns
                             0.0) # duration
-              @dbServer.add_jobs([job])
+              @db_server.add_jobs([job])
             else
               job = complete_job
               job.state = 'SUCCEEDED'
               job.native_state = 'FORCED'
-              @dbServer.update_jobs([job])
+              @db_server.update_jobs([job])
             end
 
             # Add the new job to the database
@@ -783,7 +783,7 @@ module WorkflowMgr
     def vacuum!(seconds)
       # with_locked_db
       with_locked_db do
-        @dbServer.vacuum(seconds)
+        @db_server.vacuum(seconds)
       end
     end
 
@@ -802,14 +802,14 @@ module WorkflowMgr
 
 
       # Open/Create the database
-      @dbServer.dbopen
+      @db_server.dbopen
 
       # Acquire a lock on the workflow in the database
-      @locked = @dbServer.lock_workflow
+      @locked = @db_server.lock_workflow
       Process.exit(1) unless @locked
 
       # Set up an object to serve file stat info
-      @workflowIOServer = WorkflowIOProxy.new(@dbServer, @config, @options)
+      @workflow_io_server = WorkflowIOProxy.new(@db_server, @config, @options)
       ######################################
       #
       # Pass control to the code block
@@ -828,23 +828,23 @@ module WorkflowMgr
     ensure
       # Shut down the batch queue server if it is no longer needed
       # Skip if in dryrun mode since no server was launched
-      if !(@bqServer.nil? || !@config.BatchQueueServer || WorkflowMgr.dryrun_mode?) && !@bqServer.running?
-        uri = @bqServer.__drburi
-        @bqServer.stop!
-        @dbServer.delete_bqservers([uri])
+      if !(@bq_server.nil? || !@config.BatchQueueServer || WorkflowMgr.dryrun_mode?) && !@bq_server.running?
+        uri = @bq_server.__drburi
+        @bq_server.stop!
+        @db_server.delete_bqservers([uri])
       end
 
       # Make sure we release the workflow lock in the database and shutdown the dbserver
       # Skip server shutdown if in dryrun mode since no server was launched
-      unless @dbServer.nil?
-        @dbServer.unlock_workflow if @locked
-        @dbServer.stop! if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
+      unless @db_server.nil?
+        @db_server.unlock_workflow if @locked
+        @db_server.stop! if @config.DatabaseServer && !WorkflowMgr.dryrun_mode?
       end
 
       # Make sure to shut down the workflow file stat server
       # Skip if in dryrun mode since no server was launched
-      if !@workflowIOServer.nil? && @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
-        @workflowIOServer.stop!
+      if !@workflow_io_server.nil? && @config.WorkflowIOServer && !WorkflowMgr.dryrun_mode?
+        @workflow_io_server.stop!
       end
     end
 
@@ -862,12 +862,12 @@ module WorkflowMgr
       end
 
       # Get the previous vacuum time
-      last_vacuum = @dbServer.get_vacuum_time
+      last_vacuum = @db_server.get_vacuum_time
 
       # Vacuum if we haven't done so in the last 24 hours
       if (Time.now - last_vacuum) > 24 * 3600
-        @dbServer.vacuum(@config.VacuumPurgeDays * 24 * 3600)
-        @dbServer.set_vacuum_time(Time.now)
+        @db_server.vacuum(@config.VacuumPurgeDays * 24 * 3600)
+        @db_server.set_vacuum_time(Time.now)
       end
     end
 
@@ -879,7 +879,7 @@ module WorkflowMgr
     def build_workflow
       # Open the workflow document, parse it, and validate it
       workflowdoc = WorkflowMgr.const_get("Workflow#{@config.WorkflowDocType}Doc").new(@options.workflowdoc,
-                                                                                       @workflowIOServer, @config)
+                                                                                       @workflow_io_server, @config)
 
       # Get the realtime flag
       @realtime = workflowdoc.realtime?
@@ -900,13 +900,13 @@ module WorkflowMgr
       @metatask_throttles = workflowdoc.metatask_throttles
 
       # Get the scheduler
-      @bqServer = BQSProxy.new(workflowdoc.scheduler, @config, @options)
+      @bq_server = BQSProxy.new(workflowdoc.scheduler, @config, @options)
 
       # Add this scheduler to the bqserver database if needed (skip in dryrun mode)
-      @dbServer.add_bqservers([@bqServer.__drburi]) if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
+      @db_server.add_bqservers([@bq_server.__drburi]) if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
 
       # Get the log parameters
-      @logServer = workflowdoc.log
+      @log_server = workflowdoc.log
 
       # Get the cycle defs
       @cycledefs = workflowdoc.cycledefs
@@ -976,7 +976,7 @@ module WorkflowMgr
     ##########################################
     def get_active_cycles
       # Get active cycles from the database
-      @active_cycles = @dbServer.get_active_cycles
+      @active_cycles = @db_server.get_active_cycles
     end
 
     ##########################################
@@ -999,7 +999,7 @@ module WorkflowMgr
       unless newcycles.empty?
 
         # Add the new cycles to the database
-        @dbServer.add_cycles(newcycles)
+        @db_server.add_cycles(newcycles)
 
         # Add the new cycles to the list of active cycles
         @active_cycles += newcycles
@@ -1033,7 +1033,7 @@ module WorkflowMgr
       end
 
       # Look for the lastest cycle in the database
-      db_cycle = @dbServer.get_cycle(latest_cycle_time)[0]
+      db_cycle = @db_server.get_cycle(latest_cycle_time)[0]
 
       # Return the new cycle if it hasn't already been activated
       if db_cycle.nil?
@@ -1055,7 +1055,7 @@ module WorkflowMgr
       # N is the cyclethrottle minus the number of currently active cycles.
 
       # Get the cycledefs from the database so that we can get their last known positions
-      dbcycledefs = @dbServer.get_cycledefs.collect do |dbcycledef|
+      dbcycledefs = @db_server.get_cycledefs.collect do |dbcycledef|
         case dbcycledef[:cycledef].split.size
         when 6
           CycleCron.new(dbcycledef[:cycledef], dbcycledef[:group], dbcycledef[:activation_offset],
@@ -1078,7 +1078,7 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset = @dbServer.get_cycles({ start: @cycledefs.collect(&:position).compact.min })
+      cycleset = @db_server.get_cycles({ start: @cycledefs.collect(&:position).compact.min })
 
       # Sort the cycleset
       cycleset.sort!
@@ -1130,7 +1130,7 @@ module WorkflowMgr
       end
 
       # Save the workflowdoc cycledefs with their updated positions to the database
-      @dbServer.set_cycledefs(@cycledefs.collect do |cycledef|
+      @db_server.set_cycledefs(@cycledefs.collect do |cycledef|
         { group: cycledef.group, cycledef: cycledef.cycledef, activation_offset: cycledef.activation_offset,
           position: cycledef.position }
       end)
@@ -1165,7 +1165,7 @@ module WorkflowMgr
       job_cycles.uniq!
 
       # Get all jobs whose cycle is in the job_cycle list
-      @active_jobs = @dbServer.get_jobs(job_cycles)
+      @active_jobs = @db_server.get_jobs(job_cycles)
     end
 
     ##########################################
@@ -1180,17 +1180,17 @@ module WorkflowMgr
 
       # Initialize hash of old bqserver processes from the database and establish connections to them
       bqservers = {}
-      @dbServer.get_bqservers.each do |uri|
+      @db_server.get_bqservers.each do |uri|
         # We are only interested in old bqserver processes
         # In dryrun mode, no DRb server is launched, so skip this check
-        next if !WorkflowMgr.dryrun_mode? && uri == @bqServer.__drburi
+        next if !WorkflowMgr.dryrun_mode? && uri == @bq_server.__drburi
 
         bqservers[uri] = DRbObject.new(nil, uri) unless bqservers.key?(uri)
 
       # The bqserver has died!
       rescue DRb::DRbConnError
         # Remove the bqserver uri from the database
-        @dbServer.delete_bqservers([uri])
+        @db_server.delete_bqservers([uri])
 
         # Remove the bqserver uri from the bqservers list if needed
         bqservers.delete(uri) if bqservers.key?(uri)
@@ -1215,7 +1215,7 @@ module WorkflowMgr
           # Catch exceptions for bqservers that have died unexpectedly
           rescue DRb::DRbConnError
             # Remove the bqserver uri from the database
-            @dbServer.delete_bqservers([uri])
+            @db_server.delete_bqservers([uri])
 
             # Remove the bqserver uri from the bqservers list if needed
             bqservers.delete(uri) if bqservers.key?(uri)
@@ -1228,14 +1228,14 @@ module WorkflowMgr
             msg = "Submission status of #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')} could not be " \
                   "retrieved because the server process at #{uri} died"
             WorkflowMgr.stderr(msg, 2)
-            @logServer.log(job.cycle, msg)
+            @log_server.log(job.cycle, msg)
             msg = "Submission of #{job.task} for cycle #{job.cycle.strftime('%Y%m%d%H%M')} probably, but not " \
                   "necessarily, failed.  It will be resubmitted"
             WorkflowMgr.stderr(msg, 2)
-            @logServer.log(job.cycle, msg)
+            @log_server.log(job.cycle, msg)
 
             # Delete the job from the database since it failed to submit.  It will be retried immediately.
-            @dbServer.delete_jobs([job])
+            @db_server.delete_jobs([job])
 
             # Remove the job from the active_jobs list since it failed to submit and is not active.
             @active_jobs[job.task].delete(job.cycle)
@@ -1245,7 +1245,7 @@ module WorkflowMgr
 
           # If there is no output from the submission, it means the submission is still pending
           elsif output.nil?
-            @logServer.log(job.cycle,
+            @log_server.log(job.cycle,
                            "Submission status of #{job.task} is still pending at #{uri}.  The batch system " \
                            "server may be down, unresponsive, or under heavy load.")
 
@@ -1253,14 +1253,14 @@ module WorkflowMgr
           elsif jobid.nil?
 
             # If the job submission failed, log the output of the job submission command, and print it to stdout as well
-            @dbServer.delete_jobs([job])
+            @db_server.delete_jobs([job])
 
             # Remove the job from the active_jobs list since it failed to submit and is not active.
             @active_jobs[job.task].delete(job.cycle)
             @active_jobs.delete(job.task) if @active_jobs[job.task].empty?
 
             WorkflowMgr.stderr(output, 1)
-            @logServer.log(job.cycle, "Submission status of previously pending #{job.task} is failure!  #{output}")
+            @log_server.log(job.cycle, "Submission status of previously pending #{job.task} is failure!  #{output}")
 
             next
 
@@ -1269,20 +1269,20 @@ module WorkflowMgr
             # If the job succeeded, record the jobid and log it
           else
             job.id = jobid
-            @logServer.log(job.cycle,
+            @log_server.log(job.cycle,
                            "Submission status of previously pending #{job.task} is success, jobid=#{jobid}")
 
           end
 
           # Update the job in the database
-          @dbServer.update_jobs([job])
+          @db_server.update_jobs([job])
         end
       ensure
         # Make sure we always terminate all workflowbqservers that we no longer need
         bqservers.each do |uri, bqserver|
           unless bqserver.running?
             bqserver.stop!
-            @dbServer.delete_bqservers([uri])
+            @db_server.delete_bqservers([uri])
           end
         # Catch exceptions for bqservers that have died unexpectedly
         rescue DRb::DRbConnError
@@ -1290,7 +1290,7 @@ module WorkflowMgr
                 "Submission status of some jobs may have been lost"
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
-          @dbServer.delete_bqservers([uri])
+          @db_server.delete_bqservers([uri])
         end
       end
     end
@@ -1345,10 +1345,10 @@ module WorkflowMgr
             job.state = "FAILED"
 
             # Update the state of the job in the database
-            @dbServer.update_jobs([job])
+            @db_server.update_jobs([job])
 
             # Log the fact that this job was resurrected
-            @logServer.log(job.cycle,
+            @log_server.log(job.cycle,
                            "Task #{job.task} has been resurrected.  " \
                            "#{@tasks[job.task].attributes[:maxtries] - job.tries} more tries will be allowed")
           end
@@ -1363,7 +1363,7 @@ module WorkflowMgr
         active_jobs_sorted.reject! { |job| ["FAILED", "DEAD"].include?(job.state) }
 
         # Get the status of ALL active jobs from the batch system
-        statuses = @bqServer.statuses(active_jobs_sorted.collect(&:id))
+        statuses = @bq_server.statuses(active_jobs_sorted.collect(&:id))
 
         # Loop over all active jobs and retrieve and update their current status
         active_jobs_sorted.each do |job|
@@ -1410,13 +1410,13 @@ module WorkflowMgr
 
             # Check for job hang
             if !@tasks[job.task].hangdependency.nil? && (job.state == "RUNNING")
-              wstate = WorkflowState.new(job.cycle, @active_jobs, @workflowIOServer, @cycledefs,
+              wstate = WorkflowState.new(job.cycle, @active_jobs, @workflow_io_server, @cycledefs,
                                          job.task, @tasks[job.task], @tasks)
               if @tasks[job.task].hangdependency.resolved?(wstate)
                 job.state = "FAILED"
                 runmsg = ".  A job hang has been detected.  The job will be killed.  " \
                          "It will be resubmitted if the retry count has not been exceeded."
-                @bqServer.delete(job.id)
+                @bq_server.delete(job.id)
               end
             end
 
@@ -1424,7 +1424,7 @@ module WorkflowMgr
             if !(job.state == "SUCCEEDED") && @tasks[job.task].expired?(job.cycle)
               job.state = "EXPIRED"
               runmsg = "#{runmsg}.  This task has expired.  It will be killed and will not be retried"
-              @bqServer.delete(job.id)
+              @bq_server.delete(job.id)
             end
 
           end
@@ -1461,10 +1461,10 @@ module WorkflowMgr
           statemsg = "Task #{job.task}, jobid=#{job.id}, in state #{job.state} (#{job.native_state})"
 
           # Update the job state in the database
-          @dbServer.update_jobs([job])
+          @db_server.update_jobs([job])
 
           # Log the state of the job
-          @logServer.log(job.cycle, statemsg + runmsg + unknownmsg + triesmsg)
+          @log_server.log(job.cycle, statemsg + runmsg + unknownmsg + triesmsg)
 
           if job.dead? || job.expired?
             WorkflowMgr.stderr(
@@ -1535,10 +1535,10 @@ module WorkflowMgr
             next unless @active_jobs[task.attributes[:name]][cycle.cycle].state == "SUCCEEDED"
 
             cycle.drain!
-            @logServer.log(cycle.cycle, "This cycle is draining")
+            @log_server.log(cycle.cycle, "This cycle is draining")
 
             # Update the draining cycle in the database
-            @dbServer.update_cycles([cycle])
+            @db_server.update_cycles([cycle])
 
             break
           end
@@ -1616,13 +1616,13 @@ module WorkflowMgr
 
           # Log the done status of this cycle
           if cycle_success
-            @logServer.log(cycle.cycle, "This cycle is complete: Success")
+            @log_server.log(cycle.cycle, "This cycle is complete: Success")
           else
-            @logServer.log(cycle.cycle, "This cycle is complete: Failed")
+            @log_server.log(cycle.cycle, "This cycle is complete: Failed")
           end
 
           # Update the done cycle in the database
-          @dbServer.update_cycles([cycle])
+          @db_server.update_cycles([cycle])
 
           # Otherwise add the cycle to a new list of active cycles
         else
@@ -1668,16 +1668,16 @@ module WorkflowMgr
           next if ["SUCCEEDED", "FAILED", "DEAD", "EXPIRED",
                    "SUBMITTING"].include?(@active_jobs[taskname][cycle.cycle].state)
 
-          @logServer.log(cycle.cycle,
+          @log_server.log(cycle.cycle,
                          "Deleting #{taskname} job #{@active_jobs[taskname][cycle.cycle].id} " \
                          "because this cycle has expired!")
-          @bqServer.delete(@active_jobs[taskname][cycle.cycle].id)
+          @bq_server.delete(@active_jobs[taskname][cycle.cycle].id)
         end
 
-        @logServer.log(cycle.cycle, "This cycle has expired!")
+        @log_server.log(cycle.cycle, "This cycle has expired!")
 
         # Update the expired cycles in the database
-        @dbServer.update_cycles([cycle])
+        @db_server.update_cycles([cycle])
       end
 
       # Update the active cycle list
@@ -1729,7 +1729,7 @@ module WorkflowMgr
           # Make sure the task hasn't expired.  If it has, add a fake EXPIRED job to the DB so that
           # we won't try this again.
           if task.expired?(cycletime)
-            @logServer.log(cycletime, "Cannot submit #{task.attributes[:name]}, because it has expired")
+            @log_server.log(cycletime, "Cannot submit #{task.attributes[:name]}, because it has expired")
             fakejob = Job.new(0,                        # jobid
                               task.attributes[:name],   # taskname
                               cycletime,                # cycle
@@ -1740,7 +1740,7 @@ module WorkflowMgr
                               0,                        # tries
                               0,                        # nunknowns
                               0.0) # duration
-            @dbServer.add_jobs([fakejob])
+            @db_server.add_jobs([fakejob])
             next
           end
 
@@ -1761,14 +1761,14 @@ module WorkflowMgr
 
           # Reject this task if dependencies are not satisfied
           unless task.dependency.nil?
-            wstate = WorkflowState.new(cycletime, @active_jobs, @workflowIOServer, @cycledefs,
+            wstate = WorkflowState.new(cycletime, @active_jobs, @workflow_io_server, @cycledefs,
                                        task.attributes[:name], task, @tasks)
             next unless task.dependency.resolved?(wstate)
           end
 
           # Reject this task if core throttle will be exceeded
           if @active_core_count + task.attributes[:cores] > @corethrottle
-            @logServer.log(cycletime,
+            @log_server.log(cycletime,
                            "Cannot submit #{task.attributes[:name]}, because maximum core throttle of " \
                            "#{@corethrottle} will be violated.", 2)
             next
@@ -1776,7 +1776,7 @@ module WorkflowMgr
 
           # Reject this task if task throttle will be exceeded
           if @active_task_count + 1 > @taskthrottle
-            @logServer.log(cycletime,
+            @log_server.log(cycletime,
                            "Cannot submit #{task.attributes[:name]}, because maximum global task throttle of " \
                            "#{@taskthrottle} will be violated.", 2)
             next
@@ -1788,7 +1788,7 @@ module WorkflowMgr
               0
           end
           if @active_task_instance_count[task.attributes[:name]] + 1 > task.attributes[:throttle]
-            @logServer.log(cycletime,
+            @log_server.log(cycletime,
                            "Cannot submit #{task.attributes[:name]}, because maximum task instance throttle of " \
                            "#{task.attributes[:throttle]} will be violated.", 2)
             next
@@ -1804,7 +1804,7 @@ module WorkflowMgr
                 next unless !mthrottle.nil? && (@active_metatask_instance_count[metatask] + 1 > mthrottle)
 
                 violation = true
-                @logServer.log(cycletime,
+                @log_server.log(cycletime,
                                "Cannot submit #{task.attributes[:name]}, because maximum metatask throttle of " \
                                "#{@metatask_throttles[metatask]} will be violated.", 2)
                 throw :violation
@@ -1817,7 +1817,7 @@ module WorkflowMgr
           # This code block should never execute since state should be DEAD if retries is exceeded and
           # we should never get here for a DEAD job
           if resubmit && (@active_jobs[task.attributes[:name]][cycletime].tries >= task.attributes[:maxtries])
-            @logServer.log(cycletime,
+            @log_server.log(cycletime,
                            "Cannot resubmit #{task.attributes[:name]}, maximum retry count of " \
                            "#{task.attributes[:maxtries]} has been reached")
             next
@@ -1834,7 +1834,7 @@ module WorkflowMgr
           # If we are resubmitting the job, initialize the new job to the old job
           # In dryrun mode, no DRb server is launched, so use 0 as placeholder
           newjobid = if @config.BatchQueueServer && !WorkflowMgr.dryrun_mode?
-                       @bqServer.__drburi
+                       @bq_server.__drburi
                      else
                        0
                      end
@@ -1868,7 +1868,7 @@ module WorkflowMgr
           newjobs << newjob
 
           # Add the new job to the database (skip in dryrun to avoid persistent side effects)
-          @dbServer.add_jobs([newjob]) unless WorkflowMgr.dryrun_mode?
+          @db_server.add_jobs([newjob]) unless WorkflowMgr.dryrun_mode?
 
           # Localize all <cyclestr> to current cycle
           localtask = task.localize(cycletime)
@@ -1887,26 +1887,26 @@ module WorkflowMgr
                 else
                   outdir = value.split("/")[0..-2].join("/")
                   # Roll the log file (if it already exists)
-                  @workflowIOServer.roll_log(value)
+                  @workflow_io_server.roll_log(value)
                 end
-                @workflowIOServer.mkdir_p(outdir)
+                @workflow_io_server.mkdir_p(outdir)
               end
             end
           rescue WorkflowIOHang
             msg = "WARNING! Can not submit #{task.attributes[:name]} because output directory " \
                   "'#{outdir}' resides on an unresponsive file system!"
-            @logServer.log(cycletime, msg)
+            @log_server.log(cycletime, msg)
             WorkflowMgr.stderr(msg, 2)
             WorkflowMgr.log(msg)
           end
 
           # Submit the task
-          @bqServer.submit(localtask, cycletime)
+          @bq_server.submit(localtask, cycletime)
           # In dryrun mode the per-job "Dryrun Mode: would submit ..." line below
           # is the single source of truth; suppress this "Submitting" line so the
           # workflow log is not ambiguous about whether a job was actually submitted.
           unless WorkflowMgr.dryrun_mode?
-            @logServer.log(cycletime, "Submitting #{task.attributes[:name]}")
+            @log_server.log(cycletime, "Submitting #{task.attributes[:name]}")
           end
         end
       end
@@ -1920,27 +1920,27 @@ module WorkflowMgr
       # Harvest job ids for submitted tasks
       newjobs.each do |job|
         job.id
-        jobid, output = @bqServer.get_submit_status(job.task, job.cycle)
+        jobid, output = @bq_server.get_submit_status(job.task, job.cycle)
         # Classify submission outcome: dryrun first, then pending, failure, success
         # Dryrun returns [nil, "This is a dryrun"] so output is non-nil;
         # checking output.nil? first would mis-classify dryrun as failure.
         if WorkflowMgr.dryrun_mode?
-          @logServer.log(job.cycle, "Dryrun Mode: would submit #{job.task}")
+          @log_server.log(job.cycle, "Dryrun Mode: would submit #{job.task}")
         elsif output.nil?
-          @logServer.log(job.cycle, "Submission status of #{job.task} is pending at #{job.id}")
+          @log_server.log(job.cycle, "Submission status of #{job.task} is pending at #{job.id}")
         elsif jobid.nil?
           # Delete the job from the database since it failed to submit.  It will be retried next time around.
-          @dbServer.delete_jobs([job])
+          @db_server.delete_jobs([job])
           msg = "Submission of #{job.task} failed!  #{output}"
-          @logServer.log(job.cycle, msg)
+          @log_server.log(job.cycle, msg)
           WorkflowMgr.stderr(msg, 1)
         else
           job.id = jobid
           job.state = "QUEUED"
           job.native_state = "queued"
-          @logServer.log(job.cycle, "Submission of #{job.task} succeeded, jobid=#{job.id}")
+          @log_server.log(job.cycle, "Submission of #{job.task} succeeded, jobid=#{job.id}")
           # Update the jobid for the job in the database
-          @dbServer.update_jobs([job])
+          @db_server.update_jobs([job])
         end
       end
     end

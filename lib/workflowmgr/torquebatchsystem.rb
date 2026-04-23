@@ -48,18 +48,18 @@ module WorkflowMgr
       raise WorkflowMgr::SchedulerDown unless @schedup
 
       # Initialize statuses to UNAVAILABLE
-      jobStatuses = {}
+      job_statuses = {}
       jobids.each do |jobid|
-        jobStatuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
+        job_statuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
       end
 
       jobids.each do |jobid|
-        jobStatuses[jobid] = status(jobid)
+        job_statuses[jobid] = status(jobid)
       end
     rescue WorkflowMgr::SchedulerDown
       @schedup = false
     ensure
-      return jobStatuses
+      return job_statuses
     end
 
     #####################################################

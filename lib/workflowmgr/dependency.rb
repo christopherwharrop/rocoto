@@ -866,9 +866,9 @@ module WorkflowMgr
     #####################################################
     def resolved?(state_info)
       filename = @datapath.to_s(state_info.cycle)
-      if state_info.workflow_ioserver.exist?(filename)
-        if state_info.workflow_ioserver.size(filename) >= @minsize
-          Time.now > (state_info.workflow_ioserver.mtime(filename) + @age)
+      if state_info.workflow_io_server.exist?(filename)
+        if state_info.workflow_io_server.size(filename) >= @minsize
+          Time.now > (state_info.workflow_io_server.mtime(filename) + @age)
         else
           false
         end
@@ -884,9 +884,9 @@ module WorkflowMgr
     #####################################################
     def query(state_info)
       filename = @datapath.to_s(state_info.cycle)
-      if state_info.workflow_ioserver.exist?(filename)
-        if Time.now > (state_info.workflow_ioserver.mtime(filename) + @age)
-          if state_info.workflow_ioserver.size(filename) >= @minsize
+      if state_info.workflow_io_server.exist?(filename)
+        if Time.now > (state_info.workflow_io_server.mtime(filename) + @age)
+          if state_info.workflow_io_server.size(filename) >= @minsize
             [{ dep: filename, msg: "is available", resolved: true }]
           else
             [{ dep: filename, msg: "is not large enough", resolved: false }]
