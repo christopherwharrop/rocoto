@@ -203,7 +203,7 @@ module WorkflowMgr
       latest_activation_time = nil
       latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now, true) }.compact
       unless latest_cycle_candidates.empty?
-        latest_cycle_time, latest_activation_time = latest_cycle_candidates.sort { |c1, c2| c1[1] <=> c2[1] }.last
+        latest_cycle_time, latest_activation_time = latest_cycle_candidates.max_by { |c| c[1] }
       end
 
       # Create a new cycle if a cycle <= now is defined in cycle specs

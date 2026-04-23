@@ -34,17 +34,19 @@ module WorkflowMgr
 
             # Find every XML cycle in the range
             xml_cycle_times = []
-            reftime = cycledefs.collect do |cdef|
+            first_times = cycledefs.collect do |cdef|
               cdef.next(cycopt.first, false)
-            end.compact.collect { |c| c[0] }.min
+            end
+            reftime = first_times.compact.collect { |c| c[0] }.min
             loop do
               break if reftime.nil?
               break if reftime > cycopt.last
 
               xml_cycle_times << reftime
-              reftime = cycledefs.collect do |cdef|
+              next_times = cycledefs.collect do |cdef|
                 cdef.next(reftime + 60, false)
-              end.compact.collect { |c| c[0] }.min
+              end
+              reftime = next_times.compact.collect { |c| c[0] }.min
             end
 
             # Add the cycles that are in the XML but not in the DB

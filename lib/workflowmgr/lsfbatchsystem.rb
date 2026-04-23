@@ -171,42 +171,7 @@ module WorkflowMgr
             cmd += " -n #{value}"
           else
             nodesize = task.attributes[:nodesize].to_i
-            if wantcores > nodesize
-              wantcores / nodesize
-              roundup = (wantcores + nodesize - 1) / nodesize
-              lowcores = wantcores / roundup
-              overcores = lowcores * roundup
-              bignodes = wantcores - overcores
-              littlenodes = roundup - bignodes
-              bignodes * (lowcores + 1) + littlenodes * lowcores
-              span = if bignodes > 0
-                       "-R span[ptile=#{lowcores + 1}]"
-                     else
-                       "-R span[ptile=#{lowcores}]"
-                     end
-              task_geometry = '{'
-              iproc = 0
-              (0..(bignodes - 1)).each do |inode|
-                task_geometry += "(#{(iproc..(iproc + lowcores)).to_a.join(',')})"
-                iproc += lowcores + 1
-              end
-              (0..(littlenodes - 1)).each do |inode|
-                task_geometry += "(#{(iproc..(iproc + lowcores - 1)).to_a.join(',')})"
-                iproc += lowcores
-              end
-              task_geometry += '}'
-              if bignodes > 0
-                nval = (bignodes + littlenodes) * (lowcores + 1)
-                span = lowcores + 1
-              else
-                nval = littlenodes * lowcores
-                span = lowcores
-              end
-            else
-              span = wantcores
-              task_geometry = "{(#{(0..(wantcores - 1)).to_a.join(',')})}"
-              nval = wantcores
-            end
+            span, nval, task_geometry = compute_cores_layout(wantcores, nodesize)
             cmd += " -R span[ptile=#{span}]"
             cmd += " -n #{nval}"
             envstr += "export ROCOTO_TASK_GEO='#{task_geometry}'\n"
@@ -677,6 +642,34 @@ module WorkflowMgr
         end
       end
       Time.local(*timestamp).getgm
+    end
+
+    def compute_cores_layout(wantcores, nodesize)
+      if wantcores > nodesize
+        roundup = (wantcores + nodesize - 1) / nodesize
+        lowcores = wantcores / roundup
+        overcores = lowcores * roundup
+        bignodes = wantcores - overcores
+        littlenodes = roundup - bignodes
+        task_geometry = '{'
+        iproc = 0
+        (0..(bignodes - 1)).each do
+          task_geometry += "(#{(iproc..(iproc + lowcores)).to_a.join(',')})"
+          iproc += lowcores + 1
+        end
+        (0..(littlenodes - 1)).each do
+          task_geometry += "(#{(iproc..(iproc + lowcores - 1)).to_a.join(',')})"
+          iproc += lowcores
+        end
+        task_geometry += '}'
+        nval = bignodes > 0 ? (bignodes + littlenodes) * (lowcores + 1) : littlenodes * lowcores
+        span = bignodes > 0 ? lowcores + 1 : lowcores
+      else
+        span = wantcores
+        task_geometry = "{(#{(0..(wantcores - 1)).to_a.join(',')})}"
+        nval = wantcores
+      end
+      [span, nval, task_geometry]
     end
   end
 end

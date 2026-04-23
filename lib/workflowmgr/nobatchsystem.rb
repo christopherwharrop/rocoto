@@ -146,19 +146,12 @@ unless defined? $__nobatchsystem__
       if server != host
         cmd = "ssh -o StrictHostKeyChecking=no #{server} /usr/bin/ruby -r #{__FILE__} -e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").find_job(#{jid},#{max_age})'\\'"
         output = Command.run(cmd)
-        if output[1] != 0
-          raise output[0]
-        else
-          record = output[0].chomp
-          if record == "nil"
-            return nil
-          else
-            return record
-          end
-        end
+        raise output[0] if output[1] != 0
+
+        record = output[0].chomp
+        return record == "nil" ? nil : record
       end
 
-      # Calculate the minimum end time we should look at
       min_end_time = Time.now - max_age
 
       # Look for the job record
@@ -511,9 +504,10 @@ unless defined? $__nobatchsystem__
       if File.exist?(fname)
 
         # Find all files associated with that date sorted by modification date
-        oldfiles = files.find_all do |file|
+        matching_files = files.find_all do |file|
           file =~ /^#{@acct_path}\/accounting\.#{date_str}/
-        end.sort! do |a, b|
+        end
+        oldfiles = matching_files.sort! do |a, b|
           File.stat(a).mtime <=> File.stat(b).mtime
         end
 
@@ -539,9 +533,10 @@ unless defined? $__nobatchsystem__
       `touch #{@acct_path}/accounting`
 
       # Gzip files older than 1 week
-      files.reject do |file|
+      old_files = files.reject do |file|
         file =~ /\.gz$/ || (Time.now - File.stat(file).mtime < 60 * 60 * 24 * 7)
-      end.each do |file|
+      end
+      old_files.each do |file|
         `/bin/gzip #{file}`
       end
 

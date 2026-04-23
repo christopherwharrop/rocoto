@@ -1023,7 +1023,7 @@ module WorkflowMgr
       latest_activation_time = nil
       latest_cycle_candidates = @cycledefs.collect { |c| c.previous(now, true) }.compact
       unless latest_cycle_candidates.empty?
-        latest_cycle_time, latest_activation_time = latest_cycle_candidates.sort { |c1, c2| c1[1] <=> c2[1] }.last
+        latest_cycle_time, latest_activation_time = latest_cycle_candidates.max_by { |c| c[1] }
       end
 
       # Create a new cycle if a cycle <= now is defined in cycle specs
@@ -1101,7 +1101,7 @@ module WorkflowMgr
             match = cycleset.find { |c| c.cycle == next_cycle }
             break if match.nil?
 
-            next_cycle, = cycledef.next(next_cycle + 60, by_activation_time:false)
+            next_cycle, = cycledef.next(next_cycle + 60, by_activation_time: false)
           end
 
           # If we found a new cycle, add it to the new cycle pool
@@ -1199,10 +1199,11 @@ module WorkflowMgr
 
       begin
         # Loop over active jobs looking for ones with pending submissions
-        @active_jobs.values.collect(&:values).flatten.sort_by do |job|
+        sorted_jobs = @active_jobs.values.collect(&:values).flatten.sort_by do |job|
           [job.cycle,
            @tasks[job.task].nil? ? 999_999_999 : @tasks[job.task].seq]
-        end.each do |job|
+        end
+        sorted_jobs.each do |job|
           # Skip jobs that don't have pending job ids
           next unless job.pending_submit?
 
@@ -1422,7 +1423,7 @@ module WorkflowMgr
             end
 
             # Check for job expiration
-            if !(job.state == "SUCCEEDED") && @tasks[job.task].expired?(job.cycle)
+            if job.state != "SUCCEEDED" && @tasks[job.task].expired?(job.cycle)
               job.state = "EXPIRED"
               runmsg = "#{runmsg}.  This task has expired.  It will be killed and will not be retried"
               @bq_server.delete(job.id)

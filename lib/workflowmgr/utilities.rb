@@ -192,9 +192,9 @@ module WorkflowMgr
 
               # Remove files last modified more than MaxAge days ago
               Dir["#{rocotolog}.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each do |logfile|
-                if (Time.now - File.mtime(logfile)) > (max_age * 24 * 3600)
-                  FileUtils.rm_f(logfile)
-                end
+                next unless (Time.now - File.mtime(logfile)) > (max_age * 24 * 3600)
+
+                FileUtils.rm_f(logfile)
               end
 
             end

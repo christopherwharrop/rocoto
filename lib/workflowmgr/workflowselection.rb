@@ -73,17 +73,19 @@ module WorkflowMgr
         if cycopt.is_a?(Range)
 
           # Find every cycle in the range that is a member of a cycledef
-          reftime = cycledefs.collect do |cdef|
+          first_times = cycledefs.collect do |cdef|
             cdef.next(cycopt.first, false)
-          end.compact.collect { |c| c[0] }.min
+          end
+          reftime = first_times.compact.collect { |c| c[0] }.min
           loop do
             break if reftime.nil?
             break if reftime > cycopt.last
 
             selected_cycles << reftime
-            reftime = cycledefs.collect do |cdef|
+            next_times = cycledefs.collect do |cdef|
               cdef.next(reftime + 60, false)
-            end.compact.collect { |c| c[0] }.min
+            end
+            reftime = next_times.compact.collect { |c| c[0] }.min
           end
         elsif cycopt.is_a? CycleDefSelection
           cycledefs.each do |cdef|
