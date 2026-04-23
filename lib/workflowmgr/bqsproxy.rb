@@ -37,11 +37,13 @@ module WorkflowMgr
             @bqServer.send(:stop!, *args)
           end
         rescue DRb::DRbConnError
-          msg = "WARNING! Can't shut down rocotobqserver process #{@bqPID} on host #{@bqHost} because it is not running."
+          msg = "WARNING! Can't shut down rocotobqserver process #{@bqPID} on host #{@bqHost} " \
+                "because it is not running."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
         rescue Timeout::Error
-          msg = "WARNING! Can't shut down rocotobqserver process #{@bqPID} on host #{@bqHost} because it is unresponsive and is probably wedged."
+          msg = "WARNING! Can't shut down rocotobqserver process #{@bqPID} on host #{@bqHost} " \
+                "because it is unresponsive and is probably wedged."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
         end
@@ -59,17 +61,20 @@ module WorkflowMgr
             rescue DRb::DRbConnError
               if retries < 1
                 retries += 1
-                msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} died.  Attempting to restart and try again."
+                msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} died.  " \
+                      "Attempting to restart and try again."
                 WorkflowMgr.stderr(msg, 2)
                 WorkflowMgr.log(msg)
                 initbqs
                 retry
               else
-                msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} died.  #{retries} attempts to restart the server have failed, giving up."
+                msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} died.  " \
+                      "#{retries} attempts to restart the server have failed, giving up."
                 raise msg
               end
             rescue Timeout::Error
-              msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} is unresponsive and is probably wedged."
+              msg = "WARNING! The rocotobqserver process #{@bqPID} on host #{@bqHost} is unresponsive " \
+                    "and is probably wedged."
               raise msg
             end
           end

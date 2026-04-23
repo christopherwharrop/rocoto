@@ -41,7 +41,8 @@ module WFMStat
       super(opts)
 
       # Command usage text
-      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-m metatask_list] [-a] [-s] [-T]"
+      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document " \
+                     "[-c cycle_list] [-t task_list] [-m metatask_list] [-a] [-s] [-T]"
 
       # cycle summary
       opts.on("-s", "--summary", "Cycle Summary") do

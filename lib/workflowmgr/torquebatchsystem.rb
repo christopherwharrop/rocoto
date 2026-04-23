@@ -101,7 +101,8 @@ module WorkflowMgr
             next
           else
             WorkflowMgr.stderr(
-              "DEPRECATION WARNING: <#{option}> has empty content.  This may be rejected by later versions of Rocoto.", 1
+              "DEPRECATION WARNING: <#{option}> has empty content.  " \
+              "This may be rejected by later versions of Rocoto.", 1
             )
           end
         end
@@ -273,9 +274,11 @@ module WorkflowMgr
                            end
         end
 
-        # Put the job record in the jobqueue unless it's complete but doesn't have a start time, an end time, and an exit status
+        # Put the job record in the jobqueue unless it's complete but doesn't have a start time,
+        # an end time, and an exit status
         unless record[:state] == "UNKNOWN" || (["SUCCEEDED",
-                                                "FAILED"].include?(record[:state]) && (record[:start_time].nil? || record[:end_time].nil?))
+                                                "FAILED"].include?(record[:state]) &&
+                                               (record[:start_time].nil? || record[:end_time].nil?))
           @jobqueue[record[:jobid]] = record
         end
       end

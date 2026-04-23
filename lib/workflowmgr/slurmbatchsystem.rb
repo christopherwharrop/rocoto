@@ -306,7 +306,8 @@ module WorkflowMgr
         # Return dryrun marker directly — do not fall through to regex parsing
         # which would mis-classify this as a submission failure
         WorkflowMgr.stderr(
-          "Dryrun Mode: #{task.attributes[:name]} would be submitted using #{cmd} < #{tf.path} with input\n{{\n#{input}\n}}", 4
+          "Dryrun Mode: #{task.attributes[:name]} would be submitted using #{cmd} " \
+          "< #{tf.path} with input\n{{\n#{input}\n}}", 4
         )
         return nil, "This is a dryrun"
       else
@@ -364,15 +365,18 @@ module WorkflowMgr
           # Extract randomID
           next unless randomID == job[40..71].strip
 
-          WorkflowMgr.log("WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} after sbatch failed with socket time out")
+          WorkflowMgr.log("WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} " \
+                          "after sbatch failed with socket time out")
           WorkflowMgr.stderr(
-            "WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} after sbatch failed with socket time out", 1
+            "WARNING: Retrieved jobid=#{jobid} when submitting #{task.attributes[:name]} " \
+            "after sbatch failed with socket time out", 1
           )
           return jobid, output
         end
 
         WorkflowMgr.stderr(
-          "WARNING: Unable to retrieve jobid after sbatch failed with socket time out when submitting #{task.attributes[:name]}", 1
+          "WARNING: Unable to retrieve jobid after sbatch failed with socket time out " \
+          "when submitting #{task.attributes[:name]}", 1
         )
 
         [nil, output]
@@ -410,12 +414,16 @@ module WorkflowMgr
 
         if jobids.nil? || (jobids.join(',').length > 64)
           queued_jobs, = WorkflowMgr.run4(
-            "squeue -u #{username} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200", @squeue_timeout
+            "squeue -u #{username} --federation -t all " \
+            "-O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30," \
+            "endtime:30,priority:30,exit_code:10,state:30,name:200", @squeue_timeout
           )
         else
           joblist = jobids.join(",")
           queued_jobs, = WorkflowMgr.run4(
-            "squeue --jobs=#{joblist} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200", @squeue_timeout
+            "squeue --jobs=#{joblist} --federation -t all " \
+            "-O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30," \
+            "endtime:30,priority:30,exit_code:10,state:30,name:200", @squeue_timeout
           )
         end
 
@@ -549,7 +557,8 @@ module WorkflowMgr
           end
           return if completed_jobs.empty?
         else
-          cmd = "sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority,submit,start,end,ncpus,exitcode,state%12 -P"
+          cmd = "sacct -S #{mmddyy} -L -o jobid,user%30,jobname%30,partition%20,priority," \
+                "submit,start,end,ncpus,exitcode,state%12 -P"
           completed_jobs, errors, exit_status = WorkflowMgr.run4(cmd, @sacct_timeout)
         end
 

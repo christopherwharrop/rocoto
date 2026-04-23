@@ -160,7 +160,8 @@ module WorkflowMgr
           when 'cores'     then attribute = :cores
           when 'nodes'     then attribute = :nodes
           else
-            raise "Unknown attribute '#{attribute_name}' is not one of: final, shared, exclusive, metatasks, cores, nodes"
+            raise "Unknown attribute '#{attribute_name}' is not one of: " \
+                  "final, shared, exclusive, metatasks, cores, nodes"
           end
           tasks.each_value do |task|
             if (negate && !task.attributes[attribute]) || (!negate && task.attributes[attribute])

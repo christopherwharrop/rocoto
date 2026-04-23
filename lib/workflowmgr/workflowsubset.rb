@@ -86,13 +86,17 @@ module WorkflowMgr
 
         @cycles_set.include? arg
       when WorkflowMgr::Job
-        (@all_cycles || @cycles_set.include?(job.cycle)) && (@all_tasks || @tasks_set.include?(job.task.attributes[:name]))
+        (@all_cycles || @cycles_set.include?(job.cycle)) &&
+          (@all_tasks || @tasks_set.include?(job.task.attributes[:name]))
       when Range
-        raise "Unexpected type #{arg.class.name} in \"is_selected?\".  Querying Ranges of cycles is not yet implemented."
+        raise "Unexpected type #{arg.class.name} in \"is_selected?\".  " \
+              "Querying Ranges of cycles is not yet implemented."
       when Enumerable
         arg.all? { |elem| is_selected? elem }
       else
-        raise "Unexpected type #{arg.class.name} in \"is_selected?\".  Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof (except Ranges) are allowed."
+        raise "Unexpected type #{arg.class.name} in \"is_selected?\".  " \
+              "Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof " \
+              "(except Ranges) are allowed."
       end
     end
   end

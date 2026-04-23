@@ -294,7 +294,8 @@ module WorkflowMgr
         svar
       else
         raise ArgumentError,
-              "Invalid variable name \"#{var}\": it must be a letter followed by any number of letters, numbers and underscores."
+              "Invalid variable name \"#{var}\": it must be a letter followed by " \
+              "any number of letters, numbers and underscores."
       end
     end
   end

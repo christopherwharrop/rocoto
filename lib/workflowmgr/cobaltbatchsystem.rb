@@ -117,7 +117,8 @@ module WorkflowMgr
           # Ignore this attribute if the "nodes" attribute is present
           next unless task.attributes[:nodes].nil?
 
-          WorkflowMgr.stderr("WARNING: Cobalt does not support the <cores> used by task #{task.attributes[:name]}.  Use <nodes> instead.")
+          WorkflowMgr.stderr("WARNING: Cobalt does not support the <cores> used by task " \
+                             "#{task.attributes[:name]}.  Use <nodes> instead.")
         when :nodes
           # Can't support complex geometry in qsub (only in runjob)
           # Compute number of nodes to request
@@ -128,7 +129,8 @@ module WorkflowMgr
           input += "#COBALT -t #{minutes}\n"
         when :memory
           # Cobalt does not support any way to specify this option
-          WorkflowMgr.stderr("WARNING: Cobalt does not support the option <memory> used by task #{task.attributes[:name]}.  It will be ignored.")
+          WorkflowMgr.stderr("WARNING: Cobalt does not support the option <memory> used by task " \
+                             "#{task.attributes[:name]}.  It will be ignored.")
         when :stdout
           input += "#COBALT -o #{value}\n"
         when :stderr
@@ -267,9 +269,11 @@ module WorkflowMgr
                            end
         end
 
-        # Put the job record in the jobqueue unless it's complete but doesn't have a start time, an end time, and an exit status
+        # Put the job record in the jobqueue unless it's complete but doesn't have a start time,
+        # an end time, and an exit status
         unless record[:state] == "UNKNOWN" || (["SUCCEEDED",
-                                                "FAILED"].include?(record[:state]) && (record[:start_time].nil? || record[:end_time].nil?))
+                                                "FAILED"].include?(record[:state]) &&
+                                               (record[:start_time].nil? || record[:end_time].nil?))
           @jobqueue[record[:jobid]] = record
         end
       end

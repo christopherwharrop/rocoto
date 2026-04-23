@@ -155,7 +155,8 @@ module WorkflowMgr
                  end
         else
           coresize = nodes.to_i * nodesize.to_i
-          cmd += " -extsched 'CRAYLINUX[]' -R '1*{select[craylinux && !vnode]} + #{coresize}*{select[craylinux && vnode]span[ptile=#{nodesize}] cu[type=cabinet]}'"
+          cmd += " -extsched 'CRAYLINUX[]' -R '1*{select[craylinux && !vnode]} + " \
+                 "#{coresize}*{select[craylinux && vnode]span[ptile=#{nodesize}] cu[type=cabinet]}'"
           cmd += if !memoryoption.nil?
                    " -M #{memoryoption}"
                  else
@@ -183,16 +184,19 @@ module WorkflowMgr
 
       # Run the submit command script
       if WorkflowMgr.dryrun_mode?
-        WorkflowMgr.log("Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
+        WorkflowMgr.log("Dryrun Mode: would submit #{task.attributes[:name]} using " \
+                        "'/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
         WorkflowMgr.stderr(
-          "Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}", 4
+          "Dryrun Mode: would submit #{task.attributes[:name]} using " \
+          "'/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}", 4
         )
         return nil, "This is a dryrun"
       end
 
       output = `/bin/sh #{tf.path} 2>&1`.chomp
 
-      WorkflowMgr.log("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
+      WorkflowMgr.log("Submitted #{task.attributes[:name]} using " \
+                      "'/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
       WorkflowMgr.stderr(
         "Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}", 4
       )
@@ -222,7 +226,8 @@ module WorkflowMgr
       elsif !record[:extsched].include? 'CRAYLINUX'
         # WorkflowMgr.stderr("#{record[:jobid]}: extsched=\"#{record[:extsched]}\"",1)
       elsif record[:reservation_id].nil? || (record[:reservation_id] == '')
-        # WorkflowMgr.stderr("#{record[:jobid]}: (#{record[:jobname]} #{record[:state]} ) RUNNING, CRAYLINUX but no reservation.  Is actually queued.",1)
+        # WorkflowMgr.stderr("#{record[:jobid]}: (#{record[:jobname]} #{record[:state]} ) " \
+        #                    "RUNNING, CRAYLINUX but no reservation.  Is actually queued.",1)
         record[:state] = 'QUEUED'
         record[:native_state] = 'QUEUED'
         record.delete(:start_time)

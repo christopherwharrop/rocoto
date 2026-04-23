@@ -34,18 +34,21 @@ module WorkflowMgr
             @dbServer.send(:stop!, *args)
           end
         rescue DRb::DRbConnError
-          msg = "WARNING! Can't shut down rocotodbserver process #{@dbPID} on host #{@dbHost} because it is not running."
+          msg = "WARNING! Can't shut down rocotodbserver process #{@dbPID} on host #{@dbHost} " \
+                "because it is not running."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
         rescue Timeout::Error
-          msg = "ERROR! Can't shut down rocotodbserver process #{@dbPID} on host #{@dbHost} because it is unresponsive and is probably wedged."
+          msg = "ERROR! Can't shut down rocotodbserver process #{@dbPID} on host #{@dbHost} " \
+                "because it is unresponsive and is probably wedged."
           WorkflowMgr.stderr(msg, 2)
           WorkflowMgr.log(msg)
         end
       end
 
       # Define methods
-      (WorkflowMgr.const_get("Workflow#{@config.DatabaseType}DB").instance_methods - Object.instance_methods).each do |m|
+      (WorkflowMgr.const_get("Workflow#{@config.DatabaseType}DB").instance_methods -
+       Object.instance_methods).each do |m|
         (class << self; self; end).instance_eval do
           define_method m do |*args|
             retries = 0
@@ -57,13 +60,15 @@ module WorkflowMgr
             rescue DRb::DRbConnError
               if retries < 1
                 retries += 1
-                msg = "WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} died.  Attempting to restart and try again."
+                msg = "WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} died.  " \
+                      "Attempting to restart and try again."
                 WorkflowMgr.stderr(msg, 2)
                 WorkflowMgr.log(msg)
                 initdb
                 retry
               else
-                msg = "WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} died.  #{retries} attempts to restart the server have failed, giving up."
+                msg = "WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} died.  " \
+                      "#{retries} attempts to restart the server have failed, giving up."
                 raise msg
               end
             rescue WorkflowMgr::WorkflowDBLockedException
@@ -75,7 +80,8 @@ module WorkflowMgr
                 raise
               end
             rescue Timeout::Error
-              msg = "WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} is unresponsive and is probably wedged."
+              msg = "WARNING! The rocotodbserver process #{@dbPID} on host #{@dbHost} is unresponsive " \
+                    "and is probably wedged."
               raise msg
             end
           end

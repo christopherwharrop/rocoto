@@ -211,7 +211,8 @@ module WorkflowMgr
         end
 
       else
-        warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} :: WARNING! Could not acquire lock to write log the following message"
+        warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} :: " \
+             "WARNING! Could not acquire lock to write log the following message"
         warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} ::          #{message}"
       end
     end

@@ -153,8 +153,8 @@ module WFMStat
           print_deps(dependencies, 0)
         end
         unless task.hangdependency.nil?
-          wstate = WorkflowState.new(cycle.cycle, jobs, @workflowIOServer, @workflowdoc.cycledefs, task.attributes[:name],
-                                     task, @workflowdoc.tasks)
+          wstate = WorkflowState.new(cycle.cycle, jobs, @workflowIOServer, @workflowdoc.cycledefs,
+                                     task.attributes[:name], task, @workflowdoc.tasks)
           hangdependencies = task.hangdependency.query(wstate)
           printf "%2s%s\n", "", "hang dependencies"
           print_deps(hangdependencies, 0)
@@ -295,9 +295,7 @@ module WFMStat
         tasklist.each do |task|
           next unless @subset.is_selected? task
 
-          printf "================================================================================================================================\n"
-
-          # Print status of all jobs for this task
+          printf "#{'=' * 120}\n"
           cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
           cyclelist.each do |cycle|
             next unless @subset.is_selected? cycle
@@ -346,7 +344,7 @@ module WFMStat
             next
           end
 
-          printf "================================================================================================================================\n"
+          printf "#{'=' * 120}\n"
 
           # Sort the task list in sequence order
           tasklist = jobs.keys | definedTasks.values.collect { |t| t.attributes[:name] }

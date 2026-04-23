@@ -94,25 +94,31 @@ module WorkflowMgr
           WorkflowMgr.stderr(
             "WARNING: <nodesize> support is deprecated, please use <nodes> to specify the requested resources", 1
           )
-          WorkflowMgr.log("WARNING: <nodesize> support is deprecated, please use <nodes> to specify the requested resources")
+          WorkflowMgr.log("WARNING: <nodesize> support is deprecated, please use <nodes> " \
+                          "to specify the requested resources")
         when :cores
           # Ignore this attribute if the "nodes" attribute is present
           next unless task.attributes[:nodes].nil?
 
           # Print deprecation warning
           WorkflowMgr.stderr(
-            "WARNING: <cores> support is deprecated for PBSPro, please use <nodes> to specify the requested resources", 1
+            "WARNING: <cores> support is deprecated for PBSPro, please use <nodes> " \
+            "to specify the requested resources", 1
           )
-          WorkflowMgr.log("WARNING: <cores> support is deprecated for PBSPro, please use <nodes> to specify the requested resources")
+          WorkflowMgr.log("WARNING: <cores> support is deprecated for PBSPro, please use <nodes> " \
+                          "to specify the requested resources")
 
           # Get the node size
           nodesize = task.attributes[:nodesize]
           if nodesize.nil?
             WorkflowMgr.stderr(
-              "FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information", 0
+              "FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted " \
+              "due to missing <nodesize> information", 0
             )
-            WorkflowMgr.log("FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information")
-            return nil, "FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted due to missing <nodesize> information"
+            WorkflowMgr.log("FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted " \
+                            "due to missing <nodesize> information")
+            return nil, "FATAL ERROR: task `#{task.attributes[:name]}` cannot be submitted " \
+                        "due to missing <nodesize> information"
           end
 
           # Calculate the number of full nodes required

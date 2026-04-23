@@ -425,12 +425,14 @@ module WorkflowMgr
       offsets = []
       taskdepnodes = @workflowdoc.find('//taskdep')
       taskdepnodes.each do |taskdepnode|
-        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) \
+          unless taskdepnode.attributes["cycle_offset"].nil?
       end
 
       taskdepnodes = @workflowdoc.find('//cycleexistdep')
       taskdepnodes.each do |taskdepnode|
-        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) unless taskdepnode.attributes["cycle_offset"].nil?
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) \
+          unless taskdepnode.attributes["cycle_offset"].nil?
       end
 
       offsets.uniq

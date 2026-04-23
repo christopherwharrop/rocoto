@@ -300,16 +300,19 @@ module WorkflowMgr
 
       # Run the submit command script
       if WorkflowMgr.dryrun_mode?
-        WorkflowMgr.log("Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
+        WorkflowMgr.log("Dryrun Mode: would submit #{task.attributes[:name]} using " \
+                        "'/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
         WorkflowMgr.stderr(
-          "Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}", 4
+          "Dryrun Mode: would submit #{task.attributes[:name]} using " \
+          "'/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}", 4
         )
         return nil, "This is a dryrun"
       end
 
       output = `/bin/sh #{tf.path} 2>&1`.chomp
 
-      WorkflowMgr.log("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
+      WorkflowMgr.log("Submitted #{task.attributes[:name]} using " \
+                      "'/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
       WorkflowMgr.stderr(
         "Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}", 4
       )
@@ -345,7 +348,9 @@ module WorkflowMgr
         past = reservation_age / 60.0 - runlimit
         if past > 10
           WorkflowMgr.stderr(
-            "#{job[:jobid]}: Is a zombie, falsely reported as running.  Will bkill job and list as failed with exit status 1000.  Info: now=#{now} res age=#{reservation_age} runlimit=#{runlimit} past=#{past}.", 1
+            "#{job[:jobid]}: Is a zombie, falsely reported as running.  Will bkill job and list " \
+            "as failed with exit status 1000.  Info: now=#{now} res age=#{reservation_age} " \
+            "runlimit=#{runlimit} past=#{past}.", 1
           )
           job[:state] = 'FAILED'
           job[:native_state] = 'ZOMBIE_RUNNING'
@@ -581,7 +586,8 @@ module WorkflowMgr
         recordstring.gsub!(/\n\s{3,}/, '')
         recordstring.split(/\n+/).each do |event|
           case event.strip
-            # Job <216811>, Job Name <rt_test_gsm_t126_mom5_cice5_2015040100_2day_cold>, User<emc.nemspara>, Project <GFS-T2O>,
+            # Job <216811>, Job Name <rt_test_gsm_t126_mom5_cice5_2015040100_2day_cold>,
+            # User<emc.nemspara>, Project <GFS-T2O>,
           when /^Job *<(\d+)>, *(Job Name *<([^>]+)>,)? *User *<([^>]+)>,/
             record[:jobid] = ::Regexp.last_match(1)
             record[:jobname] = ::Regexp.last_match(3)
@@ -626,7 +632,8 @@ module WorkflowMgr
             record[:end_time] = lsf_time(::Regexp.last_match(1))
             record[:exit_status] = 0
             record[:state] = "SUCCEEDED"
-          when /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited with exit code (\d+)/, /(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by signal (\d+)/
+          when /(\ w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited with exit code (\d+)/,
+               /(\ w+\s+\w+\s+\d+\s+\d+:\d+:\d+)(\s+\d\d\d\d)*: Exited by signal (\d+)/
             record[:end_time] = lsf_time(::Regexp.last_match(1))
             record[:exit_status] = ::Regexp.last_match(3).to_i
             record[:state] = "FAILED"

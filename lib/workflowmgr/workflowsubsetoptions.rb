@@ -45,7 +45,8 @@ module WorkflowMgr
       super(opts)
 
       # Override the command usage text
-      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document [-c cycle_list] [-t task_list] [-m metatask_list] [-a] [-n]"
+      opts.banner = "Usage:  #{@name} [-h] [-v #] -d database_file -w workflow_document " \
+                   "[-c cycle_list] [-t task_list] [-m metatask_list] [-a] [-n]"
 
       # Cycles of interest
       #      C   C,C,C  C:C  :C   C:
@@ -56,17 +57,22 @@ module WorkflowMgr
         when /^\d{12}(,\d{12})*$/
           @cycles.concat(clist.split(",").collect { |c| Time.gm(c[0..3], c[4..5], c[6..7], c[8..9], c[10..11]) })
         when /^(\d{12}):(\d{12})$/
-          @cycles << (Time.gm(::Regexp.last_match(1)[0..3], ::Regexp.last_match(1)[4..5], ::Regexp.last_match(1)[6..7], ::Regexp.last_match(1)[8..9],
-                              ::Regexp.last_match(1)[10..11])..Time.gm(::Regexp.last_match(2)[0..3], ::Regexp.last_match(2)[4..5],
-                                                                       ::Regexp.last_match(2)[6..7], ::Regexp.last_match(2)[8..9], ::Regexp.last_match(2)[10..11]))
+          @cycles << (Time.gm(::Regexp.last_match(1)[0..3], ::Regexp.last_match(1)[4..5],
+                              ::Regexp.last_match(1)[6..7], ::Regexp.last_match(1)[8..9],
+                              ::Regexp.last_match(1)[10..11])..
+                      Time.gm(::Regexp.last_match(2)[0..3], ::Regexp.last_match(2)[4..5],
+                              ::Regexp.last_match(2)[6..7], ::Regexp.last_match(2)[8..9],
+                              ::Regexp.last_match(2)[10..11]))
         when /^:(\d{12})$/
-          @cycles << (Time.gm(1900, 1, 1, 0,
-                              0)..Time.gm(::Regexp.last_match(1)[0..3], ::Regexp.last_match(1)[4..5], ::Regexp.last_match(1)[6..7],
-                                          ::Regexp.last_match(1)[8..9], ::Regexp.last_match(1)[10..11]))
+          @cycles << (Time.gm(1900, 1, 1, 0, 0)..
+                      Time.gm(::Regexp.last_match(1)[0..3], ::Regexp.last_match(1)[4..5],
+                              ::Regexp.last_match(1)[6..7],
+                              ::Regexp.last_match(1)[8..9], ::Regexp.last_match(1)[10..11]))
         when /^(\d{12}):$/
-          @cycles << (Time.gm(::Regexp.last_match(1)[0..3], ::Regexp.last_match(1)[4..5], ::Regexp.last_match(1)[6..7],
-                              ::Regexp.last_match(1)[8..9], ::Regexp.last_match(1)[10..11])..Time.gm(9999, 12, 31, 23,
-                                                                                                     59))
+          @cycles << (Time.gm(::Regexp.last_match(1)[0..3], ::Regexp.last_match(1)[4..5],
+                              ::Regexp.last_match(1)[6..7],
+                              ::Regexp.last_match(1)[8..9], ::Regexp.last_match(1)[10..11])..
+                      Time.gm(9999, 12, 31, 23, 59))
         when /^all|:$/i
           @cycles << ALL_POSSIBLE_CYCLES
           @all_cycles = true

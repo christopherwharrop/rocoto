@@ -78,7 +78,8 @@ module WorkflowMgr
           @config = DEFAULT_CONFIG
         end
       rescue WorkflowMgr::ForkitTimeoutException
-        msg = "ERROR: An I/O operation timed out while reading, writing, or testing for the existence of '#{@config_file}'"
+        msg = "ERROR: An I/O operation timed out while reading, writing, or testing " \
+              "for the existence of '#{@config_file}'"
         WorkflowMgr.log(msg)
         raise msg
       ensure
