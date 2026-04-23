@@ -23,5 +23,5 @@ opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
                                              'rocotocheck', # command name (used for messages)
                                              'check', # what the command does (used for messages)
                                              false) # task and cycle are required
-statusEngine = WFMStat::StatusEngine.new(opt)
-statusEngine.checkTasks
+status_engine = WFMStat::StatusEngine.new(opt)
+status_engine.checkTasks

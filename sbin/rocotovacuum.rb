@@ -30,5 +30,5 @@ unless reply =~ /^[Yy]/
 end
 
 # Create workflow engine and vacuum
-workflowEngine = WorkflowMgr::WorkflowEngine.new(opt)
-workflowEngine.vacuum!(opt.age)
+workflow_engine = WorkflowMgr::WorkflowEngine.new(opt)
+workflow_engine.vacuum!(opt.age)

@@ -20,5 +20,5 @@ LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status engine and run it
 opt = WFMStat::WFMStatOption.new(ARGV, 'rocotostat', 'statting')
-statusEngine = WFMStat::StatusEngine.new(opt)
-statusEngine.wfmstat
+status_engine = WFMStat::StatusEngine.new(opt)
+status_engine.wfmstat

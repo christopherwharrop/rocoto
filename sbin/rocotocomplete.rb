@@ -23,5 +23,5 @@ opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,
                                              'rocotocomplete', # command name (used for messages)
                                              'completion', # what the command does (used for messages)
                                              true) # default task and cycle selection is everything
-workflowEngine = WorkflowMgr::WorkflowEngine.new(opt)
-workflowEngine.complete!
+workflow_engine = WorkflowMgr::WorkflowEngine.new(opt)
+workflow_engine.complete!

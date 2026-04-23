@@ -66,17 +66,17 @@ Thread.new do
   loop do
     begin
       # Test if the rocoto process that launched this server process has become a zombie
-      isZombie = false
+      is_zombie = false
       if RUBY_PLATFORM =~ /linux/
         state = IO.readlines("/proc/#{ARGV[0]}/status", nil)[0].match(/^State:\s+(\w)/)[1]
-        isZombie = state == "Z"
+        is_zombie = state == "Z"
       else
         system("ps -eo pid,stat | grep Z | grep #{ARGV[0].to_i} 2>&1 > /dev/null")
-        isZombie = $CHILD_STATUS.exitstatus == 0
+        is_zombie = $CHILD_STATUS.exitstatus == 0
       end
 
       # If our parent has become a zombie, it's time to close STDERR so that the zombie parent can go away
-      if isZombie
+      if is_zombie
         $stderr.reopen "/dev/null", "a"
         break
       end
@@ -104,10 +104,13 @@ Thread.new do
   # solution is found, should catch those bqserver processes that get accidentally abandoned
   if $PROGRAM_NAME =~ /bqserver$/
     sleep 3600 * 24 * 4
-    WorkflowMgr.log("Shutting down #{$PROGRAM_NAME} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it appears to be abandoned")
+    msg = "Shutting down #{$PROGRAM_NAME} server process #{Process.pid} " \
+           "on host #{hostinfo[2]} (#{hostinfo[3]}) because it appears to be abandoned"
+    WorkflowMgr.log(msg)
     DRb.stop_service
 
-  # Shutdown the ioserver and dbserver processes as soon as they are orphaned (that should never happen unless rocotorun/rocotoboot dies uncleanly)
+  # Shutdown the ioserver and dbserver processes as soon as they are orphaned
+  # (that should never happen unless rocotorun/rocotoboot dies uncleanly)
   else
     loop do
       # Test if the rocoto process that launched this server process is still alive
@@ -115,7 +118,9 @@ Thread.new do
       sleep 30
     rescue Errno::ESRCH
       # If the process that launched this server is dead, shutdown this process
-      WorkflowMgr.log("Shutting down #{$PROGRAM_NAME} server process #{Process.pid} on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown.")
+      msg = "Shutting down #{$PROGRAM_NAME} server process #{Process.pid} " \
+             "on host #{hostinfo[2]} (#{hostinfo[3]}) because it has been orphaned by an ungraceful shutdown."
+      WorkflowMgr.log(msg)
       DRb.stop_service
     end
   end

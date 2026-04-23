@@ -24,5 +24,5 @@ end
 
 # Create workflow engine and run it
 opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV, 'rocotorewind', 'rewind')
-workflowengine = WorkflowMgr::WorkflowEngine.new(opt)
-workflowengine.rewind!
+workflow_engine = WorkflowMgr::WorkflowEngine.new(opt)
+workflow_engine.rewind!

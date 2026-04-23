@@ -20,5 +20,5 @@ LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
 opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV, 'rocotoboot', 'boot')
-workflowEngine = WorkflowMgr::WorkflowEngine.new(opt)
-workflowEngine.boot
+workflow_engine = WorkflowMgr::WorkflowEngine.new(opt)
+workflow_engine.boot
