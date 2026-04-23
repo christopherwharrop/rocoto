@@ -482,7 +482,7 @@ module WorkflowMgr
         code_signal = job[230..239].strip
         if code_signal =~ /:/
 
-          code, signal = code_signal.split(":").collect { |i| i.to_i }
+          code, signal = code_signal.split(":").collect(&:to_i)
           record[:exit_status] = if code == 0
                                    signal
                                  else
@@ -612,7 +612,7 @@ module WorkflowMgr
         record[:priority] = jobfields[4]
 
         # Extract the exit status
-        code, signal = jobfields[9].split(":").collect { |i| i.to_i }
+        code, signal = jobfields[9].split(":").collect(&:to_i)
         record[:exit_status] = if code == 0
                                  signal
                                else

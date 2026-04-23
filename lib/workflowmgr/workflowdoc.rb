@@ -556,9 +556,9 @@ module WorkflowMgr
       ia = a.inspect
       ib = b.inspect
       cmp = cmp.to_s
-      ia = ia[0..37] + '...' if ia.size > 40
-      ib = ib[0..37] + '...' if ib.size > 40
-      cmp = cmp[0..37] + '...' if cmp.size > 40
+      ia = "#{ia[0..37]}..." if ia.size > 40
+      ib = "#{ib[0..37]}..." if ib.size > 40
+      cmp = "#{cmp[0..37]}..." if cmp.size > 40
       "'#{ia}'#{cmp}'#{ib}'"
     end
 
@@ -762,7 +762,7 @@ module WorkflowMgr
         end
 
         # Remove the metataskdep elements
-        metataskelements.each { |metataskelement| metataskelement.remove! }
+        metataskelements.each(&:remove!)
       end
     end
 
@@ -790,7 +790,7 @@ module WorkflowMgr
 
           # Find the seqnum for the tasks on which this task depends
           seqdeplist = ch.attributes["seqnum"]
-          seqdeps = seqdeplist.split(",")[0..idx].collect { |s| s.to_i }
+          seqdeps = seqdeplist.split(",")[0..idx].collect(&:to_i)
           seqdeps[idx] -= 1
 
           # Unless this is the first task in the sequence, it has a dependency for this metatask
@@ -867,7 +867,7 @@ module WorkflowMgr
         pre_parse(ch, metatask_name)
         metatasks << ch
       end
-      metatasks.each { |ch| ch.remove! }
+      metatasks.each(&:remove!)
     end
 
     #####################################################
@@ -880,7 +880,7 @@ module WorkflowMgr
         node.output_escaping = false
         cont = unescape(node.content)
         id_table.each_key do |id|
-          next while cont.sub!("#" + id + "#", id_table[id][index])
+          next while cont.sub!("##{id}#", id_table[id][index])
         end
         node.content = cont
 
@@ -888,7 +888,7 @@ module WorkflowMgr
         node.attributes.each do |attr|
           val = attr.value
           id_table.each_key do |id|
-            next while val.sub!("#" + id + "#", id_table[id][index])
+            next while val.sub!("##{id}#", id_table[id][index])
           end
           attr.value = val
         end

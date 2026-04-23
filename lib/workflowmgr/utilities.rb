@@ -191,7 +191,7 @@ module WorkflowMgr
               maxAge = YAML.load_file("#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/rocotorc")[:MaxLogDays]
 
               # Remove files last modified more than MaxAge days ago
-              Dir[rocotolog + ".[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each do |logfile|
+              Dir["#{rocotolog}.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each do |logfile|
                 if (Time.now - File.mtime(logfile)) > (maxAge * 24 * 3600)
                   FileUtils.rm_f(logfile)
                 end

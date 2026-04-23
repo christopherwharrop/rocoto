@@ -76,7 +76,7 @@ module WorkflowMgr
           reftime = cycledefs.collect do |cdef|
             cdef.next(cycopt.first, false)
           end.compact.collect { |c| c[0] }.min
-          while true
+          loop do
             break if reftime.nil?
             break if reftime > cycopt.last
 

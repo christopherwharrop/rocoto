@@ -37,7 +37,7 @@ module WorkflowMgr
             reftime = cycledefs.collect do |cdef|
               cdef.next(cycopt.first, false)
             end.compact.collect { |c| c[0] }.min
-            while true
+            loop do
               break if reftime.nil?
               break if reftime > cycopt.last
 
@@ -48,7 +48,7 @@ module WorkflowMgr
             end
 
             # Add the cycles that are in the XML but not in the DB
-            xmlcycles = (xml_cycle_times - dbcycles.collect { |c| c.cycle }).collect { |c| WorkflowMgr::Cycle.new(c) }
+            xmlcycles = (xml_cycle_times - dbcycles.collect(&:cycle)).collect { |c| WorkflowMgr::Cycle.new(c) }
           elsif cycopt.is_a?(Time)
             cycle = dbServer.get_cycles({ start: cycopt, end: cycopt })
             if cycle.empty?

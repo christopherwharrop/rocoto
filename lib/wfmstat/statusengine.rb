@@ -264,7 +264,7 @@ module WFMStat
       dbcycles, xmlcycles, = getCycles
 
       # Get the jobs from the database for the cycles of interest
-      jobs = @dbServer.get_jobs(dbcycles.collect { |c| c.cycle })
+      jobs = @dbServer.get_jobs(dbcycles.collect(&:cycle))
 
       # Get the list of tasks from the workflow definition
       definedTasks = @workflowdoc.tasks
@@ -298,7 +298,7 @@ module WFMStat
           printf "================================================================================================================================\n"
 
           # Print status of all jobs for this task
-          cyclelist = (dbcycles | xmlcycles).collect { |c| c.cycle }.sort
+          cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
           cyclelist.each do |cycle|
             next unless @subset.is_selected? cycle
 
@@ -339,7 +339,7 @@ module WFMStat
         puts format % header
 
         # Print status of jobs for each cycle
-        cyclelist = (dbcycles | xmlcycles).collect { |c| c.cycle }.sort
+        cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
         cyclelist.each do |cycle|
           unless @subset.is_selected? cycle
             # puts "#{cycle.class.name} #{cycle.inspect}: not selected"
@@ -494,7 +494,7 @@ module WFMStat
 
       # Check for throttle violations
       active_cycles = @dbServer.get_active_cycles
-      active_jobs = @dbServer.get_jobs(active_cycles.collect { |c| c.cycle })
+      active_jobs = @dbServer.get_jobs(active_cycles.collect(&:cycle))
       ncores = 0
       ntasks = 0
       active_jobs.each_key do |jobtask|

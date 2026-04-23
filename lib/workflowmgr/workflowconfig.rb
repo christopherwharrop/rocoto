@@ -61,7 +61,7 @@ module WorkflowMgr
           config = YAML.load_file(@config_file)
           if config.is_a?(Hash)
             # Merge default config into rocotorc config if there are unspecified config options
-            if config.keys.collect { |c| c.to_s }.sort != DEFAULT_CONFIG.keys.collect { |c| c.to_s }.sort
+            if config.keys.collect(&:to_s).sort != DEFAULT_CONFIG.keys.collect(&:to_s).sort
               config = DEFAULT_CONFIG.merge(config).delete_if { |k, v| !DEFAULT_CONFIG.key?(k) }
               File.open("#{@config_file}.#{Process.pid}", "w") { |f| YAML.dump(config, f) }
             end

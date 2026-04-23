@@ -183,7 +183,7 @@ module WorkflowMgr
       if name.nil?
         name = script.to_s(Time.new)
         if name.size > 40
-          name = name[0..37] + '...'
+          name = "#{name[0..37]}..."
         end
       end
       @name = name
@@ -253,7 +253,7 @@ module WorkflowMgr
       if name.nil?
         name = shellexpr.to_s(Time.new)
         if name.size > 40
-          name = name[0..37] + '...'
+          name = "#{name[0..37]}..."
         end
       end
       @name = name

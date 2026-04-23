@@ -259,7 +259,7 @@ module WorkflowMgr
       end
 
       # Get the set of cycles that are >= the earliest cycledef position
-      cycleset = @dbServer.get_cycles(@cycledefs.collect { |cycledef| cycledef.position }.compact.min)
+      cycleset = @dbServer.get_cycles(@cycledefs.collect(&:position).compact.min)
 
       # Sort the cycleset
       cycleset.sort { |a, b| a[:cycle] <=> b[:cycle] }

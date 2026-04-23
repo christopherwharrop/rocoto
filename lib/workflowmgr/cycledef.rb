@@ -141,8 +141,7 @@ module WorkflowMgr
       allweekdays = @fields[:weekday] == get_field_range(:weekday).to_a
 
       # Find the next valid year,month,day
-      while true
-
+      loop do
         # Set done to true
         done = true
 
@@ -249,7 +248,6 @@ module WorkflowMgr
         end
 
         nextwday = Time.gm(nextyear, nextmonth, nextday).wday
-
       end
     end
 
@@ -312,8 +310,7 @@ module WorkflowMgr
       allweekdays = @fields[:weekday] == get_field_range(:weekday).to_a
 
       # Find the prev valid year,month,day
-      while true
-
+      loop do
         # Set done to true
         done = true
 
@@ -422,7 +419,6 @@ module WorkflowMgr
         end
 
         prevwday = Time.gm(prevyear, prevmonth, prevday).wday
-
       end
     end
 
