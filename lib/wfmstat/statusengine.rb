@@ -33,7 +33,8 @@ module WFMStat
       # Turn on full program tracing for verbosity 1000+
       if WorkflowMgr::VERBOSE > 999
         set_trace_func proc { |event, file, line, id, binding, classname|
-          printf "%10s %s:%-2d %10s %8s\n", event, file, line, id, classname
+          printf "%<event>10s %<file>s:%<line>-2d %<id>10s %<classname>8s\n",
+                 event: event, file: file, line: line, id: id, classname: classname
         }
 
       # Turn on program tracing for Rocoto code only for verbosity 100+
@@ -42,7 +43,8 @@ module WFMStat
           case event
           when "call", "return", "line"
             if file =~ /\/lib\/workflowmgr\/|\/lib\/wfmstat\//
-              printf "%10s %s:%-2d %10s %8s\n", event, file, line, id, classname
+              printf "%<event>10s %<file>s:%<line>-2d %<id>10s %<classname>8s\n",
+                     event: event, file: file, line: line, id: id, classname: classname
             end
           end
         }
@@ -149,14 +151,14 @@ module WFMStat
           wstate = WorkflowMgr::WorkflowState.new(cycle.cycle, jobs, @workflow_io_server, @workflowdoc.cycledefs,
                                                   task.attributes[:name], task, @workflowdoc.tasks)
           dependencies = task.dependency.query(wstate)
-          printf "%2s%s\n", "", "dependencies"
+          printf "%<indent>2s%<label>s\n", indent: "", label: "dependencies"
           print_deps(dependencies, 0)
         end
         unless task.hangdependency.nil?
           wstate = WorkflowState.new(cycle.cycle, jobs, @workflow_io_server, @workflowdoc.cycledefs,
                                      task.attributes[:name], task, @workflowdoc.tasks)
           hangdependencies = task.hangdependency.query(wstate)
-          printf "%2s%s\n", "", "hang dependencies"
+          printf "%<indent>2s%<label>s\n", indent: "", label: "hang dependencies"
           print_deps(hangdependencies, 0)
         end
       end
@@ -240,17 +242,19 @@ module WFMStat
       dbcycles, xmlcycles, = cycle_sets
 
       # Print the header
-      printf "%12s    %8s    %20s    %20s\n", "CYCLE".center(12),
-             "STATE".center(8),
-             "ACTIVATED".center(20),
-             "DEACTIVATED".center(20)
+      printf "%<cycle>12s    %<state>8s    %<activated>20s    %<deactivated>20s\n",
+             cycle: "CYCLE".center(12),
+             state: "STATE".center(8),
+             activated: "ACTIVATED".center(20),
+             deactivated: "DEACTIVATED".center(20)
 
       # Print the cycle date/times
       (dbcycles + xmlcycles).sort.each do |cycle|
-        printf "%12s    %8s    %20s    %20s\n", cycle.cycle.strftime('%Y%m%d%H%M').to_s,
-               cycle.state.to_s.capitalize.to_s,
-               cycle.activated_time_string.center(20).to_s,
-               cycle.deactivated_time_string.center(20).to_s
+        printf "%<cycle_time>12s    %<state>8s    %<activated>20s    %<deactivated>20s\n",
+               cycle_time: cycle.cycle.strftime('%Y%m%d%H%M').to_s,
+               state: cycle.state.to_s.capitalize.to_s,
+               activated: cycle.activated_time_string.center(20).to_s,
+               deactivated: cycle.deactivated_time_string.center(20).to_s
       end
     end
 

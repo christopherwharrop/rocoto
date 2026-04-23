@@ -91,7 +91,7 @@ module WorkflowMgr
     s -= minutes * 60
     seconds = s
 
-    format("%0d:%02d:%02d", hours, minutes, seconds)
+    format("%<hours>0d:%<minutes>02d:%<seconds>02d", hours: hours, minutes: minutes, seconds: seconds)
   end
 
   ##########################################
@@ -109,7 +109,7 @@ module WorkflowMgr
       minutes = 0
     end
 
-    format("%0d:%02d", hours, minutes)
+    format("%<hours>0d:%<minutes>02d", hours: hours, minutes: minutes)
   end
 
   ##########################################
