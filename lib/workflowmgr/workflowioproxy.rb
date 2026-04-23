@@ -160,18 +160,17 @@ module WorkflowMgr
                 # Add the common portion of the paths to the database
                 newdownpath = { path: commonpath.join("/"), downtime: downtime, host: @workflow_io_host,
                                 pid: @workflow_io_pid }
-                @db_server.add_downpaths([newdownpath])
-                @newdownpaths << newdownpath
 
               # Otherwise the arg path is a new down path
               else
 
                 newdownpath = { path: argpath.join("/"), downtime: downtime, host: @workflow_io_host,
                                 pid: @workflow_io_pid }
-                @db_server.add_downpaths([newdownpath])
-                @newdownpaths << newdownpath
 
               end
+
+              @db_server.add_downpaths([newdownpath])
+              @newdownpaths << newdownpath
 
               # Restart the workflow_io server
               msg = "WARNING! The rocotoioserver process #{@workflow_io_pid} on host #{@workflow_io_host} " \
@@ -206,7 +205,8 @@ module WorkflowMgr
           # Ignore SIGINT while launching server process
           Signal.trap("INT", nil)
 
-          @workflow_io_server, @workflow_io_host, @workflow_io_pid = WorkflowMgr.launch_server("#{wfmdir}/sbin/rocotoioserver")
+          @workflow_io_server, @workflow_io_host, @workflow_io_pid =
+            WorkflowMgr.launch_server("#{wfmdir}/sbin/rocotoioserver")
           @workflow_io_server.setup(workflow_io)
 
           # Restore default SIGINT handler

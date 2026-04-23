@@ -531,6 +531,8 @@ module WorkflowMgr
     #
     ##########################################
     def initialize(cycledef, group, activation_offset = 0, position = nil, exclude_hours = nil, valid_hours = nil)
+      super()
+
       @cycledef = cycledef
       @group = group
       @activation_offset = activation_offset

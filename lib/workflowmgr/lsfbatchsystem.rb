@@ -186,11 +186,11 @@ module WorkflowMgr
                      end
               task_geometry = '{'
               iproc = 0
-              for inode in (0..(bignodes - 1))
+              (0..(bignodes - 1)).each do |inode|
                 task_geometry += "(#{(iproc..(iproc + lowcores)).to_a.join(',')})"
                 iproc += lowcores + 1
               end
-              for inode in (0..(littlenodes - 1))
+              (0..(littlenodes - 1)).each do |inode|
                 task_geometry += "(#{(iproc..(iproc + lowcores - 1)).to_a.join(',')})"
                 iproc += lowcores
               end

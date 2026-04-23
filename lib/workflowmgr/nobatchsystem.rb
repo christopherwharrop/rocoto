@@ -216,8 +216,8 @@ unless defined? $__nobatchsystem__
           end
 
           sleep 1
-        end     # 2.times
-      end       # catch
+        end
+      end
 
       record
     rescue StandardError
@@ -385,14 +385,14 @@ unless defined? $__nobatchsystem__
       # Issue the submit command
       output = Command.run("& #{script} 2>&1 ")
       if output[1] != 0
-        raise "#{output[0]}"
+        raise output[0].to_s
       end
 
       # Check for success
       if output[0] =~ /[Yy]our job (\d+) .* has been submitted/
         ::Regexp.last_match(1)
       else
-        raise "#{output[0]}"
+        raise output[0].to_s
       end
     rescue StandardError
       raise $ERROR_INFO

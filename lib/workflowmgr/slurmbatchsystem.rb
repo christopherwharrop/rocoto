@@ -34,7 +34,7 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(slurm_root = nil, config)
+    def initialize(config, slurm_root = nil)
       super()
 
       # Get timeouts from the configuration
@@ -552,7 +552,7 @@ module WorkflowMgr
           return unless File.exist? sacct_cache
           return if File.zero? sacct_cache
 
-          open(sacct_cache) do |f|
+          File.open(sacct_cache) do |f|
             completed_jobs = f.read
             errors = ''
             exit_status = 0

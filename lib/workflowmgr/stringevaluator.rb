@@ -28,7 +28,7 @@ module WorkflowMgr
     #
     # Lexical Scope Query and Editing
     #
-    # []= [] has_var? each_var
+    # []= [] var? each_var
     #
     ##########################################
     def []=(var, value)
@@ -50,7 +50,7 @@ module WorkflowMgr
       end
     end
 
-    def has_var?(var)
+    def var?(var)
       svar = var.to_s
       @vars.key?(svar) || @defaults.key?(svar)
     end

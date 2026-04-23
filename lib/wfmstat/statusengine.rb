@@ -297,12 +297,12 @@ module WFMStat
         end
 
         tasklist.each do |task|
-          next unless @subset.is_selected? task
+          next unless @subset.selected? task
 
           printf "#{'=' * 128}\n"
           cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
           cyclelist.each do |cycle|
-            next unless @subset.is_selected? cycle
+            next unless @subset.selected? cycle
 
             # Only print info if the cycle is defined for this task
             unless defined_tasks[task].attributes[:cycledefs].nil?
@@ -343,7 +343,7 @@ module WFMStat
         # Print status of jobs for each cycle
         cyclelist = (dbcycles | xmlcycles).collect(&:cycle).sort
         cyclelist.each do |cycle|
-          unless @subset.is_selected? cycle
+          unless @subset.selected? cycle
             # puts "#{cycle.class.name} #{cycle.inspect}: not selected"
             next
           end
@@ -358,7 +358,7 @@ module WFMStat
             end].flatten
           end
           tasklist.each do |task|
-            unless @subset.is_selected? task
+            unless @subset.selected? task
               # puts "#{task}: not selected"
               next
             end

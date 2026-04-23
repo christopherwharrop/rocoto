@@ -24,7 +24,7 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(pbspro_root = nil, config)
+    def initialize(config, pbspro_root = nil)
       super()
 
       # Get timeouts from the configuration

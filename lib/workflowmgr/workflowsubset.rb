@@ -62,10 +62,10 @@ module WorkflowMgr
 
     ##########################################
     #
-    # is_selected
+    # selected?
     #
     ##########################################
-    def is_selected?(arg)
+    def selected?(arg)
       return true if @all_cycles && @all_tasks
 
       case arg
@@ -89,12 +89,12 @@ module WorkflowMgr
         (@all_cycles || @cycles_set.include?(job.cycle)) &&
           (@all_tasks || @tasks_set.include?(job.task.attributes[:name]))
       when Range
-        raise "Unexpected type #{arg.class.name} in \"is_selected?\".  " \
+        raise "Unexpected type #{arg.class.name} in \"selected?\".  " \
               "Querying Ranges of cycles is not yet implemented."
       when Enumerable
-        arg.all? { |elem| is_selected? elem }
+        arg.all? { |elem| selected? elem }
       else
-        raise "Unexpected type #{arg.class.name} in \"is_selected?\".  " \
+        raise "Unexpected type #{arg.class.name} in \"selected?\".  " \
               "Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof " \
               "(except Ranges) are allowed."
       end

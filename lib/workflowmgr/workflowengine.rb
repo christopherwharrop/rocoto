@@ -16,7 +16,6 @@ module WorkflowMgr
     require 'workflowmgr/workflowstate'
     require 'workflowmgr/launchserver'
     require 'workflowmgr/workflowdoc'
-    require 'workflowmgr/workflowstate'
     require 'workflowmgr/dbproxy'
     require 'workflowmgr/workflowioproxy'
     require 'workflowmgr/cycledef'
@@ -1102,7 +1101,7 @@ module WorkflowMgr
             match = cycleset.find { |c| c.cycle == next_cycle }
             break if match.nil?
 
-            next_cycle, = cycledef.next(next_cycle + 60, false)
+            next_cycle, = cycledef.next(next_cycle + 60, by_activation_time:false)
           end
 
           # If we found a new cycle, add it to the new cycle pool
@@ -1700,7 +1699,7 @@ module WorkflowMgr
 
       # Loop over active cycles and tasks, looking for eligible tasks to submit
       @active_cycles.sort { |c1, c2| c1.cycle <=> c2.cycle }.each do |cycle|
-        if !@options.all_cycles && !subset.is_selected?(cycle)
+        if !@options.all_cycles && !subset.selected?(cycle)
           WorkflowMgr.stderr("#{cycle.cycle.strftime('%Y%m%d%H%M')}: cycle is not selected by -c; skip", 4)
           next
         end
@@ -1710,7 +1709,7 @@ module WorkflowMgr
 
         cycletime = cycle.cycle
         @tasks.values.sort { |t1, t2| t1.seq <=> t2.seq }.each do |task|
-          if !@options.all_tasks && !subset.is_selected?(task)
+          if !@options.all_tasks && !subset.selected?(task)
             WorkflowMgr.stderr("#{task.attributes[:name]}: task is not selected by -m, -t, or -a; skip", 9)
             next
           end

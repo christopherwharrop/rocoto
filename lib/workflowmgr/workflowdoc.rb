@@ -17,7 +17,6 @@ module WorkflowMgr
     require 'workflowmgr/utilities'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/workflowlog'
-    require 'workflowmgr/cycledef'
     require 'workflowmgr/moabbatchsystem'
     require 'workflowmgr/moabtorquebatchsystem'
     require 'workflowmgr/torquebatchsystem'
