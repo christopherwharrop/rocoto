@@ -42,5 +42,5 @@ module WorkflowMgr
         end
       end
     end
-  end # class WorkflowLog
-end # module WorkflowMgr
+  end
+end

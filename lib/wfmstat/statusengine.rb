@@ -64,7 +64,7 @@ module WFMStat
         WorkflowMgr.log(e.backtrace.join("\n"))
       end
       Process.exit(1)
-    end # initialize
+    end
 
     ##########################################
     #
@@ -111,8 +111,7 @@ module WFMStat
       if !@workflowIOServer.nil? && @config.WorkflowIOServer
         @workflowIOServer.stop!
       end
-      # ensure
-    end # wfmstat
+    end
 
     ##########################################
     #
@@ -215,7 +214,6 @@ module WFMStat
       if !@workflowIOServer.nil? && @config.WorkflowIOServer
         @workflowIOServer.stop!
       end
-      # ensure
     end
 
     ##########################################
@@ -364,7 +362,7 @@ module WFMStat
             end
 
             # Only print info if the task is defined for this cycle
-            unless definedTasks[task].nil? or definedTasks[task].attributes[:cycledefs].nil?
+            unless definedTasks[task].nil? || definedTasks[task].attributes[:cycledefs].nil?
               # Get the cycledefs associated with this task
               taskcycledefs[task] = cycledefs.find_all do |cycledef|
                 definedTasks[task].attributes[:cycledefs].split(/[\s,]+/).member?(cycledef.group)
@@ -421,7 +419,7 @@ module WFMStat
     #
     ##########################################
     def print_cycleinfo(cycle, cycledefs, task)
-      return if task.nil? or task.attributes.nil?
+      return if task.nil? || task.attributes.nil?
 
       # Make sure the cycle is valid for this task
       cycle_is_valid = true
@@ -433,7 +431,7 @@ module WFMStat
         unless taskcycledefs.any? { |cycledef| cycledef.member?(cycle.cycle) }
           cycle_is_valid = false
         end
-      end # unless
+      end
 
       puts
       puts "Cycle: #{cycle.cycle.strftime('%Y%m%d%H%M')}"
@@ -499,8 +497,8 @@ module WFMStat
       active_jobs = @dbServer.get_jobs(active_cycles.collect { |c| c.cycle })
       ncores = 0
       ntasks = 0
-      active_jobs.keys.each do |jobtask|
-        active_jobs[jobtask].keys.each do |jobcycle|
+      active_jobs.each_key do |jobtask|
+        active_jobs[jobtask].each_key do |jobcycle|
           unless active_jobs[jobtask][jobcycle].done?
             ntasks += 1
             ncores += active_jobs[jobtask][jobcycle].cores
@@ -531,5 +529,5 @@ module WFMStat
         end
       end
     end
-  end # Class StatusEngine
-end # Module WorkflowMgr
+  end
+end

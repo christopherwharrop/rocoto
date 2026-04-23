@@ -28,7 +28,7 @@ module WorkflowMgr
     ##########################################
     def first
       self.next(Time.gm(1900, 1, 1, 0, 0), false)[0]
-    end # first
+    end
 
     ##########################################
     #
@@ -37,7 +37,7 @@ module WorkflowMgr
     ##########################################
     def last
       previous(Time.gm(9999, 12, 31, 59, 59), false)[0]
-    end # first
+    end
 
     ##########################################
     #
@@ -80,7 +80,7 @@ module WorkflowMgr
       end
 
       @position = position || first
-    end # initialize
+    end
 
     ##########################################
     #
@@ -250,8 +250,8 @@ module WorkflowMgr
 
         nextwday = Time.gm(nextyear, nextmonth, nextday).wday
 
-      end #  while true
-    end #  next
+      end
+    end
 
     ##########################################
     #
@@ -423,8 +423,8 @@ module WorkflowMgr
 
         prevwday = Time.gm(prevyear, prevmonth, prevday).wday
 
-      end #  while true
-    end #  previous
+      end
+    end
 
     ##########################################
     #
@@ -451,7 +451,7 @@ module WorkflowMgr
         if daymember && @fields[:minute].member?(gmreftime.min) && @fields[:year].member?(gmreftime.year)
           return true
         end
-      end # if month
+      end
 
       false
     end
@@ -519,7 +519,7 @@ module WorkflowMgr
         raise "Unsupported cycle cron field '#{field}'"
       end
     end
-  end # Class CycleCron
+  end
 
   ##########################################
   #
@@ -575,7 +575,7 @@ module WorkflowMgr
       raise "Invalid <cycledef>  Interval must be a positive unit of time" if @interval == 0
 
       @position = position || first
-    end # initialize
+    end
 
     ##########################################
     #
@@ -653,7 +653,7 @@ module WorkflowMgr
       end
 
       [nil, nil]
-    end # next
+    end
 
     ##########################################
     #
@@ -701,5 +701,5 @@ module WorkflowMgr
       # Apply hour filtering
       hour_valid?(reftime)
     end
-  end # Class CycleInterval
-end # Module WorkflowMgr
+  end
+end

@@ -348,6 +348,6 @@ module WorkflowMgr
           end
         end
       end
-    end # refresh_job_queue
-  end # class
-end # module
+    end
+  end
+end

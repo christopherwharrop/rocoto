@@ -85,7 +85,7 @@ module WorkflowMgr
         # Update the config file in a quasi-atomic way.
         FileUtils.mv("#{@config_file}.#{Process.pid}", @config_file) if File.exist?("#{@config_file}.#{Process.pid}")
       end
-    end # initialize
+    end
 
     ##########################################
     #
@@ -100,5 +100,5 @@ module WorkflowMgr
         super
       end
     end
-  end # Class WorkflowYAMLConfig
-end # Module WorkflowMgr
+  end
+end

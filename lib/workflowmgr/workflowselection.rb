@@ -117,9 +117,9 @@ module WorkflowMgr
           metaopt = metaopt[1..-1]
         end
         optspec << [metaopt, negate]
-      end # each option
+      end
 
-      tasks.values.each do |task|
+      tasks.each_value do |task|
         next if task.attributes[:metatasks].nil?
 
         metatasks = task.attributes[:metatasks].split(',')
@@ -132,8 +132,8 @@ module WorkflowMgr
               selection.add(task.attributes[:name])
             end
           end
-        end # each option
-      end # each task
+        end
+      end
     end
 
     ##########################################
@@ -162,7 +162,7 @@ module WorkflowMgr
           else
             raise "Unknown attribute '#{attribute_name}' is not one of: final, shared, exclusive, metatasks, cores, nodes"
           end
-          tasks.values.each do |task|
+          tasks.each_value do |task|
             if (negate && !task.attributes[attribute]) || (!negate && task.attributes[attribute])
               if negate
                 selection.delete(task.attributes[:name])
@@ -171,9 +171,9 @@ module WorkflowMgr
               end
             end
           end
-        elsif item.start_with? '/' and item.end_with? '/'
+        elsif item.start_with?('/') && item.end_with?('/')
           regex = Regexp.new item[1..-2]
-          tasks.values.each do |task|
+          tasks.each_value do |task|
             if regex =~ task.attributes[:name]
               if negate
                 selection.delete(task.attributes[:name])
@@ -184,7 +184,7 @@ module WorkflowMgr
           end
         elsif item.start_with? '@'
           cycledef = item[1..-1]
-          tasks.values.each do |task|
+          tasks.each_value do |task|
             next if task.attributes[:cycledefs].nil?
 
             cycledefs = task.attributes[:cycledefs].split(',')
@@ -201,7 +201,7 @@ module WorkflowMgr
         else
           selection.add(item)
         end
-      end # each option
+      end
     end
 
     ##########################################
@@ -226,5 +226,5 @@ module WorkflowMgr
       tasks.sort!
       tasks
     end
-  end # class WorkflowSelection
-end # module WorkflowMgr
+  end
+end

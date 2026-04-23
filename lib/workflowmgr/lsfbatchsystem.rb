@@ -337,7 +337,7 @@ module WorkflowMgr
 
 
 
-      if !job[:reservation_time].nil? and !job[:lsf_runlimit].nil?
+      if !job[:reservation_time].nil? && !job[:lsf_runlimit].nil?
         now = Time.now
         reservation_age = now - job[:reservation_time]
         runlimit = job[:lsf_runlimit]
@@ -649,7 +649,7 @@ module WorkflowMgr
 
         next if jobacct.has_key?(record[:jobid])
 
-        if record.has_key?(:state) and record[:state] != 'UNKNOWN'
+        if record.has_key?(:state) && (record[:state] != 'UNKNOWN')
           jobacct[record[:jobid]] = record
         end
       end

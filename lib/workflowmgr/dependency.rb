@@ -750,7 +750,7 @@ module WorkflowMgr
         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
           cycle_is_valid = false
         end
-      end # unless
+      end
 
       cycle_is_valid
     end
@@ -777,7 +777,7 @@ module WorkflowMgr
         unless taskcycledefs.any? { |cycledef| cycledef.member?(d.cycle) }
           cycle_is_valid = false
         end
-      end # unless
+      end
 
       if cycle_is_valid
         [{ dep: "#{@task}", msg: "is valid", resolved: true }]

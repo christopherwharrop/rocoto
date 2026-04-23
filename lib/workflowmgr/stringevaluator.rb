@@ -104,7 +104,8 @@ module WorkflowMgr
     # set_* -- Add Groups of Variables
     #
     ##########################################
-    def set_task(name, task = nil) # Add a Task and its name
+    # Add a Task and its name
+    def set_task(name, task = nil)
       @defaults['taskname'] = name.to_s # taskname = task name
       unless task.nil?
         @defaults['taskobj'] = task # taskobj = the Task
@@ -114,11 +115,13 @@ module WorkflowMgr
       self
     end
 
-    def set_doc(doc) # Add a WorkflowXMLDoc
+    # Add a WorkflowXMLDoc
+    def set_doc(doc)
       @defaults['doc'] = doc # doc = the WorkflowXMLDoc
     end
 
-    def set_cycle(cycle) # Add a Cycle
+    # Add a Cycle
+    def set_cycle(cycle)
       @defaults['cycle'] = cycle # cycle = the cycle time
 
       @defaults['evalcycle'] = cycle # evalcycle = the Cycle object again
@@ -146,17 +149,20 @@ module WorkflowMgr
     # Execution
     #
     ##########################################
-    def run_bool(evalstr) # execute, return a boolean
+    # execute, return a boolean
+    def run_bool(evalstr)
       return true if run(evalstr)
 
       false
     end
 
-    def run_str(evalstr) # execute, return a string
+    # execute, return a string
+    def run_str(evalstr)
       run(evalstr).to_s
     end
 
-    def run(evalstr) # execute, return result of eval
+    # execute, return result of eval
+    def run(evalstr)
       evalstr = evalstr.to_s
 
       # Get a binding within the get_binding() subroutine of a copy of

@@ -161,7 +161,7 @@ module WorkflowMgr
         end
         case option
         when :exclusive
-          if task.attributes[:shared].nil? or !task.attributes[:shared]
+          if task.attributes[:shared].nil? || !task.attributes[:shared]
             input += "#SBATCH --exclusive\n"
           end
         when :account
@@ -407,7 +407,7 @@ module WorkflowMgr
         # Run qstat to obtain the current status of queued jobs
         queued_jobs = ""
 
-        if jobids.nil? or jobids.join(',').length > 64
+        if jobids.nil? || (jobids.join(',').length > 64)
           queued_jobs, = WorkflowMgr.run4(
             "squeue -u #{username} --federation -t all -O jobid:40,username:40,numcpus:10,partition:20,submittime:30,starttime:30,endtime:30,priority:30,exit_code:10,state:30,name:200", @squeue_timeout
           )
@@ -513,7 +513,7 @@ module WorkflowMgr
         # Add record to job queue
         @jobqueue[record[:jobid]] = record
       end
-    end # job_queue
+    end
 
     #####################################################
     #
@@ -535,7 +535,7 @@ module WorkflowMgr
 
         if delta_days < 0
           sacct_cache = ENV["ROCOTO_SACCT_CACHE"]
-          if (sacct_cache.nil? or sacct_cache.empty?) && !ENV["HOME"].nil?
+          if (sacct_cache.nil? || sacct_cache.empty?) && !ENV["HOME"].nil?
             sacct_cache = "#{ENV['HOME']}/sacct-cache/sacct.txt"
           end
           return unless File.exist? sacct_cache
@@ -641,6 +641,6 @@ module WorkflowMgr
         # Add record to job queue
         @jobacct[record[:jobid]] = record
       end
-    end # job_acct
-  end # class
-end # module
+    end
+  end
+end

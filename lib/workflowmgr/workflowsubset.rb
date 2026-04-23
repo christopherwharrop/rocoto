@@ -66,7 +66,7 @@ module WorkflowMgr
     #
     ##########################################
     def is_selected?(arg)
-      return true if @all_cycles and @all_tasks
+      return true if @all_cycles && @all_tasks
 
       case arg
       when WorkflowMgr::Cycle
@@ -95,5 +95,5 @@ module WorkflowMgr
         raise "Unexpected type #{arg.class.name} in \"is_selected?\".  Only Cycle, Task, String (task name), Time, Job, and Enumerables thereof (except Ranges) are allowed."
       end
     end
-  end # class WorkflowSubset
-end # module WorkflowMgr
+  end
+end

@@ -22,7 +22,7 @@ module WorkflowMgr
       undefcycles = []
 
       # Get the cycles of interest that are in the database
-      if @cycles.nil? or @cycles.empty?
+      if @cycles.nil? || @cycles.empty?
         # Get the latest cycle
         last_cycle = dbServer.get_last_cycle
         dbcycles << last_cycle unless last_cycle.nil?
@@ -120,4 +120,4 @@ module WorkflowMgr
       WorkflowDBSubset.new(@all_cycles, @all_tasks, xml_cycles, db_cycles, undef_cycles, selected_tasks)
     end
   end
-end # module WorkflowMgr
+end

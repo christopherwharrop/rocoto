@@ -100,7 +100,7 @@ module WorkflowMgr
       # Validate the workflow xml document after metatask expansion
       # The second validation is needed in case metatask expansion introduced invalid XML
       validate_without_metatasks(@workflowdoc)
-    end # initialize
+    end
 
     ##########################################
     #
@@ -217,7 +217,7 @@ module WorkflowMgr
         unless sched.nil?
           clazz = WorkflowMgr.const_get("#{sched.upcase}BatchSystem")
           supported = true
-          @featuresUsed.each do |feature, ignore|
+          @featuresUsed.each_key do |feature|
             next if clazz.feature?(feature)
 
             supported = false
@@ -836,7 +836,7 @@ module WorkflowMgr
           # if seqdeps[idx]
 
           # if @metatask_modes
-        end # metatasklist.split.each
+        end
 
         # if ch.name
       end
@@ -878,7 +878,7 @@ module WorkflowMgr
       if node.node_type_name == "text"
         node.output_escaping = false
         cont = unescape(node.content)
-        id_table.each do |id, value|
+        id_table.each_key do |id|
           next while cont.sub!("#" + id + "#", id_table[id][index])
         end
         node.content = cont
@@ -886,7 +886,7 @@ module WorkflowMgr
       else
         node.attributes.each do |attr|
           val = attr.value
-          id_table.each do |id, value|
+          id_table.each_key do |id|
             next while val.sub!("#" + id + "#", id_table[id][index])
           end
           attr.value = val
@@ -978,5 +978,5 @@ module WorkflowMgr
       # Insert the expanded tasks into the XML tree
       (task_list.length - 1).downto(0) { |x| metatask.next = task_list[x] }
     end
-  end # Class WorkflowXMLDoc
-end # Module WorkflowMgr
+  end
+end

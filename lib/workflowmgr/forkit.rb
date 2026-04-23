@@ -74,5 +74,5 @@ module WorkflowMgr
       # The block took too long, exit with an error
       raise WorkflowMgr::ForkitTimeoutException, "The block timed out"
     end
-  end # def forkit
-end # module workflowmgr
+  end
+end

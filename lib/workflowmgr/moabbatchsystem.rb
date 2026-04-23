@@ -266,7 +266,7 @@ module WorkflowMgr
             record[:priority] = jobstat.value.to_i
           else
             record[jobstat.name] = jobstat.value
-          end # case jobstat
+          end
         end
         # Put the job record in the jobqueue
         @jobqueue[record[:jobid]] = record

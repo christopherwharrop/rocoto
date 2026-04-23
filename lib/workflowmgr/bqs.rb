@@ -116,15 +116,15 @@ module WorkflowMgr
     ##########################################
     def running?
       # Check to see if any threads are still running
-      @running.keys.each do |taskid|
-        @running[taskid].keys.each do |cycle|
+      @running.each_key do |taskid|
+        @running[taskid].each_key do |cycle|
           return true if @running[taskid][cycle.to_i]
         end
       end
 
       # Check to see if all statuses have been harvested
-      @harvested.keys.each do |taskid|
-        @harvested[taskid].keys.each do |cycle|
+      @harvested.each_key do |taskid|
+        @harvested[taskid].each_key do |cycle|
           return true unless @harvested[taskid][cycle.to_i]
         end
       end

@@ -261,7 +261,7 @@ module WorkflowMgr
             record[:exit_status] = jobstat.content.to_i
           else
             record[jobstat.name] = jobstat.content
-          end # case jobstat
+          end
         end
         # If the job is complete and has an exit status, change the state to SUCCEEDED or FAILED
         if record[:state] == "UNKNOWN" && !record[:exit_status].nil?
@@ -279,6 +279,6 @@ module WorkflowMgr
         end
       end
       nil
-    end # job_queue
-  end # class
-end # module
+    end
+  end
+end

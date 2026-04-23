@@ -95,9 +95,9 @@ module WorkflowMgr
                 end
 
                 # if downpath
-              end # @downpaths.each
+              end
 
-            end # unless @downpaths.empty?
+            end
 
             retries = 0
             begin
@@ -132,7 +132,7 @@ module WorkflowMgr
                   downpathmatch = path
                   break
                 end
-              end # @downpaths.each
+              end
 
               # If we found a known down path that matches the current arg path
               if commonpath.size > 3
@@ -161,13 +161,13 @@ module WorkflowMgr
                 @dbServer.add_downpaths([newdownpath])
                 @newdownpaths << newdownpath
 
-              end # if commonpath.size
+              end
 
               # Restart the workflowIO server
               msg = "WARNING! The rocotoioserver process #{@workflowIOPID} on host #{@workflowIOHost} is unresponsive while accessing #{args[0]} and is probably wedged."
               workflowIO_init
               raise WorkflowIOHang, msg
-            end # begin
+            end
           end
         end
       end
@@ -221,5 +221,5 @@ module WorkflowMgr
         raise "Could not launch IO server process."
       end
     end
-  end # Class WorkflowIOProxy
-end # Module WorkflowMgr
+  end
+end

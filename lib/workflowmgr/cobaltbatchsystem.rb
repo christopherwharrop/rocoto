@@ -273,7 +273,7 @@ module WorkflowMgr
         end
       end
       nil
-    end # job_queue
+    end
 
     #####################################################
     #
@@ -358,5 +358,5 @@ module WorkflowMgr
         FileUtils.rm(joblogfile)
       end
     end
-  end # class
-end # module
+  end
+end

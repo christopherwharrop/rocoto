@@ -88,5 +88,5 @@ module WorkflowMgr
         raise
       end
     end
-  end # class WorkflowServer
-end # module WorkflowMgr
+  end
+end

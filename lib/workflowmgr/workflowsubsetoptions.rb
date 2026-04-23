@@ -79,7 +79,7 @@ module WorkflowMgr
         end
       end
 
-      @cycles = nil if !@cycles.nil? and @cycles.empty?
+      @cycles = nil if !@cycles.nil? && @cycles.empty?
 
       # Tasks of interest
       opts.on("-t", "--tasks 'a,b,c'", Array, "List of tasks") do |tasklist|
@@ -174,4 +174,4 @@ module WorkflowMgr
       @selection
     end
   end
-end # module WorkflowMgr
+end

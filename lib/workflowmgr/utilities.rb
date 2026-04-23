@@ -196,9 +196,9 @@ module WorkflowMgr
                 end
               end
 
-            end # if rotate?
+            end
 
-          end # if File.exist?
+          end
 
           # Log the message
           File.open(rocotolog, "a") do |f|
@@ -212,8 +212,8 @@ module WorkflowMgr
       else
         warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} :: WARNING! Could not acquire lock to write log the following message"
         warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} ::          #{message}"
-      end # if got_lock
-    end # open
+      end
+    end
   end
 
   ##########################################
@@ -257,4 +257,4 @@ module WorkflowMgr
     end
     [output, error, exit_status]
   end
-end # module workflowmgr
+end
