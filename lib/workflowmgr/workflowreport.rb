@@ -485,10 +485,10 @@ module WorkflowMgr
           next if @active_jobs[taskname].nil?
 
           @active_jobs[taskname].each_key do |cycle|
-              # No need to query or update the status of jobs that we already know are done
-              # successfully or that remain failed
-              # If a job is failed at this point, it could only be because the WFM crashed before
-              # a resubmit or state update could occur
+            # No need to query or update the status of jobs that we already know are done
+            # successfully or that remain failed
+            # If a job is failed at this point, it could only be because the WFM crashed before
+            # a resubmit or state update could occur
             next if ["SUCCEEDED", "FAILED"].include?(@active_jobs[taskname][cycle][:state])
 
             # Resurrect DEAD tasks if the user increased the task maxtries sufficiently to enable more attempts
@@ -853,11 +853,11 @@ module WorkflowMgr
     # localize_task
     #
     ##########################################
-    def localize_task(t, cycle)
+    def localize_task(task, cycle)
       # Walk the task and evaluate all CompoundTimeStrings using the input cycle time
-      if t.is_a?(Hash)
+      if task.is_a?(Hash)
         lt = {}
-        t.each do |key, value|
+        task.each do |key, value|
           lkey = if key.is_a?(CompoundTimeString)
                    key.to_s(cycle)
                  else
@@ -872,8 +872,8 @@ module WorkflowMgr
                    end
           lt[lkey] = lvalue
         end
-      elsif t.is_a?(Array)
-        lt = t.collect do |value|
+      elsif task.is_a?(Array)
+        lt = task.collect do |value|
           if value.is_a?(CompoundTimeString)
             value.to_s(cycle)
           elsif value.is_a?(Hash) || value.is_a?(Array)

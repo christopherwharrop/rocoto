@@ -26,11 +26,11 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(batchSystem, dbFile, config)
+    def initialize(batch_system, db_file, config)
       Thread::Pool.abort_on_exception = true
 
       # Set the batch system
-      @batchsystem = batchSystem
+      @batchsystem = batch_system
 
       # We can't create a thread pool yet because the DRb server hasn't been started yet
       @poolSize = config.SubmitThreads

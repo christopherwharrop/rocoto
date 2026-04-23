@@ -51,8 +51,8 @@ module WorkflowMgr
   # WorkflowMgr.timeout
   #
   ##########################################
-  def self.timeout(s, &block)
-    Timeout.timeout(s, &block)
+  def self.timeout(seconds, &block)
+    Timeout.timeout(seconds, &block)
   end
 
   ##########################################

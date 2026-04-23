@@ -32,12 +32,12 @@ module WorkflowMgr
       shared: "Ignoring <shared>; this platform does not support it."
     }
 
-    def unescape(s)
+    def unescape(xmlstr)
       # This is a workaround for a LibXML bug: it is impossible to
       # disable output escaping.  That means strings will have &quot;
       # instead of " no matter what you do.  This function replaces
       # some common XML entities with their corresponding values.
-      t = s.gsub(/&quot;/, '"').gsub(/&lt;/, '<').gsub(/&gt;/, '>')
+      t = xmlstr.gsub(/&quot;/, '"').gsub(/&lt;/, '<').gsub(/&gt;/, '>')
 
       # The &amp; must be last:
       t.gsub(/&amp;/, '&')
@@ -48,21 +48,21 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(workflowdoc, workflowIOServer, config)
+    def initialize(workflowdoc, workflow_ioserver, config)
       # Set the configuration
       @config = config
 
-      # Set the workflowIOServer
-      @workflowIOServer = workflowIOServer
+      # Set the workflow_ioserver
+      @workflow_ioserver = workflow_ioserver
 
       # Track features used in the document that are only supported by
       # some platforms:
       @featuresUsed = {}
 
       # Get the text from the xml file and put it into a string.
-      # We have to do the full parsing in @workflowIOServer
+      # We have to do the full parsing in @workflow_ioserver
       # because we must ensure all external entities (i.e. files)
-      # are referenced inside the @workflowIOServer process and
+      # are referenced inside the @workflow_ioserver process and
       # not locally.
       #
       # Update:  The above doesn't work properly because the resulting
@@ -73,7 +73,7 @@ module WorkflowMgr
       # external entities on other filesystems) outside the IO server
       # process.
       begin
-        if @workflowIOServer.exist?(workflowdoc)
+        if @workflow_ioserver.exist?(workflowdoc)
           context = LibXML::XML::Parser::Context.file(workflowdoc)
           context.options = LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
           parser = LibXML::XML::Parser.new(context)
@@ -241,7 +241,7 @@ module WorkflowMgr
       verbosity = lognode.attributes['verbosity']
       verbosity = verbosity.to_i unless verbosity.nil?
 
-      WorkflowLog.new(path, verbosity, @workflowIOServer)
+      WorkflowLog.new(path, verbosity, @workflow_ioserver)
     end
 
     ##########################################
@@ -554,9 +554,9 @@ module WorkflowMgr
     #
     #####################################################
 
-    def name_stringdep(a, b, cmp)
-      ia = a.inspect
-      ib = b.inspect
+    def name_stringdep(left, right, cmp)
+      ia = left.inspect
+      ib = right.inspect
       cmp = cmp.to_s
       ia = "#{ia[0..37]}..." if ia.size > 40
       ib = "#{ib[0..37]}..." if ib.size > 40
@@ -687,7 +687,7 @@ module WorkflowMgr
     ##########################################
     def validate_with_metatasks(doc)
       # Parse the Relax NG schema XML document
-      xmlstring = @workflowIOServer.parseXMLFile("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
+      xmlstring = @workflow_ioserver.parseXMLFile("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
       relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
 
       # Prepare the Relax NG schemas for validation
@@ -704,7 +704,7 @@ module WorkflowMgr
     ##########################################
     def validate_without_metatasks(doc)
       # Parse the Relax NG schema XML document
-      xmlstring = @workflowIOServer.parseXMLFile("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
+      xmlstring = @workflow_ioserver.parseXMLFile("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
       relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
 
       # Prepare the Relax NG schemas for validation

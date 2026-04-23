@@ -271,11 +271,11 @@ module WorkflowMgr
 
         # Put the job record in the jobqueue unless it's complete but doesn't have a start time,
         # an end time, and an exit status
-        unless record[:state] == "UNKNOWN" || (["SUCCEEDED",
-                                                "FAILED"].include?(record[:state]) &&
+        next if record[:state] == "UNKNOWN" || (["SUCCEEDED",
+                                                 "FAILED"].include?(record[:state]) &&
                                                (record[:start_time].nil? || record[:end_time].nil?))
-          @jobqueue[record[:jobid]] = record
-        end
+
+        @jobqueue[record[:jobid]] = record
       end
       nil
     end

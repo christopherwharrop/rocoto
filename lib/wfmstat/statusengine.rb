@@ -516,14 +516,14 @@ module WFMStat
     # print_deps
     #
     ##########################################
-    def print_deps(deps, n)
+    def print_deps(deps, indent)
       return if deps.nil?
 
       deps.each do |d|
         if d.is_a?(Array)
-          print_deps(d, n + 1) if d.is_a?(Array)
+          print_deps(d, indent + 1) if d.is_a?(Array)
         else
-          printf "%#{2 * n + 4}s%s %s\n", "", d[:dep], d[:msg]
+          printf "%#{2 * indent + 4}s%s %s\n", "", d[:dep], d[:msg]
         end
       end
     end

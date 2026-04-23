@@ -5,7 +5,7 @@ unless defined? $__nobatchsystem__
 # Class NoBatchSystem
 #
 ##########################################
-class NoBatchSystem
+class NoBatchSystem  < BatchSystem
 
   require 'command.rb'
   require 'exceptions.rb'
@@ -19,7 +19,7 @@ class NoBatchSystem
   # initialize
   #
   #####################################################
-  def initialize(qstat_refresh_rate=@@qstat_refresh_rate) < BatchSystem
+  def initialize(qstat_refresh_rate=@@qstat_refresh_rate)
 
     begin
 

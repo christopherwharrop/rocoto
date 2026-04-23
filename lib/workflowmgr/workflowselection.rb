@@ -52,7 +52,7 @@ module WorkflowMgr
     # make_subset
     #
     ##########################################
-    def make_subset(tasks, cycledefs, dbServer = nil)
+    def make_subset(tasks, cycledefs, db_server = nil)
       selected_tasks = select_tasks(tasks)
 
       cycles = select_cycles(cycledefs)

@@ -21,9 +21,9 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(batchSystem, config, options)
+    def initialize(batch_system, config, options)
       # Store the batch system proxy creation parameters
-      @batchSystem = batchSystem
+      @batchSystem = batch_system
       @config = config
       @options = options
 

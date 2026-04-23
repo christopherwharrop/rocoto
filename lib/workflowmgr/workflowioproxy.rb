@@ -20,14 +20,14 @@ module WorkflowMgr
     # initialize
     #
     ##########################################
-    def initialize(dbServer, config, options)
+    def initialize(db_server, config, options)
       # Store the log creation parameters
-      @dbServer = dbServer
+      @db_server = db_server
       @config = config
       @options = options
 
       # Get the list of down file paths from the database
-      @downpaths = @dbServer.get_downpaths
+      @downpaths = @db_server.get_downpaths
 
       # Initialize a list of newly detected down file paths
       @newdownpaths = []
@@ -93,7 +93,7 @@ module WorkflowMgr
 
                   # The process is gone, so we can attempt to access the bad path again
                   # Remove the bad path from the list of bad paths
-                  @dbServer.delete_downpaths([downpath])
+                  @db_server.delete_downpaths([downpath])
                   @downpaths.delete(downpath)
 
                   # Stop looking for downpaths that match args, we found it
@@ -147,7 +147,7 @@ module WorkflowMgr
               if commonpath.size > 3
 
                 # Remove the known down path from the database
-                @dbServer.delete_downpaths([downpathmatch])
+                @db_server.delete_downpaths([downpathmatch])
                 @downpaths.delete(downpathmatch)
                 @newdownpaths.delete(downpathmatch)
 
@@ -160,7 +160,7 @@ module WorkflowMgr
                 # Add the common portion of the paths to the database
                 newdownpath = { path: commonpath.join("/"), downtime: downtime, host: @workflowIOHost,
                                 pid: @workflowIOPID }
-                @dbServer.add_downpaths([newdownpath])
+                @db_server.add_downpaths([newdownpath])
                 @newdownpaths << newdownpath
 
               # Otherwise the arg path is a new down path
@@ -168,7 +168,7 @@ module WorkflowMgr
 
                 newdownpath = { path: argpath.join("/"), downtime: downtime, host: @workflowIOHost,
                                 pid: @workflowIOPID }
-                @dbServer.add_downpaths([newdownpath])
+                @db_server.add_downpaths([newdownpath])
                 @newdownpaths << newdownpath
 
               end

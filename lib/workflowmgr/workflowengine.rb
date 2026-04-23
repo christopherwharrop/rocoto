@@ -1327,7 +1327,7 @@ module WorkflowMgr
         # No point in trying to update the status of jobs with pending submission status
         active_jobs_sorted.reject! do |job|
           job.state == "SUCCEEDED" || job.state == "FAILED" || job.state == "EXPIRED" ||
-          job.state == "LOST" || job.pending_submit?
+            job.state == "LOST" || job.pending_submit?
         end
 
         # Check if DEAD jobs need to be resurrected
