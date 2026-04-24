@@ -125,7 +125,7 @@ module WorkflowMgr
           end
 
           totalcores += value.to_i
-          nodes += (value.to_f / nodesize.to_f).ceil.to_i
+          nodes += (value / nodesize.to_f).ceil.to_i
 
         when :nodes
           value.split('+').each do |nodespec|
@@ -163,7 +163,7 @@ module WorkflowMgr
                    " -M 2000"
                  end
         end
-      rescue Exception => e
+      rescue StandardError => e
         warn e
         raise
       end

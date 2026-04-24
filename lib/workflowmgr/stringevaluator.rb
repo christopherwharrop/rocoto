@@ -226,8 +226,6 @@ module WorkflowMgr
                   ENV[k2.to_s] = v2
                 end
               end
-            else
-              # Skip other hashes.
             end
           elsif v.is_a?(Array)
             # Skip arrays

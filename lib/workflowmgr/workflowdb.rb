@@ -490,8 +490,7 @@ module WorkflowMgr
                                     job['exit_status'].to_i,  # exit_status
                                     job['tries'].to_i,        # tries
                                     job['nunknowns'].to_i,    # nunknowns
-                                    job['duration'].to_f      # duration
-                                   )
+                                    job['duration'].to_f)     # duration
       end
 
       # Return jobs hash

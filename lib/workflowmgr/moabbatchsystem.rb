@@ -57,6 +57,7 @@ module WorkflowMgr
 
       # Initialize statuses to UNAVAILABLE
       job_statuses = {}
+      # rubocop:disable Style/CombinableLoops
       jobids.each do |jobid|
         job_statuses[jobid] = { jobid: jobid, state: "UNAVAILABLE", native_state: "Unavailable" }
       end
@@ -64,10 +65,12 @@ module WorkflowMgr
       jobids.each do |jobid|
         job_statuses[jobid] = status(jobid)
       end
+      # rubocop:enable Style/CombinableLoops
+
+      job_statuses
     rescue WorkflowMgr::SchedulerDown
       @schedup = false
-    ensure
-      return job_statuses
+      job_statuses
     end
 
     #####################################################

@@ -140,10 +140,11 @@ module WorkflowMgr
                                 { jobid: jobid, state: "UNKNOWN", native_state: "Unknown" }
                               end
       end
+
+      job_statuses
     rescue WorkflowMgr::SchedulerDown
       @schedup = false
-    ensure
-      return job_statuses
+      job_statuses
     end
 
     #####################################################

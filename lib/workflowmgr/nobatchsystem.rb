@@ -144,7 +144,8 @@ unless defined? $__nobatchsystem__
 
       # If we are not on the server, invoke this method through an ssh tunnel to the server
       if server != host
-        cmd = "ssh -o StrictHostKeyChecking=no #{server} /usr/bin/ruby -r #{__FILE__} -e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").find_job(#{jid},#{max_age})'\\'"
+        cmd = "ssh -o StrictHostKeyChecking=no #{server} /usr/bin/ruby -r #{__FILE__} " \
+        "-e \\''puts SGEBatchSystem.new(\"#{@sge_root}\").find_job(#{jid},#{max_age})'\\'"
         output = Command.run(cmd)
         raise output[0] if output[1] != 0
 
@@ -270,7 +271,11 @@ unless defined? $__nobatchsystem__
           end
 
           fields = record.split(":")
-          next unless (stime.nil? || fields[10].to_i >= stime.to_i) && (etime.nil? || fields[10].to_i <= etime.to_i) && (accounts.nil? || !accounts.index(fields[6]).nil?) && (users.nil? || !users.index(fields[3]).nil?) && (job_pattern.nil? || job_pattern.match(fields[4]))
+          next unless (stime.nil? || fields[10].to_i >= stime.to_i) &&
+                      (etime.nil? || fields[10].to_i <= etime.to_i) &&
+                      (accounts.nil? || !accounts.index(fields[6]).nil?) &&
+                      (users.nil? || !users.index(fields[3]).nil?) &&
+                      (job_pattern.nil? || job_pattern.match(fields[4]))
 
           job_key = "#{fields[5]}_#{fields[8]}"
           if attrs.empty?
