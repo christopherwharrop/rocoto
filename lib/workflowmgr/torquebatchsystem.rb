@@ -199,9 +199,6 @@ module WorkflowMgr
     #####################################################
     def refresh_jobqueue
       begin
-        # Get the username of this process
-        Etc.getpwuid(Process.uid).name
-
         # Run qstat to obtain the current status of queued jobs
         errors = ""
         queued_jobs, errors, exit_status = WorkflowMgr.run4("qstat -x", @qstat_x_timeout)

@@ -209,7 +209,9 @@ module WorkflowMgr
       # NOTE: Security/Eval does not flag Binding#eval (only Kernel#eval).
       # A blocklist cannot safely restrict arbitrary Ruby; this feature is
       # deprecated pending removal.
+      # rubocop:disable Security/Eval
       evalbind.eval(evalcmd, errstr, evalline)
+      # rubocop:enable Security/Eval
     end
 
     ##########################################
