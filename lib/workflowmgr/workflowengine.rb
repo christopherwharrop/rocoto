@@ -234,7 +234,7 @@ module WorkflowMgr
 
             unless rewind_cycle.active?
               puts "#{strcyc}: ERROR: Unable to active cycle.  Cycle is in state #{rewind_cycle.state}."
-              return
+              return # rubocop:disable Lint/NonLocalExitFromIterator
             end
           end
         end

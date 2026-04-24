@@ -38,7 +38,6 @@ module WorkflowMgr
       svar = var.to_s
       var_name_ok?(var)
       @vars[svar] = value
-      value
     end
 
     def [](var)

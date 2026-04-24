@@ -927,6 +927,7 @@ module WorkflowMgr
       end
 
       # Parse each metatask child of this metatask, adding the metatask child to the metatask list
+      # rubocop:disable Style/CombinableLoops
       metatask.children.each do |ch|
         next unless ch.name == "metatask"
 
@@ -939,8 +940,10 @@ module WorkflowMgr
         @metatask_modes[metatask_name] = ch.attributes["mode"].nil? ? "parallel" : ch.attributes["mode"]
         pre_parse(ch, metatask_list + ",#{metatask_name}")
       end
+      # rubocop:enable Style/CombinableLoops
 
       # Build a table of var tags and their values for this metatask
+      # rubocop:disable Style/CombinableLoops
       metatask.children.each do |e|
         next unless e.name == "var"
 
@@ -951,6 +954,7 @@ module WorkflowMgr
 
         id_table[e.attributes["name"]] = var_values
       end
+      # rubocop:enable Style/CombinableLoops
       raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
 
       # Expand the metatasks, adding metatask list only to the expanded tasks from nested metatasks
