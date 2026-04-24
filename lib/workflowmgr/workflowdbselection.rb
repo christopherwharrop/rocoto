@@ -81,7 +81,7 @@ module WorkflowMgr
             this_set = Set.new these_cycles
             cyc_first = these_cycles.min
             cyc_last = these_cycles.max
-            db_cycles_for_this = db_server.load_cycles(reftime = { start: cyc_first, last: cyc_last })
+            db_cycles_for_this = db_server.load_cycles(reftime = { start: cyc_first, end: cyc_last })
             db_set = Set.new db_cycles_for_this
 
             xml_set = this_set - db_set
