@@ -57,7 +57,7 @@ module WorkflowMgr
 
       # Load the rocotorc config if one exists
       if File.exist?(@config_file) && !File.zero?(@config_file)
-        config = YAML.safe_load_file(@config_file, symbolize_names: true)
+        config = YAML.safe_load_file(@config_file, permitted_classes: [Symbol], symbolize_names: true)
         if config.is_a?(Hash)
           # Merge default config into rocotorc config if there are unspecified config options
           if config.keys.collect(&:to_s).sort != DEFAULT_CONFIG.keys.collect(&:to_s).sort

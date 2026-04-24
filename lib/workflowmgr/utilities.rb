@@ -189,7 +189,7 @@ module WorkflowMgr
               # Get the max age (in days) of the log file from the configuration
               # NOTE: This is a hack due to poor design preventing proper access to the configuration object
               rocotorc = "#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/rocotorc"
-              max_age = YAML.safe_load_file(rocotorc, symbolize_names: true)[:MaxLogDays]
+              max_age = YAML.safe_load_file(rocotorc, permitted_classes: [Symbol], symbolize_names: true)[:MaxLogDays]
 
               # Remove files last modified more than MaxAge days ago
               Dir["#{rocotolog}.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"].each do |logfile|
