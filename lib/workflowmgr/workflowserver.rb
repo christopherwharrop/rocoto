@@ -73,6 +73,10 @@ module WorkflowMgr
     # method_missing
     #
     ##########################################
+    def respond_to_missing?(name, include_private = false)
+      @setup && @server.respond_to?(name, include_private) || super
+    end
+
     def method_missing(name, *args, &block)
       raise "Server is not initialized, must call WorkflowServer.setup to initialize it." unless @setup
 

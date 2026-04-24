@@ -272,4 +272,3 @@ RSpec.describe WorkflowMgr::CycleCron do
     end
   end
 end
-

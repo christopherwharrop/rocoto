@@ -11,7 +11,6 @@ module WorkflowMgr
   ##########################################
   class WorkflowYAMLConfig
     require 'yaml'
-    require 'workflowmgr/forkit'
     require 'fileutils'
     require 'workflowmgr/utilities'
 
@@ -28,7 +27,7 @@ module WorkflowMgr
       SubmitThreads: 8,
       JobQueueTimeout: 45,
       JobAcctTimeout: 45
-    }
+    }.freeze
 
     ##########################################
     #
@@ -100,6 +99,10 @@ module WorkflowMgr
       else
         super
       end
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      @config.key?(name.to_sym) || super
     end
   end
 end

@@ -140,5 +140,9 @@ module WorkflowMgr
     def method_missing(name, *args)
       @batchsystem.send(name, *args)
     end
+
+    def respond_to_missing?(name, include_private = false)
+      @batchsystem.respond_to?(name, include_private) || super
+    end
   end
 end

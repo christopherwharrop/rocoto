@@ -139,7 +139,7 @@ module WorkflowMgr
     return if message.nil?
     return if message.empty?
 
-    if VERBOSE >= level
+    if level <= VERBOSE
       warn "#{Time.now.strftime('%x %X %Z')} :: #{WORKFLOW_ID} :: #{message}"
     end
   end
@@ -232,7 +232,7 @@ module WorkflowMgr
     begin
       pid, stdin, stdout, stderr = Open4.popen4(command)
       stdin.close
-    rescue Exception
+    rescue StandardError
       raise "Execution of '#{command}' unsuccessful: #{$ERROR_INFO}"
     end
 
