@@ -73,11 +73,6 @@ module WorkflowMgr
       # process.
       begin
         if @workflow_io_server.exist?(workflowdoc)
-          # context = LibXML::XML::Parser::Context.file(workflowdoc)
-          # context.options = LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
-          # parser = LibXML::XML::Parser.new(context)
-          # @workflowdoc = parser.parse
-
           @workflowdoc = Nokogiri::XML(@workflow_io_server.read(workflowdoc)) do |config|
             config.noent
             config.huge
@@ -94,6 +89,7 @@ module WorkflowMgr
 
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
+
       # Expand metatasks
       expand_metatasks
 
@@ -677,17 +673,9 @@ module WorkflowMgr
     ##########################################
     def validate_with_metatasks(doc)
       # Parse the Relax NG schema XML document
-      # xmlstring = @workflow_io_server.parse_xml_file("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
-      # relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
-
-
-      # Prepare the Relax NG schemas for validation
-      # relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
-
       relaxng_schema = Nokogiri::XML::RelaxNG(@workflow_io_server.read("#{File.dirname(__FILE__)}/schema_with_metatasks.rng"))
 
       # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-      # doc.validate_relaxng(relaxng_schema)
       errors = relaxng_schema.validate(doc)
       raise "Validation failed: #{errors.map(&:to_s).join("\n")}" unless errors.empty?
     end
@@ -699,15 +687,9 @@ module WorkflowMgr
     ##########################################
     def validate_without_metatasks(doc)
       # Parse the Relax NG schema XML document
-      # xmlstring = @workflow_io_server.parse_xml_file("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
-      # relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
-
-      # Prepare the Relax NG schemas for validation
-      # relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
       relaxng_schema = Nokogiri::XML::RelaxNG(@workflow_io_server.read("#{File.dirname(__FILE__)}/schema_without_metatasks.rng"))
 
       # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-      # doc.validate_relaxng(relaxng_schema)
       errors = relaxng_schema.validate(doc)
       raise "Validation failed: #{errors.map(&:to_s).join("\n")}" unless errors.empty?
     end
@@ -740,28 +722,20 @@ module WorkflowMgr
           end
 
           # Insert a "some" element after the metataskdep element
-          # somenode = LibXML::XML::Node.new("some")
           somenode = Nokogiri::XML::Node.new("some", @workflowdoc)
           threshold = metataskdep["threshold"].nil? ? "1.0" : metataskdep["threshold"]
-          # LibXML::XML::Attr.new(somenode, "threshold", threshold)
           somenode["threshold"] = threshold
           metataskdep.add_next_sibling(somenode)
 
 
           # Add taskdep elements as children to the and element
           tasknames.each do |task|
-            # taskdepnode = LibXML::XML::Node.new("taskdep")
             taskdepnode = Nokogiri::XML::Node.new("taskdep", @workflowdoc)
-            # LibXML::XML::Attr.new(taskdepnode, "task", task)
             taskdepnode["task"] = task
             unless metataskdep["cycle_offset"].nil?
-              # LibXML::XML::Attr.new(taskdepnode, "cycle_offset",
-              # metataskdep["cycle_offset"])
               taskdepnode["cycle_offset"] = metataskdep["cycle_offset"]
             end
             unless metataskdep["state"].nil?
-              # LibXML::XML::Attr.new(taskdepnode, "state",
-              # metataskdep["state"])
               taskdepnode["state"] = metataskdep["state"]
             end
             somenode << taskdepnode
@@ -779,7 +753,6 @@ module WorkflowMgr
     #
     ##########################################
     def expand_serialdeps
-      # workflowdoc.root.each
       @workflowdoc.root.element_children.each do |ch|
         next unless ch.name == "task"
 
@@ -807,8 +780,6 @@ module WorkflowMgr
           if depnode.nil?
             depnode = ch.at_xpath("./dependency")
             if depnode.nil?
-              # depnode = LibXML::XML::Node.new("dependency")
-              # andnode = LibXML::XML::Node.new("and")
               depnode = Nokogiri::XML::Node.new("dependency", @workflowdoc)
               andnode = Nokogiri::XML::Node.new("and", @workflowdoc)
               ch << depnode
@@ -819,7 +790,6 @@ module WorkflowMgr
                 andnode = depchild
               else
                 depchildren = depnode.children
-                # andnode = LibXML::XML::Node.new("and")
                 andnode = Nokogiri::XML::Node.new("and", @workflowdoc)
                 depnode << andnode
                 depchildren.each do |c|
@@ -839,19 +809,11 @@ module WorkflowMgr
             # Reject tasks that aren't a member of metatask m
             next if t["metatasks"].split(",").find_index(m).nil?
 
-            # taskdepnode = LibXML::XML::Node.new("taskdep")
             taskdepnode = Nokogiri::XML::Node.new("taskdep", @workflowdoc)
-            # LibXML::XML::Attr.new(taskdepnode, "task", t["name"])
             taskdepnode["task"] = t["name"]
             andnode << taskdepnode
           end
-
-          # if seqdeps[idx]
-
-          # if @metatask_modes
         end
-
-        # if ch.name
       end
     end
 
@@ -870,7 +832,6 @@ module WorkflowMgr
         next unless ch.name == "metatask"
 
         if ch["name"].nil?
-          # LibXML::XML::Attr.new(ch, "name", "metatask#{@metatask_seq}")
           ch["name"] = "metatask#{@metatask_seq}"
           @metatask_seq += 1
         end
@@ -891,7 +852,6 @@ module WorkflowMgr
     def traverse(node, id_table, index)
       # if node.node_type_name == "text"
       if node.text?
-        # output_escaping removed: Nokogiri does not escape content by default
         cont = unescape(node.content)
         id_table.each_key do |id|
           next while cont.sub!("##{id}#", id_table[id][index])
@@ -922,7 +882,6 @@ module WorkflowMgr
       # Set the metatask list for all task children of this metatask
       seqnum = 0
       if metatask["seqnum"].nil?
-        # LibXML::XML::Attr.new(metatask, "seqnum", "")
         metatask["seqnum"] = ""
       else
         metatask["seqnum"] += ","
@@ -946,7 +905,6 @@ module WorkflowMgr
         next unless ch.name == "metatask"
 
         if ch["name"].nil?
-          # LibXML::XML::Attr.new(ch, "name", "metatask#{@metatask_seq}")
           ch["name"] = "metatask#{@metatask_seq}"
           @metatask_seq += 1
         end
@@ -962,7 +920,6 @@ module WorkflowMgr
       metatask.children.each do |e|
         next unless e.name == "var"
 
-        # output_escaping removed: Nokogiri does not escape content by default
         var_values = unescape(e.content).split
         var_length = var_values.length if var_length == -1
         raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
@@ -982,7 +939,6 @@ module WorkflowMgr
 
           task_copy = e.dup
           if task_copy["metatasks"].nil?
-            # LibXML::XML::Attr.new(task_copy, "metatasks", metatask_list)
             task_copy["metatasks"] = metatask_list
           end
           traverse(task_copy, id_table, index)

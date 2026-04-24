@@ -164,10 +164,6 @@ module WorkflowMgr
         return if queued_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        # queued_jobs_doc = LibXML::XML::Parser.string(queued_jobs, options: LibXML::XML::Parser::Options::HUGE).parse
-        # queued_jobs_doc = Nokogiri::XML(queued_jobs) do |config|
-        #   config.huge
-        # end
         queued_jobs_doc = Nokogiri::XML(queued_jobs, options: Nokogiri::XML::ParseOptions::HUGE)
         raise WorkflowMgr::SchedulerDown unless queued_jobs_doc.errors.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
@@ -248,10 +244,6 @@ module WorkflowMgr
         return if completed_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        # recordxmldoc = LibXML::XML::Parser.string(completed_jobs, options: LibXML::XML::Parser::Options::HUGE).parse
-        # recordxmldoc = Nokogiri::XML(completed_jobs) do |config|
-        #   config.huge
-        # end
         recordxmldoc = Nokogiri::XML(completed_jobs, options: Nokogiri::XML::ParseOptions::HUGE)
         raise WorkflowMgr::SchedulerDown unless recordxmldoc.errors.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown

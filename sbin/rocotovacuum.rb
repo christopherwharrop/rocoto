@@ -13,10 +13,6 @@ $LOAD_PATH.unshift("#{rocoto_dir}/lib")
 require 'workflowmgr/workflowengine'
 require 'workflowmgr/workflowvacuumoption'
 
-# Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
-# We want to control what output goes where and when
-# LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
-
 # Get vacuum options
 opt = WorkflowMgr::WorkflowVacuumOption.new(ARGV)
 
