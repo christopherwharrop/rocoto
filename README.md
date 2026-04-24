@@ -9,7 +9,6 @@ Workflow Management is a concept that originated in the 1970's to handle busines
 
 ### Requirements
 - Ruby 3.2.0 or higher (Ruby 3.0 and 3.1 are no longer supported)
-- libxml2 development headers (for the libxml-ruby gem)
 
 ### Quick Start
 1. Clone or download Rocoto to your desired installation directory
@@ -24,27 +23,15 @@ Workflow Management is a concept that originated in the 1970's to handle busines
 
 ### Installation Options
 
-If you need to specify a custom Ruby installation or libxml2 location, use these options:
+If you need to specify a custom Ruby installation, use this option:
 
 ```bash
-./INSTALL --with-ruby=/path/to/ruby --with-xml2-dir=/path/to/libxml2
-```
-
-**Tip for NCAR Derecho users:**
-```bash
-./INSTALL --with-xml2-dir=/glade/u/apps/derecho/25.10/spack/opt/spack/libxml2/2.13.5/gcc/12.5.0/fog4
+./INSTALL --with-ruby=/path/to/ruby
 ```
 
 Available options:
 - `--with-ruby=/path/to/ruby` - Specify Ruby installation directory
-- `--with-xml2-dir=/path/to/libxml2` - Specify libxml2 installation directory
-- `--with-xml2-include=/path/to/include` - Specify libxml2 include directory
-- `--with-xml2-lib=/path/to/lib` - Specify libxml2 library directory
-- `--with-xml2-config=/path/to/xml2-config` - Specify xml2-config path
 - `--local` - Install from cached gems in vendor/cache/ (air-gapped mode)
-
-**Note**: The INSTALL script will automatically detect and append the `libxml2` subdirectory to include paths if needed.
-For example, if you specify `--with-xml2-include=/opt/include`, the script will check for and use `/opt/include/libxml2` if it exists.
 
 The installation script will:
 1. Verify Ruby version (≥ 3.2.0)
@@ -127,9 +114,6 @@ git commit -m "Update gem cache"
 ```bash
 # Use the --local option to install from cached gems
 ./INSTALL --local
-
-# Can combine with other options as needed
-./INSTALL --local --with-xml2-dir=/path/to/libxml2
 ```
 
 The cached gems are stored in `vendor/cache/` and can be committed to version control (they're small, ~3.5MB total).
