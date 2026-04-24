@@ -12,6 +12,7 @@ end
 desc 'Run specs with coverage report'
 task :coverage do
   ENV['COVERAGE'] = 'true'
+  Rake::Task[:spec].reenable
   Rake::Task[:spec].invoke
 end
 
@@ -20,6 +21,7 @@ desc 'Run specs with coverage report in terminal'
 task :coverage_terminal do
   ENV['COVERAGE'] = 'true'
   ENV['COVERAGE_TERMINAL'] = 'true'
+  Rake::Task[:spec].reenable
   Rake::Task[:spec].invoke
 end
 

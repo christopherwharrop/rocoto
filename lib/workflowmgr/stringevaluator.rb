@@ -161,14 +161,17 @@ module WorkflowMgr
     end
 
     # execute, return result of eval
+    #
+    # DEPRECATED: The <rb> tag feature is deprecated and will be removed in a future release.
+    # Evaluating arbitrary Ruby expressions from workflow XML cannot be made safe without
+    # AST-level sandboxing, which is not implemented. Use <sh> tags or workflow
+    # dependencies instead.
     def run(evalstr)
       evalstr = evalstr.to_s
 
-      # Guard against dangerous patterns in evalstr. Note: Ruby 3.x has no $SAFE,
-      # so true sandboxing is not possible without a subprocess. This blocklist
-      # catches the most common dangerous operations that have no legitimate use
-      # in a workflow dependency expression.
-      validate_evalstr!(evalstr)
+      warn '[DEPRECATION] The <rb> tag evaluates arbitrary Ruby code and will be removed ' \
+           'in a future version of Rocoto. Please replace <rb> expressions with <sh> tags ' \
+           'or workflow dependencies.'
 
       # Get a binding within the make_binding() subroutine of a copy of
       # this object.  Using a clone shields us from permanent
@@ -201,8 +204,9 @@ module WorkflowMgr
                end
 
       # Evaluate the command in the Binding we made earlier.
-      # Note: Security/Eval does not flag Binding#eval, only Kernel#eval.
-      # The validate_evalstr! call above provides defense-in-depth.
+      # NOTE: Security/Eval does not flag Binding#eval (only Kernel#eval).
+      # A blocklist cannot safely restrict arbitrary Ruby; this feature is
+      # deprecated pending removal.
       evalbind.eval(evalcmd, errstr, evalline)
     end
 
@@ -282,47 +286,6 @@ module WorkflowMgr
        'yield', '__LINE__', '__FILE__']
 
     @@reserved_vars = Set.new ['evalstr', 'evalbind', 'evalcycle']
-
-    ##########################################
-    #
-    # validate_evalstr!
-    # Blocks dangerous patterns in <rb> expressions.
-    # True sandboxing is not possible in Ruby 3.x without a subprocess;
-    # this is defense-in-depth against the most common dangerous operations.
-    #
-    ##########################################
-    def validate_evalstr!(evalstr)
-      # Patterns that have no legitimate use in a workflow dependency expression
-      dangerous = [
-        /`/,                            # backtick shell execution
-        /\bsystem\s*[\[(]/,             # system() calls
-        /\bexec\s*[\[(]/,               # exec() calls
-        /\bspawn\s*[\[(]/,              # spawn() calls
-        /\bfork\s*[\[({]/,              # fork()
-        /\bProcess\s*\./,               # Process.*
-        /\brequire\s*['"(]/,            # require 'lib'
-        /\bload\s*['"(]/,               # load 'file'
-        /\bautoload\s*['"(]/,           # autoload
-        /\beval\s*['"(]/,               # nested eval
-        /\binstance_eval\s*['"({]/,     # instance_eval
-        /\bclass_eval\s*['"({]/,        # class_eval
-        /\bmodule_eval\s*['"({]/,       # module_eval
-        /\bFile\s*\./,                  # File.*
-        /\bIO\s*[.\[]/,                 # IO.* or IO[
-        /\bDir\s*\./,                   # Dir.*
-        /\bPathname\s*\./,              # Pathname.*
-        /\bopen\s*['"(]/,               # open() file/URI
-        /\bsend\s*[:(]/,                # send() to call arbitrary methods
-        /\bpublic_send\s*[:(]/          # public_send()
-      ]
-      dangerous.each do |pattern|
-        next unless pattern.match?(evalstr)
-
-        raise ArgumentError,
-              "Potentially unsafe expression in <rb> tag: #{evalstr.inspect}. " \
-              "File I/O, process execution, and dynamic dispatch are not permitted."
-      end
-    end
 
     ##########################################
     #

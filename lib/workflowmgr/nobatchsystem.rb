@@ -559,6 +559,4 @@ module WorkflowMgr
       1
     end
   end
-
-  $__nobatchsystem__ == __FILE__
 end
