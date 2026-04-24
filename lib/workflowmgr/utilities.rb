@@ -242,10 +242,10 @@ module WorkflowMgr
     exit_status = 0
     begin
       WorkflowMgr.timeout(timeout) do
-        output += stdout.gets(nil) until stdout.eof?
+        output += stdout.read until stdout.eof?
         stdout.close
 
-        error += stderr.gets(nil) until stderr.eof?
+        error += stderr.read until stderr.eof?
         stderr.close
 
         status = Process.waitpid2(pid)
