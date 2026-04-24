@@ -135,6 +135,9 @@ RSpec/MultipleMemoizedHelpers:
 RSpec/DescribeClass:
   Enabled: false
 
+RSpec/SpecFilePathFormat:
+  Enabled: false  # WorkflowSQLite3DB doesn't map cleanly to a snake_case filename
+
 # Security - Keep these enabled
 Security/Eval:
   Enabled: true

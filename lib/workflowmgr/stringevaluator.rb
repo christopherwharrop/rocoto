@@ -214,9 +214,10 @@ module WorkflowMgr
       end
       begin
         each_var do |k, v|
-          if v.is_a?(CompoundTimeString)
+          case v
+          when CompoundTimeString
             ENV[k.to_s] = v.to_s(cycle)
-          elsif v.is_a?(Hash)
+          when Hash
             if k == 'env'
               v.each do |k2, v2|
                 if v2.is_a?(CompoundTimeString)
@@ -227,11 +228,11 @@ module WorkflowMgr
                 end
               end
             end
-          elsif v.is_a?(Array)
+          when Array
             # Skip arrays
-          elsif v.is_a?(Task)
+          when Task
             # Skip task objects
-          elsif v.is_a?(WorkflowIOProxy)
+          when WorkflowIOProxy
             # Skip IO proxy objects
           else
             ENV[k.to_s] = v.to_s

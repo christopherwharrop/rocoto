@@ -28,7 +28,8 @@ module WorkflowMgr
         dbcycles << last_cycle unless last_cycle.nil?
       else
         @cycles.each do |cycopt|
-          if cycopt.is_a?(Range)
+          case cycopt
+          when Range
             # Get all cycles within the range
             dbcycles += db_server.load_cycles({ start: cycopt.first, end: cycopt.last })
 
@@ -51,14 +52,14 @@ module WorkflowMgr
 
             # Add the cycles that are in the XML but not in the DB
             xmlcycles = (xml_cycle_times - dbcycles.collect(&:cycle)).collect { |c| WorkflowMgr::Cycle.new(c) }
-          elsif cycopt.is_a?(Time)
+          when Time
             cycle = db_server.load_cycles({ start: cycopt, end: cycopt })
             if cycle.empty?
               undefcycles << WorkflowMgr::Cycle.new(cycopt)
             else
               dbcycles += cycle
             end
-          elsif cycopt.is_a?(Array)
+          when Array
             # Get the specific cycles asked for
             cycopt.each do |c|
               cycle = db_server.load_cycles({ start: c, end: c })
@@ -68,7 +69,7 @@ module WorkflowMgr
                 dbcycles += cycle
               end
             end
-          elsif cycopt.is_a? WorkflowMgr::CycleDefSelection
+          when WorkflowMgr::CycleDefSelection
             these_cycles = []
             cycledefs.each do |cdef|
               next unless cycopt.name == cdef.group
@@ -89,7 +90,7 @@ module WorkflowMgr
 
             xml_set.each { |c| xmlcycles << WorkflowMgr::Cycle.new(c) }
 
-          elsif cycopt == ALL_POSSIBLE_CYCLES
+          when ALL_POSSIBLE_CYCLES
             dbcycles += db_server.load_cycles
           else
             raise "Invalid cycle specification type=#{cycopt.class.name} value=#{cycopt.inspect}"

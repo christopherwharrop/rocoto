@@ -408,7 +408,8 @@ module WorkflowMgr
                               "Submission status of #{taskname} could not be retrieved because " \
                               "the server process at #{uri} died")
               @log_server.log(cycle,
-                              "Submission of #{taskname} probably, but not necessarily, failed.  It will be resubmitted")
+                              "Submission of #{taskname} probably, but not necessarily, failed. " \
+                              "It will be resubmitted")
 
             # If there is no output from the submission, it means the submission is still pending
             elsif output.nil?
