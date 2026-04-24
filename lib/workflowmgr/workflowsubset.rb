@@ -86,8 +86,8 @@ module WorkflowMgr
 
         @cycles_set.include? arg
       when WorkflowMgr::Job
-        (@all_cycles || @cycles_set.include?(job.cycle)) &&
-          (@all_tasks || @tasks_set.include?(job.task.attributes[:name]))
+        (@all_cycles || @cycles_set.include?(arg.cycle)) &&
+          (@all_tasks || @tasks_set.include?(arg.task.attributes[:name]))
       when Range
         raise "Unexpected type #{arg.class.name} in \"selected?\".  " \
               "Querying Ranges of cycles is not yet implemented."

@@ -60,9 +60,9 @@ module WorkflowMgr
     # respond_to?
     #
     ##########################################
-    def respond_to?(name, priv: false)
+    def respond_to?(name, include_private: false)
       if @setup
-        @server.respond_to?(name, priv: priv)
+        @server.respond_to?(name, include_private)
       else
         super
       end

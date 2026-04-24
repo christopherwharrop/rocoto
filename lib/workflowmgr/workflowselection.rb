@@ -74,7 +74,7 @@ module WorkflowMgr
 
           # Find every cycle in the range that is a member of a cycledef
           first_times = cycledefs.collect do |cdef|
-            cdef.next(cycopt.first, false)
+            cdef.next(cycopt.first, by_activation_time: false)
           end
           reftime = first_times.compact.collect { |c| c[0] }.min
           loop do
@@ -83,7 +83,7 @@ module WorkflowMgr
 
             selected_cycles << reftime
             next_times = cycledefs.collect do |cdef|
-              cdef.next(reftime + 60, false)
+              cdef.next(reftime + 60, by_activation_time: false)
             end
             reftime = next_times.compact.collect { |c| c[0] }.min
           end

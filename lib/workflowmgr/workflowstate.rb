@@ -48,17 +48,17 @@ module WorkflowMgr
     ##########################################
     def assign_cycle(cycle)
       @cycle = cycle
-      @se&.assign_cycle(cycle)
+      @se&.add_cycle(cycle)
     end
 
     def set_task(name, task = nil)
-      if taskname.nil?
+      if name.nil?
         raise 'In WorkflowState.set_task, name cannot be nil.'
       end
 
       @task = task
       @taskname = name
-      @se&.add_cycle(cycle)
+      @se&.add_task(name, task)
     end
 
     def assign_doc(workflowdoc)

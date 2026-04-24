@@ -53,7 +53,7 @@ module WorkflowMgr
     end
 
     def natives?
-      !@native.empty?
+      !@native_list.empty?
     end
 
     #####################################################
