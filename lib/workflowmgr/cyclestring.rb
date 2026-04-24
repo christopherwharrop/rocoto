@@ -4,7 +4,6 @@
 #
 ##########################################
 module WorkflowMgr
-
   require 'date'
 
   ##########################################
@@ -13,20 +12,16 @@ module WorkflowMgr
   #
   ##########################################
   class CycleString
-
-    attr :str
-    attr :offset
+    attr_reader :str, :offset
 
     #####################################################
     #
     # initialize
     #
     #####################################################
-    def initialize(str,offset)
-
-      @str=str
-      @offset=offset
-
+    def initialize(str, offset)
+      @str = str
+      @offset = offset
     end
 
     #####################################################
@@ -35,9 +30,8 @@ module WorkflowMgr
     #
     #####################################################
     def to_s(cycle)
-
       # Calculate the reference time
-      reftime = cycle.gmtime+@offset
+      reftime = cycle.gmtime + @offset
 
       # Compute non-standard date/time components
       days_in_month = Date.new(reftime.year, reftime.month, -1).day
@@ -45,17 +39,13 @@ module WorkflowMgr
       lower_case_month_full = reftime.strftime("%B").downcase
 
       # Take care of non-standard flags first
-      str = @str.gsub("%n","#{days_in_month}")
-      str = str.gsub("%o","#{lower_case_month_abbr}")
-      str = str.gsub("%O","#{lower_case_month_full}")
+      str = @str.gsub("%n", days_in_month.to_s)
+      str = str.gsub("%o", lower_case_month_abbr.to_s)
+      str = str.gsub("%O", lower_case_month_full.to_s)
 
       # Process standard flags
-      str = reftime.strftime(str)
-
-      return (str)
-
+      reftime.strftime(str)
     end
-
 
     #####################################################
     #
@@ -63,11 +53,8 @@ module WorkflowMgr
     #
     #####################################################
     def hash
-
       @str.hash ^ @offset.hash
-
     end
-
 
     #####################################################
     #
@@ -75,15 +62,12 @@ module WorkflowMgr
     #
     #####################################################
     def inspect
-
       if @offset
-          return "<cyclestr offset=\"#{@offset}\">#{@str}</cyclestr>"
+        "<cyclestr offset=\"#{@offset}\">#{@str}</cyclestr>"
       else
-          return "<cyclestr>#{@str}</cyclestr>"
+        "<cyclestr>#{@str}</cyclestr>"
       end
-
     end
-
 
     #####################################################
     #
@@ -91,11 +75,7 @@ module WorkflowMgr
     #
     #####################################################
     def eql?(other)
-
-      return @str==other.str && @offset==other.offset
-
+      @str == other.str && @offset == other.offset
     end
-
   end
-
 end

@@ -4,7 +4,6 @@
 #
 ##########################################
 module WorkflowMgr
-
   require 'workflowmgr/lsfbatchsystem'
 
   ##########################################
@@ -13,19 +12,18 @@ module WorkflowMgr
   #
   ##########################################
   class LSFCRAYBatchSystem < LSFBatchSystem
-
     require 'workflowmgr/utilities'
     require 'fileutils'
     require 'etc'
     require 'tempfile'
 
     @@features = {
-      :shared => true,
-      :exclusive => true
+      shared: true,
+      exclusive: true
     }
 
     def self.feature?(flag)
-      return !!@@features[flag]
+      !!@@features[flag]
     end
 
     #####################################################
@@ -35,7 +33,7 @@ module WorkflowMgr
     #####################################################
     def initialize(config)
       # Enable Cray workarounds in parent class:
-      super(true,false,config)
+      super(true, false, config)
     end
 
     #####################################################
@@ -44,167 +42,171 @@ module WorkflowMgr
     #
     #####################################################
     def submit(task)
-
       # Initialize the submit command
-      cmd="bsub"
+      cmd = "bsub"
 
       # Get the Rocoto installation directory
-      rocotodir=File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
+      rocotodir = File.dirname(File.dirname(__dir__))
 
       # Build up the string of environment settings
-      envstr="#!/bin/sh\n"
-      task.envars.each { |name,env|
-        if env.nil?
-          envstr += "export #{name}\n"
-        else
-          envstr += "export #{name}='#{env}'\n"
-        end
-      }
+      envstr = "#!/bin/sh\n"
+      task.envars.each do |name, env|
+        envstr += if env.nil?
+                    "export #{name}\n"
+                  else
+                    "export #{name}='#{env}'\n"
+                  end
+      end
 
-      totalcores=0 # Total requested cores, used to trigger -n
-      nodesize=24  # Users will override with <nodesize> attribute.
-      memoryoption=nil # Contains memory option if -n is used
+      totalcores = 0 # Total requested cores, used to trigger -n
+      nodesize = 24  # Users will override with <nodesize> attribute.
+      memoryoption = nil # Contains memory option if -n is used
 
       # First pass over attributes: get node size and everything else
       # that is not a request for cores/nodes:
-      task.attributes.each do |option,value|
-
-         if value.is_a?(String)
-           if value.empty?
-             WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
-             next
-           end
+      task.attributes.each do |option, value|
+        if value.is_a?(String) && value.empty?
+          WorkflowMgr.stderr("WARNING: <#{option}> has empty content and is ignored", 1)
+          next
         end
         case option
-          when :account
-            cmd += " -P #{value}"
-          when :nodesize
-            nodesize=value
-          when :queue
-            cmd += " -q #{value}"
-          when :partition
-            WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for LSF.", 1)
-            WorkflowMgr.log("WARNING: the <partition> tag is not supported for LSF.", 1)
-          when :walltime
-            hhmm=WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
-            cmd += " -W #{hhmm}"
-          when :memory
-            units=value[-1,1]
-            amount=value[0..-2].to_i
-            case units
-              when /B|b/
-                amount=(amount / 1024.0 / 1024.0).ceil
-              when /K|k/
-                amount=(amount / 1024.0).ceil
-              when /M|m/
-                amount=amount.ceil
-              when /G|g/
-                amount=(amount * 1024.0).ceil
-              when /[0-9]/
-                amount=(value.to_i / 1024.0 / 1024.0).ceil
-            end
-            if amount>0
-              memoryoption = "#{amount}"
-            end
-          when :stdout
-            cmd += " -o #{value}"
-          when :stderr
-            cmd += " -e #{value}"
-          when :join
-            cmd += " -o #{value}"
-          when :jobname
-            cmd += " -J #{value}"
+        when :account
+          cmd += " -P #{value}"
+        when :nodesize
+          nodesize = value
+        when :queue
+          cmd += " -q #{value}"
+        when :partition
+          WorkflowMgr.stderr("WARNING: the <partition> tag is not supported for LSF.", 1)
+          WorkflowMgr.log("WARNING: the <partition> tag is not supported for LSF.")
+        when :walltime
+          hhmm = WorkflowMgr.seconds_to_hhmm(WorkflowMgr.ddhhmmss_to_seconds(value))
+          cmd += " -W #{hhmm}"
+        when :memory
+          units = value[-1, 1]
+          amount = value[0..-2].to_i
+          case units
+          when /B|b/
+            amount = (amount / 1024.0 / 1024.0).ceil
+          when /K|k/
+            amount = (amount / 1024.0).ceil
+          when /M|m/
+            amount = amount.ceil
+          when /G|g/
+            amount = (amount * 1024.0).ceil
+          when /[0-9]/
+            amount = (value.to_i / 1024.0 / 1024.0).ceil
+          end
+          if amount > 0
+            memoryoption = amount.to_s
+          end
+        when :stdout
+          cmd += " -o #{value}"
+        when :stderr
+          cmd += " -e #{value}"
+        when :join
+          cmd += " -o #{value}"
+        when :jobname
+          cmd += " -J #{value}"
         end
       end
 
-      nodes=0
-      fnodesize=Float(nodesize)
+      nodes = 0
+      Float(nodesize)
 
       # Second pass over attributes: figure out total number of
       # requested nodes.
-      spanguess=0
-      task.attributes.each do |option,value|
+      spanguess = 0
+      task.attributes.each do |option, value|
         case option
         when :cores
           unless task.attributes[:nodes].nil?
             next
           end
+
           totalcores += value.to_i
-          nodes += (value.to_f/nodesize.to_f).ceil.to_i
+          nodes += (value / nodesize.to_f).ceil.to_i
 
         when :nodes
-          value.split('+').each { |nodespec|
-            resources=nodespec.split(':ppn=')
-            mynodes=resources.shift.to_i
-            mycores=resources.shift.to_i
+          value.split('+').each do |nodespec|
+            resources = nodespec.split(':ppn=')
+            mynodes = resources.shift.to_i
+            mycores = resources.shift.to_i
             ## BUG: This does not handle threads correctly
-            nodes+=mynodes
-            totalcores += mynodes*mycores
-            spanguess=[ spanguess, mycores ].max
-          }
+            nodes += mynodes
+            totalcores += mynodes * mycores
+            spanguess = [spanguess, mycores].max
+          end
         end
       end
-      spanguess=totalcores unless spanguess
+      spanguess ||= totalcores
 
       begin
-        taskattrs=task.attributes
-        if not taskattrs[:shared].nil? and taskattrs[:shared]
+        taskattrs = task.attributes
+        if !taskattrs[:shared].nil? && taskattrs[:shared]
           cmd += " -n #{totalcores}"
-          if totalcores>1
+          if totalcores > 1
             cmd += " '-R span[ptile=#{spanguess}]'"
           end
-          if not memoryoption.nil?
-            cmd += " -R 'rusage[mem=#{memoryoption}]'"
-          else
-            cmd += " -R 'rusage[mem=2000]'"
-          end
+          cmd += if !memoryoption.nil?
+                   " -R 'rusage[mem=#{memoryoption}]'"
+                 else
+                   " -R 'rusage[mem=2000]'"
+                 end
         else
-          coresize=nodes.to_i*nodesize.to_i
-          cmd += " -extsched 'CRAYLINUX[]' -R '1*{select[craylinux && !vnode]} + #{coresize}*{select[craylinux && vnode]span[ptile=#{nodesize}] cu[type=cabinet]}'"
-          if not memoryoption.nil?
-            cmd += " -M #{memoryoption}"
-          else
-            cmd += " -M 2000"
-          end
+          coresize = nodes.to_i * nodesize.to_i
+          cmd += " -extsched 'CRAYLINUX[]' -R '1*{select[craylinux && !vnode]} + " \
+                 "#{coresize}*{select[craylinux && vnode]span[ptile=#{nodesize}] cu[type=cabinet]}'"
+          cmd += if !memoryoption.nil?
+                   " -M #{memoryoption}"
+                 else
+                   " -M 2000"
+                 end
         end
-      rescue Exception => e
-        $stderr.puts "#{e}"
+      rescue StandardError => e
+        warn e
         raise
       end
 
-      inl=0
+      inl = 0
       task.each_native do |native_line|
         cmd += " #{native_line}"
-        inl+=1
+        inl += 1
       end
 
       # Add the command to submit
       cmd += " #{rocotodir}/sbin/lsfcraywrapper.sh #{task.attributes[:command]}"
 
       # Build a script to set env vars and then call bsub to submit the job
-      tf=Tempfile.new('bsub.wrapper')
+      tf = Tempfile.new('bsub.wrapper')
       tf.write(envstr + cmd)
-      tf.flush()
+      tf.flush
 
       # Run the submit command script
       if WorkflowMgr.dryrun_mode?
-        WorkflowMgr.log("Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
-        WorkflowMgr.stderr("Dryrun Mode: would submit #{task.attributes[:name]} using '/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}",4)
-        return nil,"This is a dryrun"
+        WorkflowMgr.log("Dryrun Mode: would submit #{task.attributes[:name]} using " \
+                        "'/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}")
+        WorkflowMgr.stderr(
+          "Dryrun Mode: would submit #{task.attributes[:name]} using " \
+          "'/bin/sh #{tf.path}' with input {{#{envstr + cmd}}}", 4
+        )
+        return nil, "This is a dryrun"
       end
 
-      output=`/bin/sh #{tf.path} 2>&1`.chomp
+      output = `/bin/sh #{tf.path} 2>&1`.chomp
 
-      WorkflowMgr.log("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
-      WorkflowMgr.stderr("Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}",4)
+      WorkflowMgr.log("Submitted #{task.attributes[:name]} using " \
+                      "'/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}")
+      WorkflowMgr.stderr(
+        "Submitted #{task.attributes[:name]} using '/bin/sh #{tf.path} 2>&1' with input {{#{envstr + cmd}}}", 4
+      )
 
       # Parse the output of the submit command
-      if output=~/Job <(\d+)> is submitted to (default )*queue/
-        return $1,output
+      if output =~ /Job <(\d+)> is submitted to (default )*queue/
+        [::Regexp.last_match(1), output]
       else
-        return nil,output
+        [nil, output]
       end
-
     end
 
     #####################################################
@@ -214,26 +216,26 @@ module WorkflowMgr
     #    as running, but are not actually running.
     #
     #####################################################
-    def final_update_record(record,jobacct)
+    def final_update_record(record, jobacct)
       if record[:state].nil?
-        #WorkflowMgr.stderr("#{record[:jobid]}: nil state; return",1)
-      elsif record[:state]!='RUNNING'
-        #WorkflowMgr.stderr("#{record[:jobid]}: state #{record[:state]}; return",1)
+        # WorkflowMgr.stderr("#{record[:jobid]}: nil state; return",1)
+      elsif record[:state] != 'RUNNING'
+        # WorkflowMgr.stderr("#{record[:jobid]}: state #{record[:state]}; return",1)
       elsif record[:extsched].nil?
-       # WorkflowMgr.stderr("#{record[:jobid]}: running with no extsched; return",1)
-      elsif not record[:extsched].include? 'CRAYLINUX'
-        #WorkflowMgr.stderr("#{record[:jobid]}: extsched=\"#{record[:extsched]}\"",1)
-      elsif record[:reservation_id].nil? or record[:reservation_id]==''
-        #WorkflowMgr.stderr("#{record[:jobid]}: (#{record[:jobname]} #{record[:state]} ) RUNNING, CRAYLINUX but no reservation.  Is actually queued.",1)
-        record[:state]='QUEUED'
-        record[:native_state]='QUEUED'
+      # WorkflowMgr.stderr("#{record[:jobid]}: running with no extsched; return",1)
+      elsif !record[:extsched].include? 'CRAYLINUX'
+        # WorkflowMgr.stderr("#{record[:jobid]}: extsched=\"#{record[:extsched]}\"",1)
+      elsif record[:reservation_id].nil? || (record[:reservation_id] == '')
+        # WorkflowMgr.stderr("#{record[:jobid]}: (#{record[:jobname]} #{record[:state]} ) " \
+        #                    "RUNNING, CRAYLINUX but no reservation.  Is actually queued.",1)
+        record[:state] = 'QUEUED'
+        record[:native_state] = 'QUEUED'
         record.delete(:start_time)
-        jobacct[record[:jobid]]=record
-        #WorkflowMgr.stderr("#{record[:jobid]}: override #{record[:state]} #{record[:native_state]}")
+        jobacct[record[:jobid]] = record
+        # WorkflowMgr.stderr("#{record[:jobid]}: override #{record[:state]} #{record[:native_state]}")
       end
-      #WorkflowMgr.stderr("#{record[:jobid]}: Final state: #{record[:state]} (#{record[:native_state]})",1)
-      return record
+      # WorkflowMgr.stderr("#{record[:jobid]}: Final state: #{record[:state]} (#{record[:native_state]})",1)
+      record
     end
-
   end
 end

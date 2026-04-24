@@ -4,14 +4,12 @@
 #
 ##########################################
 module WFMStat
-
   ##########################################
   #
   # Class Job
   #
   ##########################################
   class Job
-
     include Enumerable
 
     @@sort_order = [:time, :taskname]
@@ -23,8 +21,8 @@ module WFMStat
 
     attr_reader :taskname, :time, :state, :jobid, :exit_status, :tries
 
-    def initialize(taskname,time,jobid,state,exit_status,tries)
-      @taskname = taskname   # String
+    def initialize(taskname, time, jobid, state, exit_status, tries)
+      @taskname = taskname # String
       @time = time
       @jobid = jobid
       @state = state
@@ -35,20 +33,18 @@ module WFMStat
     # sort by @@sort_order
     def <=>(other)
       # generalize later
-      if (@@sort_order.first == :taskname) then
+      if @@sort_order.first == :taskname
         ret = @taskname <=> other.taskname
-        if (@taskname == other.taskname) then
+        if @taskname == other.taskname
           ret = @time <=> other.time
         end
       else
         ret = @time <=> other.time
-        if (@time == other.time) then
+        if @time == other.time
           ret = @taskname <=> other.taskname
         end
       end
       ret
     end
-
-  end  # Job
-
-end  # Module WorkflowMgr
+  end
+end

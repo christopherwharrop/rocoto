@@ -3,12 +3,63 @@
 # Configure SimpleCov for code coverage
 if ENV['COVERAGE']
   require 'simplecov'
+
+  # Custom formatter for terminal output
+  module SimpleCov
+    module Formatter
+      class TerminalFormatter
+        def format(result)
+          puts "\n#{'=' * 80}"
+          puts "COVERAGE REPORT BY FILE"
+          puts "=" * 80
+
+          result.groups.each do |group_name, files|
+            # Only show our code, not gems
+            project_files = files.select { |f| !f.filename.include?('/bundle/') && !f.filename.include?('/vendor/') }
+            next if project_files.empty?
+
+            puts "\n#{group_name}:"
+            puts "-" * 80
+            project_files.sort_by(&:covered_percent).reverse.each do |file|
+              printf "  %-<file>60s %<percent>6.2f%% (%<covered>d/%<total>d)\n",
+                     file: file.filename.sub("#{SimpleCov.root}/", ''),
+                     percent: file.covered_percent,
+                     covered: file.covered_lines.count,
+                     total: file.lines_of_code
+            end
+          end
+
+          puts "\n#{'=' * 80}"
+          printf "TOTAL COVERAGE: %<percent>.2f%% (%<covered>d/%<total>d lines)\n",
+                 percent: result.covered_percent,
+                 covered: result.covered_lines,
+                 total: result.total_lines
+          puts "=" * 80
+        end
+      end
+    end
+  end
+
   SimpleCov.start do
     add_filter '/spec/'
     add_filter '/test/'
     add_filter '/vendor/'
+    add_filter '/bundle/'
     add_group 'Libraries', 'lib'
-    minimum_coverage 45  # Adjusted for legacy codebase - will increase as we refactor
+
+    # Track all .rb files in lib/, even if not loaded by tests
+    track_files 'lib/**/*.rb'
+
+    # Minimum coverage lowered because we now track ALL files (not just loaded ones)
+    minimum_coverage 4.5 # Will increase as we add more tests
+
+    # Use terminal formatter if requested, otherwise just HTML
+    if ENV['COVERAGE_TERMINAL']
+      formatter SimpleCov::Formatter::MultiFormatter.new([
+                                                           SimpleCov::Formatter::HTMLFormatter,
+                                                           SimpleCov::Formatter::TerminalFormatter
+                                                         ])
+    end
   end
 end
 

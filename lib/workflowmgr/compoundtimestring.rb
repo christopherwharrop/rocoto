@@ -4,19 +4,16 @@
 #
 ##########################################
 module WorkflowMgr
-
-
   ##########################################
   #
   # Class CompoundTimeString
   #
   ##########################################
   class CompoundTimeString
-
     require 'workflowmgr/cyclestring'
     require 'workflowmgr/utilities'
 
-    attr :str_objects
+    attr_reader :str_objects
 
     #####################################################
     #
@@ -24,47 +21,38 @@ module WorkflowMgr
     #
     #####################################################
     def initialize(str_objects)
-
-      @str_objects=str_objects
-
+      @str_objects = str_objects
     end
-
 
     #####################################################
     #
     # to_s
     #
     #####################################################
-    def to_s(time=nil)
-
-      @str_objects.collect {|obj|
+    def to_s(time = nil)
+      @str_objects.collect do |obj|
         if obj.is_a?(String)
           obj
         else
           obj.to_s(time)
         end
-      }.join.strip
-
+      end.join.strip
     end
-
 
     #####################################################
     #
     # to_s
     #
     #####################################################
-    def inspect()
-
-      @str_objects.collect {|obj|
+    def inspect
+      @str_objects.collect do |obj|
         if obj.is_a?(String)
           obj
         else
-          obj.inspect()
+          obj.inspect
         end
-      }.join.strip
-
+      end.join.strip
     end
-
 
     #####################################################
     #
@@ -72,11 +60,8 @@ module WorkflowMgr
     #
     #####################################################
     def hash
-
       @str_objects.hash
-
     end
-
 
     #####################################################
     #
@@ -84,12 +69,7 @@ module WorkflowMgr
     #
     #####################################################
     def eql?(other)
-
-      return @str_objects==other.str_objects
-
+      @str_objects == other.str_objects
     end
-
   end
-
-
 end

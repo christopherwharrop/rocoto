@@ -16,6 +16,9 @@ test/test.db
 .rspec_status
 coverage/
 
+# Rubocop
+.rubocop-*
+
 # Ignore emacs backup files
 *~
 **/#*#

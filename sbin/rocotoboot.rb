@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 
 # Get the base directory of the WFM installation
-__WFMDIR__=File.expand_path("../../",__FILE__)
+rocoto_dir = File.expand_path('..', __dir__)
 
 # Set up standalone bundle (no bundler gem required at runtime)
 require_relative '../bundle/bundler/setup'
 
 # Add include path for WFM libraries
-$:.unshift("#{__WFMDIR__}/lib")
+$LOAD_PATH.unshift("#{rocoto_dir}/lib")
 
 # Load workflow status library
 require 'workflowmgr/workflowengine'
@@ -19,7 +19,6 @@ require 'libxml'
 LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
-opt=WorkflowMgr::WorkflowSubsetOptions.new(ARGV,'rocotoboot','boot')
-workflowEngine=WorkflowMgr::WorkflowEngine.new(opt)
-workflowEngine.boot
-
+opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV, 'rocotoboot', 'boot')
+workflow_engine = WorkflowMgr::WorkflowEngine.new(opt)
+workflow_engine.boot

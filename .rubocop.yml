@@ -1,0 +1,149 @@
+# RuboCop configuration for Rocoto
+# This is a legacy codebase - starting with lenient rules
+
+plugins:
+  - rubocop-rspec
+  - rubocop-rake
+
+AllCops:
+  TargetRubyVersion: 3.2
+  NewCops: disable  # Don't automatically enable new cops
+  Exclude:
+    - 'vendor/**/*'
+    - 'bundle/**/*'
+    - 'test/**/*'
+    - 'lib/lockfile/**/*'  # Vendored third-party code
+  SuggestExtensions: false
+
+# Metrics - Legacy code often has long methods/classes
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/ModuleLength:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Metrics/ParameterLists:
+  Enabled: false
+
+# Layout - Start with basics
+Layout/LineLength:
+  Max: 120  # Modern monitors can handle this
+  Exclude:
+    - 'Rakefile'
+
+Layout/TrailingWhitespace:
+  Enabled: true
+
+Layout/EmptyLines:
+  Enabled: false  # Legacy code has inconsistent spacing
+
+Layout/IndentationConsistency:
+  Enabled: true
+
+Layout/IndentationWidth:
+  Enabled: true
+  Width: 2
+
+# Style - Be lenient with legacy patterns
+Style/FrozenStringLiteralComment:
+  Enabled: false  # Don't require on every file yet
+
+Style/Documentation:
+  Enabled: false  # Legacy code lacks docs
+
+Style/StringLiterals:
+  Enabled: false  # Mix of single/double quotes
+
+Style/GlobalVars:
+  Enabled: false  # Legacy code uses some globals
+
+Style/ClassVars:
+  Enabled: false  # Legacy pattern
+
+Style/GuardClause:
+  Enabled: false  # Legacy nested conditionals
+
+Style/IfUnlessModifier:
+  Enabled: false  # Legacy style
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/SymbolArray:
+  Enabled: false
+
+Style/WordArray:
+  Enabled: false
+
+Style/RegexpLiteral:
+  Enabled: false
+
+# Naming
+Naming/MethodName:
+  Enabled: true
+  
+Naming/VariableName:
+  Enabled: true
+
+Naming/FileName:
+  Enabled: false  # Some legacy files use non-snake_case
+
+# Lint - Keep important safety checks enabled
+Lint/Debugger:
+  Enabled: true
+
+Lint/UnusedMethodArgument:
+  Enabled: false  # Common in legacy code
+
+Lint/UnusedBlockArgument:
+  Enabled: false
+
+Lint/ShadowingOuterLocalVariable:
+  Enabled: false
+
+Lint/AmbiguousBlockAssociation:
+  Enabled: false
+
+# RSpec - For spec files
+RSpec/MultipleExpectations:
+  Enabled: false  # Our specs have many expectations
+
+RSpec/ExampleLength:
+  Enabled: false  # Legacy specs can be long
+
+RSpec/NestedGroups:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/DescribeClass:
+  Enabled: false
+
+RSpec/SpecFilePathFormat:
+  Enabled: false  # WorkflowSQLite3DB doesn't map cleanly to a snake_case filename
+
+# Security - Keep these enabled
+Security/Eval:
+  Enabled: true
+
+Security/Open:
+  Enabled: true
+
+Security/YAMLLoad:
+  Enabled: true
