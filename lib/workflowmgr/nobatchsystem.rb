@@ -1,5 +1,11 @@
+#########################################
+#
+# Module WorkflowMgr
+#
+##########################################
 require 'English'
-unless defined? $__nobatchsystem__
+module WorkflowMgr
+  require 'workflowmgr/batchsystem'
 
   ##########################################
   #
