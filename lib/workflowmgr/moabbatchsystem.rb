@@ -28,8 +28,8 @@ module WorkflowMgr
       super()
 
       # Get timeouts from the configuration
-      @showq_timeout = JobQueueTimeout
-      @showq_c_timeout = JobAcctTimeout
+      @showq_timeout = config.JobQueueTimeout
+      @showq_c_timeout = config.JobAcctTimeout
 
       # Initialize an empty hash for job queue records
       @jobqueue = {}

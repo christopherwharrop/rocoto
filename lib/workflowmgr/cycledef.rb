@@ -36,7 +36,7 @@ module WorkflowMgr
     #
     ##########################################
     def last
-      previous(Time.gm(9999, 12, 31, 59, 59), by_activation_time: false)[0]
+      previous(Time.gm(9999, 12, 31, 23, 59), by_activation_time: false)[0]
     end
 
     ##########################################

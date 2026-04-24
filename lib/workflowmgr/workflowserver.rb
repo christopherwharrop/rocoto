@@ -60,7 +60,7 @@ module WorkflowMgr
     # respond_to?
     #
     ##########################################
-    def respond_to?(name, include_private: false)
+    def respond_to?(name, include_private = false) # rubocop:disable Style/OptionalBooleanParameter
       if @setup
         @server.respond_to?(name, include_private)
       else

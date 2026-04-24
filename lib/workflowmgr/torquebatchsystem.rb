@@ -24,7 +24,7 @@ module WorkflowMgr
     # initialize
     #
     #####################################################
-    def initialize(config, torque_root = nil)
+    def initialize(config)
       super()
 
       # Get timeouts from the configuration

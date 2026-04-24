@@ -112,7 +112,7 @@ module WorkflowMgr
           raise 'In WorkflowState, @cycle cannot be nil.'
         end
 
-        nse.set_cycle(@cycle)
+        nse.add_cycle(@cycle)
         nse.setdef('job_list', @job_list)
         nse.setdef('cycledefs', @cycledefs)
         nse.setdef('workflow_io_server', @workflow_io_server)
