@@ -10,6 +10,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    name: RuboCop Lint
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout repository
+        uses: actions/checkout@v4
+      -
+        name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      -
+        name: Run RuboCop
+        run: bundle exec rubocop --format github
+
   test-rocoto-amd64:
     name: Ruby ${{ matrix.label }}
     runs-on: ubuntu-latest
@@ -114,3 +131,20 @@ jobs:
         name: Run RSpec tests
         run: |
           docker exec frontend bash -l -c "BUNDLE_CMD=\$(ruby -e \"require 'rubygems'; puts Gem.bin_path('bundler', 'bundle')\"); cd work; \$BUNDLE_CMD exec rake spec"
+
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout repository
+        uses: actions/checkout@v4
+      -
+        name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      -
+        name: Run specs with coverage
+        run: bundle exec rake coverage_terminal
