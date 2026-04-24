@@ -209,7 +209,8 @@ module WorkflowMgr
         return if queued_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        queued_jobs_doc = Nokogiri::XML(queued_jobs, options: Nokogiri::XML::ParseOptions::HUGE)
+        queued_jobs_doc = Nokogiri::XML(queued_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
+
         raise WorkflowMgr::SchedulerDown unless queued_jobs_doc.errors.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
         WorkflowMgr.log($ERROR_INFO.to_s)
@@ -218,7 +219,7 @@ module WorkflowMgr
       end
 
       # For each job, find the various attributes and create a job record
-      queued_jobs = queued_jobs_doc.root.find('//Job')
+      queued_jobs = queued_jobs_doc.root.xpath('//Job')
       #  queued_jobs.find
       queued_jobs.each do |job|
         # Initialize an empty job record
@@ -226,7 +227,7 @@ module WorkflowMgr
 
         # Look at all the attributes for this job and build the record
         # job.children
-        job.each_element do |jobstat|
+        job.element_children.each do |jobstat|
           case jobstat.name
           when /Job_Id/
             record[:jobid] = jobstat.content.split(".").first

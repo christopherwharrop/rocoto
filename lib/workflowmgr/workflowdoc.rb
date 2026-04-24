@@ -58,19 +58,6 @@ module WorkflowMgr
       # some platforms:
       @features_used = {}
 
-      # Get the text from the xml file and put it into a string.
-      # We have to do the full parsing in @workflow_io_server
-      # because we must ensure all external entities (i.e. files)
-      # are referenced inside the @workflow_io_server process and
-      # not locally.
-      #
-      # Update:  The above doesn't work properly because the resulting
-      # XML string does not include the linefeeds in the XML header.
-      # That, in turn, causes XML validation error messages to contain
-      # an incorrect line number.  Therefore, existence of the top-level
-      # document is checked, and then the file is parsed (including possible
-      # external entities on other filesystems) outside the IO server
-      # process.
       begin
         if @workflow_io_server.exist?(workflowdoc)
           @workflowdoc = Nokogiri::XML(@workflow_io_server.read(workflowdoc)) do |config|
@@ -743,7 +730,7 @@ module WorkflowMgr
         end
 
         # Remove the metataskdep elements
-        metataskelements.each(&:remove!)
+        metataskelements.each(&:remove)
       end
     end
 

@@ -14,6 +14,7 @@ module WorkflowMgr
   ##########################################
   class MOABTORQUEBatchSystem < BatchSystem
     require 'etc'
+    require 'nokogiri'
     require 'parsedate'
     require 'workflowmgr/utilities'
     require 'workflowmgr/torquebatchsystem'
@@ -164,7 +165,7 @@ module WorkflowMgr
         return if queued_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        queued_jobs_doc = Nokogiri::XML(queued_jobs, options: Nokogiri::XML::ParseOptions::HUGE)
+        queued_jobs_doc = Nokogiri::XML(queued_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
         raise WorkflowMgr::SchedulerDown unless queued_jobs_doc.errors.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
         WorkflowMgr.log($ERROR_INFO.to_s)
@@ -173,7 +174,7 @@ module WorkflowMgr
       end
 
       # For each job, find the various attributes and create a job record
-      queued_jobs = queued_jobs_doc.find('//job')
+      queued_jobs = queued_jobs_doc.xpath('//job')
       #  queued_jobs.find
       queued_jobs.each do |job|
         # Initialize an empty job record
@@ -244,7 +245,8 @@ module WorkflowMgr
         return if completed_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        recordxmldoc = Nokogiri::XML(completed_jobs, options: Nokogiri::XML::ParseOptions::HUGE)
+        recordxmldoc = Nokogiri::XML(completed_jobsm, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
+
         raise WorkflowMgr::SchedulerDown unless recordxmldoc.errors.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown
         WorkflowMgr.log($ERROR_INFO.to_s)
@@ -253,24 +255,24 @@ module WorkflowMgr
       end
 
       # For each job, find the various attributes and create a job record
-      recordxml = recordxmldoc.find('//job')
+      recordxml = recordxmldoc.xpath('//job')
       recordxml.each do |job|
         record = {}
-        record[:jobid] = job.attributes['JobID']
-        record[:native_state] = job.attributes['State']
-        record[:jobname] = job.attributes['JobName']
-        record[:user] = job.attributes['User']
-        record[:cores] = job.attributes['ReqProcs'].to_i
-        record[:queue] = job.attributes['Class']
-        record[:submit_time] = Time.at(job.attributes['SubmissionTime'].to_i).getgm
-        record[:start_time] = Time.at(job.attributes['StartTime'].to_i).getgm
-        record[:end_time] = Time.at(job.attributes['CompletionTime'].to_i).getgm
-        record[:duration] = job.attributes['AWDuration'].to_i
-        record[:priority] = job.attributes['StartPriority'].to_i
-        record[:exit_status] = if job.attributes['State'] =~ /^Removed/ || job.attributes['CompletionCode'] =~ /^CNCLD/
+        record[:jobid] = job['JobID']
+        record[:native_state] = job['State']
+        record[:jobname] = job['JobName']
+        record[:user] = job['User']
+        record[:cores] = job['ReqProcs'].to_i
+        record[:queue] = job['Class']
+        record[:submit_time] = Time.at(job['SubmissionTime'].to_i).getgm
+        record[:start_time] = Time.at(job['StartTime'].to_i).getgm
+        record[:end_time] = Time.at(job['CompletionTime'].to_i).getgm
+        record[:duration] = job['AWDuration'].to_i
+        record[:priority] = job['StartPriority'].to_i
+        record[:exit_status] = if job['State'] =~ /^Removed/ || job['CompletionCode'] =~ /^CNCLD/
                                  255
                                else
-                                 job.attributes['CompletionCode'].to_i
+                                 job['CompletionCode'].to_i
                                end
         record[:state] = if record[:exit_status] == 0
                            "SUCCEEDED"
