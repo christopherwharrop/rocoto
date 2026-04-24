@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 ruby ">= 3.2.0"
 
-gem "nokogiri", "~> 1.16"  # Bundles precompiled libxml2, no system deps needed
+gem "nokogiri", "~> 1.16" # Bundles precompiled libxml2, no system deps needed
 gem "open4", "~> 1.3"
 gem "sqlite3", "~> 1.7"
 gem "thread", "~> 0.2"
@@ -23,12 +23,6 @@ group :development do
   gem "rubocop", "~> 1.66", require: false
   gem "rubocop-rake", "~> 0.6", require: false
   gem "rubocop-rspec", "~> 3.0", require: false
-end
-
-group :development do
-  gem "rubocop", "~> 1.66", require: false
-  gem "rubocop-rspec", "~> 3.0", require: false
-  gem "rubocop-rake", "~> 0.6", require: false
 end
 
 group :test do
