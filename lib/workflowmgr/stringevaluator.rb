@@ -173,7 +173,7 @@ module WorkflowMgr
                  'in a future version of Rocoto. Please replace <rb> expressions with <sh> tags ' \
                  'or workflow dependencies.'
       WorkflowMgr.stderr(warn_msg, 4)
-      WorkflowMgr.log(warn_msg, 1)
+      WorkflowMgr.log(warn_msg)
 
       # Get a binding within the make_binding() subroutine of a copy of
       # this object.  Using a clone shields us from permanent
