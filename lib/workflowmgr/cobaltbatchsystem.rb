@@ -16,7 +16,6 @@ module WorkflowMgr
   class COBALTBatchSystem < BatchSystem
     require 'etc'
     require 'parsedate'
-    require 'libxml'
     require 'workflowmgr/utilities'
     require 'tempfile'
 

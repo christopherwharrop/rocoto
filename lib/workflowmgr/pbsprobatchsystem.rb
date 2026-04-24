@@ -15,7 +15,6 @@ module WorkflowMgr
   class PBSPROBatchSystem < BatchSystem
     require 'etc'
     require 'parsedate'
-    require 'libxml'
     require 'workflowmgr/utilities'
     require 'tempfile'
 

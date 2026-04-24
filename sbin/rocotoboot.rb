@@ -12,11 +12,10 @@ $LOAD_PATH.unshift("#{rocoto_dir}/lib")
 # Load workflow status library
 require 'workflowmgr/workflowengine'
 require 'workflowmgr/workflowsubsetoptions'
-require 'libxml'
 
 # Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
 # We want to control what output goes where and when
-LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
+# LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Create workflow status and run it
 opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV, 'rocotoboot', 'boot')

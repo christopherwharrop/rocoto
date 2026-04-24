@@ -11,7 +11,6 @@ module WorkflowMgr
   ##########################################
   class WorkflowIO
     require 'fileutils'
-    require 'libxml'
 
 
     ##########################################
@@ -23,12 +22,11 @@ module WorkflowMgr
 
     ##########################################
     #
-    # parse_xml_file
+    # read
     #
     ##########################################
-    def parse_xml_file(filename)
-      document = LibXML::XML::Parser.file(filename, options: LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE).parse
-      document.to_s
+    def read(filename)
+      File.read(filename)
     end
 
     ##########################################

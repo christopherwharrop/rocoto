@@ -16,7 +16,6 @@ module WorkflowMgr
   class SLURMBatchSystem < BatchSystem
     require 'etc'
     require 'parsedate'
-    require 'libxml'
     require 'securerandom'
     require 'workflowmgr/utilities'
 
