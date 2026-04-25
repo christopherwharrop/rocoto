@@ -226,7 +226,8 @@ module WorkflowMgr
         return if queued_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        queued_jobs_doc = Nokogiri::XML(queued_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
+        queued_jobs_doc = Nokogiri::XML(queued_jobs, nil, nil,
+                                        Nokogiri::XML::ParseOptions::DEFAULT_XML | Nokogiri::XML::ParseOptions::HUGE)
         unless queued_jobs_doc.errors.empty?
           parse_errors = queued_jobs_doc.errors.map(&:to_s).join("\n")
           raise WorkflowMgr::SchedulerDown, "Failed to parse showq output: #{parse_errors}"
@@ -314,7 +315,8 @@ module WorkflowMgr
         return if completed_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        recordxmldoc = Nokogiri::XML(completed_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
+        recordxmldoc = Nokogiri::XML(completed_jobs, nil, nil,
+                                     Nokogiri::XML::ParseOptions::DEFUALT_XML, Nokogiri::XML::ParseOptions::HUGE)
 
         unless recordxmldoc.errors.empty?
           parse_errors = recordxmldoc.errors.map(&:to_s).join("\n")
