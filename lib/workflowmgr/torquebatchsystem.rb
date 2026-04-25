@@ -17,6 +17,7 @@ module WorkflowMgr
     require 'parsedate'
     require 'workflowmgr/utilities'
     require 'tempfile'
+    require 'nokogiri'
 
     #####################################################
     #
