@@ -166,11 +166,18 @@ module WorkflowMgr
 
         # Parse the XML output of showq, building job status records for each job
         queued_jobs_doc = Nokogiri::XML(queued_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
-        raise WorkflowMgr::SchedulerDown unless queued_jobs_doc.errors.empty?
-      rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
-        raise WorkflowMgr::SchedulerDown
+        unless queued_jobs_doc.errors.empty?
+          parse_errors = queued_jobs_doc.errors.map(&:to_s).join("\n")
+          raise WorkflowMgr::SchedulerDown, "Failed to parse showq output: #{parse_errors}"
+        end
+      rescue Timeout::Error => e
+        WorkflowMgr.log(e.to_s)
+        WorkflowMgr.stderr(e.to_s, 3)
+        raise WorkflowMgr::SchedulerDown, e.to_s
+      rescue WorkflowMgr::SchedulerDown => e
+        WorkflowMgr.log(e.to_s)
+        WorkflowMgr.stderr(e.to_s, 3)
+        raise
       end
 
       # For each job, find the various attributes and create a job record
@@ -182,8 +189,8 @@ module WorkflowMgr
 
         # Look at all the attributes for this job and build the record
         # job.children
-        job.attributes.each do |jobstat|
-          case jobstat.name
+        job.attributes.each do |name, jobstat|
+          case name
           when /JobID/
             record[:jobid] = jobstat.value
           when /State/
@@ -246,12 +253,18 @@ module WorkflowMgr
 
         # Parse the XML output of showq, building job status records for each job
         recordxmldoc = Nokogiri::XML(completed_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
-
-        raise WorkflowMgr::SchedulerDown unless recordxmldoc.errors.empty?
-      rescue Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
-        raise WorkflowMgr::SchedulerDown
+        unless recordxmldoc.errors.empty?
+          parse_errors = recordxmldoc.errors.map(&:to_s).join("\n")
+          raise WorkflowMgr::SchedulerDown, "Failed to parse showq output: #{parse_errors}"
+        end
+      rescue Timeout::Error => e
+        WorkflowMgr.log(e.to_s)
+        WorkflowMgr.stderr(e.to_s, 3)
+        raise WorkflowMgr::SchedulerDown, e.to_s
+      rescue WorkflowMgr::SchedulerDown => e
+        WorkflowMgr.log(e.to_s)
+        WorkflowMgr.stderr(e.to_s, 3)
+        raise
       end
 
       # For each job, find the various attributes and create a job record
