@@ -60,8 +60,9 @@ module WorkflowMgr
 
       begin
         if @workflow_io_server.exist?(workflowdoc)
-          @workflowdoc = Nokogiri::XML(@workflow_io_server.read(workflowdoc)) do |config|
+          @workflowdoc = Nokogiri::XML(@workflow_io_server.read(workflowdoc), workflowdoc) do |config|
             config.noent
+            config.nonet
             config.huge
             config.nocdata
           end
@@ -941,7 +942,7 @@ module WorkflowMgr
       end
 
       # Insert the expanded tasks into the XML tree
-      (task_list.length - 1).downto(0) { |x| metatask.next = task_list[x] }
+      (task_list.length - 1).downto(0) { |x| metatask.add_next_sibling(task_list[x]) }
     end
   end
 end
