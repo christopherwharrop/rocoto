@@ -60,11 +60,11 @@ module WorkflowMgr
 
       begin
         if @workflow_io_server.exist?(workflowdoc)
-          @workflowdoc = Nokogiri::XML(@workflow_io_server.read(workflowdoc), workflowdoc) do |config|
-            config.noent
-            config.nonet
-            config.huge
-            config.nocdata
+          @workflowdoc = Nokogiri::XML(@workflow_io_server.read(workflowdoc), workflowdoc) do |xml_config|
+            xml_config.noent
+            xml_config.nonet
+            xml_config.huge
+            xml_config.nocdata
           end
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
