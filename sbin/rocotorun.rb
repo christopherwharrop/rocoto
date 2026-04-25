@@ -13,14 +13,6 @@ $LOAD_PATH.unshift("#{rocoto_dir}/lib")
 require 'workflowmgr/workflowengine'
 require 'workflowmgr/workflowsubsetoptions'
 require 'workflowmgr/utilities'
-require 'libxml'
-
-# Replace that ridiculous Libxml-ruby handler that automatically sends
-# output to stderr We want to control what output goes where and when.
-LibXML::XML::Error.set_handler do |error|
-  WorkflowMgr.stderr(error.to_s)
-  WorkflowMgr.log(error.to_s)
-end
 
 # Create workflow engine and run it
 opt = WorkflowMgr::WorkflowSubsetOptions.new(ARGV,

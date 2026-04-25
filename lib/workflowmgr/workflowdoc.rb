@@ -13,7 +13,7 @@ module WorkflowMgr
   class WorkflowXMLDoc
     require 'time'
 
-    require 'libxml'
+    require 'nokogiri'
     require 'workflowmgr/utilities'
     require 'workflowmgr/cycledef'
     require 'workflowmgr/workflowlog'
@@ -58,25 +58,18 @@ module WorkflowMgr
       # some platforms:
       @features_used = {}
 
-      # Get the text from the xml file and put it into a string.
-      # We have to do the full parsing in @workflow_io_server
-      # because we must ensure all external entities (i.e. files)
-      # are referenced inside the @workflow_io_server process and
-      # not locally.
-      #
-      # Update:  The above doesn't work properly because the resulting
-      # XML string does not include the linefeeds in the XML header.
-      # That, in turn, causes XML validation error messages to contain
-      # an incorrect line number.  Therefore, existence of the top-level
-      # document is checked, and then the file is parsed (including possible
-      # external entities on other filesystems) outside the IO server
-      # process.
       begin
         if @workflow_io_server.exist?(workflowdoc)
-          context = LibXML::XML::Parser::Context.file(workflowdoc)
-          context.options = LibXML::XML::Parser::Options::NOENT | LibXML::XML::Parser::Options::HUGE | LibXML::XML::Parser::Options::NOCDATA
-          parser = LibXML::XML::Parser.new(context)
-          @workflowdoc = parser.parse
+          @workflowdoc = Nokogiri::XML(@workflow_io_server.read(workflowdoc), workflowdoc) do |xml_config|
+            xml_config.noent
+            xml_config.nonet
+            xml_config.huge
+            xml_config.nocdata
+          end
+          unless @workflowdoc.errors.empty?
+            parse_errors = @workflowdoc.errors.map(&:to_s).join("\n")
+            raise "Cannot parse workflow document #{workflowdoc} because it is malformed:\n#{parse_errors}"
+          end
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
@@ -88,6 +81,7 @@ module WorkflowMgr
 
       # Validate the workflow xml document before metatask expansion
       validate_with_metatasks(@workflowdoc)
+
       # Expand metatasks
       expand_metatasks
 
@@ -108,13 +102,11 @@ module WorkflowMgr
     #
     ##########################################
     def realtime?
-      if @workflowdoc.root.attributes?
-        realtime = @workflowdoc.root.attributes["realtime"]
-        if realtime.nil?
-          nil
-        else
-          !(realtime.downcase =~ /^t|true$/).nil?
-        end
+      realtime = @workflowdoc.root["realtime"]
+      if realtime.nil?
+        nil
+      else
+        !(realtime.downcase =~ /^t|true$/).nil?
       end
     end
 
@@ -124,13 +116,11 @@ module WorkflowMgr
     #
     ##########################################
     def cyclelifespan
-      if @workflowdoc.root.attributes?
-        cls = @workflowdoc.root.attributes["cyclelifespan"]
-        if cls.nil?
-          nil
-        else
-          WorkflowMgr.ddhhmmss_to_seconds(cls)
-        end
+      cls = @workflowdoc.root["cyclelifespan"]
+      if cls.nil?
+        nil
+      else
+        WorkflowMgr.ddhhmmss_to_seconds(cls)
       end
     end
 
@@ -140,13 +130,11 @@ module WorkflowMgr
     #
     ##########################################
     def cyclethrottle
-      if @workflowdoc.root.attributes?
-        ct = @workflowdoc.root.attributes["cyclethrottle"]
-        if ct.nil?
-          nil
-        else
-          ct.to_i
-        end
+      ct = @workflowdoc.root["cyclethrottle"]
+      if ct.nil?
+        nil
+      else
+        ct.to_i
       end
     end
 
@@ -156,13 +144,11 @@ module WorkflowMgr
     #
     ##########################################
     def taskthrottle
-      if @workflowdoc.root.attributes?
-        tt = @workflowdoc.root.attributes["taskthrottle"]
-        if tt.nil?
-          nil
-        else
-          tt.to_i
-        end
+      tt = @workflowdoc.root["taskthrottle"]
+      if tt.nil?
+        nil
+      else
+        tt.to_i
       end
     end
 
@@ -179,13 +165,11 @@ module WorkflowMgr
     #
     ##########################################
     def corethrottle
-      if @workflowdoc.root.attributes?
-        ct = @workflowdoc.root["corethrottle"]
-        if ct.nil?
-          nil
-        else
-          ct.to_i
-        end
+      ct = @workflowdoc.root["corethrottle"]
+      if ct.nil?
+        nil
+      else
+        ct.to_i
       end
     end
 
@@ -195,13 +179,11 @@ module WorkflowMgr
     #
     ##########################################
     def scheduler
-      if @workflowdoc.root.attributes?
-        sched = @workflowdoc.root["scheduler"]
-        if sched.nil?
-          nil
-        else
-          WorkflowMgr.const_get("#{sched.upcase}BatchSystem").new(@config)
-        end
+      sched = @workflowdoc.root["scheduler"]
+      if sched.nil?
+        nil
+      else
+        WorkflowMgr.const_get("#{sched.upcase}BatchSystem").new(@config)
       end
     end
 
@@ -212,17 +194,15 @@ module WorkflowMgr
     ##########################################
     def features_supported?
       supported = false
-      if @workflowdoc.root.attributes?
-        sched = @workflowdoc.root["scheduler"]
-        unless sched.nil?
-          clazz = WorkflowMgr.const_get("#{sched.upcase}BatchSystem")
-          supported = true
-          @features_used.each_key do |feature|
-            next if clazz.feature?(feature)
+      sched = @workflowdoc.root["scheduler"]
+      unless sched.nil?
+        clazz = WorkflowMgr.const_get("#{sched.upcase}BatchSystem")
+        supported = true
+        @features_used.each_key do |feature|
+          next if clazz.feature?(feature)
 
-            supported = false
-            WorkflowMgr.stderr(@@messages[feature] || "Feature '#{feature}' is unsupported on this platform.")
-          end
+          supported = false
+          WorkflowMgr.stderr(@@messages[feature] || "Feature '#{feature}' is unsupported on this platform.")
         end
       end
       supported
@@ -234,10 +214,9 @@ module WorkflowMgr
     #
     ##########################################
     def log
-      lognodes = @workflowdoc.find('/workflow/log')
-      lognode = lognodes.first
+      lognode = @workflowdoc.at_xpath('/workflow/log')
       path = get_compound_time_string(lognode)
-      verbosity = lognode.attributes['verbosity']
+      verbosity = lognode['verbosity']
       verbosity = verbosity.to_i unless verbosity.nil?
 
       WorkflowLog.new(path, verbosity, @workflow_io_server)
@@ -250,19 +229,19 @@ module WorkflowMgr
     ##########################################
     def cycledefs
       cycles = []
-      cyclenodes = @workflowdoc.find('/workflow/cycledef')
+      cyclenodes = @workflowdoc.xpath('/workflow/cycledef')
       cyclenodes.each do |cyclenode|
-        cyclenode.output_escaping = false
+        # output_escaping removed: Nokogiri does not escape content by default
         cyclefields = unescape(cyclenode.content.strip)
         nfields = cyclefields.split.size
-        group = cyclenode.attributes['group']
+        group = cyclenode['group']
         activation_offset = if realtime?
-                              WorkflowMgr.ddhhmmss_to_seconds(cyclenode.attributes['activation_offset'])
+                              WorkflowMgr.ddhhmmss_to_seconds(cyclenode['activation_offset'])
                             else
                               0
                             end
-        exclude_hours = cyclenode.attributes['exclude_hours']
-        valid_hours = cyclenode.attributes['valid_hours']
+        exclude_hours = cyclenode['exclude_hours']
+        valid_hours = cyclenode['valid_hours']
         if nfields == 3
           cycles << CycleInterval.new(cyclefields, group, activation_offset, nil, exclude_hours, valid_hours)
         elsif nfields == 6
@@ -286,7 +265,7 @@ module WorkflowMgr
     ##########################################
     def tasks
       tasks = {}
-      tasknodes = @workflowdoc.find('/workflow/task')
+      tasknodes = @workflowdoc.xpath('/workflow/task')
       tasknodes.each_with_index do |tasknode, seq|
         natives = []
         rewinders = []
@@ -295,7 +274,7 @@ module WorkflowMgr
         taskdep = nil
         taskhangdep = nil
         # Get task attributes insde the <task> tag
-        tasknode.attributes.each do |attr|
+        tasknode.attributes.each_value do |attr|
           attrkey = attr.name.to_sym
           attrval = case attrkey
                     when :maxtries, :throttle # Attributes with integer values go here
@@ -309,7 +288,7 @@ module WorkflowMgr
         end
 
         # Get task attributes, envars, and dependencies declared as elements inside <task> element
-        tasknode.each_element do |e|
+        tasknode.element_children.each do |e|
           case e.name
           when /shared/
             taskattrs[:shared] = true
@@ -320,7 +299,7 @@ module WorkflowMgr
           when /^envar$/
             envar_name = nil
             envar_value = nil
-            e.each_element do |element|
+            e.element_children.each do |element|
               case element.name
               when /^name$/
                 envar_name = get_compound_time_string(element)
@@ -330,7 +309,7 @@ module WorkflowMgr
             end
             taskenvars[envar_name] = envar_value
           when /^rewind$/
-            e.each_element do |element|
+            e.element_children.each do |element|
               if element.name == 'rb'
                 rewinders.push(get_rubydep(element))
               elsif element.name == 'sh'
@@ -340,13 +319,13 @@ module WorkflowMgr
               end
             end
           when /^dependency$/
-            e.each_element do |element|
+            e.element_children.each do |element|
               raise "ERROR: <dependency> tag contains too many elements" unless taskdep.nil?
 
               taskdep = Dependency.new(get_dependency_node(element))
             end
           when /^hangdependency$/
-            e.each_element do |element|
+            e.element_children.each do |element|
               raise "ERROR: <hangdependency> tag contains too many elements" unless taskhangdep.nil?
 
               taskhangdep = Dependency.new(get_dependency_node(element))
@@ -355,10 +334,10 @@ module WorkflowMgr
             attrkey = e.name.to_sym
             case attrkey
             when :cores # <task> elements with integer values go here
-              e.output_escaping = false
+              # output_escaping removed: Nokogiri does not escape content by default
               attrval = unescape(e.content).to_i
             when :nodes
-              e.output_escaping = false
+              # output_escaping removed: Nokogiri does not escape content by default
               attrval = unescape(e.content)
               taskattrs[:cores] = 0
               attrval.split("+").each do |nodespec|
@@ -379,7 +358,7 @@ module WorkflowMgr
                 taskattrs[:cores] += nodes * ppn * tpp
               end
             when :nodesize
-              e.output_escaping = false
+              # output_escaping removed: Nokogiri does not escape content by default
               attrval = unescape(e.content).to_i
             else # <task> elements with compoundtimestring values
               attrval = get_compound_time_string(e)
@@ -422,16 +401,16 @@ module WorkflowMgr
     ##########################################
     def taskdep_cycle_offsets
       offsets = []
-      taskdepnodes = @workflowdoc.find('//taskdep')
+      taskdepnodes = @workflowdoc.xpath('//taskdep')
       taskdepnodes.each do |taskdepnode|
-        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) \
-          unless taskdepnode.attributes["cycle_offset"].nil?
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode["cycle_offset"]) \
+          unless taskdepnode["cycle_offset"].nil?
       end
 
-      taskdepnodes = @workflowdoc.find('//cycleexistdep')
+      taskdepnodes = @workflowdoc.xpath('//cycleexistdep')
       taskdepnodes.each do |taskdepnode|
-        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode.attributes["cycle_offset"]) \
-          unless taskdepnode.attributes["cycle_offset"].nil?
+        offsets << WorkflowMgr.ddhhmmss_to_seconds(taskdepnode["cycle_offset"]) \
+          unless taskdepnode["cycle_offset"].nil?
       end
 
       offsets.uniq
@@ -451,14 +430,14 @@ module WorkflowMgr
       end
 
       strarray = []
-      element.each do |e|
-        e.output_escaping = false
-        if e.node_type == LibXML::XML::Node::TEXT_NODE
+      element.children.each do |e|
+        # output_escaping removed: Nokogiri does not escape content by default
+        if e.text?
           strarray << unescape(e.content)
-        elsif e.node_type == LibXML::XML::Node::COMMENT_NODE
+        elsif e.comment?
           # Ignore comments
         else
-          offset_sec = WorkflowMgr.ddhhmmss_to_seconds(e.attributes["offset"])
+          offset_sec = WorkflowMgr.ddhhmmss_to_seconds(e["offset"])
           case e.name
           when "cyclestr"
             formatstr = unescape(e.content)
@@ -483,7 +462,7 @@ module WorkflowMgr
     def get_dependency_node(element)
       # Build a dependency tree
       children = []
-      element.each_element { |e| children << e }
+      element.element_children.each { |e| children << e }
       case element.name
       when "not"
         DependencyNotOperator.new(children.collect { |child| get_dependency_node(child) })
@@ -500,7 +479,7 @@ module WorkflowMgr
       when "some"
         DependencySomeOperator.new(children.collect do |child|
           get_dependency_node(child)
-        end, element.attributes["threshold"].to_f)
+        end, element["threshold"].to_f)
       when "taskdep"
         get_taskdep(element)
       when "streq", "strneq", "true", "false"
@@ -532,8 +511,8 @@ module WorkflowMgr
       when 'false'
         ConstDependency.new(false, 'false')
       when 'streq', 'strneq'
-        left = get_compound_time_string(element.find('left').first)
-        right = get_compound_time_string(element.find('right').first)
+        left = get_compound_time_string(element.xpath('left').first)
+        right = get_compound_time_string(element.xpath('right').first)
         if element.name == 'streq'
           name = name_stringdep(left, right, '==')
           compare = '=='
@@ -570,13 +549,13 @@ module WorkflowMgr
     #####################################################
     def get_taskdep(element)
       # Get the mandatory task attribute
-      task = element.attributes["task"]
+      task = element["task"]
 
       # Get the state attribute
-      state = element.attributes["state"] || "SUCCEEDED"
+      state = element["state"] || "SUCCEEDED"
 
       # Get the cycle offset, if there is one
-      cycle_offset = WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"]) || 0
+      cycle_offset = WorkflowMgr.ddhhmmss_to_seconds(element["cycle_offset"]) || 0
 
       TaskDependency.new(task, state, cycle_offset)
     end
@@ -588,7 +567,7 @@ module WorkflowMgr
     #####################################################
     def get_cycleexistdep(element)
       # Get the cycle offset, if there is one
-      cycle_offset = WorkflowMgr.ddhhmmss_to_seconds(element.attributes["cycle_offset"])
+      cycle_offset = WorkflowMgr.ddhhmmss_to_seconds(element["cycle_offset"])
 
       CycleExistDependency.new(cycle_offset)
     end
@@ -599,7 +578,7 @@ module WorkflowMgr
     #
     #####################################################
     def get_taskvaliddep(element)
-      task = element.attributes["task"]
+      task = element["task"]
 
       TaskValidDependency.new(task)
     end
@@ -611,7 +590,7 @@ module WorkflowMgr
     #####################################################
     def get_rubydep(element)
       # Get the cycle offset, if there is one
-      name = element.attributes["name"]
+      name = element["name"]
       text = get_compound_time_string(element)
       RubyDependency.new(text, name)
     end
@@ -623,9 +602,9 @@ module WorkflowMgr
     #####################################################
     def get_shelldep(element)
       # Get the cycle offset, if there is one
-      name = element.attributes["name"]
-      shell = element.attributes["shell"]
-      runopt = element.attributes["runopt"]
+      name = element["name"]
+      shell = element["shell"]
+      runopt = element["runopt"]
       if shell.nil?
         shell = '/bin/sh' # POSIX requires this location for the POSIX sh
       end
@@ -643,10 +622,10 @@ module WorkflowMgr
     ##########################################
     def get_datadep(element)
       # Get the age attribute
-      age_sec = WorkflowMgr.ddhhmmss_to_seconds(element.attributes["age"]) || 0
+      age_sec = WorkflowMgr.ddhhmmss_to_seconds(element["age"]) || 0
 
       # Get the minsize attribute
-      minsize = element.attributes["minsize"] || 0
+      minsize = element["minsize"] || 0
       case minsize
       when /^(\d+)$/
         minsize = ::Regexp.last_match(1).to_i
@@ -686,14 +665,11 @@ module WorkflowMgr
     ##########################################
     def validate_with_metatasks(doc)
       # Parse the Relax NG schema XML document
-      xmlstring = @workflow_io_server.parse_xml_file("#{File.dirname(__FILE__)}/schema_with_metatasks.rng")
-      relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
-
-      # Prepare the Relax NG schemas for validation
-      relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
+      relaxng_schema = Nokogiri::XML::RelaxNG(@workflow_io_server.read("#{File.dirname(__FILE__)}/schema_with_metatasks.rng"))
 
       # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-      doc.validate_relaxng(relaxng_schema)
+      errors = relaxng_schema.validate(doc)
+      raise "Validation failed: #{errors.map(&:to_s).join("\n")}" unless errors.empty?
     end
 
     ##########################################
@@ -703,14 +679,11 @@ module WorkflowMgr
     ##########################################
     def validate_without_metatasks(doc)
       # Parse the Relax NG schema XML document
-      xmlstring = @workflow_io_server.parse_xml_file("#{File.dirname(__FILE__)}/schema_without_metatasks.rng")
-      relaxng_document = LibXML::XML::Parser.string(xmlstring, options: LibXML::XML::Parser::Options::NOENT).parse
-
-      # Prepare the Relax NG schemas for validation
-      relaxng_schema = LibXML::XML::RelaxNG.document(relaxng_document)
+      relaxng_schema = Nokogiri::XML::RelaxNG(@workflow_io_server.read("#{File.dirname(__FILE__)}/schema_without_metatasks.rng"))
 
       # Validate the workflow XML file against the general Relax NG Schema that validates metatask tags
-      doc.validate_relaxng(relaxng_schema)
+      errors = relaxng_schema.validate(doc)
+      raise "Validation failed: #{errors.map(&:to_s).join("\n")}" unless errors.empty?
     end
 
     ##########################################
@@ -719,11 +692,11 @@ module WorkflowMgr
     #
     ##########################################
     def expand_metataskdeps
-      @workflowdoc.root.each_element do |ch|
+      @workflowdoc.root.element_children.each do |ch|
         next unless ch.name == "task"
 
         # Find the metataskdep nodes
-        metataskdeps = ch.find('.//metataskdep')
+        metataskdeps = ch.xpath('.//metataskdep')
 
         # Replace each of them with the equivalient <and><taskdep/><taskdep/>...</and> expression
         metataskelements = []
@@ -731,39 +704,38 @@ module WorkflowMgr
           metataskelements << metataskdep
 
           # Get the name of the metatask
-          metatask = metataskdep.attributes["metatask"]
+          metatask = metataskdep["metatask"]
 
           # Find all names of tasks descended from the metatask
           tasknames = []
-          tasks = @workflowdoc.find("//task[contains(@metatasks,'#{metatask}')]")
+          tasks = @workflowdoc.xpath("//task[contains(@metatasks,'#{metatask}')]")
           tasks.each do |task|
-            tasknames << task.attributes["name"] if task.attributes["metatasks"] =~ /^([^,]+,)*#{metatask}(,[^,]+)*$/
+            tasknames << task["name"] if task["metatasks"] =~ /^([^,]+,)*#{metatask}(,[^,]+)*$/
           end
 
           # Insert a "some" element after the metataskdep element
-          somenode = LibXML::XML::Node.new("some")
-          threshold = metataskdep.attributes["threshold"].nil? ? "1.0" : metataskdep.attributes["threshold"]
-          LibXML::XML::Attr.new(somenode, "threshold", threshold)
-          metataskdep.next = somenode
+          somenode = Nokogiri::XML::Node.new("some", @workflowdoc)
+          threshold = metataskdep["threshold"].nil? ? "1.0" : metataskdep["threshold"]
+          somenode["threshold"] = threshold
+          metataskdep.add_next_sibling(somenode)
+
 
           # Add taskdep elements as children to the and element
           tasknames.each do |task|
-            taskdepnode = LibXML::XML::Node.new("taskdep")
-            LibXML::XML::Attr.new(taskdepnode, "task", task)
+            taskdepnode = Nokogiri::XML::Node.new("taskdep", @workflowdoc)
+            taskdepnode["task"] = task
             unless metataskdep["cycle_offset"].nil?
-              LibXML::XML::Attr.new(taskdepnode, "cycle_offset",
-                                    metataskdep.attributes["cycle_offset"])
+              taskdepnode["cycle_offset"] = metataskdep["cycle_offset"]
             end
-            unless metataskdep.attributes["state"].nil?
-              LibXML::XML::Attr.new(taskdepnode, "state",
-                                    metataskdep.attributes["state"])
+            unless metataskdep["state"].nil?
+              taskdepnode["state"] = metataskdep["state"]
             end
             somenode << taskdepnode
           end
         end
 
         # Remove the metataskdep elements
-        metataskelements.each(&:remove!)
+        metataskelements.each(&:remove)
       end
     end
 
@@ -773,24 +745,23 @@ module WorkflowMgr
     #
     ##########################################
     def expand_serialdeps
-      # workflowdoc.root.each
-      @workflowdoc.root.each_element do |ch|
+      @workflowdoc.root.element_children.each do |ch|
         next unless ch.name == "task"
 
         # Skip tasks that are not members of a metatask
-        next if ch.attributes["metatasks"].nil?
+        next if ch["metatasks"].nil?
 
         depnode = nil
         andnode = nil
 
         # Add dependencies for each serial metatask that this task is a member of
-        metatasklist = ch.attributes["metatasks"]
+        metatasklist = ch["metatasks"]
         metatasklist.split(",").each_with_index do |m, idx|
           # Ignore parallel metatasks
           next unless @metatask_modes[m] == "serial"
 
           # Find the seqnum for the tasks on which this task depends
-          seqdeplist = ch.attributes["seqnum"]
+          seqdeplist = ch["seqnum"]
           seqdeps = seqdeplist.split(",")[0..idx].collect(&:to_i)
           seqdeps[idx] -= 1
 
@@ -799,19 +770,19 @@ module WorkflowMgr
 
           # Find the <dependency> node for this task, or make one if it isn't found
           if depnode.nil?
-            depnode = ch.find_first("./dependency")
+            depnode = ch.at_xpath("./dependency")
             if depnode.nil?
-              depnode = LibXML::XML::Node.new("dependency")
-              andnode = LibXML::XML::Node.new("and")
+              depnode = Nokogiri::XML::Node.new("dependency", @workflowdoc)
+              andnode = Nokogiri::XML::Node.new("and", @workflowdoc)
               ch << depnode
               depnode << andnode
             else
-              depchild = depnode.find_first("./*[1]")
+              depchild = depnode.at_xpath("./*[1]")
               if depchild.name == "and"
                 andnode = depchild
               else
                 depchildren = depnode.children
-                andnode = LibXML::XML::Node.new("and")
+                andnode = Nokogiri::XML::Node.new("and", @workflowdoc)
                 depnode << andnode
                 depchildren.each do |c|
                   andnode << c
@@ -821,26 +792,20 @@ module WorkflowMgr
           end
 
           # Find all tasks that match the sequence number for dependent tasks
-          tasks1 = @workflowdoc.find("//task[starts-with(@seqnum,'#{seqdeps.join(',')},')]")
-          tasks2 = @workflowdoc.find("//task[@seqnum='#{seqdeps.join(',')}']")
+          tasks1 = @workflowdoc.xpath("//task[starts-with(@seqnum,'#{seqdeps.join(',')},')]")
+          tasks2 = @workflowdoc.xpath("//task[@seqnum='#{seqdeps.join(',')}']")
           tasks = tasks1.to_a | tasks2.to_a
 
           # Insert a task dep for each dependent task
           tasks.each do |t|
             # Reject tasks that aren't a member of metatask m
-            next if t.attributes["metatasks"].split(",").find_index(m).nil?
+            next if t["metatasks"].split(",").find_index(m).nil?
 
-            taskdepnode = LibXML::XML::Node.new("taskdep")
-            LibXML::XML::Attr.new(taskdepnode, "task", t.attributes["name"])
+            taskdepnode = Nokogiri::XML::Node.new("taskdep", @workflowdoc)
+            taskdepnode["task"] = t["name"]
             andnode << taskdepnode
           end
-
-          # if seqdeps[idx]
-
-          # if @metatask_modes
         end
-
-        # if ch.name
       end
     end
 
@@ -855,20 +820,20 @@ module WorkflowMgr
       @metatask_seq = 1
       @metatask_throttles = {}
       @metatask_modes = {}
-      @workflowdoc.root.each_element do |ch|
+      @workflowdoc.root.element_children.each do |ch|
         next unless ch.name == "metatask"
 
-        if ch.attributes["name"].nil?
-          LibXML::XML::Attr.new(ch, "name", "metatask#{@metatask_seq}")
+        if ch["name"].nil?
+          ch["name"] = "metatask#{@metatask_seq}"
           @metatask_seq += 1
         end
-        metatask_name = ch.attributes["name"]
-        @metatask_throttles[metatask_name] = ch.attributes["throttle"].nil? ? 999_999 : ch.attributes["throttle"].to_i
-        @metatask_modes[metatask_name] = ch.attributes["mode"].nil? ? "parallel" : ch.attributes["mode"]
+        metatask_name = ch["name"]
+        @metatask_throttles[metatask_name] = ch["throttle"].nil? ? 999_999 : ch["throttle"].to_i
+        @metatask_modes[metatask_name] = ch["mode"].nil? ? "parallel" : ch["mode"]
         pre_parse(ch, metatask_name)
         metatasks << ch
       end
-      metatasks.each(&:remove!)
+      metatasks.each(&:remove)
     end
 
     #####################################################
@@ -877,8 +842,8 @@ module WorkflowMgr
     #
     #####################################################
     def traverse(node, id_table, index)
-      if node.node_type_name == "text"
-        node.output_escaping = false
+      # if node.node_type_name == "text"
+      if node.text?
         cont = unescape(node.content)
         id_table.each_key do |id|
           next while cont.sub!("##{id}#", id_table[id][index])
@@ -886,7 +851,7 @@ module WorkflowMgr
         node.content = cont
 
       else
-        node.attributes.each do |attr|
+        node.attributes.each_value do |attr|
           val = attr.value
           id_table.each_key do |id|
             next while val.sub!("##{id}#", id_table[id][index])
@@ -908,21 +873,21 @@ module WorkflowMgr
 
       # Set the metatask list for all task children of this metatask
       seqnum = 0
-      if metatask.attributes["seqnum"].nil?
-        LibXML::XML::Attr.new(metatask, "seqnum", "")
+      if metatask["seqnum"].nil?
+        metatask["seqnum"] = ""
       else
-        metatask.attributes["seqnum"] += ","
+        metatask["seqnum"] += ","
       end
       metatask.children.each do |e|
         if e.name == "task"
-          e.attributes["metatasks"] = metatask_list
-          e.attributes["seqnum"] = metatask["seqnum"]
+          e["metatasks"] = metatask_list
+          e["seqnum"] = metatask["seqnum"]
           seqnum += 1
-          e.attributes["seqnum"] += seqnum.to_s
+          e["seqnum"] += seqnum.to_s
         elsif e.name == "metatask"
-          e.attributes["seqnum"] = metatask.attributes["seqnum"]
+          e["seqnum"] = metatask["seqnum"]
           seqnum += 1
-          e.attributes["seqnum"] += seqnum.to_s
+          e["seqnum"] += seqnum.to_s
         end
       end
 
@@ -931,13 +896,13 @@ module WorkflowMgr
       metatask.children.each do |ch|
         next unless ch.name == "metatask"
 
-        if ch.attributes["name"].nil?
-          LibXML::XML::Attr.new(ch, "name", "metatask#{@metatask_seq}")
+        if ch["name"].nil?
+          ch["name"] = "metatask#{@metatask_seq}"
           @metatask_seq += 1
         end
-        metatask_name = ch.attributes["name"]
-        @metatask_throttles[metatask_name] = ch.attributes["throttle"].nil? ? 999_999 : ch.attributes["throttle"].to_i
-        @metatask_modes[metatask_name] = ch.attributes["mode"].nil? ? "parallel" : ch.attributes["mode"]
+        metatask_name = ch["name"]
+        @metatask_throttles[metatask_name] = ch["throttle"].nil? ? 999_999 : ch["throttle"].to_i
+        @metatask_modes[metatask_name] = ch["mode"].nil? ? "parallel" : ch["mode"]
         pre_parse(ch, metatask_list + ",#{metatask_name}")
       end
       # rubocop:enable Style/CombinableLoops
@@ -947,12 +912,11 @@ module WorkflowMgr
       metatask.children.each do |e|
         next unless e.name == "var"
 
-        e.output_escaping = false
         var_values = unescape(e.content).split
         var_length = var_values.length if var_length == -1
         raise "ERROR: <var> tags do not contain the same number of items!" if var_values.length != var_length
 
-        id_table[e.attributes["name"]] = var_values
+        id_table[e["name"]] = var_values
       end
       # rubocop:enable Style/CombinableLoops
       raise "ERROR: No <var> tag or values specified in one or more metatasks" if var_length < 1
@@ -965,24 +929,24 @@ module WorkflowMgr
         metatask.children.each do |e|
           next unless e.name == "task"
 
-          task_copy = e.copy(true)
-          if task_copy.attributes["metatasks"].nil?
-            LibXML::XML::Attr.new(task_copy, "metatasks", metatask_list)
+          task_copy = e.dup
+          if task_copy["metatasks"].nil?
+            task_copy["metatasks"] = metatask_list
           end
           traverse(task_copy, id_table, index)
-          seqarr = task_copy.attributes["seqnum"].split(",")
+          seqarr = task_copy["seqnum"].split(",")
           if index == 0
             maxseq = seqarr[depth - 1].to_i
           else
             seqarr[depth - 1] = seqarr[depth - 1].to_i + maxseq * index
-            task_copy.attributes["seqnum"] = seqarr.join(",")
+            task_copy["seqnum"] = seqarr.join(",")
           end
           task_list << task_copy
         end
       end
 
       # Insert the expanded tasks into the XML tree
-      (task_list.length - 1).downto(0) { |x| metatask.next = task_list[x] }
+      (task_list.length - 1).downto(0) { |x| metatask.add_next_sibling(task_list[x]) }
     end
   end
 end

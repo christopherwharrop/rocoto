@@ -16,23 +16,13 @@ Install the Rocoto Workflow Manager and its dependencies.
 
 Options:
     --with-ruby=PATH         Path to Ruby installation directory
-    --with-xml2-dir=PATH     Path to libxml2 installation directory
-    --with-xml2-include=PATH Path to libxml2 include directory
-                             (Script will auto-detect libxml2 subdirectory)
-    --with-xml2-lib=PATH     Path to libxml2 library directory
-    --with-xml2-config=PATH  Path to xml2-config executable
     --local                  Use cached gems from vendor/cache/ (air-gapped mode)
     -h, --help               Show this help message
 
 Examples:
     ./INSTALL
     ./INSTALL --with-ruby=/opt/ruby/3.2.0
-    ./INSTALL --with-xml2-dir=/usr/local
-    ./INSTALL --with-xml2-include=/opt/libxml2/include --with-xml2-lib=/opt/libxml2/lib
     ./INSTALL --local  # Air-gapped installation using vendor/cache/
-
-Note: The script will automatically append 'libxml2' to include paths if needed,
-      so both /path/include and /path/include/libxml2 will work.
 
 EOF
     exit 0
@@ -40,28 +30,12 @@ EOF
 
 # Parse command line arguments
 RUBY=""
-xml2dir=""
-xml2include=""
-xml2config=""
-xml2lib=""
 LOCAL_INSTALL=false
 
 for arg in "$@"; do
     case "$arg" in
         --with-ruby=*)
             RUBY="${arg#*=}/bin/ruby"
-            ;;
-        --with-xml2-dir=*)
-            xml2dir="${arg#*=}"
-            ;;
-        --with-xml2-include=*)
-            xml2include="${arg#*=}"
-            ;;
-        --with-xml2-config=*)
-            xml2config="${arg#*=}"
-            ;;
-        --with-xml2-lib=*)
-            xml2lib="${arg#*=}"
             ;;
         --local)
             LOCAL_INSTALL=true
@@ -160,65 +134,6 @@ for file in sbin/*; do
 done
 echo "==> Updated shebangs in $shebang_count script(s)"
 
-# Build bundle config arguments for libxml2
-BUNDLE_BUILD_ARGS=""
-
-# Configure libxml2 paths if specified
-if [[ -n "$xml2dir" ]]; then
-    if [[ ! -d "$xml2dir" ]]; then
-        echo "Warning: Specified xml2dir does not exist: $xml2dir" >&2
-    else
-        BUNDLE_BUILD_ARGS+=" --with-xml2-dir=${xml2dir}"
-        # Auto-detect subdirectories if not explicitly set
-        if [[ -z "$xml2include" ]]; then
-            # Try include/libxml2 first, then include
-            if [[ -d "${xml2dir}/include/libxml2" ]]; then
-                xml2include="${xml2dir}/include/libxml2"
-            elif [[ -d "${xml2dir}/include" ]]; then
-                xml2include="${xml2dir}/include"
-            fi
-        fi
-        [[ -z "$xml2lib" && -d "${xml2dir}/lib" ]] && xml2lib="${xml2dir}/lib"
-        [[ -z "$xml2config" && -x "${xml2dir}/bin/xml2-config" ]] && xml2config="${xml2dir}/bin/xml2-config"
-    fi
-fi
-
-# Add individual configuration options if set
-if [[ -n "$xml2include" ]]; then
-    if [[ -d "$xml2include" ]]; then
-        # If path doesn't end with libxml2, check if libxml2 subdir exists
-        if [[ ! "$xml2include" =~ libxml2$ ]] && [[ -d "${xml2include}/libxml2" ]]; then
-            xml2include="${xml2include}/libxml2"
-            echo "==> Auto-detected libxml2 headers at: $xml2include"
-        fi
-        BUNDLE_BUILD_ARGS+=" --with-xml2-include=${xml2include}"
-    else
-        echo "Warning: Specified xml2include directory does not exist: $xml2include" >&2
-    fi
-fi
-
-if [[ -n "$xml2lib" ]]; then
-    if [[ -d "$xml2lib" ]]; then
-        BUNDLE_BUILD_ARGS+=" --with-xml2-lib=${xml2lib}"
-    else
-        echo "Warning: Specified xml2lib directory does not exist: $xml2lib" >&2
-    fi
-fi
-
-if [[ -n "$xml2config" ]]; then
-    if [[ -x "$xml2config" ]]; then
-        BUNDLE_BUILD_ARGS+=" --with-xml2-config=${xml2config}"
-    else
-        echo "Warning: Specified xml2-config is not executable: $xml2config" >&2
-    fi
-fi
-
-# Configure bundler build options for libxml-ruby if needed
-if [[ -n "$BUNDLE_BUILD_ARGS" ]]; then
-    echo "==> Configuring bundler build options for libxml-ruby:${BUNDLE_BUILD_ARGS}"
-    "$BUNDLE_CMD" config set --local build.libxml-ruby "${BUNDLE_BUILD_ARGS}"
-fi
-
 # Configure bundler to use local installation directory
 echo "==> Configuring bundler for local gem installation..."
 "$BUNDLE_CMD" config set --local path 'bundle'
@@ -251,13 +166,6 @@ else
         echo ""
         echo "Error: Bundler installation failed." >&2
         echo "This is often due to missing system dependencies or network issues." >&2
-        echo ""
-        echo "For libxml-ruby, you may need to install libxml2 development files:" >&2
-        echo "  - Ubuntu/Debian: sudo apt-get install libxml2-dev" >&2
-        echo "  - RHEL/CentOS: sudo yum install libxml2-devel" >&2
-        echo "  - macOS: brew install libxml2" >&2
-        echo ""
-        echo "Or specify a custom location with --with-xml2-dir" >&2
         echo ""
         echo "For air-gapped systems, use the --local option to install from cached gems." >&2
         echo "See README.md for details on creating the gem cache." >&2

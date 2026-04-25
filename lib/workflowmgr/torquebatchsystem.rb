@@ -15,9 +15,9 @@ module WorkflowMgr
   class TORQUEBatchSystem < BatchSystem
     require 'etc'
     require 'parsedate'
-    require 'libxml'
     require 'workflowmgr/utilities'
     require 'tempfile'
+    require 'nokogiri'
 
     #####################################################
     #
@@ -210,15 +210,25 @@ module WorkflowMgr
         return if queued_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        queued_jobs_doc = LibXML::XML::Parser.string(queued_jobs, options: LibXML::XML::Parser::Options::HUGE).parse
-      rescue LibXML::XML::Error, Timeout::Error, WorkflowMgr::SchedulerDown
-        WorkflowMgr.log($ERROR_INFO.to_s)
-        WorkflowMgr.stderr($ERROR_INFO.to_s, 3)
-        raise WorkflowMgr::SchedulerDown
+        queued_jobs_doc = Nokogiri::XML(queued_jobs, nil, nil,
+                                        Nokogiri::XML::ParseOptions::DEFAULT_XML | Nokogiri::XML::ParseOptions::HUGE)
+
+        unless queued_jobs_doc.errors.empty?
+          parse_errors = queued_jobs_doc.errors.map(&:to_s).join("\n")
+          raise WorkflowMgr::SchedulerDown, "Failed to parse qstat output: #{parse_errors}"
+        end
+      rescue Timeout::Error => e
+        WorkflowMgr.log(e.to_s)
+        WorkflowMgr.stderr(e.to_s, 3)
+        raise WorkflowMgr::SchedulerDown, e.to_s
+      rescue WorkflowMgr::SchedulerDown => e
+        WorkflowMgr.log(e.to_s)
+        WorkflowMgr.stderr(e.to_s, 3)
+        raise
       end
 
       # For each job, find the various attributes and create a job record
-      queued_jobs = queued_jobs_doc.root.find('//Job')
+      queued_jobs = queued_jobs_doc.root.xpath('//Job')
       #  queued_jobs.find
       queued_jobs.each do |job|
         # Initialize an empty job record
@@ -226,7 +236,7 @@ module WorkflowMgr
 
         # Look at all the attributes for this job and build the record
         # job.children
-        job.each_element do |jobstat|
+        job.element_children.each do |jobstat|
           case jobstat.name
           when /Job_Id/
             record[:jobid] = jobstat.content.split(".").first
@@ -245,7 +255,7 @@ module WorkflowMgr
           when /Job_Owner/
             record[:user] = jobstat.content
           when /Resource_List/
-            jobstat.each_element do |e|
+            jobstat.element_children.each do |e|
               if e.name == 'procs'
                 record[:cores] = e.content.to_i
                 break

@@ -16,7 +16,6 @@ require 'drb'
 require 'socket'
 require 'workflowmgr/workflowserver'
 require 'workflowmgr/utilities'
-require 'libxml'
 require 'fileutils'
 
 # Set the verbosity for the server process
@@ -31,10 +30,6 @@ if WorkflowMgr.const_defined?(:DRYRUN)
   WorkflowMgr.send(:remove_const, :DRYRUN)
 end
 WorkflowMgr.const_set("DRYRUN", 0)
-
-# Turn off that ridiculous Libxml-ruby handler that automatically sends output to stderr
-# We want to control what output goes where and when
-LibXML::XML::Error.set_handler(&LibXML::XML::Error::QUIET_HANDLER)
 
 # Daemonize this process so that there aren't problems caused
 # by failure to reap exit statuses and propagation of zombies
