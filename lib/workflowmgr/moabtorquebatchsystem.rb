@@ -245,7 +245,7 @@ module WorkflowMgr
         return if completed_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        recordxmldoc = Nokogiri::XML(completed_jobsm, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
+        recordxmldoc = Nokogiri::XML(completed_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
 
         raise WorkflowMgr::SchedulerDown unless recordxmldoc.errors.empty?
       rescue Timeout::Error, WorkflowMgr::SchedulerDown

@@ -246,7 +246,7 @@ module WorkflowMgr
           when /Job_Owner/
             record[:user] = jobstat.content
           when /Resource_List/
-            jobstat.each_element do |e|
+            jobstat.element_children.each do |e|
               if e.name == 'procs'
                 record[:cores] = e.content.to_i
                 break
