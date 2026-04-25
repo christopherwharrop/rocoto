@@ -66,6 +66,10 @@ module WorkflowMgr
             xml_config.huge
             xml_config.nocdata
           end
+          unless @workflowdoc.errors.empty?
+            parse_errors = @workflowdoc.errors.map(&:to_s).join("\n")
+            raise "Cannot parse workflow document #{workflowdoc} because it is malformed:\n#{parse_errors}"
+          end
         else
           raise "Cannot read XML file, #{workflowdoc}, because it does not exist!"
         end
