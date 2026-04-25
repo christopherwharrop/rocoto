@@ -254,7 +254,7 @@ module WorkflowMgr
 
         # Parse the XML output of showq, building job status records for each job
         recordxmldoc = Nokogiri::XML(completed_jobs, nil, nil,
-                                     Nokogiri::XML::ParseOptions::DEFAULT_XML, Nokogiri::XML::ParseOptions::HUGE)
+                                     Nokogiri::XML::ParseOptions::DEFAULT_XML | Nokogiri::XML::ParseOptions::HUGE)
         unless recordxmldoc.errors.empty?
           parse_errors = recordxmldoc.errors.map(&:to_s).join("\n")
           raise WorkflowMgr::SchedulerDown, "Failed to parse showq output: #{parse_errors}"
