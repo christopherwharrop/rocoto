@@ -314,7 +314,7 @@ module WorkflowMgr
         return if completed_jobs.empty?
 
         # Parse the XML output of showq, building job status records for each job
-        recordxmldoc = Nokogiri::XML(completed_job, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
+        recordxmldoc = Nokogiri::XML(completed_jobs, nil, nil, Nokogiri::XML::ParseOptions::HUGE)
 
         unless recordxmldoc.errors.empty?
           parse_errors = recordxmldoc.errors.map(&:to_s).join("\n")
