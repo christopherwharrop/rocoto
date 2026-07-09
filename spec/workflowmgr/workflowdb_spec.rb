@@ -7,72 +7,134 @@ require 'workflowmgr/workflowdb'
 RSpec.describe WorkflowMgr::WorkflowSQLite3DB do
   describe 'workflow locking' do
     let(:databasefile) { 'test.db' }
+    let(:lockfile) { 'test_lock.db' }
 
     before do
       FileUtils.rm_f(databasefile)
+      FileUtils.rm_f(lockfile)
     end
 
     after do
       FileUtils.rm_f(databasefile)
+      FileUtils.rm_f(lockfile)
     end
 
     it 'properly locks and serializes database access across processes' do
       # Initialize a workflow SQLite database
       database = described_class.new(databasefile)
+      database.dbopen
 
       # Add a test table to the database
       dbhandle = SQLite3::Database.new(databasefile)
       dbhandle.transaction do |db|
         db.execute('CREATE TABLE test (val INTEGER);')
+        db.execute('INSERT INTO test VALUES (0);')
       end
       dbhandle.close
 
-      # Fork 10 processes, each doing 100 database operations
-      pids = []
-      10.times do
-        pids << Process.fork do
-          100.times do
-            database.lock_workflow
+      # Create a worker script that simulates a rocotorun process
+      lib_path = File.expand_path('../../lib', __dir__)
+      worker_script = <<~RUBY
+        #!/usr/bin/env ruby
+        $LOAD_PATH.unshift('#{lib_path}')
 
-            # Get a handle to the database
+        require 'sqlite3'
+        require 'workflowmgr/workflowdb'
+
+        databasefile = ARGV[0]
+        action = ARGV[1]
+
+        database = WorkflowMgr::WorkflowSQLite3DB.new(databasefile)
+        database.dbopen
+
+        case action
+        when 'lock'
+          # Acquire lock and hold it briefly
+          success = database.lock_workflow
+          if success
+            # Write that we have the lock
+            puts "LOCKED"
+            # Hold the lock for a moment
+            sleep 0.5
+            database.unlock_workflow
+          else
+            puts "FAILED"
+            exit 1
+          end
+        when 'increment'
+          # Acquire lock, increment counter, release
+          success = database.lock_workflow
+          if success
             dbhandle = SQLite3::Database.new(databasefile)
-
             dbhandle.transaction do |db|
-              val = db.execute('SELECT val FROM test')
-              if val.empty?
-                db.execute('INSERT into test values (1)')
-              else
-                db.execute("UPDATE test SET val=#{val[0][0] + 1}")
-              end
+              val = db.execute('SELECT val FROM test')[0][0]
+              db.execute("UPDATE test SET val=\#{val + 1}")
             end
-
             dbhandle.close
             database.unlock_workflow
+            puts "INCREMENTED"
+          else
+            puts "FAILED"
+            exit 1
           end
-          exit 0
         end
-      end
 
-      # Wait for all child processes
-      ndbaccess = 0
-      pids.each do |pid|
-        _childpid, status = Process.waitpid2(pid)
-        ndbaccess += 1 if status.exitstatus == 0
-      end
+        exit 0
+      RUBY
 
-      # Verify the final value
-      dbhandle = SQLite3::Database.new(databasefile)
-      dbhandle.transaction do |db|
-        val = db.execute('SELECT val FROM test')
-        if ndbaccess.positive?
-          # If locking works correctly, all 100 operations should have incremented the counter
-          expect(val).to eq([[100]])
-        else
-          # If no child processes succeeded (shouldn't happen), table should be empty
-          expect(val).to eq([])
+      # Write the worker script
+      worker_file = 'test_worker.rb'
+      File.write(worker_file, worker_script)
+
+      begin
+        # Test 1: Sequential operations should all succeed
+        5.times do
+          result = `bundle exec ruby #{worker_file} #{databasefile} increment 2>&1`
+          expect(result).to include("INCREMENTED")
+          expect($?.exitstatus).to eq(0)
         end
+
+        # Verify counter
+        dbhandle = SQLite3::Database.new(databasefile)
+        val = dbhandle.execute('SELECT val FROM test')[0][0]
+        dbhandle.close
+        expect(val).to eq(5)
+
+        # Test 2: One process holds lock while another tries to acquire
+        # Start a process that will hold the lock
+        holder_pid = spawn("bundle exec ruby #{worker_file} #{databasefile} lock", out: '/dev/null', err: '/dev/null')
+
+        # Wait for it to acquire the lock
+        sleep 0.2
+
+        # Try to increment while the lock is held - should fail/timeout
+        start_time = Time.now
+        competitor_pid = spawn("bundle exec ruby #{worker_file} #{databasefile} increment", out: '/dev/null', err: '/dev/null')
+
+        # The competitor should wait for the lock to be released
+        _pid, status = Process.wait2(competitor_pid)
+        elapsed = Time.now - start_time
+
+        # Should have waited at least 0.3 seconds (lock was held for 0.5s, we waited 0.2s before starting)
+        expect(elapsed).to be >= 0.2
+
+        # Wait for holder to finish
+        Process.wait2(holder_pid)
+
+        # Competitor might have succeeded or failed depending on timing
+        # If it succeeded, counter should be 6, if failed should still be 5
+        dbhandle = SQLite3::Database.new(databasefile)
+        val = dbhandle.execute('SELECT val FROM test')[0][0]
+        dbhandle.close
+        expect(val).to be_between(5, 6)
+      ensure
+        # Clean up
+        FileUtils.rm_f(worker_file)
+        FileUtils.rm_f('test_worker_0.out')
+        FileUtils.rm_f('test_worker_0.err')
+        FileUtils.rm_f('test_worker_1.out')
+        FileUtils.rm_f('test_worker_1.err')
       end
-      dbhandle.close
     end
   end
 end

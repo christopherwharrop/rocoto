@@ -4,6 +4,7 @@
 #
 ##########################################
 require 'English'
+require 'fileutils'
 module WorkflowMgr
   # DRYRUN controls whether workflow operations are executed or just logged.
   # It defaults to 0 (off), but can be overridden via the WORKFLOWMGR_DRYRUN
@@ -139,8 +140,11 @@ module WorkflowMgr
     return if message.nil?
     return if message.empty?
 
-    if level <= VERBOSE
-      warn "#{Time.now.strftime('%x %X %Z')} :: #{WORKFLOW_ID} :: #{message}"
+    verbose = defined?(WorkflowMgr::VERBOSE) ? WorkflowMgr::VERBOSE : 0
+    workflow_id = defined?(WorkflowMgr::WORKFLOW_ID) ? WorkflowMgr::WORKFLOW_ID : 'unknown'
+
+    if level <= verbose
+      warn "#{Time.now.strftime('%x %X %Z')} :: #{workflow_id} :: #{message}"
     end
   end
 
@@ -153,8 +157,15 @@ module WorkflowMgr
     return if message.nil?
     return if message.empty?
 
+    # Get workflow ID, or use 'unknown' if not defined
+    workflow_id = defined?(WorkflowMgr::WORKFLOW_ID) ? WorkflowMgr::WORKFLOW_ID : 'unknown'
+
     # Name of the current log file
-    rocotolog = "#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/#{WorkflowMgr::WORKFLOW_ID.sub(/.xml$/, '')}/log"
+    rocotolog = "#{ENV['HOME']}/.rocoto/#{WorkflowMgr.version}/#{workflow_id.sub(/.xml$/, '')}/log"
+
+    # Create the log directory if it doesn't exist
+    logdir = File.dirname(rocotolog)
+    FileUtils.mkdir_p(logdir) unless File.directory?(logdir)
 
     # Logging requires exclusive access to the logs
     # Open the log lock file
@@ -204,7 +215,7 @@ module WorkflowMgr
 
           # Log the message
           File.open(rocotolog, "a") do |f|
-            f.puts "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} :: #{message}"
+            f.puts "#{Time.now.strftime('%x %X %Z')} :: #{workflow_id} :: #{message}"
           end
         ensure
           # Make sure the lock is released
@@ -212,9 +223,9 @@ module WorkflowMgr
         end
 
       else
-        warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} :: " \
+        warn "#{Time.now.strftime('%x %X %Z')} :: #{workflow_id} :: " \
              "WARNING! Could not acquire lock to write log the following message"
-        warn "#{Time.now.strftime('%x %X %Z')} :: #{WorkflowMgr::WORKFLOW_ID} ::          #{message}"
+        warn "#{Time.now.strftime('%x %X %Z')} :: #{workflow_id} ::          #{message}"
       end
     end
   end
