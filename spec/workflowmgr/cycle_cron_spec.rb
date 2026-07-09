@@ -61,7 +61,7 @@ RSpec.describe WorkflowMgr::CycleCron do
   describe '#next' do
     it 'returns current time when called with now for wildcard pattern' do
       cycle = described_class.new('* * * * * *', 'test', 0)
-      reftime = Time.at(Time.now.to_i)
+      reftime = Time.at(Time.now.to_i).utc
       reftime -= reftime.sec
       nextcycle = cycle.next(reftime)
       expect(nextcycle[0]).to eq(reftime)
@@ -197,7 +197,7 @@ RSpec.describe WorkflowMgr::CycleCron do
   describe '#previous' do
     it 'returns current time when called with now for wildcard pattern' do
       cycle = described_class.new('* * * * * *', 'test', 0)
-      reftime = Time.at(Time.now.to_i)
+      reftime = Time.at(Time.now.to_i).utc
       reftime -= reftime.sec
       prevcycle = cycle.previous(reftime)
       expect(prevcycle[0]).to eq(reftime)

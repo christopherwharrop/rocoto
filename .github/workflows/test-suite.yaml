@@ -47,6 +47,14 @@ jobs:
             label: '3.3.0 (first release)'
           - ruby-version: '3.3'
             label: '3.3 (latest patch)'
+          - ruby-version: '3.4.1'
+            label: '3.4.1 (second release)'
+          - ruby-version: '3.4'
+            label: '3.4 (latest patch)'
+          - ruby-version: '4.0.0'
+            label: '4.0.0 (first release)'
+          - ruby-version: '4.0'
+            label: '4.0 (latest patch)'
     steps:
       -
         name: Checkout repository
@@ -91,10 +99,10 @@ jobs:
       -
         name: Install Ruby ${{ matrix.ruby-version }} and dependencies
         run: |
-          docker exec frontend bash -c "sudo apt-get update && sudo apt-get install -y build-essential libssl-dev libreadline-dev zlib1g-dev libxml2-dev curl git"
-          docker exec frontend bash -c "git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build"
-          docker exec frontend bash -c "sudo /tmp/ruby-build/install.sh"
-          docker exec frontend bash -c '
+          docker exec rocoto-frontend bash -c "sudo apt-get update && sudo apt-get install -y build-essential libssl-dev libreadline-dev zlib1g-dev libxml2-dev curl git"
+          docker exec rocoto-frontend bash -c "git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build"
+          docker exec rocoto-frontend bash -c "sudo /tmp/ruby-build/install.sh"
+          docker exec rocoto-frontend bash -c '
             VERSION="${{ matrix.ruby-version }}";
             if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               # Full version specified (e.g., 3.2.0)
@@ -110,27 +118,27 @@ jobs:
             sudo ln -sf $INSTALL_DIR/bin/ruby /usr/local/bin/ruby;
             sudo ln -sf $INSTALL_DIR/bin/gem /usr/local/bin/gem;
           '
-          docker exec frontend bash -c "ruby --version"
+          docker exec rocoto-frontend bash -c "ruby --version"
       -
         name: Copy test files to work directory
         run: |
-          docker exec frontend bash -l -c "mkdir -p work; cd work; cp -r ../rocoto/* ."
+          docker exec rocoto-frontend bash -l -c "mkdir -p work; cd work; cp -r ../rocoto/* ."
       -
         name: Install rocoto
         run: |
           # Extract minor version (X.Y) from matrix version for directory path
           MINOR_VERSION=$(echo "${{ matrix.ruby-version }}" | cut -d. -f1,2)
-          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${MINOR_VERSION} --local"
-          docker exec frontend bash -l -c "cd work; ./UNINSTALL"
-          docker exec frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${MINOR_VERSION}"
+          docker exec rocoto-frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${MINOR_VERSION} --local"
+          docker exec rocoto-frontend bash -l -c "cd work; ./UNINSTALL"
+          docker exec rocoto-frontend bash -l -c "cd work; ./INSTALL --with-ruby=/usr/local/ruby-${MINOR_VERSION}"
       -
         name: Run test suite
         run: |
-          docker exec frontend bash -l -c "cd work; bin/rocotorun -h"
+          docker exec rocoto-frontend bash -l -c "cd work; bin/rocotorun -h"
       -
         name: Run RSpec tests
         run: |
-          docker exec frontend bash -l -c "BUNDLE_CMD=\$(ruby -e \"require 'rubygems'; puts Gem.bin_path('bundler', 'bundle')\"); cd work; \$BUNDLE_CMD exec rake spec"
+          docker exec rocoto-frontend bash -l -c "BUNDLE_CMD=\$(ruby -e \"require 'rubygems'; puts Gem.bin_path('bundler', 'bundle')\"); cd work; \$BUNDLE_CMD exec rake spec"
 
   coverage:
     name: Test Coverage

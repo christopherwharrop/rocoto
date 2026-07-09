@@ -9,11 +9,10 @@
  <!ENTITY CUSTOM "<native></native>">
 
 
- <!ENTITY TEST_HOME "/home/Christopher.W.Harrop/rocoto-master/test">
- <!ENTITY DATA_HOME "/scratch4/BMC/gsd-hpcs/Christopher.W.Harrop/test">
- <!ENTITY PROJECT "gsd-hpcs">
- <!ENTITY QUEUE "batch">
- <!ENTITY SCHED "moabtorque">
+ <!ENTITY TEST_HOME "/home/admin/rocoto/test">
+ <!ENTITY DATA_HOME "/home/admin/rocoto/test">
+ <!ENTITY PARTITION "slurmpar">
+ <!ENTITY SCHED "slurm">
 
 <!--
  <!ENTITY TEST_HOME "/home/harrop/rocoto-1.1/test">
@@ -103,21 +102,13 @@
 
       <command><cyclestr offset="-1:00:00">&TEST_HOME;/bin/test.ksh -d @Y-@m-@d_@X @p</cyclestr></command>
 
-      <account>&PROJECT;</account>
+      <partition>&PARTITION;</partition>
 
-      <queue>&QUEUE;</queue>
+      <cores>8</cores>
 
-      <cores>48</cores>
-
-      <nodesize>36</nodesize>
-<!--
-      <nodes>1:ppn=1+2:ppn=4:tpp=2 </nodes>
--->
       <walltime> 01:10 </walltime>
 
       <join>&TEST_HOME;/log/test/test_#foo#.join</join>
-
-      <memory>512M</memory>
 
       <jobname>test#foo#</jobname>
 <!--

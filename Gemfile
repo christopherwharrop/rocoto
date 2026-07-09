@@ -2,12 +2,18 @@
 
 source "https://rubygems.org"
 
-ruby ">= 3.2.0"
+# Ruby 3.4.0 has ABI incompatibility with nokogiri precompiled binaries.
+# Error: "undefined symbol: ruby_abi_version" when loading nokogiri C extensions.
+# Fixed in Ruby 3.4.1 (verified via testing).
+ruby ">= 3.2.0", "!= 3.4.0"
 
 gem "nokogiri", "~> 1.19.3" # Uses precompiled libxml2 on supported platforms
 gem "open4", "~> 1.3"
 gem "sqlite3", "~> 1.7"
 gem "thread", "~> 0.2"
+
+# drb was removed from Ruby's default gems starting with 3.4.0
+gem "drb", "~> 2.2"
 
 # Legacy Ruby shim libraries for compatibility
 # TODO: These can likely be removed after refactoring parsedate usage to use Date.parse

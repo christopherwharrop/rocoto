@@ -58,6 +58,9 @@ module WorkflowMgr
                             else
                               "#{@database_file}_lock"
                             end
+
+      # Initialize access mode
+      @mode = { readonly: false }
     end
 
     ##########################################

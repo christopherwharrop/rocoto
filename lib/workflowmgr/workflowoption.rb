@@ -120,6 +120,7 @@ module WorkflowMgr
           opts.parse!(args)
 
           # Set verbosity level
+          WorkflowMgr.send(:remove_const, :VERBOSE) if WorkflowMgr.const_defined?(:VERBOSE)
           WorkflowMgr.const_set("VERBOSE", @verbose)
 
           # Set dryrun level
@@ -136,6 +137,7 @@ module WorkflowMgr
           end
 
           # Set workflow id
+          WorkflowMgr.send(:remove_const, :WORKFLOW_ID) if WorkflowMgr.const_defined?(:WORKFLOW_ID)
           WorkflowMgr.const_set("WORKFLOW_ID", File.basename(@workflowdoc))
 
           # Print usage information if unknown options were passed
