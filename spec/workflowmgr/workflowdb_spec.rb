@@ -20,11 +20,9 @@ RSpec.describe WorkflowMgr::WorkflowSQLite3DB do
       FileUtils.rm_f(lockfile)
     end
 
-    # Skipped: This test is flaky due to race conditions and timing dependencies.
-    # It uses sleep() for process synchronization which is non-deterministic in CI.
-    # TODO: Redesign using proper IPC (signal files, pipes) to eliminate timing races.
-    # The test should verify: two rocotorun processes cannot write to the DB simultaneously.
-    xit 'properly locks and serializes database access across processes' do
+    it 'properly locks and serializes database access across processes' do
+      skip 'Flaky test with race conditions - needs redesign with proper IPC instead of sleep-based timing'
+
       # Initialize a workflow SQLite database
       database = described_class.new(databasefile)
       database.dbopen
