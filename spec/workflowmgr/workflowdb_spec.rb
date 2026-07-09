@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'English'
 require 'spec_helper'
 require 'fileutils'
 require 'workflowmgr/workflowdb'
@@ -91,7 +92,7 @@ RSpec.describe WorkflowMgr::WorkflowSQLite3DB do
         5.times do
           result = `bundle exec ruby #{worker_file} #{databasefile} increment 2>&1`
           expect(result).to include("INCREMENTED")
-          expect($?.exitstatus).to eq(0)
+          expect($CHILD_STATUS.exitstatus).to eq(0)
         end
 
         # Verify counter
@@ -109,10 +110,11 @@ RSpec.describe WorkflowMgr::WorkflowSQLite3DB do
 
         # Try to increment while the lock is held - should fail/timeout
         start_time = Time.now
-        competitor_pid = spawn("bundle exec ruby #{worker_file} #{databasefile} increment", out: '/dev/null', err: '/dev/null')
+        competitor_pid = spawn("bundle exec ruby #{worker_file} #{databasefile} increment",
+                               out: '/dev/null', err: '/dev/null')
 
         # The competitor should wait for the lock to be released
-        _pid, status = Process.wait2(competitor_pid)
+        _pid, _status = Process.wait2(competitor_pid)
         elapsed = Time.now - start_time
 
         # Should have waited at least 0.3 seconds (lock was held for 0.5s, we waited 0.2s before starting)
