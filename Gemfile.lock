@@ -8,7 +8,8 @@ GEM
     json (2.19.4)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
-    mini_portile2 (2.8.9)
+    nokogiri (1.19.3-aarch64-linux-gnu)
+      racc (~> 1.4)
     nokogiri (1.19.3-x86_64-linux-gnu)
       racc (~> 1.4)
     open4 (1.3.4)
@@ -64,15 +65,17 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.13.2)
     simplecov_json_formatter (0.1.4)
-    sqlite3 (1.7.3)
-      mini_portile2 (~> 2.8.0)
+    sqlite3 (2.9.6-aarch64-linux-gnu)
+    sqlite3 (2.9.6-x86_64-linux-gnu)
     thread (0.2.2)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
 
 PLATFORMS
+  aarch64-linux-gnu
   x86_64-linux
+  x86_64-linux-gnu
 
 DEPENDENCIES
   drb (~> 2.2)
@@ -86,11 +89,11 @@ DEPENDENCIES
   rubysl-date (~> 1.0)
   rubysl-parsedate (~> 1.0)
   simplecov (~> 0.22)
-  sqlite3 (~> 1.7)
+  sqlite3 (~> 2.0)
   thread (~> 0.2)
 
 RUBY VERSION
-   ruby 3.2.3p157
+  ruby 3.2.3p157
 
 BUNDLED WITH
-   2.4.19
+  4.0.16

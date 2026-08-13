@@ -9,7 +9,7 @@ ruby ">= 3.2.0", "!= 3.4.0"
 
 gem "nokogiri", "~> 1.19.3" # Uses precompiled libxml2 on supported platforms
 gem "open4", "~> 1.3"
-gem "sqlite3", "~> 1.7"
+gem "sqlite3", "~> 2.0"
 gem "thread", "~> 0.2"
 
 # drb was removed from Ruby's default gems starting with 3.4.0
