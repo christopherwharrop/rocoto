@@ -83,6 +83,18 @@ module WorkflowMgr
 
     ##########################################
     #
+    # disable_servers!
+    #
+    ##########################################
+    def disable_servers!
+      # overwrite all server options to false if "--no-server"
+      @config[:DatabaseServer] = false
+      @config[:BatchQueueServer] = false
+      @config[:WorkflowIOServer] = false
+    end
+
+    ##########################################
+    #
     # method_missing
     #
     ##########################################

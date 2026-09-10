@@ -15,7 +15,7 @@ module WorkflowMgr
   class WorkflowSubsetOptions < WorkflowOption
     require 'workflowmgr/workflowselection'
 
-    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose
+    attr_reader :database, :workflowdoc, :cycles, :tasks, :metatasks, :verbose, :no_server
 
     ##########################################
     #
@@ -30,6 +30,7 @@ module WorkflowMgr
       @action = action # ie.: boot
       @all_tasks = false
       @all_cycles = false
+      @no_server = false
       @selection = nil
       super(args)
     end
@@ -100,6 +101,13 @@ module WorkflowMgr
       # Rewind all tasks for the specified cycles instead of a list of tasks:
       opts.on("-a", '--all', "Selects all tasks.") do |flag|
         @all_tasks = true
+      end
+
+      # Run without server processes (rocotorun only)
+      if @name == 'rocotorun'
+        opts.on("--no-server", "Run without server processes") do
+          @no_server = true
+        end
       end
     end
 
