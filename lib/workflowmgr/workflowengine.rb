@@ -57,7 +57,7 @@ module WorkflowMgr
       # Get command line options
       @options = options
 
-      # overwrite all server options to false if "--no-server"
+      # overwrite all server flags to false if "--no-server"
       @config.disable_servers! if @options.respond_to?(:no_server) && @options.no_server
 
       # Set up an object to serve the workflow database (but do not open the database)
