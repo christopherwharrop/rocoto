@@ -57,6 +57,9 @@ module WorkflowMgr
       # Get command line options
       @options = options
 
+      # overwrite all server flags to false if "--no-server"
+      @config.disable_servers! if @options.respond_to?(:no_server) && @options.no_server
+
       # Set up an object to serve the workflow database (but do not open the database)
       @db_server = DBProxy.new(@config, @options)
 
@@ -542,8 +545,9 @@ module WorkflowMgr
             # checking for job ids.
             # Skip thread join in dryrun mode - thread pool workers sleep indefinitely waiting
             # for work and cause deadlock
+            # Wait for all submission threads to finish if "--no-server"
             unless @config.BatchQueueServer || WorkflowMgr.dryrun_mode?
-              Thread.list.each { |t| t.join unless t == Thread.main }
+              sleep 1 while @bq_server.submitting?
             end
 
             # Harvest job ids for submitted tasks
@@ -1913,10 +1917,10 @@ module WorkflowMgr
         end
       end
 
-      # If we are not using a batch queue server, make sure all qsub threads are terminated before checking for job ids
+      # If we are not using a batch queue server, wait for all qsub threads to finish before checking for job ids
       # Skip thread join in dryrun mode - thread pool workers sleep indefinitely waiting for work and cause deadlock
       unless @config.BatchQueueServer || WorkflowMgr.dryrun_mode?
-        Thread.list.each { |t| t.join unless t == Thread.main }
+        sleep 1 while @bq_server.submitting?
       end
 
       # Harvest job ids for submitted tasks
